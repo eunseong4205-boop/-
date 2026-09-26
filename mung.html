@@ -609,14 +609,19 @@ async function lock(){
 }
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&values.wakeLock&&!sentinel)lock();});
 
-// Save the play canvas as an image: share sheet on phones, download elsewhere.
+// Save the play canvas as an image. Inside the Claude viewer the page asks the viewer
+// through the downloads capability; opened directly, it uses the share sheet or a download.
+let saver=null;const framed=!!window.claude?.use;
+if(framed)window.claude.use('downloads').then(d=>{saver=d;}).catch(()=>{});
 $('#snapshot').addEventListener('click',()=>{
  const body=document.body;body.classList.remove('snap');requestAnimationFrame(()=>body.classList.add('snap'));
  const name='mung-'+new Date().toISOString().slice(0,16).replace(/[-:T]/g,'')+'.png';
  $('#play').toBlob(async blob=>{
   if(!blob){notice('이미지를 만들 수 없어요.');return;}
+  if(saver){try{await saver.save({filename:name,data:blob});notice('이미지를 저장했어요.');}catch(e){notice(e?.code==='declined'?'저장을 취소했어요.':e?.code==='rate_limited'?'잠시 후 다시 눌러 주세요.':'이 화면에서는 이미지를 저장할 수 없어요.');}return;}
   const file=new File([blob],name,{type:'image/png'});
   try{if(navigator.canShare?.({files:[file]})){await navigator.share({files:[file],title:'멍'});return;}}catch(e){if(e?.name==='AbortError')return;}
+  if(framed){notice('이 화면에서는 이미지를 저장할 수 없어요.');return;}
   const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),4000);notice('이미지 저장을 시작했어요.');
  },'image/png');
 });
