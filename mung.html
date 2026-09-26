@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#070b19"><link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin><link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css"><meta name="description" content="손끝에 늘어나는 젤리, 자석처럼 모이는 빛, 흐르는 네온. 여섯 가지 감각 놀이터."><title>멍 — 손끝의 작은 놀이터</title><style>
+<html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#070b19"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="멍"><meta name="format-detection" content="telephone=no"><link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin><link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css"><meta name="description" content="손끝에 늘어나는 젤리, 자석처럼 모이는 빛, 흐르는 네온. 여섯 가지 감각 놀이터."><title>멍 — 손끝의 작은 놀이터</title><style>
 /* ─── Tokens ─────────────────────────────────────────────────────────── */
 :root{color-scheme:dark;--accent:#8ba8ff;--accent-rgb:139,168,255;--glass-rgb:201,215,244;--glass-alpha:.22;--glass-blur:16px;--lens-opacity:.68;--glass-shine:.65;
 --ink:#f6f8ff;--ink-2:#d6deec;--ink-3:#aab6ca;--ink-4:#7e8aa0;--well:rgba(3,7,18,.24);--hair:rgba(255,255,255,.1);
@@ -7,7 +7,7 @@
 --rim:linear-gradient(155deg,rgba(255,255,255,.62),rgba(255,255,255,.12) 28%,rgba(255,255,255,.03) 52%,rgba(255,255,255,.1) 78%,rgba(255,255,255,.34));
 --grain:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .2 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 font-family:"Pretendard Variable",Pretendard,-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Segoe UI",system-ui,sans-serif;color:var(--ink);background:#070b19;font-size:16px;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;text-rendering:optimizeLegibility}
-*{box-sizing:border-box}body{margin:0;overflow:hidden;background:#070b19}button,input{font:inherit;letter-spacing:inherit}
+*{box-sizing:border-box}html,body{height:100%;overscroll-behavior:none}html{-webkit-text-size-adjust:100%;text-size-adjust:100%}body{margin:0;overflow:hidden;background:#070b19}button,input{font:inherit;letter-spacing:inherit}
 ::selection{background:rgba(var(--accent-rgb),.4)}
 
 /* ─── Buttons: clear glass pills with a light-catching rim ─────────────── */
@@ -42,7 +42,7 @@ box-shadow:inset 0 1px 1px rgba(255,255,255,calc(var(--glass-shine) * .95)),inse
 #play{position:fixed;inset:0;display:block;width:100%;height:100%;touch-action:none;outline-offset:-5px}
 
 /* ─── Header ─────────────────────────────────────────────────────────── */
-header{position:fixed;top:0;left:0;right:0;z-index:5;display:flex;justify-content:space-between;align-items:center;padding:max(20px,env(safe-area-inset-top)) 24px 20px;pointer-events:none}
+header{position:fixed;top:0;left:0;right:0;z-index:5;display:flex;justify-content:space-between;align-items:center;padding:max(20px,env(safe-area-inset-top)) max(24px,env(safe-area-inset-right)) 20px max(24px,env(safe-area-inset-left));pointer-events:none}
 .brand{display:flex;gap:10px;align-items:center;height:52px;padding:0 20px 0 9px;border-radius:999px;pointer-events:auto}
 .brand-mark{width:34px;height:34px;flex:none;filter:drop-shadow(0 2px 8px rgba(var(--accent-rgb),.55));animation:breathe 6s ease-in-out infinite}
 .brand strong{font-weight:750;font-size:1.25rem;letter-spacing:-.05em;background:linear-gradient(180deg,#fff 30%,#dbe5ff);-webkit-background-clip:text;background-clip:text;color:transparent}
@@ -70,7 +70,7 @@ h1 em{font-style:normal;margin-left:6px;text-shadow:none;background:linear-gradi
 .playing .intro{opacity:.1;transform:translate(-50%,-6px)}.settings-open .intro{opacity:.14}
 
 /* ─── Footer: variants, transport, dock ──────────────────────────────── */
-footer{position:fixed;bottom:max(18px,env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);width:min(640px,calc(100% - 32px));z-index:4;pointer-events:none}
+footer{position:fixed;bottom:max(18px,calc(env(safe-area-inset-bottom) + 6px));left:50%;transform:translateX(-50%);width:min(640px,calc(100% - 32px));z-index:4;pointer-events:none}
 footer button,footer nav,.variants{pointer-events:auto}
 .variants{--vi:1;--vn:3;position:relative;isolation:isolate;display:grid;grid-auto-flow:column;grid-auto-columns:1fr;width:fit-content;margin:0 auto 12px;padding:3px;border-radius:999px}
 .variants::before{content:"";position:absolute;z-index:-1;top:3px;bottom:3px;left:calc(3px + var(--vi) * (100% - 6px) / var(--vn));width:calc((100% - 6px) / var(--vn));border-radius:999px;background:linear-gradient(180deg,rgba(255,255,255,.3),rgba(255,255,255,.06)),rgba(var(--accent-rgb),.26);box-shadow:inset 0 1px 0 rgba(255,255,255,.55),0 6px 16px -8px rgba(var(--accent-rgb),.8);transition:left .5s var(--spring)}
@@ -78,7 +78,7 @@ footer button,footer nav,.variants{pointer-events:auto}
 .variants button::after{display:none}.variants button[aria-pressed=true]{color:#fff}
 .playbar{display:flex;flex-direction:column;align-items:center;gap:10px;margin-bottom:14px}
 #hint{font-size:.8125rem;font-weight:500;color:var(--ink-2);text-shadow:0 1px 10px rgba(0,0,0,.6);line-height:1.5;text-align:center;letter-spacing:-.01em}
-.transport{display:flex;flex-wrap:wrap;justify-content:center;gap:2px;border-radius:999px;padding:4px}
+.transport{display:flex;flex-wrap:wrap;justify-content:center;gap:2px;border-radius:999px;padding:4px;max-width:100%}.transport button{white-space:nowrap}
 .transport button{min-height:40px;padding:8px 15px 8px 13px;font-size:.8125rem;background:transparent;box-shadow:none;color:var(--ink-2)}
 .transport button::after{display:none}
 @media(hover:hover){.transport button:hover{background:rgba(255,255,255,.08);color:#fff}}
@@ -110,7 +110,7 @@ transition:left .52s var(--spring),right .52s var(--spring),background .4s}
 .magnet-status{margin:0 auto 10px;width:fit-content;border-radius:999px;color:#fff;padding:9px 18px;font-size:.8125rem;font-weight:600;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
 
 /* ─── Settings sheet ─────────────────────────────────────────────────── */
-.settings{position:fixed;z-index:10;right:20px;top:92px;bottom:20px;width:min(400px,calc(100vw - 32px));border-radius:34px;display:flex;flex-direction:column;background:rgba(8,13,28,calc(.4 + var(--glass-alpha) * .45));transform-origin:top right;backdrop-filter:blur(calc(var(--glass-blur) * 1.8)) saturate(1.7);-webkit-backdrop-filter:blur(calc(var(--glass-blur) * 1.8)) saturate(1.7)}
+.settings{position:fixed;z-index:10;right:max(20px,env(safe-area-inset-right));top:92px;bottom:20px;width:min(400px,calc(100vw - 32px));border-radius:34px;display:flex;flex-direction:column;background:rgba(8,13,28,calc(.4 + var(--glass-alpha) * .45));transform-origin:top right;backdrop-filter:blur(calc(var(--glass-blur) * 1.8)) saturate(1.7);-webkit-backdrop-filter:blur(calc(var(--glass-blur) * 1.8)) saturate(1.7)}
 .settings::before{background:radial-gradient(120% 50% at var(--lx) var(--ly),rgba(255,255,255,.1),transparent 60%),radial-gradient(80% 40% at 100% 0%,rgba(var(--accent-rgb),.16),transparent 70%),linear-gradient(180deg,rgba(255,255,255,.07),transparent 30%),var(--grain);background-size:auto,auto,auto,180px 180px;opacity:.8}
 .settings .glass-lens{opacity:calc(var(--lens-opacity) * .3);filter:blur(6px) saturate(.9)}
 .sheet-grip{display:none}
@@ -159,7 +159,7 @@ transition:left .52s var(--spring),right .52s var(--spring),background .4s}
 .switch-row.pressed{transform:scale(.98)}
 
 /* Sliders: accent fill, glass pill thumb that turns clear while held. */
-input[type=range]{--p:50%;appearance:none;-webkit-appearance:none;background:transparent;width:100%;height:32px;margin:6px 0 0;cursor:pointer;touch-action:none}
+input[type=range]{--p:50%;appearance:none;-webkit-appearance:none;background:transparent;width:100%;height:32px;margin:6px 0 0;cursor:pointer;touch-action:pan-y}
 input[type=range]::-webkit-slider-runnable-track{height:6px;border-radius:999px;background:linear-gradient(90deg,rgba(var(--accent-rgb),.75),rgb(var(--accent-rgb))) 0 0/var(--p) 100% no-repeat,rgba(255,255,255,.11);box-shadow:inset 0 1px 2px rgba(0,0,0,.4),0 1px 0 rgba(255,255,255,.06)}
 input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;margin-top:-8px;width:34px;height:22px;border:0;border-radius:999px;background:linear-gradient(180deg,#fff,#e9eefa);box-shadow:0 0 0 .5px rgba(0,0,0,.14),0 2px 5px rgba(0,0,0,.3),0 8px 16px -6px rgba(var(--accent-rgb),.8);transition:transform .35s var(--spring),box-shadow .2s}
 input[type=range]:active::-webkit-slider-thumb{transform:scale(1.28,1.4);background:radial-gradient(120% 90% at 50% 20%,rgba(255,255,255,.75),rgba(255,255,255,.14) 70%);box-shadow:inset 0 0 0 1px rgba(255,255,255,.85),inset 0 1px 2px #fff,inset 0 -2px 4px rgba(var(--accent-rgb),.5),0 6px 16px rgba(0,0,0,.35)}
@@ -202,7 +202,7 @@ input[type=range]:focus-visible{outline-offset:2px;border-radius:10px}
 #notice{position:fixed;top:92px;left:50%;transform:translateX(-50%);z-index:30;max-width:calc(100% - 28px);width:max-content;pointer-events:none;display:flex;align-items:center;gap:10px;border-radius:999px;color:#fff;font-size:.875rem;font-weight:550;line-height:1.5;letter-spacing:-.01em;text-align:center;padding:11px 20px 11px 16px;background:linear-gradient(180deg,rgba(255,255,255,.14),rgba(255,255,255,.03)),rgba(18,26,46,.5);backdrop-filter:blur(24px) saturate(1.9);-webkit-backdrop-filter:blur(24px) saturate(1.9);box-shadow:inset 0 1px 0 rgba(255,255,255,.4),inset 0 0 0 1px rgba(255,255,255,.1),0 14px 40px -10px rgba(0,0,0,.6);animation:toast .55s var(--spring)}
 #notice:empty{display:none}
 #notice::before{content:"";width:7px;height:7px;flex:none;border-radius:50%;background:rgb(var(--accent-rgb));box-shadow:0 0 10px rgb(var(--accent-rgb))}
-#exit-immersive{position:fixed;bottom:max(24px,env(safe-area-inset-bottom));right:24px;z-index:20;padding:10px 18px 10px 15px;backdrop-filter:blur(20px) saturate(1.8);-webkit-backdrop-filter:blur(20px) saturate(1.8);animation:toast .6s var(--spring)}
+#exit-immersive{position:fixed;bottom:max(24px,calc(env(safe-area-inset-bottom) + 8px));right:max(24px,env(safe-area-inset-right));z-index:20;padding:10px 18px 10px 15px;backdrop-filter:blur(20px) saturate(1.8);-webkit-backdrop-filter:blur(20px) saturate(1.8);animation:toast .6s var(--spring)}
 #exit-immersive .ic{width:17px;height:17px}
 .immersed .chrome{display:none!important}
 
@@ -230,8 +230,49 @@ footer{animation:rise 1s .12s var(--spring) both}
 .dock{min-height:68px;padding:5px}.dock-selection{top:5px;bottom:5px;left:calc(5px + var(--i) * (100% - 10px) / 6);right:calc(5px + (5 - var(--i)) * (100% - 10px) / 6)}.mode{font-size:.6875rem;gap:4px}.mode-icon .ic{width:22px;height:22px}
 .transport button{font-size:.75rem;padding:8px 11px 8px 10px;min-height:38px;gap:5px}.transport .ic{width:15px;height:15px}.playbar{margin-bottom:11px;gap:8px}.variants{margin-bottom:9px}.variants button{padding:6px 14px}
 .bottomline{padding:9px 10px 0}.bottomline span+span{display:none}footer{width:calc(100% - 20px);bottom:max(10px,env(safe-area-inset-bottom))}#notice{top:76px}}
-@media(max-width:360px){header{padding:12px 10px}.top-actions{gap:5px}.settings-opener{padding:0 12px}.settings-opener .ic{display:none}.brand{gap:6px;padding:0 12px 0 6px}.brand-mark{width:26px;height:26px}.intro p{font-size:.75rem}.panel-scroll{padding-left:12px;padding-right:12px}.color-grid{gap:6px}.settings .color-well{padding:10px 7px;gap:2px 6px}.mode{font-size:.625rem}.swatches{gap:7px}.transport button .ic{display:none}}
+@media(max-width:360px){header{padding:12px 10px}.top-actions{gap:5px}.settings-opener{padding:0 12px}.settings-opener .ic{display:none}.brand{gap:6px;padding:0 12px 0 6px}.brand-mark{width:26px;height:26px}.intro p{font-size:.75rem}.panel-scroll{padding-left:12px;padding-right:12px}.color-grid{gap:6px}.settings .color-well{padding:10px 7px;gap:2px 6px}.mode{font-size:.625rem}.swatches{gap:7px}.transport #special .ic{display:none}.transport #special{padding:8px 12px}}
 @media(max-height:620px){.intro{display:none}.bottomline,#hint{display:none}header{padding:10px 18px}footer{bottom:9px}.dock{min-height:64px}.variants{margin-bottom:5px}.playbar{margin-bottom:7px}.settings{top:68px;bottom:9px;height:auto;max-height:none}.sheet-grip{display:none}}
+/* ─── Phones ─────────────────────────────────────────────────────────── */
+.scrim{position:fixed;inset:0;z-index:9;display:none;background:radial-gradient(120% 80% at 50% 100%,rgba(2,4,12,.55),rgba(2,4,12,.25));-webkit-tap-highlight-color:transparent}
+@media(max-width:700px){
+ .settings-open .scrim{display:block;animation:scrimIn .35s var(--soft) both}
+ header{padding:max(12px,env(safe-area-inset-top)) max(14px,env(safe-area-inset-right)) 12px max(14px,env(safe-area-inset-left))}
+ .cluster button{width:44px;height:44px;min-height:44px}.cluster{padding:2px}
+ /* One row of controls: secondary actions collapse to icon buttons. */
+ .transport{flex-wrap:nowrap;gap:2px;padding:4px}
+ .transport button{min-height:44px;padding:8px 14px 8px 12px;font-size:.8125rem}
+ .transport #pause,.transport #clear,.transport #fill-bubbles{width:44px;min-width:44px;padding:0;flex:none}
+ .transport #pause .label,.transport #clear .label,.transport #fill-bubbles .label{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
+ .transport .ic{width:18px;height:18px}
+ .transport #special{flex:0 1 auto;min-width:0}.transport #special .label{overflow:hidden;text-overflow:ellipsis}
+ .variants button{min-height:40px;padding:8px 16px}
+ .settings{bottom:max(10px,env(safe-area-inset-bottom));max-height:calc(100dvh - max(20px,env(safe-area-inset-top)) - 20px)}
+ .panel-scroll{padding-bottom:calc(28px + env(safe-area-inset-bottom) * .5);-webkit-overflow-scrolling:touch}
+ .sheet-grip{height:30px}.sheet-grip span{width:44px}
+ .settings-tabs button{min-height:42px}
+ .option-segments button{min-height:40px}
+ .presets button{min-height:50px}
+ .swatch{width:38px;height:38px;min-height:38px}
+ .settings label{margin-top:12px}
+ input[type=range]{height:36px}
+ #notice{top:max(72px,calc(env(safe-area-inset-top) + 60px));font-size:.8125rem;padding:10px 16px 10px 13px}
+ #exit-immersive{min-height:44px}
+}
+@media(max-width:700px) and (max-height:720px){.bottomline{display:none}.intro{top:80px}h1{margin:12px 0 6px}}
+/* Phones on their side: slim chrome, sheet docked to the right. */
+@media(max-height:500px) and (orientation:landscape){
+ header{padding:max(8px,env(safe-area-inset-top)) max(14px,env(safe-area-inset-right)) 8px max(14px,env(safe-area-inset-left))}
+ .brand{height:44px}.edition{display:none}.settings-opener{height:44px}.cluster button{width:40px;height:40px;min-height:40px}
+ footer{width:min(560px,calc(100% - 32px));bottom:max(8px,env(safe-area-inset-bottom))}
+ .dock{min-height:56px;padding:4px}.dock-selection{top:4px;bottom:4px;left:calc(4px + var(--i) * (100% - 8px) / 6);right:calc(4px + (5 - var(--i)) * (100% - 8px) / 6)}
+ .mode{flex-direction:row;gap:6px;font-size:.75rem}.mode-icon .ic{width:20px;height:20px}
+ .transport{flex-wrap:nowrap}.transport button{min-height:38px;padding:6px 12px}.transport .ic{width:16px;height:16px}
+ .settings{top:max(8px,env(safe-area-inset-top));bottom:max(8px,env(safe-area-inset-bottom));right:max(10px,env(safe-area-inset-right));width:min(380px,55vw);border-radius:28px}
+ .panel-head{padding:14px 16px 10px 20px}.eyebrow{display:none}.panel-head h2{font-size:1.25rem;margin:0}
+ #notice{top:max(60px,env(safe-area-inset-top))}
+ .top-actions{transition:opacity .3s}.settings-open .top-actions{opacity:0;pointer-events:none}
+}
+@keyframes scrimIn{from{opacity:0}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;animation:none!important}button.pressed{transform:none}}
 
 /* Capture the selection gesture instead of browser scrolling or text callouts. */
@@ -250,6 +291,7 @@ document.documentElement.style.setProperty('--mung-dream-image','url(\"'+window.
 <canvas id="play" tabindex="0" aria-label="감각 놀이터. 누르고 드래그하세요. 스페이스 또는 엔터로 화면 가운데에서 놀 수 있습니다."></canvas>
 <header class="chrome"><div class="brand glass-surface" data-glass><svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><defs><radialGradient id="bm-body" cx="34%" cy="28%" r="80%"><stop offset="0" stop-color="#fff"/><stop offset=".32" style="stop-color:var(--accent)"/><stop offset="1" stop-color="#1a2552"/></radialGradient><linearGradient id="bm-rim" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".95"/><stop offset=".5" stop-color="#fff" stop-opacity=".1"/><stop offset="1" stop-color="#fff" stop-opacity=".5"/></linearGradient></defs><circle cx="16" cy="16" r="13" fill="url(#bm-body)"/><circle cx="16" cy="16" r="12.5" fill="none" stroke="url(#bm-rim)"/><ellipse cx="11.6" cy="10.6" rx="4.4" ry="2.6" transform="rotate(-32 11.6 10.6)" fill="#fff" fill-opacity=".75"/><path d="M8.5 20.5c3.8 3.2 11.2 3.2 15-.8" fill="none" stroke="#fff" stroke-opacity=".45" stroke-width="1.2" stroke-linecap="round"/></svg><strong>멍</strong><span class="edition">손끝의 쉼</span></div><div class="top-actions"><div class="cluster glass-surface" data-glass><button id="sound" class="circle-button" aria-pressed="false" aria-label="소리 켜기"><span class="sr-only">소리 꺼짐</span><svg class="ic ic-off" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9.5h3.2L12 5.5v13l-4.8-4H4z"/><path class="soft" d="M16 9.8l4.4 4.4M20.4 9.8L16 14.2"/></svg><svg class="ic ic-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9.5h3.2L12 5.5v13l-4.8-4H4z"/><path d="M15.5 9.2a4 4 0 0 1 0 5.6"/><path class="soft" d="M18.2 6.6a7.6 7.6 0 0 1 0 10.8"/></svg></button><button id="immersive" class="circle-button" aria-pressed="false" aria-label="몰입 모드"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V5.5A1.5 1.5 0 0 1 5.5 4H9M15 4h3.5A1.5 1.5 0 0 1 20 5.5V9M20 15v3.5a1.5 1.5 0 0 1-1.5 1.5H15M9 20H5.5A1.5 1.5 0 0 1 4 18.5V15"/></svg></button></div><button id="settings-toggle" class="settings-opener" aria-expanded="false" aria-controls="settings-panel"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7.5h8.5M17.5 7.5H20M4 16.5h2.5M11.5 16.5H20"/><circle cx="15" cy="7.5" r="2.5"/><circle cx="9" cy="16.5" r="2.5"/></svg>나의 공간</button></div></header>
 <section class="intro chrome"><div class="kicker chip-glass"><span id="number">01</span><span>TOUCH &amp; FEEL</span></div><h1 id="title">말랑하게,<br><em>생각을 풀어요.</em></h1><p id="description">꾹 누르고 당겨 보세요.<br>놓으면 탱글, 다시 제자리로.</p></section>
+<div id="scrim" class="scrim" aria-hidden="true"></div>
 <aside id="settings-panel" class="settings chrome glass-surface" data-glass aria-labelledby="settings-heading" hidden>
 <div id="sheet-grip" class="sheet-grip" aria-hidden="true"><span></span></div><div class="panel-head"><div><span class="eyebrow">MY SPACE</span><h2 id="settings-heading">나의 공간</h2></div><button id="settings-close" aria-label="설정 닫기"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></svg></button></div>
 <div class="settings-tabs" style="--tab-index:0" role="tablist" aria-label="설정 종류">
@@ -293,7 +335,7 @@ document.documentElement.style.setProperty('--mung-dream-image','url(\"'+window.
 <div class="setting-row"><label for="volume">소리 크기 <output id="volume-value">40%</output></label><input id="volume" type="range" min="0" max="100" value="40"></div></div><button id="auto" class="wide switch-row" aria-pressed="false">자동으로 놀기 <span>OFF</span></button>
 <p class="help">공간과 색 조합은 이 기기에 저장돼요. 전체 흐름은 이번 방문에만 적용돼요.</p></section>
 </div></aside>
-<footer class="chrome"><div id="variants" class="variants chip-glass" role="group" aria-label="놀이 스타일"></div><div id="magnet-status" class="magnet-status chip-glass" hidden></div><div class="playbar"><span id="hint">당기고, 놓으면 탱글.</span><div class="transport glass-surface" data-glass><button id="fill-bubbles" hidden><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="7" cy="7.5" r="3"/><circle cx="16.5" cy="8.5" r="3.8"/><circle cx="9" cy="16.5" r="3.6"/><circle class="soft" cx="17.5" cy="17.5" r="2"/></svg>화면 가득 채우기</button><button id="special" title="현재 놀이의 특별한 반응"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5l1.5 4.6c.3.9 1 1.6 1.9 1.9L20 11.5l-4.6 1.5c-.9.3-1.6 1-1.9 1.9L12 19.5l-1.5-4.6c-.3-.9-1-1.6-1.9-1.9L4 11.5l4.6-1.5c.9-.3 1.6-1 1.9-1.9z"/></svg><span class="label">한 번에 팡</span></button><button id="pause" aria-pressed="false"><svg class="ic ic-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5.5v13M15 5.5v13"/></svg><svg class="ic ic-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.8v12.4a.8.8 0 0 0 1.2.7l9.9-6.2a.8.8 0 0 0 0-1.4L9.2 5.1A.8.8 0 0 0 8 5.8z"/></svg><span class="label">일시정지</span></button><button id="clear"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3L4.5 9"/><path d="M4.5 4.5V9H9"/></svg>다시 시작</button></div></div><nav class="dock glass-surface" data-glass aria-label="놀이 선택" style="--active-index:0"><span class="dock-selection" aria-hidden="true"></span><button class="mode active" data-mode="jelly" aria-pressed="true"><span class="mode-icon"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.6c4.6 0 7.9 3.3 7.9 7.9 0 5-3.5 8.9-7.9 8.9s-7.9-3.9-7.9-8.9c0-4.6 3.3-7.9 7.9-7.9z"/><path class="soft" d="M8.3 10.2a4 4 0 0 1 3.1-3"/><path class="soft" d="M7 15.2c3 1.4 7 1.4 10 0"/></svg></span><span>젤리</span><small>01</small></button><button class="mode" data-mode="ripple" aria-pressed="false"><span class="mode-icon"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="2.6"/><circle cx="12" cy="12" r="6"/><circle class="soft" cx="12" cy="12" r="9.4"/></svg></span><span>물결</span><small>02</small></button><button class="mode" data-mode="stardust" aria-pressed="false"><span class="mode-icon"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M10.5 3.5l1.6 4.9c.3.9 1 1.6 1.9 1.9l4.9 1.6-4.9 1.6c-.9.3-1.6 1-1.9 1.9l-1.6 4.9-1.6-4.9c-.3-.9-1-1.6-1.9-1.9L2.1 11.9 7 10.3c.9-.3 1.6-1 1.9-1.9z"/><path class="soft" d="M18.5 2.8v3.4M16.8 4.5h3.4M19 17.2v2.6M17.7 18.5h2.6"/></svg></span><span>별가루</span><small>03</small></button><button class="mode" data-mode="bubble" aria-pressed="false"><span class="mode-icon"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9.5" cy="13.5" r="6.2"/><path class="soft" d="M6.6 11.8a3.3 3.3 0 0 1 2.4-2.4"/><circle cx="17.6" cy="6.6" r="3"/><circle class="soft" cx="18.2" cy="16.8" r="1.6"/></svg></span><span>버블</span><small>04</small></button><button class="mode" data-mode="magnet" aria-pressed="false"><span class="mode-icon"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4.5h4.2v7.3a2.8 2.8 0 0 0 5.6 0V4.5H19v7.3a7 7 0 0 1-14 0z"/><path class="soft" d="M5 8.4h4.2M14.8 8.4H19"/></svg></span><span>자석</span><small>05</small></button><button class="mode" data-mode="ribbon" aria-pressed="false"><span class="mode-icon"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M2.8 14.5c2.9-6 6.3-6 9.2 0s6.3 6 9.2 0"/><path class="soft" d="M2.8 9.5c2.9-6 6.3-6 9.2 0s6.3 6 9.2 0"/></svg></span><span>리본</span><small>06</small></button></nav><div class="bottomline"><span id="scene-caption">오로라의 꿈</span><span>누르고 · 흐르고 · 쉬어가기</span></div></footer>
+<footer class="chrome"><div id="variants" class="variants chip-glass" role="group" aria-label="놀이 스타일"></div><div id="magnet-status" class="magnet-status chip-glass" hidden></div><div class="playbar"><span id="hint">당기고, 놓으면 탱글.</span><div class="transport glass-surface" data-glass><button id="fill-bubbles" title="화면 가득 채우기" hidden><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="7" cy="7.5" r="3"/><circle cx="16.5" cy="8.5" r="3.8"/><circle cx="9" cy="16.5" r="3.6"/><circle class="soft" cx="17.5" cy="17.5" r="2"/></svg><span class="label">화면 가득 채우기</span></button><button id="special" title="현재 놀이의 특별한 반응"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5l1.5 4.6c.3.9 1 1.6 1.9 1.9L20 11.5l-4.6 1.5c-.9.3-1.6 1-1.9 1.9L12 19.5l-1.5-4.6c-.3-.9-1-1.6-1.9-1.9L4 11.5l4.6-1.5c.9-.3 1.6-1 1.9-1.9z"/></svg><span class="label">한 번에 팡</span></button><button id="pause" title="일시정지 / 재생" aria-pressed="false"><svg class="ic ic-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5.5v13M15 5.5v13"/></svg><svg class="ic ic-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.8v12.4a.8.8 0 0 0 1.2.7l9.9-6.2a.8.8 0 0 0 0-1.4L9.2 5.1A.8.8 0 0 0 8 5.8z"/></svg><span class="label">일시정지</span></button><button id="clear" title="다시 시작"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3L4.5 9"/><path d="M4.5 4.5V9H9"/></svg><span class="label">다시 시작</span></button></div></div><nav class="dock glass-surface" data-glass aria-label="놀이 선택" style="--active-index:0"><span class="dock-selection" aria-hidden="true"></span><button class="mode active" data-mode="jelly" aria-pressed="true"><span class="mode-icon"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.6c4.6 0 7.9 3.3 7.9 7.9 0 5-3.5 8.9-7.9 8.9s-7.9-3.9-7.9-8.9c0-4.6 3.3-7.9 7.9-7.9z"/><path class="soft" d="M8.3 10.2a4 4 0 0 1 3.1-3"/><path class="soft" d="M7 15.2c3 1.4 7 1.4 10 0"/></svg></span><span>젤리</span><small>01</small></button><button class="mode" data-mode="ripple" aria-pressed="false"><span class="mode-icon"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="2.6"/><circle cx="12" cy="12" r="6"/><circle class="soft" cx="12" cy="12" r="9.4"/></svg></span><span>물결</span><small>02</small></button><button class="mode" data-mode="stardust" aria-pressed="false"><span class="mode-icon"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M10.5 3.5l1.6 4.9c.3.9 1 1.6 1.9 1.9l4.9 1.6-4.9 1.6c-.9.3-1.6 1-1.9 1.9l-1.6 4.9-1.6-4.9c-.3-.9-1-1.6-1.9-1.9L2.1 11.9 7 10.3c.9-.3 1.6-1 1.9-1.9z"/><path class="soft" d="M18.5 2.8v3.4M16.8 4.5h3.4M19 17.2v2.6M17.7 18.5h2.6"/></svg></span><span>별가루</span><small>03</small></button><button class="mode" data-mode="bubble" aria-pressed="false"><span class="mode-icon"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9.5" cy="13.5" r="6.2"/><path class="soft" d="M6.6 11.8a3.3 3.3 0 0 1 2.4-2.4"/><circle cx="17.6" cy="6.6" r="3"/><circle class="soft" cx="18.2" cy="16.8" r="1.6"/></svg></span><span>버블</span><small>04</small></button><button class="mode" data-mode="magnet" aria-pressed="false"><span class="mode-icon"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4.5h4.2v7.3a2.8 2.8 0 0 0 5.6 0V4.5H19v7.3a7 7 0 0 1-14 0z"/><path class="soft" d="M5 8.4h4.2M14.8 8.4H19"/></svg></span><span>자석</span><small>05</small></button><button class="mode" data-mode="ribbon" aria-pressed="false"><span class="mode-icon"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M2.8 14.5c2.9-6 6.3-6 9.2 0s6.3 6 9.2 0"/><path class="soft" d="M2.8 9.5c2.9-6 6.3-6 9.2 0s6.3 6 9.2 0"/></svg></span><span>리본</span><small>06</small></button></nav><div class="bottomline"><span id="scene-caption">오로라의 꿈</span><span>누르고 · 흐르고 · 쉬어가기</span></div></footer>
 <button id="exit-immersive" hidden><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4v3.5A1.5 1.5 0 0 1 7.5 9H4M20 9h-3.5A1.5 1.5 0 0 1 15 7.5V4M15 20v-3.5a1.5 1.5 0 0 1 1.5-1.5H20M4 15h3.5A1.5 1.5 0 0 1 9 16.5V20"/></svg>메뉴 보기</button><div id="notice" role="status" aria-live="polite"></div><script>
 (() => {
   'use strict';
@@ -888,7 +930,7 @@ addEventListener('resize',()=>{resize();draw();});resize();start();
   const lit=[...document.querySelectorAll('.glass-surface')];let px=0,py=0,queued=false;
   function light(){queued=false;for(const el of lit){if(el.hidden)continue;const r=el.getBoundingClientRect();if(!r.width||!r.height)continue;
     el.style.setProperty('--lx',Math.max(-15,Math.min(115,(px-r.left)/r.width*100)).toFixed(1)+'%');el.style.setProperty('--ly',Math.max(-25,Math.min(125,(py-r.top)/r.height*100)).toFixed(1)+'%');}}
-  if(!matchMedia('(prefers-reduced-motion: reduce)').matches)document.addEventListener('pointermove',e=>{px=e.clientX;py=e.clientY;if(!queued){queued=true;requestAnimationFrame(light);}},{passive:true});
+  if(!matchMedia('(prefers-reduced-motion: reduce)').matches&&matchMedia('(hover: hover) and (pointer: fine)').matches)document.addEventListener('pointermove',e=>{px=e.clientX;py=e.clientY;if(!queued){queued=true;requestAnimationFrame(light);}},{passive:true});
   // Sliders paint their filled portion from a --p custom property.
   const paint=el=>{const min=Number(el.min)||0,max=Number(el.max)||100;el.style.setProperty('--p',((Number(el.value)-min)/((max-min)||1)*100)+'%');};
   const paintAll=()=>document.querySelectorAll('input[type=range]').forEach(paint);
@@ -896,6 +938,8 @@ addEventListener('resize',()=>{resize();draw();});resize();start();
   document.addEventListener('click',()=>requestAnimationFrame(paintAll));
   new MutationObserver(paintAll).observe(document.querySelector('#settings-panel'),{childList:true,subtree:true});
   paintAll();
+  // Tapping outside the phone sheet closes it.
+  document.querySelector('#scrim').addEventListener('click',()=>document.querySelector('#settings-close').click());
   // Re-run the intro entrance whenever the play mode changes.
   const intro=document.querySelector('.intro');
   document.querySelectorAll('.mode').forEach(b=>b.addEventListener('click',()=>{intro.classList.remove('swap');void intro.offsetWidth;intro.classList.add('swap');}));
