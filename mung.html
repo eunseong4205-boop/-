@@ -30,7 +30,7 @@ button:disabled{opacity:.45;cursor:default}
 /* ─── Liquid glass surface ─────────────────────────────────────────────
    Layers, back to front: backdrop blur → refracting lens canvas → tint,
    pointer sheen and grain → content → gradient rim that catches light. */
-.glass-surface{--lx:28%;--ly:-10%;isolation:isolate;position:relative;overflow:hidden;background:rgba(var(--glass-rgb),calc(var(--glass-alpha) * .16));
+.glass-surface{--lx:28%;--ly:-10%;isolation:isolate;position:relative;overflow:hidden;background:rgba(var(--glass-rgb),calc(var(--glass-alpha) * var(--glass-alpha) * 1.1));
 backdrop-filter:blur(var(--glass-blur)) saturate(1.9) brightness(1.06);-webkit-backdrop-filter:blur(var(--glass-blur)) saturate(1.9) brightness(1.06);
 box-shadow:inset 0 1px 1px rgba(255,255,255,calc(var(--glass-shine) * .95)),inset 0 -1px 1px rgba(255,255,255,calc(var(--glass-shine) * .22)),inset 1px 0 0 rgba(193,236,255,.1),inset -1px 0 0 rgba(255,200,245,.08),inset 0 14px 22px -16px rgba(255,255,255,.22),inset 0 -16px 26px -18px rgba(var(--accent-rgb),.34),0 1px 1px rgba(0,0,0,.1),0 12px 30px -10px rgba(2,6,20,.5),0 34px 70px -26px rgba(2,6,20,.55)}
 .glass-surface::before{content:"";position:absolute;inset:0;z-index:-1;border-radius:inherit;pointer-events:none;background:radial-gradient(120% 90% at var(--lx) var(--ly),rgba(255,255,255,.16),transparent 58%),linear-gradient(180deg,rgba(255,255,255,.1),rgba(255,255,255,0) 42%,rgba(255,255,255,.03)),rgba(var(--glass-rgb),calc(var(--glass-alpha) * .22)),var(--grain);background-size:auto,auto,auto,180px 180px;opacity:.95}
@@ -67,7 +67,7 @@ h1 br{display:none}
 h1 em{font-style:normal;margin-left:6px;text-shadow:none;background:linear-gradient(100deg,#fff 5%,rgb(var(--accent-rgb)) 50%,#fff 95%);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 2px 18px rgba(var(--accent-rgb),.45));animation:sheen 9s ease-in-out infinite}
 .intro p{font-size:.9375rem;line-height:1.7;color:var(--ink-2);margin:0;letter-spacing:-.01em;text-shadow:0 1px 14px rgba(3,6,18,.7)}
 .intro p br{display:none}
-.playing .intro{opacity:.1;transform:translate(-50%,-6px)}.settings-open .intro{opacity:.14}
+.playing .intro{opacity:.1;transform:translate(-50%,-6px)}.breathing .intro{opacity:0;transform:translate(-50%,-10px)}.settings-open .intro{opacity:.14}
 
 /* ─── Footer: variants, transport, dock ──────────────────────────────── */
 footer{position:fixed;bottom:max(18px,calc(env(safe-area-inset-bottom) + 6px));left:50%;transform:translateX(-50%);width:min(640px,calc(100% - 32px));z-index:4;pointer-events:none}
@@ -121,8 +121,8 @@ transition:left .52s var(--spring),right .52s var(--spring),background .4s}
 .panel-head button{width:40px;height:40px;min-height:40px;padding:0;border-radius:50%;color:var(--ink-2)}
 .panel-head button .ic{width:17px;height:17px;stroke-width:2}
 @media(hover:hover){.panel-head button:hover{transform:rotate(90deg);color:#fff}}
-.settings-tabs{--tab-index:0;display:grid;grid-template-columns:repeat(3,1fr);position:relative;isolation:isolate;margin:0 18px 6px;padding:4px;border-radius:999px;background:var(--well);box-shadow:inset 0 1px 3px rgba(0,0,0,.35),inset 0 0 0 1px rgba(255,255,255,.05),0 1px 0 rgba(255,255,255,.07);flex-shrink:0}
-.settings-tabs::before{content:"";position:absolute;z-index:-1;top:4px;bottom:4px;left:calc(4px + var(--tab-index) * (100% - 8px) / 3);right:calc(4px + (2 - var(--tab-index)) * (100% - 8px) / 3);border-radius:999px;background:linear-gradient(180deg,rgba(255,255,255,.26),rgba(255,255,255,.06)),rgba(var(--accent-rgb),.18);box-shadow:inset 0 1px 0 rgba(255,255,255,.55),inset 0 -1px 0 rgba(255,255,255,.1),0 4px 14px -4px rgba(0,0,0,.4);transition:left .48s var(--spring),right .48s var(--spring)}
+.settings-tabs{--tab-index:0;display:grid;grid-template-columns:repeat(4,1fr);position:relative;isolation:isolate;margin:0 18px 6px;padding:4px;border-radius:999px;background:var(--well);box-shadow:inset 0 1px 3px rgba(0,0,0,.35),inset 0 0 0 1px rgba(255,255,255,.05),0 1px 0 rgba(255,255,255,.07);flex-shrink:0}
+.settings-tabs::before{content:"";position:absolute;z-index:-1;top:4px;bottom:4px;left:calc(4px + var(--tab-index) * (100% - 8px) / 4);right:calc(4px + (3 - var(--tab-index)) * (100% - 8px) / 4);border-radius:999px;background:linear-gradient(180deg,rgba(255,255,255,.26),rgba(255,255,255,.06)),rgba(var(--accent-rgb),.18);box-shadow:inset 0 1px 0 rgba(255,255,255,.55),inset 0 -1px 0 rgba(255,255,255,.1),0 4px 14px -4px rgba(0,0,0,.4);transition:left .48s var(--spring),right .48s var(--spring)}
 .settings-tabs[data-dir=next]::before{transition:left .52s .06s var(--spring),right .38s var(--spring)}
 .settings-tabs[data-dir=prev]::before{transition:left .38s var(--spring),right .52s .06s var(--spring)}
 .settings-tabs button{background:transparent!important;box-shadow:none!important;min-height:38px;font-size:.8125rem;font-weight:600;padding:7px 8px;color:var(--ink-3)}
@@ -134,7 +134,7 @@ transition:left .52s var(--spring),right .52s var(--spring),background .4s}
 .settings h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,rgba(255,255,255,.16),transparent)}
 .panel-scroll section>h3:first-child{margin-top:12px}
 .help{font-size:.8125rem;line-height:1.65;color:var(--ink-3);margin:12px 6px 16px;letter-spacing:-.005em}.help:empty{display:none}
-.presets{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.presets button{min-height:48px;border-radius:18px;font-size:.8125rem;padding:9px 6px}
+.presets{display:grid;grid-template-columns:1fr 1fr;gap:8px}.presets button{flex-direction:column;align-items:flex-start;justify-content:center;gap:3px;min-height:62px;border-radius:20px;padding:11px 15px;text-align:left}.presets strong{font-size:.875rem;font-weight:650;letter-spacing:-.02em}.presets small{font-size:.6875rem;font-weight:500;color:var(--ink-3)}.presets button[aria-pressed=true] small{color:var(--ink-2)}
 .control-group{padding:4px 16px 16px;border-radius:24px;background:linear-gradient(180deg,rgba(0,0,0,.16),rgba(0,0,0,.06)),var(--well);box-shadow:inset 0 1px 2px rgba(0,0,0,.3),inset 0 0 0 1px rgba(255,255,255,.05),0 1px 0 rgba(255,255,255,.06)}
 .option-segments{display:grid;grid-template-columns:repeat(4,1fr);gap:2px;margin-top:10px;padding:3px;border-radius:14px;background:rgba(0,0,0,.2);box-shadow:inset 0 1px 2px rgba(0,0,0,.3)}
 .option-segments button{font-size:.75rem;padding:7px 3px;min-height:34px;border-radius:11px;background:transparent;box-shadow:none;color:var(--ink-3)}
@@ -273,10 +273,80 @@ footer{animation:rise 1s .12s var(--spring) both}
  .top-actions{transition:opacity .3s}.settings-open .top-actions{opacity:0;pointer-events:none}
 }
 @keyframes scrimIn{from{opacity:0}}
+/* ─── Settings: tabs with icons, glass presets, segments ─────────────── */
+.settings-tabs button{flex-direction:column;gap:3px;min-height:52px;font-size:.6875rem;padding:6px 4px}
+.settings-tabs .ic{width:18px;height:18px;transition:transform .45s var(--spring)}
+.settings-tabs button[aria-selected=true] .ic{transform:translateY(-1px) scale(1.08);filter:drop-shadow(0 0 6px rgba(var(--accent-rgb),.8))}
+.settings.scrolled .settings-tabs{box-shadow:inset 0 1px 3px rgba(0,0,0,.35),inset 0 0 0 1px rgba(255,255,255,.05),0 14px 22px -14px rgba(0,0,0,.8)}
+.option-segments.three{grid-template-columns:repeat(3,1fr)}.option-segments.five{grid-template-columns:repeat(5,1fr)}
+.panel-scroll>section>.option-segments{margin:0}
+.help.inset{margin:10px 2px 2px}
+.glass-presets{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.glass-presets button{flex-direction:column;gap:7px;padding:7px 7px 10px;border-radius:18px;font-size:.75rem;min-height:74px}
+.gp-swatch{position:relative;display:block;width:100%;height:34px;border-radius:12px;overflow:hidden;background:var(--mung-dream-image) center/cover;box-shadow:inset 0 0 0 1px rgba(255,255,255,.14)}
+.gp-swatch::after{content:"";position:absolute;inset:6px 8px;border-radius:9px;box-shadow:inset 0 1px 0 rgba(255,255,255,.6),inset 0 0 0 1px rgba(255,255,255,.18)}
+.gp-swatch.clear::after{background:linear-gradient(160deg,rgba(255,255,255,.28),rgba(255,255,255,.04));backdrop-filter:blur(1px);-webkit-backdrop-filter:blur(1px)}
+.gp-swatch.frost::after{background:rgba(236,242,255,.34);backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px)}
+.gp-swatch.tint::after{background:rgba(var(--accent-rgb),.5);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
+.gp-swatch.midnight::after{background:rgba(14,20,40,.78);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
+.hint-text{font-size:.6875rem;font-weight:500;color:var(--ink-3)}
+#factory-reset{color:#ffd9df}
+#factory-reset.armed{color:#fff;background:linear-gradient(180deg,rgba(255,255,255,.16),rgba(255,255,255,.03)),rgba(255,86,120,.34);box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 10px 26px -12px rgba(255,86,120,.9)}
+#factory-reset.armed .hint-text{color:#ffe3e8}
+#snapshot{justify-content:flex-start;gap:10px}#snapshot .ic{width:19px;height:19px}
+
+/* ─── Ambient light that the glass can bend ─────────────────────────── */
+.ambient{position:fixed;inset:0;z-index:1;pointer-events:none;overflow:hidden;opacity:.42;transition:opacity .8s}
+.ambient i{position:absolute;width:56vmax;height:56vmax;border-radius:50%;background:radial-gradient(circle,rgba(var(--accent-rgb),.34),rgba(var(--accent-rgb),.08) 42%,transparent 66%);will-change:transform}
+.ambient i:first-child{left:calc(50% - 28vmax);bottom:-40vmax;animation:drift1 24s ease-in-out infinite alternate}
+.ambient i:last-child{right:-30vmax;top:-34vmax;width:44vmax;height:44vmax;opacity:.7;animation:drift2 31s ease-in-out infinite alternate}
+.playing .ambient{opacity:.3}
+@keyframes drift1{to{transform:translate3d(-6vmax,-3vmax,0) scale(1.12)}}
+@keyframes drift2{to{transform:translate3d(-8vmax,6vmax,0) scale(.9)}}
+
+/* ─── The glass flares when something bursts ───────────────────────── */
+.flare .glass-surface::after{animation:rimFlare .9s var(--soft)}
+.flare .dock-selection{animation:pillFlare 1s var(--soft)}
+.flare .ambient{animation:ambFlare 1.1s var(--soft)}
+@keyframes rimFlare{from{opacity:1;filter:brightness(1.9)}}
+@keyframes pillFlare{from{box-shadow:inset 0 1px 1px #fff,inset 0 -10px 18px -8px rgba(var(--accent-rgb),.9),0 0 42px 2px rgba(var(--accent-rgb),.85)}}
+@keyframes ambFlare{from{opacity:.85}}
+
+/* ─── Kinetic title ─────────────────────────────────────────────────── */
+h1 .ch{display:inline-block;white-space:pre}
+.intro.swap h1 .ch{animation:charIn .75s var(--spring) both;animation-delay:calc(var(--i) * 26ms + 40ms)}
+.intro.swap h1 em{display:inline-block;animation:charIn .9s var(--spring) both;animation-delay:calc(var(--n,8) * 26ms + 90ms)}
+@keyframes charIn{from{opacity:0;transform:translateY(.5em) rotate(6deg) scale(.9);filter:blur(5px)}}
+
+/* ─── Toast becomes a small island that expands ────────────────────── */
+#notice{animation:island .65s var(--spring)}
+@keyframes island{0%{opacity:0;clip-path:inset(0 calc(50% - 20px) round 999px);scale:.92}35%{opacity:1}100%{clip-path:inset(0 0 round 999px)}}
+
+/* ─── Breathing guide ───────────────────────────────────────────────── */
+.breath{--bs:min(80vw,58vh,440px);position:fixed;left:50%;top:47%;z-index:1;width:var(--bs);height:var(--bs);transform:translate(-50%,-50%);pointer-events:none}
+.breath-ring{position:absolute;inset:0;border-radius:50%;transform:scale(.6);transition:transform 4s cubic-bezier(.45,0,.55,1);background:radial-gradient(circle,transparent 60%,rgba(var(--accent-rgb),.07) 66%,rgba(var(--accent-rgb),.2) 69.5%,rgba(255,255,255,.55) 70.4%,transparent 71.2%);box-shadow:0 0 50px -10px rgba(var(--accent-rgb),.55),inset 0 0 60px -14px rgba(var(--accent-rgb),.5)}
+.breath-ring::after{content:"";position:absolute;inset:-4px;border-radius:50%;box-shadow:0 0 34px 2px rgba(var(--accent-rgb),.55),inset 0 0 26px rgba(255,255,255,.18);opacity:0;transition:opacity .9s}
+.breath[data-phase=hold] .breath-ring::after,.breath[data-phase=rest] .breath-ring::after{opacity:1}
+.breath-label{position:absolute;left:50%;top:9%;transform:translateX(-50%);display:flex;align-items:baseline;gap:8px;padding:7px 14px;border-radius:999px;font-size:.8125rem;font-weight:650;color:var(--ink);white-space:nowrap}
+#breath-count{min-width:1ch;font-size:.9375rem;font-variant-numeric:tabular-nums;color:rgb(var(--accent-rgb));filter:brightness(1.35)}
+.immersed .breath{opacity:.55}
+
+/* ─── Rest timer chip, frame meter, capture flash, rest glow ───────── */
+.timer-chip{display:inline-flex;align-items:center;gap:6px;margin-left:2px;padding:4px 10px 4px 5px;border-radius:999px;font-size:.75rem;font-weight:650;font-variant-numeric:tabular-nums;color:#fff;background:rgba(var(--accent-rgb),.22);box-shadow:inset 0 0 0 1px rgba(var(--accent-rgb),.3)}
+.timer-chip i{width:16px;height:16px;border-radius:50%;background:conic-gradient(rgb(var(--accent-rgb)) calc(var(--p,0) * 360deg),rgba(255,255,255,.2) 0);-webkit-mask:radial-gradient(circle,transparent 4.5px,#000 5px);mask:radial-gradient(circle,transparent 4.5px,#000 5px)}
+.fps-chip{position:fixed;z-index:6;left:max(24px,env(safe-area-inset-left));top:calc(max(20px,env(safe-area-inset-top)) + 64px);padding:6px 11px;border-radius:999px;font:600 .6875rem/1 ui-monospace,SFMono-Regular,Menlo,monospace;color:#d8ffe8;background:rgba(6,12,24,.55);box-shadow:inset 0 0 0 1px rgba(255,255,255,.12);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);pointer-events:none}
+body.snap::after{content:"";position:fixed;inset:0;z-index:50;background:#fff;pointer-events:none;animation:snap .7s ease-out forwards}
+@keyframes snap{from{opacity:.7}to{opacity:0}}
+body.rest-done::before{content:"";position:fixed;inset:0;z-index:3;pointer-events:none;background:radial-gradient(circle at 50% 50%,rgba(var(--accent-rgb),.3),transparent 70%);animation:restGlow 3.4s ease-in-out forwards}
+@keyframes restGlow{0%{opacity:0}30%{opacity:1}100%{opacity:0}}
+@media(max-width:700px){.fps-chip{left:max(14px,env(safe-area-inset-left));top:calc(max(12px,env(safe-area-inset-top)) + 56px)}.breath{top:46%;--bs:min(84vw,52vh,440px)}.settings-tabs button{min-height:52px}.glass-presets{gap:6px}.glass-presets button{padding:6px 5px 9px;font-size:.6875rem}.option-segments.five button{font-size:.6875rem}}
+.settings-opener{white-space:nowrap}
+@media(max-width:700px){.brand:has(.timer-chip:not([hidden])) strong{display:none}.brand:has(.timer-chip:not([hidden])){gap:6px;padding-right:8px}}
+@media(max-width:360px){.presets button{padding:10px 12px}.timer-chip{padding:3px 8px 3px 4px}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;animation:none!important}button.pressed{transform:none}}
 
 /* Capture the selection gesture instead of browser scrolling or text callouts. */
-.dock,#variants,.settings-tabs,.option-segments,.presets,.scene-grid,.swatches{touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.dock,#variants,.settings-tabs,.option-segments,.presets,.scene-grid,.swatches,.glass-presets{touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 #play{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 .scrubbing{transform:scale(.95)!important}
 .mode.scrubbing .mode-icon{transform:translateY(-2px) scale(1.18)}
@@ -288,23 +358,30 @@ document.documentElement.style.setProperty('--mung-nebula-image','url(\"'+window
 document.documentElement.style.setProperty('--mung-dream-image','url(\"'+window.MungEmbeddedImages.dream+'\")');
 </script>
 <body>
+<div class="ambient chrome" aria-hidden="true"><i></i><i></i></div>
 <canvas id="play" tabindex="0" aria-label="감각 놀이터. 누르고 드래그하세요. 스페이스 또는 엔터로 화면 가운데에서 놀 수 있습니다."></canvas>
-<header class="chrome"><div class="brand glass-surface" data-glass><svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><defs><radialGradient id="bm-body" cx="34%" cy="28%" r="80%"><stop offset="0" stop-color="#fff"/><stop offset=".32" style="stop-color:var(--accent)"/><stop offset="1" stop-color="#1a2552"/></radialGradient><linearGradient id="bm-rim" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".95"/><stop offset=".5" stop-color="#fff" stop-opacity=".1"/><stop offset="1" stop-color="#fff" stop-opacity=".5"/></linearGradient></defs><circle cx="16" cy="16" r="13" fill="url(#bm-body)"/><circle cx="16" cy="16" r="12.5" fill="none" stroke="url(#bm-rim)"/><ellipse cx="11.6" cy="10.6" rx="4.4" ry="2.6" transform="rotate(-32 11.6 10.6)" fill="#fff" fill-opacity=".75"/><path d="M8.5 20.5c3.8 3.2 11.2 3.2 15-.8" fill="none" stroke="#fff" stroke-opacity=".45" stroke-width="1.2" stroke-linecap="round"/></svg><strong>멍</strong><span class="edition">손끝의 쉼</span></div><div class="top-actions"><div class="cluster glass-surface" data-glass><button id="sound" class="circle-button" aria-pressed="false" aria-label="소리 켜기"><span class="sr-only">소리 꺼짐</span><svg class="ic ic-off" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9.5h3.2L12 5.5v13l-4.8-4H4z"/><path class="soft" d="M16 9.8l4.4 4.4M20.4 9.8L16 14.2"/></svg><svg class="ic ic-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9.5h3.2L12 5.5v13l-4.8-4H4z"/><path d="M15.5 9.2a4 4 0 0 1 0 5.6"/><path class="soft" d="M18.2 6.6a7.6 7.6 0 0 1 0 10.8"/></svg></button><button id="immersive" class="circle-button" aria-pressed="false" aria-label="몰입 모드"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V5.5A1.5 1.5 0 0 1 5.5 4H9M15 4h3.5A1.5 1.5 0 0 1 20 5.5V9M20 15v3.5a1.5 1.5 0 0 1-1.5 1.5H15M9 20H5.5A1.5 1.5 0 0 1 4 18.5V15"/></svg></button></div><button id="settings-toggle" class="settings-opener" aria-expanded="false" aria-controls="settings-panel"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7.5h8.5M17.5 7.5H20M4 16.5h2.5M11.5 16.5H20"/><circle cx="15" cy="7.5" r="2.5"/><circle cx="9" cy="16.5" r="2.5"/></svg>나의 공간</button></div></header>
+<div id="breath" class="breath" aria-hidden="true" hidden><div class="breath-ring"></div><div class="breath-label chip-glass"><span id="breath-phase">들이쉬기</span><span id="breath-count">4</span></div></div>
+<div id="fps" class="fps-chip" aria-hidden="true" hidden>— fps</div>
+<header class="chrome"><div class="brand glass-surface" data-glass><svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><defs><radialGradient id="bm-body" cx="34%" cy="28%" r="80%"><stop offset="0" stop-color="#fff"/><stop offset=".32" style="stop-color:var(--accent)"/><stop offset="1" stop-color="#1a2552"/></radialGradient><linearGradient id="bm-rim" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".95"/><stop offset=".5" stop-color="#fff" stop-opacity=".1"/><stop offset="1" stop-color="#fff" stop-opacity=".5"/></linearGradient></defs><circle cx="16" cy="16" r="13" fill="url(#bm-body)"/><circle cx="16" cy="16" r="12.5" fill="none" stroke="url(#bm-rim)"/><ellipse cx="11.6" cy="10.6" rx="4.4" ry="2.6" transform="rotate(-32 11.6 10.6)" fill="#fff" fill-opacity=".75"/><path d="M8.5 20.5c3.8 3.2 11.2 3.2 15-.8" fill="none" stroke="#fff" stroke-opacity=".45" stroke-width="1.2" stroke-linecap="round"/></svg><strong>멍</strong><span class="edition">손끝의 쉼</span><span id="timer-chip" class="timer-chip" title="쉼 타이머" hidden><i aria-hidden="true"></i><span id="timer-text">0:00</span></span></div><div class="top-actions"><div class="cluster glass-surface" data-glass><button id="sound" class="circle-button" aria-pressed="false" aria-label="소리 켜기"><span class="sr-only">소리 꺼짐</span><svg class="ic ic-off" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9.5h3.2L12 5.5v13l-4.8-4H4z"/><path class="soft" d="M16 9.8l4.4 4.4M20.4 9.8L16 14.2"/></svg><svg class="ic ic-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9.5h3.2L12 5.5v13l-4.8-4H4z"/><path d="M15.5 9.2a4 4 0 0 1 0 5.6"/><path class="soft" d="M18.2 6.6a7.6 7.6 0 0 1 0 10.8"/></svg></button><button id="immersive" class="circle-button" aria-pressed="false" aria-label="몰입 모드"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V5.5A1.5 1.5 0 0 1 5.5 4H9M15 4h3.5A1.5 1.5 0 0 1 20 5.5V9M20 15v3.5a1.5 1.5 0 0 1-1.5 1.5H15M9 20H5.5A1.5 1.5 0 0 1 4 18.5V15"/></svg></button></div><button id="settings-toggle" class="settings-opener" aria-expanded="false" aria-controls="settings-panel"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7.5h8.5M17.5 7.5H20M4 16.5h2.5M11.5 16.5H20"/><circle cx="15" cy="7.5" r="2.5"/><circle cx="9" cy="16.5" r="2.5"/></svg>나의 공간</button></div></header>
 <section class="intro chrome"><div class="kicker chip-glass"><span id="number">01</span><span>TOUCH &amp; FEEL</span></div><h1 id="title">말랑하게,<br><em>생각을 풀어요.</em></h1><p id="description">꾹 누르고 당겨 보세요.<br>놓으면 탱글, 다시 제자리로.</p></section>
 <div id="scrim" class="scrim" aria-hidden="true"></div>
 <aside id="settings-panel" class="settings chrome glass-surface" data-glass aria-labelledby="settings-heading" hidden>
 <div id="sheet-grip" class="sheet-grip" aria-hidden="true"><span></span></div><div class="panel-head"><div><span class="eyebrow">MY SPACE</span><h2 id="settings-heading">나의 공간</h2></div><button id="settings-close" aria-label="설정 닫기"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></svg></button></div>
 <div class="settings-tabs" style="--tab-index:0" role="tablist" aria-label="설정 종류">
-<button id="tab-play" data-settings-tab="play" role="tab" aria-selected="true" aria-controls="panel-play">놀이</button>
-<button id="tab-space" data-settings-tab="space" role="tab" aria-selected="false" aria-controls="panel-space" tabindex="-1">공간·색</button>
-<button id="tab-feel" data-settings-tab="feel" role="tab" aria-selected="false" aria-controls="panel-feel" tabindex="-1">유리·터치</button>
+<button id="tab-play" data-settings-tab="play" role="tab" aria-selected="true" aria-controls="panel-play"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5l1.5 4.6c.3.9 1 1.6 1.9 1.9L20 11.5l-4.6 1.5c-.9.3-1.6 1-1.9 1.9L12 19.5l-1.5-4.6c-.3-.9-1-1.6-1.9-1.9L4 11.5l4.6-1.5c.9-.3 1.6-1 1.9-1.9z"/></svg><span>놀이</span></button>
+<button id="tab-space" data-settings-tab="space" role="tab" aria-selected="false" aria-controls="panel-space" tabindex="-1"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5a8.5 8.5 0 1 0 0 17c1.3 0 2-.8 2-1.8 0-1.4-1.2-1.7-1.2-3 0-1 .8-1.7 1.8-1.7h2.2a3.7 3.7 0 0 0 3.7-3.7C20.5 6.8 16.7 3.5 12 3.5z"/><circle class="fill" cx="7.8" cy="11" r="1.2"/><circle class="fill" cx="10.6" cy="7.4" r="1.2"/><circle class="fill" cx="15" cy="7.8" r="1.2"/></svg><span>공간·색</span></button>
+<button id="tab-feel" data-settings-tab="feel" role="tab" aria-selected="false" aria-controls="panel-feel" tabindex="-1"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.8c3.2 3.6 6 7 6 10.2a6 6 0 0 1-12 0c0-3.2 2.8-6.6 6-10.2z"/><path class="soft" d="M9.2 14.4a2.9 2.9 0 0 0 2.4 2.8"/></svg><span>유리·터치</span></button>
+<button id="tab-calm" data-settings-tab="calm" role="tab" aria-selected="false" aria-controls="panel-calm" tabindex="-1"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M19.5 14.6A8 8 0 0 1 9.4 4.5a8 8 0 1 0 10.1 10.1z"/><path class="soft" d="M16.5 3.6v2.8M15.1 5h2.8"/></svg><span>소리·쉼</span></button>
 </div><div class="panel-scroll">
 <section id="panel-play" role="tabpanel" aria-labelledby="tab-play">
-<p class="panel-copy">오늘의 기분에 맞는 촉감.</p>
-<div class="presets" role="group" aria-label="감각 프리셋"><button data-preset="calm" aria-pressed="false">잔잔하게</button><button data-preset="tactile" aria-pressed="false">쫀득하게</button><button data-preset="cinema" aria-pressed="false">화려하게</button></div>
-<h3 id="tune-title">말랑 젤리 세부 설정</h3><p id="tune-help" class="help">아래에서 놀이를 고르면 조절 항목도 바뀌어요. 값은 즉시 적용돼요.</p>
+<p class="panel-copy">오늘의 기분에 맞는 촉감을 골라요.</p>
+<div class="presets" role="group" aria-label="감각 프리셋"><button data-preset="calm" aria-pressed="false"><strong>잔잔하게</strong><small>느리고 부드럽게</small></button><button data-preset="tactile" aria-pressed="false"><strong>쫀득하게</strong><small>탄력 있고 선명하게</small></button><button data-preset="cinema" aria-pressed="false"><strong>화려하게</strong><small>크고 풍성하게</small></button><button data-preset="dreamy" aria-pressed="false"><strong>몽환적으로</strong><small>길게 번지는 잔상</small></button></div>
+<h3 id="tune-title">말랑 젤리 세부 설정</h3><p id="tune-help" class="help">아래 독에서 놀이를 고르면 조절 항목도 바뀌어요. 값은 즉시 적용돼요.</p>
 <div id="mode-controls" class="control-group"></div><p id="magnet-explanation" class="help" hidden>최소 시간이 지난 뒤, 빛의 95%가 지정 반경 안에서 안정되어야 폭발해요. 작은 반경일수록 어려워요.</p>
-<button id="reset-tuning" class="wide">세부 설정 기본값으로</button><p class="help">놀이별 세부 설정과 터치 설정은 이 기기에 저장돼요.</p>
+<button id="reset-tuning" class="wide">세부 설정 기본값으로</button>
+<h3>전체 흐름</h3><div class="control-group"><div class="setting-row"><label for="speed">흐르는 속도 <output id="speed-value">1.0×</output></label><input id="speed" type="range" min="0.35" max="1.8" step="0.05" value="1"></div>
+<div class="setting-row"><label for="power">반응의 크기 <output id="power-value">1.0×</output></label><input id="power" type="range" min="0.5" max="1.6" step="0.05" value="1"></div></div><button id="auto" class="wide switch-row" aria-pressed="false">자동으로 놀기 <span>OFF</span></button>
+<p class="help">놀이별 세부 설정은 이 기기에 저장돼요. 전체 흐름은 이번 방문에만 적용돼요.</p>
 </section>
 <section id="panel-space" role="tabpanel" aria-labelledby="tab-space" hidden>
 <h3>어디에서 쉴까요?</h3><div class="scene-grid" role="group" aria-label="배경 장면">
@@ -321,6 +398,7 @@ document.documentElement.style.setProperty('--mung-dream-image','url(\"'+window.
 <label class="color-well" for="color-sky"><input id="color-sky" data-color="sky" type="color" value="#778bda"><span>공간의 색</span><output id="hex-sky">#778BDA</output></label>
 <label class="color-well" for="color-glass"><input id="color-glass" data-color="glassTint" type="color" value="#c9d7f4"><span>유리의 색</span><output id="hex-glassTint">#C9D7F4</output></label>
 </div><div class="swatches" role="group" aria-label="빠른 빛 색상"><button data-palette="acid" class="swatch" style="--swatch:#c6ff6b" aria-label="라임" aria-pressed="false"></button><button data-palette="aurora" class="swatch" style="--swatch:#6fffe0" aria-label="오로라" aria-pressed="false"></button><button data-palette="candy" class="swatch" style="--swatch:#ff85bd" aria-label="캔디" aria-pressed="false"></button><button data-palette="ocean" class="swatch" style="--swatch:#779eff" aria-label="블루" aria-pressed="false"></button><button id="random-look"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M16.5 4H20v3.5M4 19.5L20 4M20 16.5V20h-3.5M14.5 14.5L20 20M4 4.5l5 5"/></svg>색 조합 섞기</button></div>
+<div class="control-group flow-group"><div class="setting-row"><label>색의 흐름 <output id="hue-flow-value">멈춤</output></label><div class="option-segments" role="group" aria-label="색의 흐름"><button data-extra="hueFlow" data-value="0" aria-pressed="false">멈춤</button><button data-extra="hueFlow" data-value="1" aria-pressed="false">느리게</button><button data-extra="hueFlow" data-value="2" aria-pressed="false">보통</button><button data-extra="hueFlow" data-value="3" aria-pressed="false">빠르게</button></div></div><p class="help inset">빛과 유리의 색이 무지개처럼 천천히 변해요.</p></div>
 <h3>공간의 깊이</h3><div id="ambience-controls" class="control-group"></div>
 <div class="control-group legacy-space"><div class="setting-row"><label for="star-density">별의 밀도 <output id="density-value">65%</output></label><input id="star-density" type="range" min="0" max="100" step="5" value="65"></div>
 <div class="setting-row"><label for="space-glow">성운의 빛 <output id="glow-value">70%</output></label><input id="space-glow" type="range" min="0" max="100" step="5" value="70"></div>
@@ -328,25 +406,44 @@ document.documentElement.style.setProperty('--mung-dream-image','url(\"'+window.
 <h3>내가 만든 공간</h3><div class="saved-looks" role="group" aria-label="내 공간 저장 슬롯"><button data-look-slot="0">비어 있음 ①</button><button data-look-slot="1">비어 있음 ②</button><button data-look-slot="2">비어 있음 ③</button></div>
 <div class="split-actions"><button id="save-look">선택한 칸에 저장</button><button id="reset-look">공간 기본값</button></div><p id="look-status" class="help" role="status">칸을 고르고 저장하면 나중에 다시 불러올 수 있어요.</p>
 </section>
-<section id="panel-feel" role="tabpanel" aria-labelledby="tab-feel" hidden><h3>손끝의 반응</h3><div id="feel-controls" class="control-group"></div>
+<section id="panel-feel" role="tabpanel" aria-labelledby="tab-feel" hidden>
+<h3>유리 스타일</h3><div class="glass-presets" role="group" aria-label="유리 스타일"><button data-glass-preset="clear" aria-pressed="false"><i class="gp-swatch clear"></i><span>클리어</span></button><button data-glass-preset="frost" aria-pressed="false"><i class="gp-swatch frost"></i><span>프로스트</span></button><button data-glass-preset="tint" aria-pressed="false"><i class="gp-swatch tint"></i><span>틴트</span></button><button data-glass-preset="midnight" aria-pressed="false"><i class="gp-swatch midnight"></i><span>미드나잇</span></button></div>
+<h3>손끝의 반응</h3><div id="feel-controls" class="control-group"></div>
 <button id="test-haptic" class="wide">진동 패턴 느껴보기</button><p id="haptic-status" class="help" role="status"></p><p class="help">진동은 지원되는 기기에서만 작동해요. 기기의 ‘동작 줄이기’를 사용하면 강한 움직임과 화면 반동을 줄여요.</p>
-<h3>전체 흐름</h3><div class="control-group"><div class="setting-row"><label for="speed">흐르는 속도 <output id="speed-value">1.0×</output></label><input id="speed" type="range" min="0.35" max="1.8" step="0.05" value="1"></div>
-<div class="setting-row"><label for="power">반응의 크기 <output id="power-value">1.0×</output></label><input id="power" type="range" min="0.5" max="1.6" step="0.05" value="1"></div>
-<div class="setting-row"><label for="volume">소리 크기 <output id="volume-value">40%</output></label><input id="volume" type="range" min="0" max="100" value="40"></div></div><button id="auto" class="wide switch-row" aria-pressed="false">자동으로 놀기 <span>OFF</span></button>
-<p class="help">공간과 색 조합은 이 기기에 저장돼요. 전체 흐름은 이번 방문에만 적용돼요.</p></section>
+<h3>화질과 성능</h3><div class="control-group"><div class="setting-row"><label>화질 <output id="quality-value">고화질</output></label><div class="option-segments three" role="group" aria-label="화질"><button data-extra="quality" data-value="0" aria-pressed="false">절전</button><button data-extra="quality" data-value="1" aria-pressed="false">균형</button><button data-extra="quality" data-value="2" aria-pressed="false">고화질</button></div></div></div>
+<button id="fps-toggle" class="wide switch-row" role="switch" aria-checked="false" aria-pressed="false">프레임 표시 <span>OFF</span></button>
+<p class="help">끊김이 느껴지면 ‘균형’이나 ‘절전’을 골라 보세요. 선명도를 조금 낮추는 대신 더 부드럽게 움직여요.</p>
+<h3>처음으로</h3><button id="factory-reset" class="wide">모든 설정 처음으로 <span class="hint-text">두 번 눌러 확인</span></button>
+</section>
+<section id="panel-calm" role="tabpanel" aria-labelledby="tab-calm" hidden>
+<p class="panel-copy">소리와 호흡으로 천천히 쉬어가요.</p>
+<h3>소리</h3><button id="sound-switch" class="wide switch-row" role="switch" aria-checked="false" aria-pressed="false">소리 켜기 <span>OFF</span></button>
+<div class="control-group"><div class="setting-row"><label for="volume">소리 크기 <output id="volume-value">40%</output></label><input id="volume" type="range" min="0" max="100" value="40"></div>
+<div class="setting-row"><label>소리의 결 <output id="sound-style-value">맑게</output></label><div class="option-segments" role="group" aria-label="소리의 결"><button data-extra="soundStyle" data-value="0" aria-pressed="false">맑게</button><button data-extra="soundStyle" data-value="1" aria-pressed="false">오르골</button><button data-extra="soundStyle" data-value="2" aria-pressed="false">부드럽게</button><button data-extra="soundStyle" data-value="3" aria-pressed="false">로파이</button></div></div>
+<div class="setting-row"><label for="ambience-level">앰비언스 크기 <output id="ambience-level-value">50%</output></label><input id="ambience-level" type="range" min="0" max="100" step="5" value="50"></div></div>
+<button id="ambience" class="wide switch-row" role="switch" aria-checked="false" aria-pressed="false">배경 앰비언스 <span>OFF</span></button>
+<p class="help">앰비언스는 지금 빛의 색에 맞춘 낮은 화음이 숨 쉬듯 이어져요. 소리를 켜야 들려요.</p>
+<h3>호흡 가이드</h3><div class="option-segments" role="group" aria-label="호흡 가이드"><button data-extra="breath" data-value="0" aria-pressed="false">끔</button><button data-extra="breath" data-value="1" aria-pressed="false">박스 4·4</button><button data-extra="breath" data-value="2" aria-pressed="false">4·7·8</button><button data-extra="breath" data-value="3" aria-pressed="false">공명 5·5</button></div>
+<p class="help">화면 가운데 고리를 따라 숨을 쉬어요. 터치 진동을 켜 두면 박자마다 가볍게 알려줘요.</p>
+<h3>쉼 타이머</h3><div class="option-segments five" role="group" aria-label="쉼 타이머"><button data-extra="restTimer" data-value="0" aria-pressed="false">끔</button><button data-extra="restTimer" data-value="1" aria-pressed="false">3분</button><button data-extra="restTimer" data-value="2" aria-pressed="false">5분</button><button data-extra="restTimer" data-value="3" aria-pressed="false">10분</button><button data-extra="restTimer" data-value="4" aria-pressed="false">15분</button></div>
+<p id="timer-status" class="help" role="status">시간을 정하면 끝날 때 조용히 알려드려요.</p>
+<h3>도구</h3><button id="wake-lock" class="wide switch-row" role="switch" aria-checked="false" aria-pressed="false">화면 켜두기 <span>OFF</span></button>
+<button id="snapshot" class="wide"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8.5A1.5 1.5 0 0 1 5.5 7h2l1.5-2h6l1.5 2h2A1.5 1.5 0 0 1 20 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 17.5z"/><circle cx="12" cy="12.5" r="3.4"/></svg>지금 화면을 이미지로 저장</button>
+<p class="help">소리, 호흡, 화질 설정은 이 기기에 저장돼요.</p>
+</section>
 </div></aside>
 <footer class="chrome"><div id="variants" class="variants chip-glass" role="group" aria-label="놀이 스타일"></div><div id="magnet-status" class="magnet-status chip-glass" hidden></div><div class="playbar"><span id="hint">당기고, 놓으면 탱글.</span><div class="transport glass-surface" data-glass><button id="fill-bubbles" title="화면 가득 채우기" hidden><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="7" cy="7.5" r="3"/><circle cx="16.5" cy="8.5" r="3.8"/><circle cx="9" cy="16.5" r="3.6"/><circle class="soft" cx="17.5" cy="17.5" r="2"/></svg><span class="label">화면 가득 채우기</span></button><button id="special" title="현재 놀이의 특별한 반응"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5l1.5 4.6c.3.9 1 1.6 1.9 1.9L20 11.5l-4.6 1.5c-.9.3-1.6 1-1.9 1.9L12 19.5l-1.5-4.6c-.3-.9-1-1.6-1.9-1.9L4 11.5l4.6-1.5c.9-.3 1.6-1 1.9-1.9z"/></svg><span class="label">한 번에 팡</span></button><button id="pause" title="일시정지 / 재생" aria-pressed="false"><svg class="ic ic-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5.5v13M15 5.5v13"/></svg><svg class="ic ic-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.8v12.4a.8.8 0 0 0 1.2.7l9.9-6.2a.8.8 0 0 0 0-1.4L9.2 5.1A.8.8 0 0 0 8 5.8z"/></svg><span class="label">일시정지</span></button><button id="clear" title="다시 시작"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3L4.5 9"/><path d="M4.5 4.5V9H9"/></svg><span class="label">다시 시작</span></button></div></div><nav class="dock glass-surface" data-glass aria-label="놀이 선택" style="--active-index:0"><span class="dock-selection" aria-hidden="true"></span><button class="mode active" data-mode="jelly" aria-pressed="true"><span class="mode-icon"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.6c4.6 0 7.9 3.3 7.9 7.9 0 5-3.5 8.9-7.9 8.9s-7.9-3.9-7.9-8.9c0-4.6 3.3-7.9 7.9-7.9z"/><path class="soft" d="M8.3 10.2a4 4 0 0 1 3.1-3"/><path class="soft" d="M7 15.2c3 1.4 7 1.4 10 0"/></svg></span><span>젤리</span><small>01</small></button><button class="mode" data-mode="ripple" aria-pressed="false"><span class="mode-icon"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="2.6"/><circle cx="12" cy="12" r="6"/><circle class="soft" cx="12" cy="12" r="9.4"/></svg></span><span>물결</span><small>02</small></button><button class="mode" data-mode="stardust" aria-pressed="false"><span class="mode-icon"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M10.5 3.5l1.6 4.9c.3.9 1 1.6 1.9 1.9l4.9 1.6-4.9 1.6c-.9.3-1.6 1-1.9 1.9l-1.6 4.9-1.6-4.9c-.3-.9-1-1.6-1.9-1.9L2.1 11.9 7 10.3c.9-.3 1.6-1 1.9-1.9z"/><path class="soft" d="M18.5 2.8v3.4M16.8 4.5h3.4M19 17.2v2.6M17.7 18.5h2.6"/></svg></span><span>별가루</span><small>03</small></button><button class="mode" data-mode="bubble" aria-pressed="false"><span class="mode-icon"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9.5" cy="13.5" r="6.2"/><path class="soft" d="M6.6 11.8a3.3 3.3 0 0 1 2.4-2.4"/><circle cx="17.6" cy="6.6" r="3"/><circle class="soft" cx="18.2" cy="16.8" r="1.6"/></svg></span><span>버블</span><small>04</small></button><button class="mode" data-mode="magnet" aria-pressed="false"><span class="mode-icon"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4.5h4.2v7.3a2.8 2.8 0 0 0 5.6 0V4.5H19v7.3a7 7 0 0 1-14 0z"/><path class="soft" d="M5 8.4h4.2M14.8 8.4H19"/></svg></span><span>자석</span><small>05</small></button><button class="mode" data-mode="ribbon" aria-pressed="false"><span class="mode-icon"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M2.8 14.5c2.9-6 6.3-6 9.2 0s6.3 6 9.2 0"/><path class="soft" d="M2.8 9.5c2.9-6 6.3-6 9.2 0s6.3 6 9.2 0"/></svg></span><span>리본</span><small>06</small></button></nav><div class="bottomline"><span id="scene-caption">오로라의 꿈</span><span>누르고 · 흐르고 · 쉬어가기</span></div></footer>
 <button id="exit-immersive" hidden><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4v3.5A1.5 1.5 0 0 1 7.5 9H4M20 9h-3.5A1.5 1.5 0 0 1 15 7.5V4M15 20v-3.5a1.5 1.5 0 0 1 1.5-1.5H20M4 15h3.5A1.5 1.5 0 0 1 9 16.5V20"/></svg>메뉴 보기</button><div id="notice" role="status" aria-live="polite"></div><script>
 (() => {
   'use strict';
-  const defaults = { elastic: 1.25, damping: .89, stretch: 1.35, jellySize: 1, waveSpread: 1, waveLife: 1.3, waveLayers: 3, sparkleCount: 1.25, afterglow: 1.35, burstPower: 1.2, bubbleSize: 1, bubbleBounce: .8, bubbleDensity: 150, ribbonLag: 1.15, ribbonWidth: 1.2, ribbonLength: 60, magnetHold: 4, magnetRadius: 16, magnetSwirl: 1, uiSpring: 1, glass: 22, blur: 16, shake: 0, haptic: 0, hapticStyle: 0, hapticLength: 1, waveRate: 2, bubbleRate: 5, popCadence: 50, burstStyle: 0, refraction: .72, shine: .65, jellyDepth: 1, waveCaustic: 1, bubbleFilm: 1, starLinks: 1, ribbonTwist: 1, magnetCorona: 1, magnetAmount: 1 };
+  const defaults = { elastic: 1.25, damping: .89, stretch: 1.35, jellySize: 1, waveSpread: 1, waveLife: 1.3, waveLayers: 3, sparkleCount: 1.25, afterglow: 1.35, burstPower: 1.2, bubbleSize: 1, bubbleBounce: .8, bubbleDensity: 150, ribbonLag: 1.15, ribbonWidth: 1.2, ribbonLength: 60, magnetHold: 4, magnetRadius: 16, magnetSwirl: 1, uiSpring: 1, glass: 22, blur: 16, shake: 0, haptic: 0, hapticStyle: 0, hapticLength: 1, waveRate: 2, bubbleRate: 5, popCadence: 50, burstStyle: 0, refraction: .72, shine: .65, jellyDepth: 1, waveCaustic: 1, bubbleFilm: 1, starLinks: 1, ribbonTwist: 1, magnetCorona: 1, magnetAmount: 1, jellyGloss: 1, jellySplash: 1, floaters: 6, rainAmount: 1, twinkleGlint: 1, nebulaCloud: 1, bubbleSheen: 1, fieldLines: 1, ribbonGlitter: 1 };
   const schema = {
-    jelly: [['elastic','돌아오는 탄력',.65,1.8,.05],['damping','여운 / 흔들림',.75,.95,.01],['stretch','늘어나는 길이',.6,1.8,.05],['jellySize','젤리 크기',.7,1.3,.05],['jellyDepth','속결과 표면 반사',0,1.5,.1]],
-    ripple: [['waveSpread','퍼지는 속도',.5,1.8,.05],['waveLife','남아 있는 시간',.6,2,.05],['waveLayers','겹물결 수',1,5,1],['waveRate','꾹 누를 때 물결 / 초',.5,4,.5],['waveCaustic','겹치는 물빛',0,1.5,.1]],
-    stardust: [['sparkleCount','별가루 양',.5,1.8,.05],['starLinks','별자리 연결빛',0,1.5,.1],['afterglow','빛의 잔상',.6,2,.05],['burstPower','폭발의 힘',.6,1.8,.05],['burstStyle','터지는 파티클 스타일',0,3,1]],
-    bubble: [['bubbleSize','방울 크기',.65,1.6,.05],['bubbleFilm','비눗막의 무지갯빛',0,1.5,.1],['bubbleBounce','방울 탄성',.3,.95,.05],['bubbleDensity','가득 채울 때 밀도',60,180,10],['bubbleRate','꾹 누를 때 방울 / 초',2,12,1],['popCadence','연쇄 터짐 간격 (ms · 1×)',35,120,5],['burstPower','터지는 힘',.6,1.8,.05]],
-    magnet: [['magnetAmount','빛 입자 양 (기본의 배수)',.5,1.5,.1],['magnetHold','최소 응축 시간 (1× 기준 초)',3,8,.5],['magnetRadius','응축 반경 (px)',10,22,1],['magnetSwirl','끌어당기기 전 소용돌이',.5,1.5,.05],['magnetCorona','응축하는 빛의 테두리',0,1.5,.1],['burstPower','폭발의 힘',.6,1.8,.05],['burstStyle','터지는 파티클 스타일',0,3,1]],
-    ribbon: [['ribbonLag','따라오는 느긋함',.6,1.6,.05],['ribbonTwist','실크의 꼬임',.4,2,.1],['ribbonWidth','리본 두께',.5,2,.05],['ribbonLength','리본 길이',32,80,4],['afterglow','잔상이 남는 시간',.6,2,.05]],
+    jelly: [['elastic','돌아오는 탄력',.65,1.8,.05],['damping','여운 / 흔들림',.75,.95,.01],['stretch','늘어나는 길이',.6,1.8,.05],['jellySize','젤리 크기',.7,1.3,.05],['jellyDepth','속결과 표면 반사',0,1.5,.1],['jellyGloss','광택과 바닥 반사',0,1.5,.1],['jellySplash','놓을 때 튀는 물방울',0,1.5,.1]],
+    ripple: [['waveSpread','퍼지는 속도',.5,1.8,.05],['waveLife','남아 있는 시간',.6,2,.05],['waveLayers','겹물결 수',1,5,1],['waveRate','꾹 누를 때 물결 / 초',.5,4,.5],['waveCaustic','겹치는 물빛',0,1.5,.1],['floaters','물 위에 뜬 꽃잎',0,14,1],['rainAmount','빗방울 양 · 빗방울 스타일',.3,2,.1]],
+    stardust: [['sparkleCount','별가루 양',.5,1.8,.05],['starLinks','별자리 연결빛',0,1.5,.1],['afterglow','빛의 잔상',.6,2,.05],['burstPower','폭발의 힘',.6,1.8,.05],['burstStyle','터지는 파티클 스타일',0,3,1],['twinkleGlint','큰 별의 반짝임',0,1.5,.1],['nebulaCloud','터질 때 성운 구름',0,1.5,.1]],
+    bubble: [['bubbleSize','방울 크기',.65,1.6,.05],['bubbleFilm','비눗막의 무지갯빛',0,1.5,.1],['bubbleBounce','방울 탄성',.3,.95,.05],['bubbleDensity','가득 채울 때 밀도',60,180,10],['bubbleRate','꾹 누를 때 방울 / 초',2,12,1],['popCadence','연쇄 터짐 간격 (ms · 1×)',35,120,5],['burstPower','터지는 힘',.6,1.8,.05],['bubbleSheen','표면의 반짝임',0,1.5,.1]],
+    magnet: [['magnetAmount','빛 입자 양 (기본의 배수)',.5,1.5,.1],['magnetHold','최소 응축 시간 (1× 기준 초)',3,8,.5],['magnetRadius','응축 반경 (px)',10,22,1],['magnetSwirl','끌어당기기 전 소용돌이',.5,1.5,.05],['magnetCorona','응축하는 빛의 테두리',0,1.5,.1],['fieldLines','끌어당기는 힘의 선',0,1.5,.1],['burstPower','폭발의 힘',.6,1.8,.05],['burstStyle','터지는 파티클 스타일',0,3,1]],
+    ribbon: [['ribbonLag','따라오는 느긋함',.6,1.6,.05],['ribbonTwist','실크의 꼬임',.4,2,.1],['ribbonWidth','리본 두께',.5,2,.05],['ribbonLength','리본 길이',32,80,4],['ribbonGlitter','흩날리는 반짝이',0,1.5,.1],['afterglow','잔상이 남는 시간',.6,2,.05]],
     feel: [['uiSpring','메뉴의 쫀득함',0,1.5,.1],['glass','유리의 색 농도 (%)',8,60,2],['blur','유리의 흐림 (px)',4,30,2],['refraction','물방울 확대 효과',0,1,.05],['shine','유리 가장자리 반사',0,1,.05],['shake','폭발 때 화면 반동',0,1,.1],['haptic','터치 진동',0,1,1],['hapticStyle','터짐 진동 패턴',0,3,1],['hapticLength','진동 길이',.5,1.5,.1]]
   };
   const names={jelly:'말랑 젤리',ripple:'빛 물결',stardust:'별가루',bubble:'버블 팝',magnet:'빛 자석',ribbon:'네온 리본'};
@@ -361,7 +458,7 @@ document.documentElement.style.setProperty('--mung-dream-image','url(\"'+window.
     const item=document.createElement('div');item.className='setting-row';
     const text=document.createElement('label');text.htmlFor='tune-'+key;text.textContent=label;
     const output=document.createElement('output');output.id='value-'+key;output.htmlFor='tune-'+key;output.textContent=format(key,values[key]);text.appendChild(output);item.appendChild(text);
-    const update=value=>{values[key]=value;output.textContent=format(key,value);document.querySelectorAll('[data-preset]').forEach(b=>b.setAttribute('aria-pressed','false'));applyGlass();persist();if(key==='haptic'&&!value)cancelHaptics();notify(key);};
+    const update=value=>{values[key]=value;output.textContent=format(key,value);document.querySelectorAll('[data-preset]').forEach(b=>b.setAttribute('aria-pressed','false'));if(['glass','blur','refraction','shine'].includes(key))document.querySelectorAll('[data-glass-preset]').forEach(b=>b.setAttribute('aria-pressed','false'));applyGlass();persist();if(key==='haptic'&&!value)cancelHaptics();notify(key);};
     if(key==='haptic'){const input=document.createElement('button');input.id='tune-'+key;input.className='mini-switch';input.setAttribute('role','switch');input.setAttribute('aria-label',label);input.setAttribute('aria-checked',String(!!values[key]));input.textContent=values[key]?'켜짐':'꺼짐';input.addEventListener('click',()=>{update(values[key]?0:1);input.setAttribute('aria-checked',String(!!values[key]));input.textContent=values[key]?'켜짐':'꺼짐';});item.appendChild(input);}
     else if(key==='hapticStyle'||key==='burstStyle'){const options=key==='hapticStyle'?['놀이별','톡톡','두르륵','쿵']:['다양하게','유성','꽃잎','프리즘'],row=document.createElement('div');row.className='option-segments';row.setAttribute('role','group');row.setAttribute('aria-label',label);options.forEach((name,i)=>{const button=document.createElement('button');button.textContent=name;button.setAttribute('aria-pressed',String(values[key]===i));button.addEventListener('click',()=>{update(i);for(const [j,x] of [...row.children].entries())x.setAttribute('aria-pressed',String(j===i));});row.appendChild(button);});item.appendChild(row);}
     else{const input=document.createElement('input');input.type='range';input.id='tune-'+key;input.min=min;input.max=max;input.step=step;input.value=values[key];input.setAttribute('aria-label',label);input.addEventListener('input',()=>update(Number(input.value)));item.appendChild(input);}
@@ -378,11 +475,12 @@ document.documentElement.style.setProperty('--mung-dream-image','url(\"'+window.
     const factor=values.hapticLength*Math.max(.65,Math.min(1.25,amount)),pattern=selected.map((ms,i)=>Math.round(Math.min(90,ms*(i%2?1:factor))));
     try{const ok=navigator.vibrate(pattern);if(ok)vibrationUntil=now+pattern.reduce((a,b)=>a+b,0)+12;return !!ok;}catch{return false;}
   }
-  window.MungSettings={values,mode,connect:fn=>{notify=fn;},pulse,cancelHaptics};
+  // apply() lets other panels change several values at once (glass styles).
+  window.MungSettings={values,mode,connect:fn=>{notify=fn;},pulse,cancelHaptics,apply:patch=>{for(const [k,v] of Object.entries(patch))if(Object.hasOwn(values,k))values[k]=v;applyGlass();fields('feel',document.querySelector('#feel-controls'));persist();notify('glass');}};
   document.querySelector('#test-haptic').addEventListener('click',()=>{const status=document.querySelector('#haptic-status');if(!values.haptic){status.textContent='위에서 터치 진동을 켜 주세요.';return;}cancelHaptics();status.textContent=pulse(1,'magnet')?'진동 신호를 보냈어요. 느껴지는 강도는 기기에 따라 달라요.':'이 기기 또는 브라우저에서 진동 신호를 사용할 수 없어요.';});
   if(typeof navigator.vibrate!=='function')document.querySelector('#haptic-status').textContent='이 브라우저는 기기 진동을 지원하지 않아요. 시각적 반동은 사용할 수 있어요.';
   fields('feel',document.querySelector('#feel-controls'));mode(current);applyGlass();
-  document.querySelectorAll('[data-preset]').forEach(b=>b.addEventListener('click',()=>{const presets={calm:{elastic:.8,damping:.8,stretch:.85,sparkleCount:.7,afterglow:1.5,burstPower:.7,uiSpring:.6,waveSpread:.7,waveLife:1.6,waveLayers:2,bubbleBounce:.6,ribbonLag:1.4,ribbonWidth:.8},tactile:{elastic:1.4,damping:.92,stretch:1.5,sparkleCount:1.3,afterglow:1.4,burstPower:1.35,uiSpring:1.3,waveSpread:1.15,waveLife:1.3,waveLayers:3,bubbleBounce:.9,ribbonLag:1.1,ribbonWidth:1.25},cinema:{elastic:1.1,damping:.9,stretch:1.2,sparkleCount:1.7,afterglow:1.8,burstPower:1.6,uiSpring:1,waveSpread:1.3,waveLife:1.8,waveLayers:5,bubbleBounce:.85,ribbonLag:1.2,ribbonWidth:1.8}};Object.assign(values,presets[b.dataset.preset]);mode(current);fields('feel',document.querySelector('#feel-controls'));persist();notify('preset');document.querySelectorAll('[data-preset]').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));}));
+  document.querySelectorAll('[data-preset]').forEach(b=>b.addEventListener('click',()=>{const presets={calm:{elastic:.8,damping:.8,stretch:.85,sparkleCount:.7,afterglow:1.5,burstPower:.7,uiSpring:.6,waveSpread:.7,waveLife:1.6,waveLayers:2,bubbleBounce:.6,ribbonLag:1.4,ribbonWidth:.8},tactile:{elastic:1.4,damping:.92,stretch:1.5,sparkleCount:1.3,afterglow:1.4,burstPower:1.35,uiSpring:1.3,waveSpread:1.15,waveLife:1.3,waveLayers:3,bubbleBounce:.9,ribbonLag:1.1,ribbonWidth:1.25},cinema:{elastic:1.1,damping:.9,stretch:1.2,sparkleCount:1.7,afterglow:1.8,burstPower:1.6,uiSpring:1,waveSpread:1.3,waveLife:1.8,waveLayers:5,bubbleBounce:.85,ribbonLag:1.2,ribbonWidth:1.8},dreamy:{elastic:.9,damping:.93,stretch:1.45,sparkleCount:1.2,afterglow:2,burstPower:.95,uiSpring:.8,waveSpread:.75,waveLife:2,waveLayers:4,bubbleBounce:.7,ribbonLag:1.5,ribbonWidth:1.5,twinkleGlint:1.4,nebulaCloud:1.4,ribbonGlitter:1.3}};Object.assign(values,presets[b.dataset.preset]);mode(current);fields('feel',document.querySelector('#feel-controls'));persist();notify('preset');document.querySelectorAll('[data-preset]').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));}));
   document.querySelector('#reset-tuning').addEventListener('click',()=>{Object.assign(values,defaults);cancelHaptics();applyGlass();mode(current);fields('feel',document.querySelector('#feel-controls'));persist();document.querySelectorAll('[data-preset]').forEach(b=>b.setAttribute('aria-pressed','false'));notify('reset');});
   const panel=document.querySelector('#settings-panel'),opener=document.querySelector('#settings-toggle');
   let panelAnimation=null;
@@ -448,11 +546,105 @@ controls();sync();
 </script><script>
 (() => {
 'use strict';
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+const defaults={soundStyle:0,ambience:false,ambienceLevel:50,breath:0,hueFlow:0,quality:2,fps:false,wakeLock:false};
+const limits={soundStyle:3,breath:3,hueFlow:3,quality:2,ambienceLevel:100};
+const labels={soundStyle:['맑게','오르골','부드럽게','로파이'],hueFlow:['멈춤','느리게','보통','빠르게'],quality:['절전','균형','고화질']};
+let stored={};try{stored=JSON.parse(localStorage.getItem('mung-extra-v1')||'{}')||{};}catch{}
+const values={...defaults,restTimer:0};
+for(const [k,d] of Object.entries(defaults)){const v=stored[k];if(typeof d==='boolean'&&typeof v==='boolean')values[k]=v;else if(typeof d==='number'&&Number.isFinite(v))values[k]=Math.max(0,Math.min(limits[k],Math.round(v)));}
+let notify=()=>{};
+const notice=t=>window.MungEngine?.notice(t);
+function persist(){try{const {restTimer,...keep}=values;localStorage.setItem('mung-extra-v1',JSON.stringify(keep));}catch{}}
+function setSwitch(el,on){el.setAttribute('aria-pressed',String(on));el.setAttribute('aria-checked',String(on));const t=el.querySelector('span');if(t)t.textContent=on?'ON':'OFF';}
+function sync(){
+ $$('[data-extra]').forEach(b=>b.setAttribute('aria-pressed',String(values[b.dataset.extra]===Number(b.dataset.value))));
+ for(const [k,names] of Object.entries(labels)){const o=$('#'+k.replace(/[A-Z]/g,m=>'-'+m.toLowerCase())+'-value');if(o)o.textContent=names[values[k]];}
+ setSwitch($('#ambience'),values.ambience);setSwitch($('#fps-toggle'),values.fps);setSwitch($('#wake-lock'),values.wakeLock);
+ $('#ambience-level').value=values.ambienceLevel;$('#ambience-level-value').textContent=values.ambienceLevel+'%';$('#fps').hidden=!values.fps;
+}
+function set(key,value){values[key]=value;persist();sync();notify(key);if(key==='breath')breath();if(key==='restTimer')timer();if(key==='wakeLock')lock();}
+$$('[data-extra]').forEach(b=>b.addEventListener('click',()=>set(b.dataset.extra,Number(b.dataset.value))));
+$('#ambience').addEventListener('click',()=>{set('ambience',!values.ambience);if(values.ambience&&$('#sound').getAttribute('aria-pressed')!=='true')notice('소리를 켜면 앰비언스가 들려요.');});
+$('#fps-toggle').addEventListener('click',()=>set('fps',!values.fps));
+$('#wake-lock').addEventListener('click',()=>set('wakeLock',!values.wakeLock));
+$('#ambience-level').addEventListener('input',e=>{values.ambienceLevel=Number(e.target.value);$('#ambience-level-value').textContent=values.ambienceLevel+'%';persist();notify('ambienceLevel');});
+// The panel's sound switch drives the header button, which owns the audio context.
+const soundButton=$('#sound'),soundSwitch=$('#sound-switch');
+soundSwitch.addEventListener('click',()=>soundButton.click());
+new MutationObserver(()=>setSwitch(soundSwitch,soundButton.getAttribute('aria-pressed')==='true')).observe(soundButton,{attributes:true,attributeFilter:['aria-pressed']});
+
+// Breathing guide: the ring grows on the in-breath, rests, then shrinks on the out-breath.
+const patterns=[null,[['in',4],['hold',4],['out',4],['rest',4]],[['in',4],['hold',7],['out',8]],[['in',5],['out',5]]];
+const words={in:'들이쉬기',hold:'멈추기',out:'내쉬기',rest:'비우기'};
+const guide=$('#breath'),ring=guide.querySelector('.breath-ring');let breathTimer=0,countTimer=0;
+function breath(){
+ clearTimeout(breathTimer);clearInterval(countTimer);const pattern=patterns[values.breath];guide.hidden=!pattern;document.body.classList.toggle('breathing',!!pattern);if(!pattern)return;
+ let i=0;const run=()=>{const [phase,sec]=pattern[i++%pattern.length];guide.dataset.phase=phase;$('#breath-phase').textContent=words[phase];let left=sec;$('#breath-count').textContent=left;
+  ring.style.transitionDuration=sec+'s';if(phase==='in')ring.style.transform='scale(1)';else if(phase==='out')ring.style.transform='scale(.6)';
+  clearInterval(countTimer);countTimer=setInterval(()=>{if(--left>0)$('#breath-count').textContent=left;},1000);
+  window.MungSettings.pulse(.3,'tap');breathTimer=setTimeout(run,sec*1000);};
+ ring.style.transitionDuration='0s';ring.style.transform='scale(.6)';requestAnimationFrame(()=>requestAnimationFrame(run));
+}
+
+// Rest timer: a countdown chip in the brand pill and a soft ending.
+const minutes=[0,3,5,10,15],chip=$('#timer-chip'),status=$('#timer-status');let endAt=0,ticker=0;
+const clock=ms=>{const t=Math.max(0,Math.ceil(ms/1000));return Math.floor(t/60)+':'+String(t%60).padStart(2,'0');};
+function timer(){
+ clearInterval(ticker);const m=minutes[values.restTimer];
+ if(!m){endAt=0;chip.hidden=true;status.textContent='시간을 정하면 끝날 때 조용히 알려드려요.';return;}
+ const total=m*60000;endAt=Date.now()+total;chip.hidden=false;
+ const update=()=>{const left=endAt-Date.now();$('#timer-text').textContent=clock(left);chip.style.setProperty('--p',String(Math.min(1,1-left/total)));status.textContent='남은 시간 '+clock(left)+' · 끝나면 부드럽게 알려드려요.';
+  if(left<=0){clearInterval(ticker);chip.hidden=true;values.restTimer=0;sync();status.textContent='잘 쉬었어요. 필요하면 다시 시작해요.';window.MungEngine?.restDone();}};
+ update();ticker=setInterval(update,1000);
+}
+
+// Keep the screen awake while resting, where the browser allows it.
+let sentinel=null;
+async function lock(){
+ if(!values.wakeLock){const s=sentinel;sentinel=null;try{await s?.release();}catch{}return;}
+ if(!('wakeLock' in navigator)){values.wakeLock=false;persist();sync();notice('이 브라우저는 화면 켜두기를 지원하지 않아요.');return;}
+ try{sentinel=await navigator.wakeLock.request('screen');sentinel.addEventListener('release',()=>{sentinel=null;});}
+ catch{values.wakeLock=false;persist();sync();notice('이 환경에서는 화면 켜두기를 쓸 수 없어요.');}
+}
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&values.wakeLock&&!sentinel)lock();});
+
+// Save the play canvas as an image: share sheet on phones, download elsewhere.
+$('#snapshot').addEventListener('click',()=>{
+ const body=document.body;body.classList.remove('snap');requestAnimationFrame(()=>body.classList.add('snap'));
+ const name='mung-'+new Date().toISOString().slice(0,16).replace(/[-:T]/g,'')+'.png';
+ $('#play').toBlob(async blob=>{
+  if(!blob){notice('이미지를 만들 수 없어요.');return;}
+  const file=new File([blob],name,{type:'image/png'});
+  try{if(navigator.canShare?.({files:[file]})){await navigator.share({files:[file],title:'멍'});return;}}catch(e){if(e?.name==='AbortError')return;}
+  const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),4000);notice('이미지 저장을 시작했어요.');
+ },'image/png');
+});
+
+// Glass styles set several glass values and the glass tint together.
+const glassStyles={clear:{glass:12,blur:10,refraction:.9,shine:.85,tint:'#e4ecff'},frost:{glass:32,blur:28,refraction:.4,shine:.6,tint:'#eef2fb'},tint:{glass:44,blur:16,refraction:.7,shine:.75,tint:null},midnight:{glass:58,blur:22,refraction:.35,shine:.4,tint:'#1b2442'}};
+$$('[data-glass-preset]').forEach(b=>b.addEventListener('click',()=>{const g=glassStyles[b.dataset.glassPreset];window.MungSpace.set('glassTint',g.tint||window.MungSpace.values.main);window.MungSettings.apply({glass:g.glass,blur:g.blur,refraction:g.refraction,shine:g.shine});$$('[data-glass-preset]').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));}));
+
+// Factory reset needs a second tap within three seconds.
+const reset=$('#factory-reset');let armed=0;
+reset.addEventListener('click',()=>{
+ if(!armed){reset.classList.add('armed');reset.firstChild.textContent='한 번 더 누르면 초기화 ';armed=setTimeout(()=>{armed=0;reset.classList.remove('armed');reset.firstChild.textContent='모든 설정 처음으로 ';},3000);return;}
+ clearTimeout(armed);for(const k of ['mung-feel-v6','mung-space-v8','mung-extra-v1'])try{localStorage.removeItem(k);}catch{}location.reload();
+});
+
+window.MungExtra={values,connect:fn=>{notify=fn;}};
+sync();
+addEventListener('load',()=>{breath();if(values.wakeLock)lock();});
+})();
+
+</script><script>
+(() => {
+'use strict';
 const surfaces=[...document.querySelectorAll('[data-glass]')].map(element=>{const canvas=document.createElement('canvas');canvas.className='glass-lens';canvas.setAttribute('aria-hidden','true');element.prepend(canvas);return{element,canvas,ctx:canvas.getContext('2d')};});
 let frame=0;
 function render(source,dpr){
  // Copying the play canvas waits for its raster, so the lens refreshes every other frame, as the original did.
- if(++frame%2)return;const amount=window.MungSettings.values.refraction??.65;if(!amount||document.body.classList.contains('immersed'))return;
+ if(++frame%((window.MungExtra?.values.quality??2)===0?3:2))return;const amount=window.MungSettings.values.refraction??.65;if(!amount||document.body.classList.contains('immersed'))return;
  for(const item of surfaces){const {element,canvas,ctx}=item;if(element.hidden)continue;const r=element.getBoundingClientRect();if(r.width<1||r.height<1||r.bottom<0||r.top>innerHeight)continue;
  const scale=Math.min(devicePixelRatio||1,1.25),cw=Math.round(r.width*scale),ch=Math.round(r.height*scale);if(canvas.width!==cw||canvas.height!==ch){canvas.width=cw;canvas.height=ch;}ctx.clearRect(0,0,cw,ch);
  const zoom=1+.05*amount,sw=r.width/zoom,sh=r.height/zoom,sx=r.left+(r.width-sw)/2,sy=r.top+(r.height-sh)/2;
@@ -527,6 +719,8 @@ window.MungGlass={render};
       }
       for(let j=0;j<5;j++){const r=extent*(t*1.3+j*.045);if(r<1)continue;k.strokeStyle=s.col(b.hue+j*18,fade*.5,86);k.lineWidth=j===0?3:.7;k.beginPath();k.ellipse(b.x,b.y,r,r*.4,orientation+.5,t+j,TAU+t+j-.4);k.stroke();}
     }else{
+      // Stardust leaves a soft nebula that spreads while the arms fly out.
+      if(b.kind==='stardust'&&s.tune.nebulaCloud>0)for(let i=0;i<3;i++){const a=b.spin+i*2.1,d=extent*(.2+t*.55);glow(k,b.x+Math.cos(a)*d,b.y+Math.sin(a)*d,Math.max(1,extent*(.45+t*.9)),s.col(s.second+i*22,fade*.15*s.tune.nebulaCloud,70));}
       const arms=b.style===2?7:b.style===1?9:12;
       glow(k,b.x,b.y,Math.max(1,extent*.6),s.col(b.hue,life*life*.15,88));
       for(let arm=0;arm<arms;arm++){
@@ -608,6 +802,8 @@ window.MungGlass={render};
         }
       }
     }
+    // A bright head leads the ribbon so the eye can follow the fingertip.
+    const head=path[0];glow(k,head.x,head.y,16*scale,s.col(s.second,life*.32,92));k.fillStyle=s.col(s.base,life*.9,98);k.beginPath();k.arc(head.x,head.y,2.2*scale,0,TAU);k.fill();
     k.restore();
   }
   function details(k,s){
@@ -636,7 +832,7 @@ window.MungGlass={render};
       }
     }
     // Short curved histories retain the direction of a flick without flooding the screen.
-    for(const p of s.sparks.slice(-180))if(p.history?.length>2&&p.kind!=='bubble'){
+    for(const p of s.sparks.slice(-180))if(p.history?.length>2&&p.kind!=='bubble'&&p.kind!=='glitter'){
       line(k,p.history);k.strokeStyle=s.col(p.hue,p.life*.19,82);k.lineWidth=Math.max(.5,p.r*.32);k.stroke();
     }
     k.restore();
@@ -658,10 +854,13 @@ const copy={jelly:['01','말랑하게,','생각을 풀어요.','꾹 누르고 �
 let w,h,dpr,mode='jelly',palette='ocean',speed=1,power=1,paused=false,auto=false,sound=false,volume=.4,sim=0,acc=0,last=0,raf=0;
 let rings=[],sparks=[],bubbles=[],jelly=[],dust=[],trails=new Map(),pointers=new Map(),stars=[],audio,master,lastNote=0,noticeTimer,introTimer;
 let blasts=[],delayed=[],magnetAssist=null;
+let floaters=[],drops=[],skips=[],jellyWaves=[],touchPulses=[],hueShift=0,rainClock=0,rainGap=12,lastFlare=0,amb=null,fpsFrames=0,fpsTicks=0,fpsAt=0;
+const extra=window.MungExtra.values;let baseMaterial=null;
 let variant=1,space=world.scene,starDensity=world.starDensity,spaceGlow=world.spaceGlow/100,twinkle=world.twinkle,skyLayer=null;
 const cosmicImage=new Image();cosmicImage.onload=()=>{if(w&&h){makeSky();draw();}};cosmicImage.src=window.MungEmbeddedImages.nebula;const dreamImage=new Image();dreamImage.onload=()=>{if(w&&h){makeSky();draw();}};dreamImage.src=window.MungEmbeddedImages.dream;
 const skies={nebula:[265,205,320],ocean:[215,175,245],rose:[315,265,25],void:[230,240,220]};
-const variants={jelly:['탱글','쫀득','물렁'],stardust:['유성','은하','불꽃'],ribbon:['실크 한 장','오로라 커튼','네온 꼬임']};
+const variants={jelly:['탱글','쫀득','물렁'],ripple:['빗방울','잔잔한 물','물수제비'],stardust:['유성','은하','불꽃'],bubble:['유리구슬','비눗방울','솜사탕'],magnet:['블랙홀','초신성','소용돌이'],ribbon:['실크 한 장','오로라 커튼','네온 꼬임']};
+const variantHints={jelly:['탱글 · 단단하게 튕겨 돌아와요.','쫀득 · 늘어났다가 느긋하게 돌아와요.','물렁 · 크게 출렁이며 오래 흔들려요.'],ripple:['빗방울 · 물 위로 빗방울이 떨어져요.','잔잔한 물 · 꾹 누르면 계속, 쓱 그으면 따라와요.','물수제비 · 빠르게 튕기듯 놓으면 통통 건너가요.'],stardust:['유성 · 긋는 방향으로 별이 쏟아져요.','은하 · 손끝 주위로 별이 맴돌아요.','불꽃 · 꾹 누르고 있으면 계속 터져요.'],bubble:['유리구슬 · 무겁게 떨어져 부딪히고 쌓여요.','비눗방울 · 짧게 톡, 꾹 누르면 몽글몽글.','솜사탕 · 폭신하게 떠오르다 사르르.'],magnet:['블랙홀 · 빛이 원반을 이루며 빨려 들어가요.','초신성 · 한곳에 모았다 놓으면 폭발해요.','소용돌이 · 은하처럼 나선을 그리며 모여요.'],ribbon:['한 장의 실크 · 넓고 매끈하게 따라와요.','오로라 커튼 · 넓게 퍼지고 느긋하게 흘러요.','네온 꼬임 · 두 가닥이 교차하며 감겨요.']};
 const autoPoint={x:0,y:0,dx:1,dy:1,emitAt:0};
 const rand=(a,b)=>a+Math.random()*(b-a), clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
 // The simulation ticks at 120 Hz. Tuning constants are per 60 Hz frame, so each tick advances H of one:
@@ -673,7 +872,12 @@ const hue=()=>material[0][0]+rand(-12,12);
 const skyCol=(h,a,l=65,s=65)=>`hsla(${h},${s}%,${l}%,${clamp(a,0,1)})`;
 function sensoryFrame(){return {mode,variant,w,h,sim,reduce,tune,power,col,base:material[0][0],second:material[1][0],inputs:inputs(),rings,sparks,jelly,dust};}
 function center(){return {x:w*.5,y:h*(w<700?.46:.47),r:Math.min(w*.22,h*.2,152)*(mode==='jelly'?tune.jellySize:1)};}
-function resize(){w=innerWidth;h=innerHeight;dpr=Math.min(devicePixelRatio||1,2);canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);makeStars();makeSky();reset();}
+const dprCap=()=>[1,1.5,2][extra.quality]??2;
+function applyQuality(){dpr=Math.min(devicePixelRatio||1,dprCap());canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);}
+function hslRgb(h,s,l){s/=100;l/=100;const a=s*Math.min(l,1-l),f=n=>{const k=(n+h/30)%12;return Math.round(255*(l-a*Math.max(-1,Math.min(k-3,9-k,1))));};return [f(0),f(8),f(4)];}
+// Colour flow rotates both play hues and the UI accent together.
+function applyHue(){baseMaterial??=[window.MungSpace.hsl(world.main),window.MungSpace.hsl(world.second)];material=baseMaterial.map(m=>[(m[0]+hueShift)%360,m[1],m[2]]);if(hueShift){const [r,g,b]=hslRgb(...material[0]),root=document.documentElement.style;root.setProperty('--accent-rgb',r+','+g+','+b);root.setProperty('--accent',`rgb(${r},${g},${b})`);}}
+function resize(){w=innerWidth;h=innerHeight;dpr=Math.min(devicePixelRatio||1,dprCap());canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);makeStars();makeSky();reset();}
 function makeStars(){stars=Array.from({length:Math.round(starDensity*3)},()=>({x:rand(0,w),y:rand(0,h),r:rand(.4,1.65),phase:rand(0,7),depth:rand(.3,1)}));}
 function makeSky(){
  previousSky=skyLayer;skyBlend=previousSky&&!reduce&&!paused?0:1;skyDirty=false;
@@ -700,7 +904,12 @@ function drawSpace(){
 function segmentHit(x,y,a,b){const dx=b.x-a.x,dy=b.y-a.y,u=clamp(((x-a.x)*dx+(y-a.y)*dy)/(dx*dx+dy*dy||1),0,1);return Math.hypot(x-a.x-dx*u,y-a.y-dy*u);}
 function jellyContact(x,y){let inside=false;for(let i=0,j=jelly.length-1;i<jelly.length;j=i++){const a=jelly[i],b=jelly[j];if(segmentHit(x,y,a,b)<18)return true;if((a.y>y)!==(b.y>y)&&x<(b.x-a.x)*(y-a.y)/(b.y-a.y)+a.x)inside=!inside;}return inside;}
 function makeDust(){dust=Array.from({length:Math.round((w<700?560:920)*tune.magnetAmount)},()=>({x:rand(w*.08,w*.92),y:rand(h*.1,h*.8),vx:rand(-.5,.5),vy:rand(-.5,.5),r:rand(.65,2.2),history:[],hue:hue()}));}
-function reset(){meteors=[];window.MungSettings.cancelHaptics();popQueue=[];keyPoint=null;kick=0;autoPoint.lastPaint=null;autoPoint.bornAt=sim;autoPoint.spawnAt=sim;autoPoint.bubble=null;autoPoint.streaming=false;blasts=[];delayed=[];magnetAssist=null;autoPoint.held=0;autoPoint.stable=0;autoPoint.ready=false;rings=[];sparks=[];bubbles=[];trails.clear();pointers.clear();const c=center();jelly=Array.from({length:32},(_,i)=>{const a=i/32*Math.PI*2;return{x:c.x+Math.cos(a)*c.r,y:c.y+Math.sin(a)*c.r,vx:0,vy:0,skin:0,skinV:0,a};});makeDust();if(mode==='bubble')fillBubbles();if(mode==='ripple')for(let i=0;i<5;i++)rings.push({x:c.x,y:c.y,r:20+i*30,life:1-i*.1,hue:hue()});if(mode==='stardust')burst(c.x,c.y,45,2);syncBubbleAction();}
+function reset(){meteors=[];window.MungSettings.cancelHaptics();popQueue=[];keyPoint=null;kick=0;autoPoint.lastPaint=null;autoPoint.bornAt=sim;autoPoint.spawnAt=sim;autoPoint.bubble=null;autoPoint.streaming=false;blasts=[];delayed=[];magnetAssist=null;autoPoint.held=0;autoPoint.stable=0;autoPoint.ready=false;rings=[];sparks=[];bubbles=[];floaters=[];drops=[];skips=[];jellyWaves=[];touchPulses=[];trails.clear();pointers.clear();const c=center();jelly=Array.from({length:32},(_,i)=>{const a=i/32*Math.PI*2;return{x:c.x+Math.cos(a)*c.r,y:c.y+Math.sin(a)*c.r,vx:0,vy:0,skin:0,skinV:0,a};});makeDust();if(mode==='bubble')fillBubbles();if(mode==='ripple')makeFloaters();if(mode==='ripple')for(let i=0;i<5;i++)rings.push({x:c.x,y:c.y,r:20+i*30,life:1-i*.1,hue:hue()});if(mode==='stardust')burst(c.x,c.y,45,2);syncBubbleAction();}
+function makeFloaters(){floaters=Array.from({length:Math.round(tune.floaters)},()=>({x:rand(w*.08,w*.92),y:rand(h*.18,h*.78),vx:0,vy:0,rot:rand(0,7),spin:rand(-.01,.01),size:rand(9.5,14.5),hue:material[1][0]+rand(-25,25),phase:rand(0,7),petals:Math.random()<.5?5:6}));}
+function splash(x,y,n){for(let i=0;i<n;i++){const a=-Math.PI/2+rand(-.9,.9),v=rand(1.2,3);sparks.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,r:rand(.8,1.8),life:1,decay:.03,hue:hue(),px:x,py:y,phase:rand(0,7),history:[],kind:'splash',shape:0,curve:0,drag:.985});}}
+function skipStone(p){const v=Math.hypot(p.mvx||0,p.mvy||0);if(v<3||reduce)return;const nx=p.mvx/v,ny=p.mvy/v,n=clamp(Math.round(v/5),3,7);let x=p.x,y=p.y,gap=clamp(v*7,50,130);for(let k=0;k<n;k++){x+=nx*gap;y+=ny*gap;gap*=.78;if(x<0||x>w||y<0||y>h)break;skips.push({at:sim+10+k*9+k*k*1.5,x,y,force:1.1*(1-k/(n+1))+.25,dx:p.mvx*.3,dy:p.mvy*.3});}}
+// The glass UI catches a brief flare of light from bursts.
+function flare(){if(reduce)return;const now=performance.now();if(now-lastFlare<280)return;lastFlare=now;const b=document.body;b.classList.remove('flare');requestAnimationFrame(()=>b.classList.add('flare'));}
 function notice(t){$('#notice').textContent=t;clearTimeout(noticeTimer);noticeTimer=setTimeout(()=>$('#notice').textContent='',1800);}
 function engaged(){document.body.classList.add('playing');clearTimeout(introTimer);introTimer=setTimeout(()=>document.body.classList.remove('playing'),12000);}
 function burst(x,y,n,force=1,source=mode,style=0,baseHue=hue()){
@@ -713,16 +922,40 @@ function burst(x,y,n,force=1,source=mode,style=0,baseHue=hue()){
 function spawnBubble(x,y){
  if(bubbles.length>=240){const index=bubbles.findIndex(b=>!pointers.size||![...pointers.values()].some(p=>p.bubble===b));if(index<0)return null;bubbles.splice(index,1);}
  const r=Math.min(rand(20,48)*power*tune.bubbleSize,Math.min(w,h)*.2),b={x:clamp(x,r,w-r),y:clamp(y,r,h-r),r,vx:rand(-.5,.5),vy:rand(-.6,-.15),life:1,squash:.72,sv:0,hue:hue(),phase:rand(0,7),birth:.22,wobble:.045};
- bubbles.push(b);return b;
+ if(mode==='bubble'&&variant===0){b.vy=rand(-.5,.3);b.squash=.92;}else if(mode==='bubble'&&variant===2)b.vx*=.6;b.spin=rand(0,7);bubbles.push(b);return b;
 }
-function fillBubbles(){popQueue=[];bubbles=[];syncBubbleAction();const spacing=Math.max(32,Math.sqrt(w*h/tune.bubbleDensity)),radius=spacing*.56*Math.sqrt(tune.bubbleSize);let row=0;for(let y=radius*.3;y<h+radius*.4;y+=spacing*.86){for(let x=radius*.3-(row%2)*spacing*.5;x<w+radius*.4;x+=spacing){spawnBubble(x,y);const b=bubbles[bubbles.length-1];b.r=Math.min(radius*rand(.93,1.05),Math.min(w,h)*.2);b.vx=rand(-.15,.15);b.vy=rand(-.15,.15);b.squash=1;b.birth=1;}row++;}}
-function festival(x,y,scale=1,kind=mode){scale*=tune.burstPower;const style=tune.burstStyle?Math.round(tune.burstStyle)-1:effectSerial++%3;window.MungSettings.pulse(scale,kind);kickStyle=style;kick=Math.max(kick,scale*tune.shake*8);burst(x,y,Math.round((kind==='bubble'?27:100)*scale),3*scale,kind,style);blasts.push({x,y,life:1,hue:hue(),size:scale,kind,style,spin:rand(0,7)});if(blasts.length>12)blasts.shift();if(!reduce&&kind!=='bubble'){for(let i=0;i<8;i++){const a=i*Math.PI/4+rand(-.25,.25);delayed.push({at:sim+8+i*3,x:x+Math.cos(a)*70*scale,y:y+Math.sin(a)*70*scale,n:kind==='bubble'?5:18,force:1.8*scale,kind,style});}if(delayed.length>60)delayed.splice(0,delayed.length-60);}}
+function fillBubbles(){popQueue=[];bubbles=[];syncBubbleAction();const spacing=Math.max(32,Math.sqrt(w*h/tune.bubbleDensity)),radius=spacing*(mode==='bubble'&&variant===0?.47:.56)*Math.sqrt(tune.bubbleSize);const marbles=mode==='bubble'&&variant===0,bottom=marbles?h*.62:h+radius*.4;let row=0;for(let y=radius*.3;y<bottom;y+=spacing*.86){for(let x=radius*.3-(row%2)*spacing*.5;x<w+radius*.4;x+=spacing){spawnBubble(x,y);const b=bubbles[bubbles.length-1];b.r=Math.min(radius*rand(.93,1.05),Math.min(w,h)*.2);b.vx=rand(-.15,.15);b.vy=marbles?rand(0,1.2):rand(-.15,.15);b.squash=1;b.birth=1;}row++;}}
+function festival(x,y,scale=1,kind=mode){scale*=tune.burstPower;const style=tune.burstStyle?Math.round(tune.burstStyle)-1:effectSerial++%3;window.MungSettings.pulse(scale,kind);kickStyle=style;kick=Math.max(kick,scale*tune.shake*8);burst(x,y,Math.round((kind==='bubble'?27:100)*scale),3*scale,kind,style);blasts.push({x,y,life:1,hue:hue(),size:scale,kind,style,spin:rand(0,7)});if(blasts.length>12)blasts.shift();flare();if(!reduce&&kind!=='bubble'){for(let i=0;i<8;i++){const a=i*Math.PI/4+rand(-.25,.25);delayed.push({at:sim+8+i*3,x:x+Math.cos(a)*70*scale,y:y+Math.sin(a)*70*scale,n:kind==='bubble'?5:18,force:1.8*scale,kind,style});}if(delayed.length>60)delayed.splice(0,delayed.length-60);}}
 function gathered(p){if(!p||!dust.length)return 0;return dust.filter(d=>Math.hypot(d.x-p.x,d.y-p.y)<=tune.magnetRadius).length/dust.length;}
 function canDetonate(p){return !!p&&p.ready&&p.held>=tune.magnetHold*60&&p.stable>=45&&gathered(p)>=.95;}
 function releaseMagnet(p){if(canDetonate(p)){explode(p);notice('초신성 · 빛을 해방했어요');}else{for(const d of dust){d.vx+=rand(-.8,.8);d.vy+=rand(-.8,.8);}notice('아직 응축 중이에요. 한곳에서 조금 더 꾹.');}}
 function beginMagnet(){const c=center();return{x:c.x,y:c.y,held:0,stable:0,ready:false,charge:0,dx:0,dy:0};}
-function tone(kind='touch',size=32){if(!sound||paused||!audio||audio.state!=='running'||performance.now()-lastNote<(mode==='bubble'?45:100))return;lastNote=performance.now();const osc=audio.createOscillator(),g=audio.createGain(),t=audio.currentTime;const pop=mode==='bubble',soft=mode==='jelly',boom=kind==='burst'&&mode==='magnet';const freq=boom?105:pop?clamp(1100-size*9,260,900):soft?rand(160,210):[261.63,293.66,329.63,392,440,523.25][Math.floor(rand(0,6))];osc.type=mode==='ribbon'?'triangle':'sine';osc.frequency.setValueAtTime(freq,t);osc.frequency.exponentialRampToValueAtTime(boom?32:pop?80:soft?90:freq*.998,t+(boom?.55:pop?.1:soft?.22:.8));g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(boom?.24:.13,t+.009);g.gain.exponentialRampToValueAtTime(.0001,t+(pop?.16:soft?.3:1.1));osc.connect(g);g.connect(master);osc.start();osc.stop(t+1.2);osc.onended=()=>{osc.disconnect();g.disconnect();};}
-function wave(x,y,force=1,dx=0,dy=0){if(mode!=='ripple')return;const count=reduce?1:tune.waveLayers;for(let i=0;i<count;i++)rings.push({x,y,r:3+i*12,life:1-i*.12,hue:material[0][0]+i*7,force,driftX:clamp(dx*.08,-1.2,1.2),driftY:clamp(dy*.08,-1.2,1.2),phase:rand(0,7),direction:Math.atan2(dy,dx)});if(rings.length>60)rings.splice(0,rings.length-60);}
+function tone(kind='touch',size=32){if(!sound||paused||!audio||audio.state!=='running'||performance.now()-lastNote<(mode==='bubble'?45:100))return;lastNote=performance.now();
+ const style=extra.soundStyle|0,t=audio.currentTime,pop=mode==='bubble',soft=mode==='jelly',boom=kind==='burst'&&mode==='magnet',notes=[261.63,293.66,329.63,392,440,523.25];
+ let freq=boom?105:pop?clamp(1100-size*9,260,900):soft?rand(160,210):notes[Math.floor(rand(0,6))],end=boom?32:pop?80:soft?90:freq*.998,tail=pop?.16:soft?.3:1.1,peak=boom?.24:.13,attack=.009;
+ const osc=audio.createOscillator(),g=audio.createGain();
+ if(style===1){freq=boom?freq*2:Math.min(2400,(pop||soft?notes[Math.floor(rand(0,6))]:freq)*2);end=freq*.999;tail=boom?1.2:1.4;peak=.1;attack=.004;osc.type='sine';
+  const bell=audio.createOscillator(),bg=audio.createGain();bell.frequency.value=freq*4.01;bg.gain.setValueAtTime(0,t);bg.gain.linearRampToValueAtTime(.035,t+.004);bg.gain.exponentialRampToValueAtTime(.0001,t+.5);bell.connect(bg);bg.connect(master);bell.start(t);bell.stop(t+.6);bell.onended=()=>{bell.disconnect();bg.disconnect();};}
+ else if(style===2){freq*=.5;end=freq*(pop?.6:.98);tail=pop?.35:soft?.5:1.4;peak=boom?.2:.12;attack=.03;osc.type='triangle';}
+ else if(style===3){end=freq*(pop?.5:.97);tail=pop?.12:soft?.2:.45;peak=boom?.12:.06;osc.type='square';osc.detune.value=rand(-14,14);}
+ else osc.type=mode==='ribbon'?'triangle':'sine';
+ if(style>=2){const f=audio.createBiquadFilter();f.type='lowpass';f.frequency.value=style===2?900:1500;f.Q.value=.6;osc.connect(f);f.connect(g);}else osc.connect(g);
+ osc.frequency.setValueAtTime(freq,t);osc.frequency.exponentialRampToValueAtTime(Math.max(20,end),t+(boom?.55:pop?.1:soft?.22:.8));
+ g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(peak,t+attack);g.gain.exponentialRampToValueAtTime(.0001,t+tail);g.connect(master);osc.start(t);osc.stop(t+tail+.1);osc.onended=()=>{osc.disconnect();g.disconnect();};}
+function chime(){if(!audio||!sound||audio.state!=='running')return;const t=audio.currentTime;[523.25,659.25,783.99,1046.5].forEach((f,i)=>{const o=audio.createOscillator(),g=audio.createGain(),at=t+i*.18;o.frequency.value=f;g.gain.setValueAtTime(0,at);g.gain.linearRampToValueAtTime(.09,at+.01);g.gain.exponentialRampToValueAtTime(.0001,at+1.6);o.connect(g);g.connect(master);o.start(at);o.stop(at+1.7);o.onended=()=>{o.disconnect();g.disconnect();};});}
+// A low drone in the key of the current light colour, breathing slowly.
+function ambienceRoot(){return [110,123.47,138.59,164.81,185][Math.floor((((material[0][0]%360)+360)%360)/72)%5];}
+function syncAmbience(){
+ const on=!!(audio&&sound&&!paused&&!document.hidden&&extra.ambience),level=extra.ambienceLevel/100*.14;
+ if(on&&!amb){const t=audio.currentTime,out=audio.createGain(),filter=audio.createBiquadFilter(),lfo=audio.createOscillator(),depth=audio.createGain(),root=ambienceRoot();
+  filter.type='lowpass';filter.frequency.value=520;filter.Q.value=.7;out.gain.setValueAtTime(0,t);out.gain.linearRampToValueAtTime(level,t+2.5);lfo.frequency.value=.08;depth.gain.value=level*.35;lfo.connect(depth);depth.connect(out.gain);
+  const voices=[[1,.5,'sine'],[1.5,.28,'sine'],[2.003,.16,'triangle']].map(([m,v,type])=>{const o=audio.createOscillator(),vg=audio.createGain();o.type=type;o.frequency.value=root*m;vg.gain.value=v;o.connect(vg);vg.connect(filter);o.start(t);return {o,vg,m};});
+  filter.connect(out);out.connect(master);lfo.start(t);amb={out,filter,lfo,depth,voices};}
+ else if(!on&&amb){const a=amb;amb=null;if(audio.state==='running'){const t=audio.currentTime;a.out.gain.cancelScheduledValues(t);a.out.gain.setTargetAtTime(0,t,.25);}setTimeout(()=>{for(const v of a.voices){v.o.stop();v.o.disconnect();v.vg.disconnect();}a.lfo.stop();a.lfo.disconnect();a.depth.disconnect();a.filter.disconnect();a.out.disconnect();},1400);}
+ else if(on&&amb){const t=audio.currentTime,root=ambienceRoot();amb.out.gain.cancelScheduledValues(t);amb.out.gain.setTargetAtTime(level,t,.4);amb.depth.gain.setTargetAtTime(level*.35,t,.4);for(const v of amb.voices)v.o.frequency.setTargetAtTime(root*v.m,t,1.5);}
+}
+function restDone(){notice('잘 쉬었어요 · 천천히 돌아와요');chime();window.MungSettings.pulse(1,'ready');const b=document.body;b.classList.remove('rest-done');requestAnimationFrame(()=>b.classList.add('rest-done'));}
+function wave(x,y,force=1,dx=0,dy=0,layers=tune.waveLayers){if(mode!=='ripple')return;const count=reduce?1:Math.max(1,Math.round(layers));for(let i=0;i<count;i++)rings.push({x,y,r:3+i*12,life:1-i*.12,hue:material[0][0]+i*7,force,driftX:clamp(dx*.08,-1.2,1.2),driftY:clamp(dy*.08,-1.2,1.2),phase:rand(0,7),direction:Math.atan2(dy,dx)});if(rings.length>60)rings.splice(0,rings.length-60);}
 function emit(p,first=false){
 if(mode==='ripple'){const moved=Math.hypot(p.x-(p.lastX??p.x),p.y-(p.lastY??p.y)),interval=60/Math.max(.5,tune.waveRate)*(reduce?2:1);if(!first&&p.lastWave!==undefined&&moved<20&&(p.waveTimer||0)<interval)return;wave(p.x,p.y,first?1.2:1+Math.min(.8,moved/100),p.dx||0,p.dy||0);p.lastX=p.x;p.lastY=p.y;p.lastWave=sim;p.waveTimer=0;window.MungSettings.pulse(.4,'ripple');}
 if(mode==='stardust'){
@@ -763,19 +996,27 @@ function explode(p){if(mode==='magnet'&&!canDetonate(p))return;const charge=clam
 }
 function inputs(){if(magnetAssist&&mode==='magnet')return[magnetAssist];if(pointers.size)return [...pointers.values()];if(keyPoint)return[keyPoint];if(auto&&!reduce){const c=center();if(mode==='magnet'){autoPoint.x=c.x;autoPoint.y=c.y;if((autoPoint.cooldown||0)>sim)return [];}else{autoPoint.x=c.x+Math.cos(sim*.011)*c.r*.9;autoPoint.y=c.y+Math.sin(sim*.017)*c.r*.7;}return[autoPoint];}return [];}
 canvas.addEventListener('contextmenu',e=>e.preventDefault());
-canvas.addEventListener('pointerdown',e=>{e.preventDefault();if(paused){notice('재생을 누르면 다시 움직여요.');return;}if(pointers.size>=5)return;magnetAssist=null;const p={x:e.clientX,y:e.clientY,dx:0,dy:0,ox:e.clientX,oy:e.clientY,charge:0,held:0,stable:0,ready:false,emitAt:sim,grabAt:sim,pressureTarget:e.pointerType==='pen'?clamp(e.pressure*1.5,.2,1):1,press:0,mvx:0,mvy:0,contact:jellyContact(e.clientX,e.clientY),grab:jelly.map(q=>({x:q.x,y:q.y,weight:Math.exp(-Math.pow(Math.hypot(q.x-e.clientX,q.y-e.clientY)/(center().r*.9),2))}))};if(!pointers.size)trails.clear();pointers.set(e.pointerId,p);canvas.setPointerCapture(e.pointerId);engaged();emit(p,true);if(mode==='jelly'&&p.contact)window.MungSettings.pulse(.35,'tap');});
+canvas.addEventListener('pointerdown',e=>{e.preventDefault();if(paused){notice('재생을 누르면 다시 움직여요.');return;}if(pointers.size>=5)return;magnetAssist=null;const p={x:e.clientX,y:e.clientY,dx:0,dy:0,ox:e.clientX,oy:e.clientY,charge:0,held:0,stable:0,ready:false,emitAt:sim,grabAt:sim,pressureTarget:e.pointerType==='pen'?clamp(e.pressure*1.5,.2,1):1,press:0,mvx:0,mvy:0,contact:jellyContact(e.clientX,e.clientY),grab:jelly.map(q=>({x:q.x,y:q.y,weight:Math.exp(-Math.pow(Math.hypot(q.x-e.clientX,q.y-e.clientY)/(center().r*.9),2))}))};if(!pointers.size)trails.clear();pointers.set(e.pointerId,p);canvas.setPointerCapture(e.pointerId);engaged();emit(p,true);if(mode==='jelly'&&p.contact){window.MungSettings.pulse(.35,'tap');jellyWaves.push({x:p.x,y:p.y,r:3,life:.9});}touchPulses.push({x:p.x,y:p.y,life:1});if(touchPulses.length>8)touchPulses.shift();});
 canvas.addEventListener('pointermove',e=>{if(!reduce){camera.tx=(e.clientX/w-.5)*7;camera.ty=(e.clientY/h-.5)*7;}const p=pointers.get(e.pointerId);if(!p)return;p.dx=e.clientX-p.x;p.dy=e.clientY-p.y;p.mvx=p.mvx*.4+p.dx*.6;p.mvy=p.mvy*.4+p.dy*.6;if(Math.hypot(p.dx,p.dy)>2){p.stable=0;p.ready=false;}if(e.pointerType==='pen')p.pressureTarget=clamp(e.pressure*1.5,.2,1);if(mode==='bubble'&&!p.streaming&&sim-(p.bornAt??sim)<24&&!popQueue.length&&Math.hypot(p.dx,p.dy)>12){const end={x:e.clientX,y:e.clientY};const hit=bubbles.filter(b=>segmentHit(b.x,b.y,p,end)<b.r*.7&&!inputs().some(q=>q!==p&&q.bubble===b)).sort((a,b)=>Math.hypot(a.x-p.x,a.y-p.y)-Math.hypot(b.x-p.x,b.y-p.y)).slice(0,10);for(const b of hit)popBubble(b);p.bubble=null;p.bornAt=sim;}p.x=e.clientX;p.y=e.clientY;});
-function release(e){const p=pointers.get(e.pointerId);if(!p)return;pointers.delete(e.pointerId);if(e.type==='pointerup'&&!paused){if(mode==='magnet')releaseMagnet(p);else if(mode==='stardust')explode(p);if(mode==='bubble'&&p.bubble&&!p.created)popBubble(p.bubble);if(mode==='ribbon'){const path=trails.get(e.pointerId);if(path){if(!reduce)for(let i=0;i<path.length;i+=6){burst(path[i].x,path[i].y,2,.25,'ribbon',1);const last=sparks[sparks.length-1];last.vx+=(p.mvx||0)*.1;last.vy+=(p.mvy||0)*.1;}path.releaseAt=sim;path.flick=reduce?0:clamp(Math.hypot(p.mvx,p.mvy)*.045,.2,1.8);window.MungSettings.pulse(.35,'ribbon');}}if(mode==='jelly'&&p.contact){for(let i=0;i<jelly.length;i++){const q=jelly[i];q.skinV+=p.grab[i].weight*(p.press||.2)*(reduce?1:8);const rebound=(p.press||.2)*8*tune.elastic*(reduce?.25:1);q.vx+=clamp(p.mvx,-24,24)*p.grab[i].weight*.7+Math.cos(q.a)*rebound;q.vy+=clamp(p.mvy,-24,24)*p.grab[i].weight*.7+Math.sin(q.a)*rebound;}window.MungSettings.pulse(.8,'jelly');tone('release');}}if(canvas.hasPointerCapture(e.pointerId))canvas.releasePointerCapture(e.pointerId);}
+function release(e){const p=pointers.get(e.pointerId);if(!p)return;pointers.delete(e.pointerId);if(e.type==='pointerup'&&!paused){if(mode==='magnet')releaseMagnet(p);else if(mode==='stardust')explode(p);if(mode==='bubble'&&p.bubble&&!p.created)popBubble(p.bubble);if(mode==='ripple'&&variant===2)skipStone(p);if(mode==='ribbon'){const path=trails.get(e.pointerId);if(path){if(!reduce)for(let i=0;i<path.length;i+=6){burst(path[i].x,path[i].y,2,.25,'ribbon',1);const last=sparks[sparks.length-1];last.vx+=(p.mvx||0)*.1;last.vy+=(p.mvy||0)*.1;}path.releaseAt=sim;path.flick=reduce?0:clamp(Math.hypot(p.mvx,p.mvy)*.045,.2,1.8);window.MungSettings.pulse(.35,'ribbon');}}if(mode==='jelly'&&p.contact){for(let i=0;i<jelly.length;i++){const q=jelly[i];q.skinV+=p.grab[i].weight*(p.press||.2)*(reduce?1:8);const rebound=(p.press||.2)*8*tune.elastic*(reduce?.25:1);q.vx+=clamp(p.mvx,-24,24)*p.grab[i].weight*.7+Math.cos(q.a)*rebound;q.vy+=clamp(p.mvy,-24,24)*p.grab[i].weight*.7+Math.sin(q.a)*rebound;}window.MungSettings.pulse(.8,'jelly');tone('release');const fling=Math.hypot(p.mvx||0,p.mvy||0);if(!reduce&&tune.jellySplash>0)burst(p.x,p.y,Math.round((4+Math.min(10,fling*.6))*tune.jellySplash),1.2+Math.min(2,fling*.08),'jelly',0,material[1][0]);jellyWaves.push({x:p.x,y:p.y,r:6,life:1,strong:true});}}if(canvas.hasPointerCapture(e.pointerId))canvas.releasePointerCapture(e.pointerId);}
 ['pointerup','pointercancel','lostpointercapture'].forEach(n=>canvas.addEventListener(n,release));
 canvas.addEventListener('keydown',e=>{if(e.code==='Space'||e.code==='Enter'){e.preventDefault();if(paused||e.repeat)return;if(mode==='ripple'||mode==='bubble'){if(!keyPoint){const c=center();keyPoint={x:c.x,y:c.y,dx:0,dy:0,emitAt:sim};emit(keyPoint,true);engaged();}return;}if(mode==='magnet'){if(!e.repeat&&!magnetAssist)magnetAssist=beginMagnet();return;}const c=center(),point={x:c.x,y:c.y};emit(point,true);if(mode==='bubble'&&point.bubble&&!point.created)popBubble(point.bubble);if(mode==='jelly')jelly.forEach(p=>{p.vx+=Math.cos(p.a)*7*power;p.vy+=Math.sin(p.a)*7*power;});if(mode==='magnet'||mode==='stardust')explode({x:c.x,y:c.y,charge:1});if(mode==='ribbon'){const path=Array.from({length:36},(_,i)=>({x:c.x+Math.sin(i*.22)*c.r,y:c.y+(i-18)*4,vx:0,vy:0}));trails.set('key',path);}engaged();tone();}});
 canvas.addEventListener('keyup',e=>{if(e.code!=='Space'&&e.code!=='Enter')return;if(keyPoint){if(mode==='bubble'&&keyPoint.bubble&&!keyPoint.created)popBubble(keyPoint.bubble);keyPoint=null;}if(mode==='magnet'&&magnetAssist){releaseMagnet(magnetAssist);magnetAssist=null;}});canvas.addEventListener('blur',()=>{keyPoint=null;magnetAssist=null;});
 function step(){sim+=H;skyBlend=Math.min(1,skyBlend+.035*H);if(skyBlend===1)previousSky=null;camera.x+=(camera.tx-camera.x)*ease(.035);camera.y+=(camera.ty-camera.y)*ease(.035);if(world.meteors&&!reduce&&sim%540===0){meteors.push({x:rand(w*.1,w*.7),y:rand(h*.05,h*.35),vx:rand(3,6),vy:rand(1,2.5),life:1});}for(const m of meteors){m.x+=m.vx*H;m.y+=m.vy*H;m.life-=.012*H;}meteors=meteors.filter(m=>m.life>0);kick*=damp(kickStyle===2?.79:.86);if(popQueue.length&&popQueue[0].at<=sim){const item=popQueue.shift();popBubble(item.bubble);syncBubbleAction();if(!popQueue.length)notice('하나하나, 모두 터졌어요.');}for(const b of blasts)b.life-=(b.kind==='magnet'?.014:b.kind==='stardust'?.021:.034)*H;blasts=blasts.filter(b=>b.life>0);const due=delayed.filter(b=>b.at<=sim);delayed=delayed.filter(b=>b.at>sim);for(const b of due)burst(b.x,b.y,b.n,b.force,b.kind,b.style||0);if(auto&&!pointers.size&&!reduce&&sim%240===0&&mode==='stardust'){explode(autoPoint);autoPoint.charge=0;}const ins=inputs(),c=center(),motion=reduce?.22:1;for(const p of ins){p.charge=clamp((p.charge||0)+.008*H,0,1);p.dx=(p.dx||0)*damp(.88);p.dy=(p.dy||0)*damp(.88);p.mvx=(p.mvx||0)*damp(.92);p.mvy=(p.mvy||0)*damp(.92);p.press=(p.press||0)+((p.pressureTarget??1)-(p.press||0))*ease(.12);if(mode==='ripple'){p.waveTimer=(p.waveTimer||0)+H/speed;emit(p);}else if(sim-(p.emitAt||0)>(mode==='bubble'?3:2)){emit(p);p.emitAt=sim;}}
 for(const r of rings){r.x+=(r.driftX||0)*motion*H;r.y+=(r.driftY||0)*motion*H;r.driftX=(r.driftX||0)*damp(.987);r.driftY=(r.driftY||0)*damp(.987);r.r+=(.7+(r.force||1)*.25)*power*motion*tune.waveSpread*H;r.life-=.0028/tune.waveLife*H;}
 rings=rings.filter(r=>r.life>0);
-for(const p of sparks){if(!reduce&&sim%3===0){p.history.push({x:p.x,y:p.y});if(p.history.length>7)p.history.shift();}p.px=p.x;p.py=p.y;if(mode==='stardust'&&p.kind==='stardust'&&!reduce)for(const touch of ins){const dx=touch.x-p.x,dy=touch.y-p.y,d=Math.hypot(dx,dy)||1,still=Math.max(0,1-Math.hypot(touch.dx||0,touch.dy||0)/8);if(d<160&&still>.2){const orbit=18+(1-(touch.charge||0))*44,pull=clamp((d-orbit)*.004,-.12,.35)*still;p.vx+=(dx/d*pull-dy/d*.045)*power*H;p.vy+=(dy/d*pull+dx/d*.045)*power*H;}}p.x+=p.vx*motion*H;p.y+=p.vy*motion*H;const vx=p.vx,turn=reduce?0:(p.curve||0)*p.life*H,drag=damp(p.drag);p.vx=(p.vx-p.vy*turn)*drag;p.vy=(p.vy+vx*turn)*drag+(p.kind==='bubble'?.032:p.kind==='ribbon'?-.004:.006)*H;if(!reduce&&p.life<.7){const flow=Math.sin(p.y*.018+p.phase+sim*.012)*.014*H;p.vx+=flow;p.vy+=Math.cos(p.x*.015+p.phase)*.008*H;}p.life-=(p.decay||.012)*H;}
+for(const p of sparks){if(!reduce&&sim%3===0){p.history.push({x:p.x,y:p.y});if(p.history.length>7)p.history.shift();}p.px=p.x;p.py=p.y;if(mode==='stardust'&&p.kind==='stardust'&&!reduce)for(const touch of ins){const dx=touch.x-p.x,dy=touch.y-p.y,d=Math.hypot(dx,dy)||1,still=Math.max(0,1-Math.hypot(touch.dx||0,touch.dy||0)/8);if(d<160&&still>.2){const orbit=18+(1-(touch.charge||0))*44,pull=clamp((d-orbit)*.004,-.12,.35)*still;p.vx+=(dx/d*pull-dy/d*.045)*power*H;p.vy+=(dy/d*pull+dx/d*.045)*power*H;}}p.x+=p.vx*motion*H;p.y+=p.vy*motion*H;const vx=p.vx,turn=reduce?0:(p.curve||0)*p.life*H,drag=damp(p.drag);p.vx=(p.vx-p.vy*turn)*drag;p.vy=(p.vy+vx*turn)*drag+(p.kind==='bubble'?.032:p.kind==='ribbon'?-.004:p.kind==='jelly'?.1:p.kind==='splash'?.13:p.kind==='glitter'?.01:.006)*H;if(!reduce&&p.life<.7){const flow=Math.sin(p.y*.018+p.phase+sim*.012)*.014*H;p.vx+=flow;p.vy+=Math.cos(p.x*.015+p.phase)*.008*H;}p.life-=(p.decay||.012)*H;}
 sparks=sparks.filter(p=>p.life>0);
-for(const b of bubbles){b.x+=b.vx*motion*H;b.y+=b.vy*motion*H;b.vx*=damp(.992);b.vy=b.vy*damp(.99)-.0003*H;b.birth=Math.min(1,(b.birth??1)+.055*H);const held=ins.some(p=>p.bubble===b),queued=b.popAt&&b.popAt-sim<12;b.sv+=((held?.73:queued?.78:1)-b.squash)*.16*H;b.sv*=damp(tune.bubbleBounce);b.squash=clamp(b.squash+b.sv*H,.62,1.32);b.wobble=Math.min(.12,.028+Math.abs(b.sv)*.55);b.life=1;if(b.y<b.r||b.y>h-b.r){b.vy*=-.8;b.y=clamp(b.y,b.r,h-b.r);}if(b.x<b.r||b.x>w-b.r){b.vx*=-.85;b.x=clamp(b.x,b.r,w-b.r);} }
-for(let i=0;i<bubbles.length;i++)for(let j=i+1;j<bubbles.length;j++){const a=bubbles[i],b=bubbles[j],dx=b.x-a.x,dy=b.y-a.y,dist=Math.hypot(dx,dy)||1,over=a.r+b.r-dist;if(over>0){const push=Math.min(over*.015,.7)*H;a.vx-=dx/dist*push;a.vy-=dy/dist*push;b.vx+=dx/dist*push;b.vy+=dy/dist*push;const impact=Math.min(.009,Math.abs((a.vx-b.vx)*dx/dist+(a.vy-b.vy)*dy/dist)*.0015)*H;a.sv-=impact;b.sv-=impact;}}
+// Bubble styles: 0 glass marbles fall and stack, 1 soap bubbles drift, 2 candy floss rises.
+const bv=mode==='bubble'?variant:1;
+for(const b of bubbles){b.x+=b.vx*motion*H;b.y+=b.vy*motion*H;
+ if(bv===0){b.vy+=.14*H;b.vx*=damp(.996);b.vy*=damp(.998);}else if(bv===2){b.vx*=damp(.99);b.vy=b.vy*damp(.99)-.006*H;}else{b.vx*=damp(.992);b.vy=b.vy*damp(.99)-.0003*H;}
+ b.spin=(b.spin||0)+b.vx/(b.r||1)*H;b.birth=Math.min(1,(b.birth??1)+.055*H);const held=ins.some(p=>p.bubble===b),queued=b.popAt&&b.popAt-sim<12;b.sv+=((held?.73:queued?.78:1)-b.squash)*.16*H;b.sv*=damp(tune.bubbleBounce);b.squash=clamp(b.squash+b.sv*H,bv===0?.9:.62,bv===0?1.1:1.32);b.wobble=Math.min(bv===2?.16:.12,(bv===2?.05:.028)+Math.abs(b.sv)*.55);b.life=1;
+ if(bv===0){if(b.y>h-b.r){b.y=h-b.r;if(b.vy>0){b.vy*=-.42;if(b.vy>-.35)b.vy=0;}b.vx*=damp(.985);}if(b.y<b.r){b.y=b.r;if(b.vy<0)b.vy*=-.4;}if(b.x<b.r){b.x=b.r;if(b.vx<0)b.vx*=-.5;}if(b.x>w-b.r){b.x=w-b.r;if(b.vx>0)b.vx*=-.5;}}
+ else{if(b.y<b.r||b.y>h-b.r){b.vy*=-.8;b.y=clamp(b.y,b.r,h-b.r);}if(b.x<b.r||b.x>w-b.r){b.vx*=-.85;b.x=clamp(b.x,b.r,w-b.r);}}}
+for(let i=0;i<bubbles.length;i++)for(let j=i+1;j<bubbles.length;j++){const a=bubbles[i],b=bubbles[j],dx=b.x-a.x,dy=b.y-a.y,rr=a.r+b.r;if(dx>rr||dx<-rr||dy>rr||dy<-rr)continue;const dist=Math.hypot(dx,dy)||1,over=rr-dist;if(over<=0)continue;const nx=dx/dist,ny=dy/dist;
+ if(bv===0){const corr=over*.5;a.x-=nx*corr;a.y-=ny*corr;b.x+=nx*corr;b.y+=ny*corr;const rel=(b.vx-a.vx)*nx+(b.vy-a.vy)*ny;if(rel<0){const imp=-rel*.72;a.vx-=nx*imp;a.vy-=ny*imp;b.vx+=nx*imp;b.vy+=ny*imp;}}
+ else{const push=Math.min(over*.015,.7)*H;a.vx-=nx*push;a.vy-=ny*push;b.vx+=nx*push;b.vy+=ny*push;const impact=Math.min(.009,Math.abs((a.vx-b.vx)*nx+(a.vy-b.vy)*ny)*.0015)*H;a.sv-=impact;b.sv-=impact;}}
 bubbles=bubbles.filter(b=>b.life>0&&b.y+b.r>0);
 if(mode==='jelly'){
  const spring=[.06,.036,.023][variant]*tune.elastic, damping=reduce?.65:clamp(tune.damping+(variant===1?.015:variant===2?-.025:0),.7,.955),jd=damp(damping);
@@ -787,21 +1028,53 @@ if(mode==='jelly'){
  p.vx+=(p.x-jx)/(c.r||1)*pressure*H;p.vy+=(p.y-jy)/(c.r||1)*pressure*H;p.vx+=((tx-p.x)*spring+(prev.x+next.x-2*p.x)*.07)*H;p.vy+=((ty-p.y)*spring+(prev.y+next.y-2*p.y)*.07)*H;p.vx=clamp(p.vx*jd,-35,35);p.vy=clamp(p.vy*jd,-35,35);}
  for(const p of jelly){p.skin=clamp((p.skin||0)+p.skinV*H,-18,18);p.x+=p.vx*H;p.y+=p.vy*H;}}
 if(mode==='magnet'){
- for(const touch of ins)touch.held=(touch.held||0)+H;
- for(const p of dust){if(!reduce&&sim%3===0){p.history.push({x:p.x,y:p.y});if(p.history.length>8)p.history.shift();}for(const touch of ins){const dx=touch.x-p.x,dy=touch.y-p.y,dist=Math.max(8,Math.hypot(dx,dy)),g=clamp((touch.held-60)/(tune.magnetHold*60),0,1),pull=(.12+.48*g)*Math.sqrt(power),orbit=.23*(1-g)*tune.magnetSwirl;p.vx+=(dx/dist*pull-dy/dist*orbit)*H;p.vy+=(dy/dist*pull+dx/dist*orbit)*H;if(dist<30&&g>.8){p.vx*=damp(.78);p.vy*=damp(.78);}}
+ for(const touch of ins)touch.held=(touch.held||0)+H;const swirlBoost=[1.7,1,1.35][variant]??1;
+ for(const p of dust){if(!reduce&&sim%3===0){p.history.push({x:p.x,y:p.y});if(p.history.length>8)p.history.shift();}for(const touch of ins){const dx=touch.x-p.x,dy=touch.y-p.y,dist=Math.max(8,Math.hypot(dx,dy)),g=clamp((touch.held-60)/(tune.magnetHold*60),0,1),pull=(.12+.48*g)*Math.sqrt(power),orbit=.23*(1-g)*tune.magnetSwirl*swirlBoost;p.vx+=(dx/dist*pull-dy/dist*orbit)*H;p.vy+=(dy/dist*pull+dx/dist*orbit)*H;if(dist<30&&g>.8){p.vx*=damp(.78);p.vy*=damp(.78);}}
  if(!ins.length&&!reduce){p.vx+=Math.sin(p.y*.008+sim*.005)*.018*H;p.vy+=Math.cos(p.x*.008+sim*.005)*.018*H;}const fr=damp(ins.length?.965:.983);p.vx*=fr;p.vy*=fr;p.x+=p.vx*motion*H;p.y+=p.vy*motion*H;if(p.x<0||p.x>w)p.vx*=-1;if(p.y<0||p.y>h)p.vy*=-1;p.x=clamp(p.x,0,w);p.y=clamp(p.y,0,h);}
  for(const touch of ins){const ratio=gathered(touch);touch.ratio=ratio;touch.stable=ins.length===1&&ratio>=.95&&touch.held>=tune.magnetHold*60?(touch.stable||0)+H:0;touch.ready=touch.stable>=45;touch.charge=Math.min(ratio,touch.held/(tune.magnetHold*60),touch.stable/45);}
  const p=ins[0],status=p?(p.ready?'응축 완료 · 지금 놓으세요':((p.ratio||0)>=.95?`중심 안정화 ${Math.floor(Math.min(1,(p.stable||0)/45)*100)}% · 조금만 더`:`빛 모으기 ${Math.floor((p.ratio||0)*100)}% · 한곳에서 꾹`)):'빛을 한 점에 모아 보세요';if($('#magnet-status').textContent!==status)$('#magnet-status').textContent=status;if(p?.ready&&!p.announced){p.announced=true;notice('응축 완료 · 지금 놓으세요');window.MungSettings.pulse(1,'ready');}if(p&&!p.ready)p.announced=false;
  if(auto&&!pointers.size&&!magnetAssist&&canDetonate(autoPoint)){explode(autoPoint);autoPoint.held=0;autoPoint.stable=0;autoPoint.ready=false;autoPoint.cooldown=sim+180;}
 }
+// Detail layers: touch rings, colour flow, jelly surface waves, rain, skipping stones, petals, glitter.
+for(const t of touchPulses)t.life-=.05*H;touchPulses=touchPulses.filter(t=>t.life>0);
+if(extra.hueFlow){hueShift=(hueShift+[0,.02,.06,.15][extra.hueFlow]*H)%360;if(sim%30===0)applyHue();if(sim%240===0&&amb)syncAmbience();}
+if(mode==='jelly'){for(const wv of jellyWaves){wv.r+=(1.4+(1-wv.life)*1.6)*(wv.strong?1.6:1)*H;wv.life-=(wv.strong?.016:.024)*H;}jellyWaves=jellyWaves.filter(wv=>wv.life>0);if(!reduce&&sim%18===0)for(const t of ins)if(t.contact&&jellyWaves.length<14)jellyWaves.push({x:t.x,y:t.y,r:3,life:.7});}
+if(mode==='ripple'){
+ if(variant===0&&!reduce){rainClock+=H*tune.rainAmount;if(rainClock>=rainGap){rainClock=0;rainGap=rand(6,26);drops.push({x:rand(w*.05,w*.95),y:rand(h*.14,h*.86),fall:1});}}
+ for(const d of drops){d.fall-=.075*H;if(d.fall<=0){wave(d.x,d.y,.5,0,0,2);splash(d.x,d.y,4);}}drops=drops.filter(d=>d.fall>0);
+ for(const k of skips)if(k.at<=sim){wave(k.x,k.y,k.force,k.dx,k.dy,2);splash(k.x,k.y,6);tone();window.MungSettings.pulse(.3,'ripple');k.done=true;}skips=skips.filter(k=>!k.done);
+ const src=rings.length>12?rings.filter((_,i)=>i%Math.ceil(rings.length/12)===0):rings;
+ for(const f of floaters){for(const r of src){const dx=f.x-r.x,dy=(f.y-r.y)/.72,d=Math.hypot(dx,dy)||1,delta=Math.abs(d-r.r);if(delta<24){const push=(1-delta/24)*r.life*.12*(r.force||1)*H;f.vx+=dx/d*push;f.vy+=dy/d*push*.72;f.spin+=push*.02*(f.phase>3.5?1:-1);}}
+  for(const t of ins){const dx=f.x-t.x,dy=f.y-t.y,d=Math.hypot(dx,dy)||1;if(d<70){const push=(1-d/70)*.35*H;f.vx+=dx/d*push;f.vy+=dy/d*push;}}
+  f.vx*=damp(.965);f.vy*=damp(.965);f.spin*=damp(.97);f.x+=f.vx*H;f.y+=f.vy*H;f.rot+=(f.spin+.002)*H;if(f.x<-20)f.x=w+20;if(f.x>w+20)f.x=-20;if(f.y<h*.1)f.vy+=.05*H;if(f.y>h*.88)f.vy-=.05*H;}}
+if(mode==='ribbon'&&tune.ribbonGlitter>0&&!reduce){for(const p of ins){const v=Math.hypot(p.mvx||0,p.mvy||0);if(Math.random()<Math.min(.9,v*.035*tune.ribbonGlitter)*H)sparks.push({x:p.x+rand(-10,10),y:p.y+rand(-10,10),vx:rand(-.5,.5)+(p.mvx||0)*.04,vy:rand(-.3,.3)+(p.mvy||0)*.04,r:rand(.9,2),life:1,decay:.009/tune.afterglow,hue:material[1][0]+rand(-25,25),px:p.x,py:p.y,phase:rand(0,7),history:[],kind:'glitter',shape:2,curve:0,drag:.975});}if(sparks.length>1100)sparks.splice(0,sparks.length-1100);}
 if(mode==='ribbon'){const entries=pointers.size?[...pointers.entries()]:ins.length?[['auto',ins[0]]]:[];for(const [id,p] of entries){if(!trails.has(id)&&trails.size>=5)trails.delete(trails.keys().next().value);if(!trails.has(id))trails.set(id,Array.from({length:Math.round(tune.ribbonLength)},()=>({x:p.x,y:p.y,vx:0,vy:0})));}for(const [id,path] of trails){const active=entries.some(e=>e[0]===id);path.life=active?1:(path.life??1)-.004/tune.afterglow*H;if(path.life<=0){trails.delete(id);continue;}const target=entries.find(e=>e[0]===id)?.[1]||(reduce?{x:path[0].x,y:path[0].y}:{x:clamp(path[0].x+path[0].vx*.9,20,w-20),y:clamp(path[0].y+path[0].vy*.9,20,h-20)});for(let i=0;i<path.length;i++){const p=path[i],t=i?path[i-1]:target;p.width=(p.width??1)+((i?(path[i-1].width??1):clamp(1.35-Math.hypot(target.dx||0,target.dy||0)*.022,.45,1.35))-(p.width??1))*ease(.18);const stiffness=[.29,.13,.24][variant]/tune.ribbonLag*H;p.vx+=(t.x-p.x)*stiffness;p.vy+=(t.y-p.y)*stiffness;if(path.releaseAt!==undefined&&!reduce){const age=sim-path.releaseAt,packet=Math.exp(-Math.pow((i-age*.65)/8,2))*(path.flick||0);const dx=t.x-p.x,dy=t.y-p.y,len=Math.hypot(dx,dy)||1;p.vx+=-dy/len*packet*Math.sin(age*.35)*H;p.vy+=dx/len*packet*Math.sin(age*.35)*H;}const friction=damp([.58,.72,.64][variant]);p.vx*=friction;p.vy*=friction;p.x+=p.vx*H;p.y+=p.vy*H;}}}
 }
+// A solid glass marble: the world behind it appears upside down, with a coloured core and a caustic.
+function drawMarble(b){const r=b.r;
+ if(skyLayer){ctx.save();ctx.clip();ctx.globalAlpha=.7;ctx.rotate(Math.PI);const rw=r*2.2/w*skyLayer.width,rh=r*2.2/h*skyLayer.height,sx=clamp(b.x/w*skyLayer.width-rw/2,0,Math.max(0,skyLayer.width-rw)),sy=clamp(b.y/h*skyLayer.height-rh/2,0,Math.max(0,skyLayer.height-rh));ctx.drawImage(skyLayer,sx,sy,rw,rh,-r,-r,r*2,r*2);ctx.restore();}
+ const body=ctx.createRadialGradient(-r*.25,-r*.3,r*.1,0,0,r);body.addColorStop(0,col(b.hue,.08,85));body.addColorStop(.55,col(b.hue,.22,40));body.addColorStop(.88,col(b.hue,.55,22));body.addColorStop(1,col(b.hue+20,.85,60));ctx.fillStyle=body;ctx.fill();
+ ctx.save();ctx.clip();ctx.rotate(b.spin||0);ctx.fillStyle=col(b.hue+40,.55,62);ctx.beginPath();ctx.moveTo(-r*.8,0);ctx.bezierCurveTo(-r*.3,-r*.5,r*.3,r*.5,r*.8,0);ctx.bezierCurveTo(r*.3,r*.18,-r*.3,-r*.18,-r*.8,0);ctx.fill();
+ ctx.fillStyle=col(material[1][0],.35,70);ctx.beginPath();ctx.moveTo(-r*.6,r*.1);ctx.bezierCurveTo(-r*.2,-r*.3,r*.2,r*.4,r*.6,r*.05);ctx.bezierCurveTo(r*.2,r*.22,-r*.2,-r*.12,-r*.6,r*.1);ctx.fill();ctx.rotate(-(b.spin||0));
+ const caustic=ctx.createRadialGradient(r*.35,r*.45,0,r*.35,r*.45,r*.5);caustic.addColorStop(0,col(b.hue,.6*tune.bubbleSheen,94));caustic.addColorStop(1,col(b.hue,0));ctx.fillStyle=caustic;ctx.fillRect(-r,-r,r*2,r*2);ctx.restore();
+ ctx.strokeStyle=col(b.hue,.7,88);ctx.lineWidth=1.1;ctx.stroke();
+ ctx.fillStyle='rgba(255,255,255,'+(.85*Math.min(1,tune.bubbleSheen))+')';ctx.beginPath();ctx.ellipse(-r*.4,-r*.45,r*.16,r*.08,-.6,0,7);ctx.fill();ctx.fillStyle='rgba(255,255,255,.16)';ctx.beginPath();ctx.ellipse(-r*.1,-r*.62,r*.45,r*.14,-.1,0,7);ctx.fill();}
+// Candy floss: soft pastel body, fuzzy edge and a few sugar sparkles.
+function drawCandy(b){const r=b.r,body=ctx.createRadialGradient(-r*.3,-r*.35,r*.05,0,0,r*1.05);body.addColorStop(0,col(b.hue,.7,95));body.addColorStop(.45,col(b.hue+20,.55,86));body.addColorStop(.85,col(b.hue+45,.42,78));body.addColorStop(1,col(b.hue+60,.18,85));ctx.fillStyle=body;ctx.fill();
+ ctx.strokeStyle=col(b.hue+30,.1,95);ctx.lineWidth=r*.2;ctx.stroke();ctx.strokeStyle=col(b.hue,.16,97);ctx.lineWidth=r*.08;ctx.stroke();
+ ctx.save();ctx.clip();for(let i=0;i<7;i++){const a=i*2.4+(b.phase||0),d=r*(.2+(i%3)*.22);ctx.fillStyle='rgba(255,255,255,'+(.35+.3*Math.sin(sim*.05+i+(b.phase||0)))+')';ctx.beginPath();ctx.arc(Math.cos(a)*d,Math.sin(a)*d,Math.max(.6,r*.03),0,7);ctx.fill();}ctx.restore();
+ ctx.fillStyle='rgba(255,255,255,.42)';ctx.beginPath();ctx.ellipse(-r*.32,-r*.42,r*.3,r*.13,-.5,0,7);ctx.fill();}
 function draw(){ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,w,h);ctx.fillStyle='#050a15';ctx.fillRect(0,0,w,h);const c=center(),base=material[0][0],second=material[1][0];drawSpace();
 ctx.save();if(kick>.05&&!reduce)ctx.translate(Math.sin(sim*(kickStyle===1?1.3:2.8))*kick*(kickStyle===2?.35:1),Math.cos(sim*(kickStyle===2?4:2.1))*kick*.65);
 ctx.globalCompositeOperation='lighter';const sensory=sensoryFrame();if(mode==='ripple')window.MungSensory.water(ctx,sensory);
 for(const r of rings){const radius=r.r,al=r.life*clamp(radius/24,0,1);for(let layer=0;layer<3;layer++){ctx.beginPath();for(let i=0;i<=100;i++){const a=i/100*Math.PI*2,rr=radius+Math.sin(a*5+radius*.018+(r.phase||0))*Math.min(5,radius*.035)+Math.sin(a*9-radius*.025)*Math.min(2,radius*.015)+layer*3;const x=r.x+Math.cos(a)*rr,y=r.y+Math.sin(a)*rr*.72;if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);}ctx.lineWidth=layer===0?16:layer===1?2.2:.65;ctx.strokeStyle=col(r.hue+layer*22,al*(layer===0?.035:layer===1?.3:.65),layer===2?94:72);ctx.stroke();}
  for(let i=0;i<3;i++){const a=radius*.004+i*2.1;ctx.beginPath();ctx.ellipse(r.x,r.y,Math.max(.1,radius-2),Math.max(.1,radius*.72-1),0,a,a+.45);ctx.lineWidth=1.2;ctx.strokeStyle=col(r.hue+50,al*.7,93);ctx.stroke();}
 }
+if(mode==='ripple'){for(const d of drops){const y0=d.y-d.fall*70;ctx.strokeStyle=col(base,.4*(1-d.fall*.4),92);ctx.lineWidth=1.1;ctx.beginPath();ctx.moveTo(d.x,y0-16);ctx.lineTo(d.x,y0);ctx.stroke();}
+ if(floaters.length){ctx.save();ctx.globalCompositeOperation='source-over';for(const f of floaters){const bob=reduce?0:Math.sin(sim*.03+f.phase)*.08;ctx.save();ctx.translate(f.x,f.y);ctx.rotate(f.rot);ctx.scale(1+bob,.78-bob*.5);
+  ctx.fillStyle='rgba(2,6,18,.22)';ctx.beginPath();ctx.ellipse(2.5,3.5,f.size*1.25,f.size*1.1,0,0,7);ctx.fill();
+  for(let k=0;k<f.petals;k++){const a=k*Math.PI*2/f.petals;ctx.fillStyle=col(f.hue+k*4,.8,k%2?80:87);ctx.beginPath();ctx.ellipse(Math.cos(a)*f.size*.55,Math.sin(a)*f.size*.55,f.size*.62,f.size*.34,a,0,7);ctx.fill();}
+  ctx.fillStyle=col(f.hue+40,.95,93);ctx.beginPath();ctx.arc(0,0,f.size*.24,0,7);ctx.fill();ctx.fillStyle='rgba(255,255,255,.55)';ctx.beginPath();ctx.ellipse(-f.size*.35,-f.size*.4,f.size*.22,f.size*.09,-.5,0,7);ctx.fill();ctx.restore();}ctx.restore();}}
 for(const b of blasts)window.MungSensory.explosion(ctx,b,sensory);
 for(const p of sparks){
  const size=Math.max(.1,p.r*p.life),shimmer=reduce?1:.85+Math.sin(sim*.075+p.phase)*.15;
@@ -812,6 +1085,11 @@ for(const p of sparks){
    else if(p.shape===1){ctx.moveTo(-size*2,0);ctx.quadraticCurveTo(0,-size*2,size*2,0);ctx.quadraticCurveTo(0,size*.6,-size*2,0);}
    else{ctx.moveTo(-size*1.8,0);ctx.lineTo(0,-size);ctx.lineTo(size*1.8,0);ctx.lineTo(0,size);ctx.closePath();}
    ctx.fill();ctx.stroke();ctx.fillStyle=col(p.hue,p.life*.85,98);ctx.beginPath();ctx.ellipse(-size*.6,-size*.3,size*.45,size*.2,0,0,7);ctx.fill();
+ }else if(p.kind==='jelly'){
+   ctx.fillStyle=col(p.hue,p.life*.75,62);ctx.beginPath();ctx.ellipse(0,0,size*1.5+Math.hypot(p.vx,p.vy)*.5,size*1.1,0,0,7);ctx.fill();ctx.fillStyle='rgba(255,255,255,'+(p.life*.7)+')';ctx.beginPath();ctx.arc(size*.35,-size*.35,size*.35,0,7);ctx.fill();
+ }else if(p.kind==='glitter'){
+   const tw=reduce?.7:Math.pow(Math.sin(sim*.14+p.phase*5)*.5+.5,3);ctx.rotate(sim*.02+p.phase);ctx.fillStyle=col(p.hue,p.life*(.35+tw*.65),95);ctx.beginPath();ctx.moveTo(-size*1.3,0);ctx.lineTo(0,-size*.5);ctx.lineTo(size*1.3,0);ctx.lineTo(0,size*.5);ctx.closePath();ctx.fill();
+   if(tw>.6){ctx.strokeStyle=col(p.hue,p.life*tw*.8,98);ctx.lineWidth=.5;ctx.beginPath();ctx.moveTo(0,-size*3);ctx.lineTo(0,size*3);ctx.moveTo(-size*3,0);ctx.lineTo(size*3,0);ctx.stroke();}
  }else{
    ctx.fillStyle=col(p.hue,p.life*.055);ctx.beginPath();ctx.arc(0,0,size*4,0,7);ctx.fill();
    ctx.strokeStyle=col(p.hue,p.life*.45*shimmer,82);ctx.lineWidth=Math.max(.45,size*.45);ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(-Math.hypot(p.vx,p.vy)*(p.kind==='magnet'?5:3),0);ctx.stroke();
@@ -822,13 +1100,17 @@ for(const p of sparks){
  }
  ctx.restore();
 }
+// Big stars glint now and then with a screen-aligned cross flare.
+if(mode==='stardust'&&tune.twinkleGlint>0&&!reduce)for(const p of sparks){if(p.kind!=='stardust'||p.r<2.7||p.life<.4)continue;const gl=Math.pow(Math.sin(sim*.05+p.phase*4)*.5+.5,8)*tune.twinkleGlint*p.life;if(gl<.08)continue;const L=p.r*9*gl,L2=L*.45;ctx.strokeStyle=col(p.hue,gl*.9,97);ctx.lineWidth=.8;ctx.beginPath();ctx.moveTo(p.x-L,p.y);ctx.lineTo(p.x+L,p.y);ctx.moveTo(p.x,p.y-L);ctx.lineTo(p.x,p.y+L);ctx.stroke();ctx.lineWidth=.5;ctx.beginPath();ctx.moveTo(p.x-L2,p.y-L2);ctx.lineTo(p.x+L2,p.y+L2);ctx.moveTo(p.x+L2,p.y-L2);ctx.lineTo(p.x-L2,p.y+L2);ctx.stroke();}
 if(mode==='stardust'||mode==='magnet')for(const p of inputs()){const a=p.charge||0;for(let i=0;i<4;i++){ctx.fillStyle=col(base,a>i/4?.85:.16,90);ctx.beginPath();ctx.arc(p.x-9+i*6,p.y-25,1.4,0,7);ctx.fill();}const g=ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,45+a*45);g.addColorStop(0,col(base,.16+a*.12,85));g.addColorStop(1,col(base,0));ctx.fillStyle=g;ctx.beginPath();ctx.arc(p.x,p.y,45+a*45,0,7);ctx.fill();}
+const bv=mode==='bubble'?variant:1;
 for(const b of bubbles){
  ctx.save();ctx.globalCompositeOperation='source-over';ctx.translate(b.x,b.y);const birth=b.birth??1;ctx.scale(b.squash*birth,birth/b.squash);
  const held=inputs().find(p=>p.bubble===b),pressAngle=held?Math.atan2(held.y-b.y,held.x-b.x):0;const phase=b.phase||0,amp=reduce?.01:(b.wobble||.03),points=[];
  for(let i=0;i<16;i++){const a=i*Math.PI/8,dimple=held?Math.pow(Math.max(0,Math.cos(a-pressAngle)),8)*.18*(held.press||0):0,r=b.r*(1-dimple+Math.sin(a*3+phase+sim*(reduce?0:.028))*amp+Math.cos(a*2-phase)*amp*.45);points.push({x:Math.cos(a)*r,y:Math.sin(a)*r});}
  ctx.beginPath();ctx.moveTo((points[15].x+points[0].x)/2,(points[15].y+points[0].y)/2);
  for(let i=0;i<16;i++){const p=points[i],n=points[(i+1)%16];ctx.quadraticCurveTo(p.x,p.y,(p.x+n.x)/2,(p.y+n.y)/2);}ctx.closePath();
+ if(bv===0)drawMarble(b);else if(bv===2)drawCandy(b);else{
  if(skyLayer){ctx.save();ctx.clip();ctx.globalAlpha=.42;const rw=b.r*1.45/w*skyLayer.width,rh=b.r*1.45/h*skyLayer.height,sx=clamp(b.x/w*skyLayer.width-rw/2,0,Math.max(0,skyLayer.width-rw)),sy=clamp(b.y/h*skyLayer.height-rh/2,0,Math.max(0,skyLayer.height-rh));ctx.drawImage(skyLayer,sx,sy,rw,rh,-b.r,-b.r,b.r*2,b.r*2);ctx.restore();}
  const body=ctx.createRadialGradient(-b.r*.3,-b.r*.4,b.r*.02,0,0,b.r*1.08);
  body.addColorStop(0,col(b.hue,.42,88));body.addColorStop(.28,col(b.hue,.22,65));body.addColorStop(.65,col(b.hue,.1,36));body.addColorStop(.88,col(b.hue+35,.3,59));body.addColorStop(1,col(b.hue+18,.55,88));
@@ -836,6 +1118,7 @@ for(const b of bubbles){
  ctx.clip();window.MungSensory.bubble(ctx,b,sensory);ctx.fillStyle='rgba(255,255,255,.36)';ctx.beginPath();ctx.ellipse(-b.r*.3,-b.r*.48,b.r*.28,b.r*.1,-.45,0,7);ctx.fill();
  ctx.fillStyle='rgba(255,255,255,.65)';ctx.beginPath();ctx.ellipse(-b.r*.49,-b.r*.32,b.r*.06,b.r*.1,.5,0,7);ctx.fill();
  ctx.strokeStyle=col(b.hue+65,.55,86);ctx.lineWidth=Math.max(1.5,b.r*.04);ctx.beginPath();ctx.ellipse(b.r*.1,b.r*.15,b.r*.65,b.r*.62,-.2,.35,1.95);ctx.stroke();
+ if(tune.bubbleSheen>0&&!reduce){const tw=Math.pow(Math.sin(sim*.04+(b.phase||0)*3)*.5+.5,6)*tune.bubbleSheen;if(tw>.1){const x=-b.r*.49,y=-b.r*.32,L=b.r*.38*tw;ctx.strokeStyle='rgba(255,255,255,'+Math.min(.9,tw)+')';ctx.lineWidth=.8;ctx.beginPath();ctx.moveTo(x-L,y);ctx.lineTo(x+L,y);ctx.moveTo(x,y-L);ctx.lineTo(x,y+L);ctx.stroke();}}}
  ctx.restore();
 }
 if(mode==='jelly'){
@@ -843,49 +1126,72 @@ if(mode==='jelly'){
  const extent=Math.max(c.r*.7,...jelly.map(p=>Math.hypot(p.x-cx,p.y-cy)));
  ctx.globalCompositeOperation='source-over';
  ctx.save();ctx.translate(cx,cy+c.r*1.1);ctx.scale(1,.24);const shadow=ctx.createRadialGradient(0,0,0,0,0,extent);shadow.addColorStop(0,col(base,.22,40));shadow.addColorStop(1,col(base,0));ctx.fillStyle=shadow;ctx.fillRect(-extent,-extent,extent*2,extent*2);ctx.restore();
+ const sheen=tune.jellyGloss;
+ // A faint mirror image on the floor below the jelly.
+ if(sheen>0){const floorY=cy+extent*1.02;ctx.save();ctx.translate(0,floorY*2);ctx.scale(1,-1);ctx.beginPath();ctx.moveTo((jelly[31].x+jelly[0].x)/2,(jelly[31].y+jelly[0].y)/2);for(let i=0;i<32;i++){const p=jelly[i],nx=jelly[(i+1)%32];ctx.quadraticCurveTo(p.x,p.y,(p.x+nx.x)/2,(p.y+nx.y)/2);}ctx.closePath();const rg=ctx.createLinearGradient(0,floorY,0,floorY-extent*.9);rg.addColorStop(0,col(base,.16*sheen,55));rg.addColorStop(1,col(base,0));ctx.fillStyle=rg;ctx.fill();ctx.restore();}
  ctx.beginPath();const n=jelly.length;ctx.moveTo((jelly[n-1].x+jelly[0].x)/2,(jelly[n-1].y+jelly[0].y)/2);for(let i=0;i<n;i++){const p=jelly[i],next=jelly[(i+1)%n];ctx.quadraticCurveTo(p.x,p.y,(p.x+next.x)/2,(p.y+next.y)/2);}ctx.closePath();ctx.save();ctx.clip();
  if(skyLayer){const sx=(cx-extent*.8)/w*skyLayer.width,sy=(cy-extent*.8)/h*skyLayer.height;ctx.drawImage(skyLayer,sx,sy,extent*1.6/w*skyLayer.width,extent*1.6/h*skyLayer.height,cx-extent,cy-extent,extent*2,extent*2);}
  const body=ctx.createRadialGradient(cx-extent*.32,cy-extent*.48,extent*.04,cx,cy,extent);body.addColorStop(0,col(base,.78,88));body.addColorStop(.21,col(base,.72,61));body.addColorStop(.53,col(base,.68,32));body.addColorStop(.8,col(second,.76,19));body.addColorStop(.95,col(second,.8,47));body.addColorStop(1,col(base,.84,82));ctx.fillStyle=body;ctx.fillRect(cx-extent-4,cy-extent-4,extent*2+8,extent*2+8);
  const inner=ctx.createRadialGradient(cx+extent*.32,cy+extent*.42,0,cx+extent*.25,cy+extent*.3,extent*.9);inner.addColorStop(0,col(second,.64,66));inner.addColorStop(.45,col(second,.17));inner.addColorStop(1,col(second,0));ctx.fillStyle=inner;ctx.fillRect(cx-extent,cy-extent,extent*2,extent*2);
- ctx.save();ctx.translate(cx-extent*.28,cy-extent*.48);ctx.rotate(-.45);ctx.scale(1,.38);const gloss=ctx.createRadialGradient(0,0,0,0,0,extent*.5);gloss.addColorStop(0,'rgba(255,255,255,.92)');gloss.addColorStop(.3,'rgba(255,255,255,.4)');gloss.addColorStop(1,'rgba(255,255,255,0)');ctx.fillStyle=gloss;ctx.fillRect(-extent*.5,-extent*.5,extent,extent);ctx.restore();
+ ctx.save();ctx.translate(cx-extent*.28-camera.x*2.4,cy-extent*.48-camera.y*2.4);ctx.rotate(-.45);ctx.scale(1,.38);const gloss=ctx.createRadialGradient(0,0,0,0,0,extent*.5);gloss.addColorStop(0,'rgba(255,255,255,'+Math.min(1,.92*Math.max(.35,sheen))+')');gloss.addColorStop(.3,'rgba(255,255,255,'+(.4*Math.max(.35,sheen))+')');gloss.addColorStop(1,'rgba(255,255,255,0)');ctx.fillStyle=gloss;ctx.fillRect(-extent*.5,-extent*.5,extent,extent);ctx.restore();
  window.MungSensory.jelly(ctx,sensory,cx,cy,extent);
- for(let i=0;i<12;i++){const a=i*2.4,r=extent*(.17+(i%4)*.12),x=cx+Math.cos(a+sim*.002)*r,y=cy+Math.sin(a+sim*.002)*r;ctx.fillStyle=col(base,.12,88);ctx.beginPath();ctx.arc(x,y,2+i%3,0,7);ctx.fill();}ctx.restore();ctx.beginPath();ctx.moveTo((jelly[31].x+jelly[0].x)/2,(jelly[31].y+jelly[0].y)/2);for(let i=0;i<32;i++){const p=jelly[i],next=jelly[(i+1)%32];ctx.quadraticCurveTo(p.x,p.y,(p.x+next.x)/2,(p.y+next.y)/2);}ctx.closePath();ctx.strokeStyle=col(base,.6,85);ctx.lineWidth=1.4;ctx.stroke();ctx.globalCompositeOperation='lighter';
+ for(const wv of jellyWaves){ctx.strokeStyle=col(second,wv.life*.4*Math.max(.3,sheen),93);ctx.lineWidth=1.2;ctx.beginPath();ctx.ellipse(wv.x,wv.y,wv.r,wv.r*.8,0,0,7);ctx.stroke();ctx.strokeStyle=col(base,wv.life*.08,90);ctx.lineWidth=5;ctx.stroke();}
+ for(let i=0;i<12;i++){const a=i*2.4,r=extent*(.17+(i%4)*.12),x=cx+Math.cos(a+sim*.002)*r,y=cy+Math.sin(a+sim*.002)*r;ctx.fillStyle=col(base,.12,88);ctx.beginPath();ctx.arc(x,y,2+i%3,0,7);ctx.fill();}ctx.restore();ctx.beginPath();ctx.moveTo((jelly[31].x+jelly[0].x)/2,(jelly[31].y+jelly[0].y)/2);for(let i=0;i<32;i++){const p=jelly[i],next=jelly[(i+1)%32];ctx.quadraticCurveTo(p.x,p.y,(p.x+next.x)/2,(p.y+next.y)/2);}ctx.closePath();ctx.strokeStyle=col(base,.6,85);ctx.lineWidth=1.4;ctx.stroke();
+ // Rim light on the side facing the finger (or the sky when untouched).
+ {const t=inputs().find(q=>q.contact),lx=t?t.x-cx:-extent*.6-camera.x*6,ly=t?t.y-cy:-extent*.8-camera.y*6,ll=Math.hypot(lx,ly)||1,rim=ctx.createLinearGradient(cx-lx/ll*extent,cy-ly/ll*extent,cx+lx/ll*extent,cy+ly/ll*extent);rim.addColorStop(0,col(second,0,95));rim.addColorStop(.62,col(second,0,95));rim.addColorStop(1,col(second,(t?.85:.5)*Math.min(1,sheen),96));ctx.strokeStyle=rim;ctx.lineWidth=2.6;ctx.stroke();}
+ ctx.globalCompositeOperation='lighter';
 }
-if(mode==='magnet'){for(const p of dust){if(p.history?.length>2){ctx.beginPath();p.history.forEach((q,i)=>i?ctx.lineTo(q.x,q.y):ctx.moveTo(q.x,q.y));ctx.lineWidth=p.r*.7;ctx.strokeStyle=col(p.hue,.12,80);ctx.stroke();}ctx.strokeStyle=col(p.hue,.23);ctx.lineWidth=p.r;ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(p.x-p.vx*2,p.y-p.vy*2);ctx.stroke();ctx.fillStyle=col(p.hue,.58);ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,7);ctx.fill();}}
+if(mode==='magnet'){const q0=inputs()[0];for(const p of dust){const near=q0?Math.hypot(p.x-q0.x,p.y-q0.y):1e9,heat=variant===0&&near<110?1-near/110:0;if(p.history?.length>2){ctx.beginPath();p.history.forEach((q,i)=>i?ctx.lineTo(q.x,q.y):ctx.moveTo(q.x,q.y));ctx.lineWidth=p.r*(variant===2?.9:.7);ctx.strokeStyle=col(p.hue,variant===2?.22:.12,80);ctx.stroke();}ctx.strokeStyle=col(p.hue,.23);ctx.lineWidth=p.r;ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(p.x-p.vx*2,p.y-p.vy*2);ctx.stroke();ctx.fillStyle=col(p.hue+heat*40,.58+heat*.3,70+heat*24);ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,7);ctx.fill();}
+ if(q0){const c2=q0.charge||0,fl=tune.fieldLines;
+  // Dashed field lines flow inward, bending with the swirl of the chosen style.
+  if(fl>0){ctx.save();ctx.setLineDash([3,11]);ctx.lineDashOffset=reduce?0:-sim*1.4;ctx.lineWidth=1;const R=Math.min(w,h)*.46,bend=.9*([1.7,1,1.35][variant]??1);for(let i=0;i<12;i++){const a=i*Math.PI/6+sim*(reduce?0:.002),ca=a+bend;ctx.strokeStyle=col(base+i*6,(.05+.12*c2)*fl,85);ctx.beginPath();ctx.moveTo(q0.x+Math.cos(a)*R,q0.y+Math.sin(a)*R);ctx.quadraticCurveTo(q0.x+Math.cos(ca)*R*.5,q0.y+Math.sin(ca)*R*.5,q0.x,q0.y);ctx.stroke();}ctx.restore();}
+  if(variant===0){const R=5+17*c2;ctx.save();ctx.translate(q0.x,q0.y);ctx.rotate(-.35);
+   const half=(from,to)=>{ctx.beginPath();ctx.ellipse(0,0,R*2.7,R*.85,0,from,to);};
+   ctx.lineWidth=R*.9;ctx.strokeStyle=col(base+20,.18+.3*c2,70);half(Math.PI,Math.PI*2);ctx.stroke();ctx.lineWidth=R*.25;ctx.strokeStyle=col(second,.35+.4*c2,92);half(Math.PI,Math.PI*2);ctx.stroke();
+   ctx.globalCompositeOperation='source-over';ctx.fillStyle='rgba(1,2,8,.96)';ctx.beginPath();ctx.arc(0,0,R,0,7);ctx.fill();ctx.globalCompositeOperation='lighter';
+   ctx.strokeStyle=col(second,.55+.4*c2,97);ctx.lineWidth=1.3;ctx.beginPath();ctx.arc(0,0,R*1.18,0,7);ctx.stroke();
+   ctx.lineWidth=R*.9;ctx.strokeStyle=col(base+20,.2+.32*c2,72);half(0,Math.PI);ctx.stroke();ctx.lineWidth=R*.25;ctx.strokeStyle=col(second,.4+.45*c2,94);half(0,Math.PI);ctx.stroke();ctx.restore();}
+  else if(variant===2){ctx.save();ctx.translate(q0.x,q0.y);ctx.rotate(reduce?0:sim*.012);for(let arm=0;arm<2;arm++){ctx.beginPath();for(let k=0;k<=40;k++){const th=k/40*Math.PI*2.6,rr=10*Math.exp(.3*th),x=Math.cos(th+arm*Math.PI)*rr,y=Math.sin(th+arm*Math.PI)*rr;k?ctx.lineTo(x,y):ctx.moveTo(x,y);}ctx.strokeStyle=col(base+arm*30,.06+.12*c2,78);ctx.lineWidth=9;ctx.stroke();ctx.strokeStyle=col(second,.12+.2*c2,90);ctx.lineWidth=1.2;ctx.stroke();}ctx.restore();}}}
 if(mode==='ribbon')for(const path of trails.values())window.MungSensory.ribbon(ctx,path,sensory);
+for(const t of touchPulses){const r=10+(1-t.life)*42;ctx.strokeStyle=col(base,t.life*.4,93);ctx.lineWidth=1.2;ctx.beginPath();ctx.arc(t.x,t.y,r,0,7);ctx.stroke();ctx.strokeStyle=col(second,t.life*.12,90);ctx.lineWidth=5;ctx.stroke();}
 ctx.globalAlpha=1;window.MungSensory.details(ctx,sensory);ctx.globalCompositeOperation='source-over';ctx.restore();window.MungGlass?.render(canvas,dpr);}
 function loop(now){raf=0;if(document.hidden||paused){last=0;draw();return;}const elapsed=last?Math.min(now-last,100):STEP_MS;last=now;acc+=elapsed*speed;let count=0;
 // A small tolerance absorbs vsync jitter so a 120 Hz display gets exactly one tick per frame.
 // Slow frames catch up in ticks (down to 10 fps) instead of turning into slow motion.
-while(acc>=STEP_MS*.8&&count<12){step();acc-=STEP_MS;count++;}if(count)draw();raf=requestAnimationFrame(loop);}
+while(acc>=STEP_MS*.8&&count<12){step();acc-=STEP_MS;count++;}if(count){draw();fpsFrames++;}fpsTicks+=count;
+if(extra.fps&&now-fpsAt>=500){if(fpsAt&&now-fpsAt<2000)$('#fps').textContent=Math.round(fpsFrames*1000/(now-fpsAt))+' fps · '+Math.round(fpsTicks*1000/(now-fpsAt))+' Hz';fpsFrames=0;fpsTicks=0;fpsAt=now;}
+raf=requestAnimationFrame(loop);}
 function start(){last=0;acc=0;if(!raf&&!paused&&!document.hidden)raf=requestAnimationFrame(loop);else draw();}
-function syncAudio(){if(!audio)return;if(paused||document.hidden||!sound)audio.suspend().catch(()=>{});else audio.resume().catch(()=>{});}
-$$('.mode').forEach(b=>b.addEventListener('click',()=>{mode=b.dataset.mode;variant=1;const dock=document.querySelector('.dock'),next=Array.from(document.querySelectorAll('.mode')).indexOf(b),prev=Number(dock.style.getPropertyValue('--active-index'))||0;if(next!==prev)dock.dataset.dir=next>prev?'next':'prev';dock.style.setProperty('--active-index',String(next));syncVariants();$$('.mode').forEach(x=>{x.classList.toggle('active',x===b);x.setAttribute('aria-pressed',String(x===b));});const t=copy[mode];$('#number').textContent=t[0];$('#title').innerHTML=t[1]+'<br><em>'+t[2]+'</em>';$('#description').innerHTML=t[3];if(mode!=='ribbon')$('#hint').textContent=t[4];document.body.classList.remove('playing');reset();if(mode==='ribbon'){const c=center();trails.set('demo',Array.from({length:36},(_,i)=>({x:c.x+Math.sin(i*.16)*c.r,y:c.y+(i-18)*5,vx:0,vy:0})));}draw();}));
+function syncAudio(){if(!audio)return;syncAmbience();if(paused||document.hidden||!sound)audio.suspend().catch(()=>{});else audio.resume().catch(()=>{});}
+$$('.mode').forEach(b=>b.addEventListener('click',()=>{mode=b.dataset.mode;variant=1;const dock=document.querySelector('.dock'),next=Array.from(document.querySelectorAll('.mode')).indexOf(b),prev=Number(dock.style.getPropertyValue('--active-index'))||0;if(next!==prev)dock.dataset.dir=next>prev?'next':'prev';dock.style.setProperty('--active-index',String(next));syncVariants();$$('.mode').forEach(x=>{x.classList.toggle('active',x===b);x.setAttribute('aria-pressed',String(x===b));});const t=copy[mode];$('#number').textContent=t[0];$('#title').innerHTML=t[1]+'<br><em>'+t[2]+'</em>';$('#description').innerHTML=t[3];if(!variantHints[mode])$('#hint').textContent=t[4];document.body.classList.remove('playing');reset();if(mode==='ribbon'){const c=center();trails.set('demo',Array.from({length:36},(_,i)=>({x:c.x+Math.sin(i*.16)*c.r,y:c.y+(i-18)*5,vx:0,vy:0})));}draw();}));
 $$('[data-palette]').forEach(b=>b.addEventListener('click',()=>{palette=b.dataset.palette;window.MungSpace.palette(palette);$$('[data-palette]').forEach(x=>{x.classList.toggle('selected',x===b);x.setAttribute('aria-pressed',String(x===b));});}));
 $('#speed').addEventListener('input',e=>{speed=Number(e.target.value);$('#speed-value').textContent=speed.toFixed(2).replace(/0$/,'')+'×';});
 $('#power').addEventListener('input',e=>{power=Number(e.target.value);$('#power-value').textContent=power.toFixed(2).replace(/0$/,'')+'×';});
 $('#volume').addEventListener('input',e=>{volume=Number(e.target.value)/100;$('#volume-value').textContent=e.target.value+'%';if(master)master.gain.setTargetAtTime(volume*.65,audio.currentTime,.05);});
-$('#sound').addEventListener('click',async()=>{try{if(!audio){const AC=window.AudioContext||window.webkitAudioContext;if(!AC)throw Error();audio=new AC();master=audio.createGain();master.gain.value=volume*.65;master.connect(audio.destination);}sound=!sound;if(sound&&!paused)await audio.resume();else await audio.suspend();$('#sound').setAttribute('aria-pressed',String(sound));$('#sound').setAttribute('aria-label',sound?'소리 끄기':'소리 켜기');$('#sound span').textContent=sound?'소리 켜짐':'소리 꺼짐';tone();}catch{sound=false;$('#sound').setAttribute('aria-pressed','false');$('#sound span').textContent='소리 사용 불가';notice('이 환경에서는 소리를 사용할 수 없어요.');}});
+$('#sound').addEventListener('click',async()=>{try{if(!audio){const AC=window.AudioContext||window.webkitAudioContext;if(!AC)throw Error();audio=new AC();master=audio.createGain();master.gain.value=volume*.65;master.connect(audio.destination);}sound=!sound;if(sound&&!paused)await audio.resume();else await audio.suspend();$('#sound').setAttribute('aria-pressed',String(sound));$('#sound').setAttribute('aria-label',sound?'소리 끄기':'소리 켜기');$('#sound span').textContent=sound?'소리 켜짐':'소리 꺼짐';syncAmbience();tone();}catch{sound=false;$('#sound').setAttribute('aria-pressed','false');$('#sound span').textContent='소리 사용 불가';notice('이 환경에서는 소리를 사용할 수 없어요.');}});
 $('#auto').addEventListener('click',()=>{if(reduce){notice('동작 줄이기 설정에서는 자동놀이를 쉬어요.');return;}auto=!auto;$('#auto').setAttribute('aria-pressed',String(auto));$('#auto span').textContent=auto?'ON':'OFF';if(!auto)trails.delete('auto');});
 $('#pause').addEventListener('click',()=>{paused=!paused;magnetAssist=null;keyPoint=null;window.MungSettings.cancelHaptics();pointers.clear();$('#pause').setAttribute('aria-pressed',String(paused));$('#pause .label').textContent=paused?'재생':'일시정지';if(paused&&raf){cancelAnimationFrame(raf);raf=0;}syncAudio();start();});
 $('#clear').addEventListener('click',()=>{reset();draw();notice('새롭게, 다시.');});
 function immerse(on){document.body.classList.toggle('immersed',on);$('#immersive').setAttribute('aria-pressed',String(on));$('#exit-immersive').hidden=!on;if(on)$('#exit-immersive').focus();else $('#immersive').focus();}
 $('#immersive').addEventListener('click',()=>immerse(true));$('#exit-immersive').addEventListener('click',()=>immerse(false));document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.body.classList.contains('immersed'))immerse(false);});
 document.addEventListener('visibilitychange',()=>{magnetAssist=null;keyPoint=null;window.MungSettings.cancelHaptics();pointers.clear();if(document.hidden&&raf){cancelAnimationFrame(raf);raf=0;}syncAudio();start();});
-function syncVariants(){window.MungSettings.mode(mode);if(mode==='ribbon')$('#hint').textContent=['한 장의 실크 · 넓고 매끈하게 따라와요.','오로라 커튼 · 넓게 퍼지고 느긋하게 흘러요.','네온 꼬임 · 두 가닥이 교차하며 감겨요.'][variant];$('#fill-bubbles').hidden=mode!=='bubble';$('#magnet-status').hidden=mode!=='magnet';$('#special .label').textContent={jelly:'탱글 튀기기',ripple:'큰 물결',stardust:'별 폭발',bubble:'하나씩 모두 터뜨리기',magnet:'중심 응축 / 놓기',ribbon:'리본 펼치기'}[mode];if(mode==='bubble')syncBubbleAction();const row=$('#variants');row.replaceChildren();const names=variants[mode];row.hidden=!names;if(!names)return;row.style.setProperty('--vi',String(variant));row.style.setProperty('--vn',String(names.length));names.forEach((name,i)=>{const b=document.createElement('button');b.textContent=name;b.setAttribute('aria-pressed',String(i===variant));b.addEventListener('click',()=>{variant=i;syncVariants();draw();});row.appendChild(b);});}
+function onVariant(){if(mode==='bubble')fillBubbles();if(mode==='ripple'){drops=[];skips=[];}for(const p of inputs()){p.held=0;p.stable=0;p.ready=false;}}
+function syncVariants(){window.MungSettings.mode(mode);if(variantHints[mode])$('#hint').textContent=variantHints[mode][variant];$('#fill-bubbles').hidden=mode!=='bubble';$('#magnet-status').hidden=mode!=='magnet';$('#special .label').textContent={jelly:'탱글 튀기기',ripple:'큰 물결',stardust:'별 폭발',bubble:'하나씩 모두 터뜨리기',magnet:'중심 응축 / 놓기',ribbon:'리본 펼치기'}[mode];if(mode==='bubble')syncBubbleAction();const row=$('#variants');row.replaceChildren();const names=variants[mode];row.hidden=!names;if(!names)return;row.style.setProperty('--vi',String(variant));row.style.setProperty('--vn',String(names.length));names.forEach((name,i)=>{const b=document.createElement('button');b.textContent=name;b.setAttribute('aria-pressed',String(i===variant));b.addEventListener('click',()=>{const changed=variant!==i;variant=i;syncVariants();if(changed)onVariant();draw();});row.appendChild(b);});}
 $('#special').addEventListener('click',()=>{if(paused){notice('재생을 누르면 다시 움직여요.');return;}const c=center();if(mode==='magnet'){if(magnetAssist){releaseMagnet(magnetAssist);magnetAssist=null;}else{pointers.clear();magnetAssist=beginMagnet();}return;}if(mode==='stardust')explode({x:c.x,y:c.y,charge:1});else if(mode==='jelly')jelly.forEach(p=>{p.vx+=Math.cos(p.a)*(reduce?3:12);p.vy+=Math.sin(p.a)*(reduce?3:12);});else if(mode==='ripple'){wave(c.x,c.y,1.5);}else if(mode==='bubble'){popAllBubbles();}else{trails.clear();for(let k=0;k<3;k++)trails.set('show'+k,Array.from({length:52},(_,i)=>({x:c.x+Math.sin(i*.14+k*2)*c.r,y:c.y+Math.cos(i*.12+k*2)*c.r,vx:0,vy:0})));}engaged();tone();});
 $('#star-density').addEventListener('input',e=>window.MungSpace.set('starDensity',Number(e.target.value)));
 $('#space-glow').addEventListener('input',e=>window.MungSpace.set('spaceGlow',Number(e.target.value)));
 $('#twinkle').addEventListener('click',()=>window.MungSpace.set('twinkle',!world.twinkle));
 window.MungSpace.connect(key=>{
- space=world.scene;spaceGlow=world.spaceGlow/100;twinkle=world.twinkle;material=[window.MungSpace.hsl(world.main),window.MungSpace.hsl(world.second)];
+ space=world.scene;spaceGlow=world.spaceGlow/100;twinkle=world.twinkle;baseMaterial=null;applyHue();if(amb&&['main','colors','restore'].includes(key))syncAmbience();
  if(starDensity!==world.starDensity){starDensity=world.starDensity;makeStars();}
  if(['main','second','colors','restore'].includes(key)){[rings,sparks,bubbles,dust].forEach(items=>items.forEach(p=>p.hue=hue()));}
  if(['scene','sky','fog','vignette','spaceGlow','colors','restore'].includes(key)){skyDirty=true;if(paused)previousSky=null;}
  if(!world.meteors)meteors=[];draw();
 });
 $('#fill-bubbles').addEventListener('click',()=>{fillBubbles();draw();engaged();});
-window.MungSettings.connect(key=>{if(key==='magnetAmount'){makeDust();for(const p of inputs()){p.held=0;p.stable=0;p.ready=false;p.ratio=0;}}if(key==='bubbleSize'||key==='bubbleDensity'){if(mode==='bubble')fillBubbles();}if(key==='ribbonLength')trails.clear();if(key==='reset'){reset();notice('세부 설정을 기본값으로 돌렸어요.');}if(key==='magnetHold'||key==='magnetRadius'||key==='magnetSwirl'){for(const p of inputs()){p.held=0;p.stable=0;p.ready=false;}}draw();});
+window.MungSettings.connect(key=>{if(key==='magnetAmount'){makeDust();for(const p of inputs()){p.held=0;p.stable=0;p.ready=false;p.ratio=0;}}if(key==='bubbleSize'||key==='bubbleDensity'){if(mode==='bubble')fillBubbles();}if(key==='ribbonLength')trails.clear();if(key==='floaters'&&mode==='ripple')makeFloaters();if(key==='reset'){reset();notice('세부 설정을 기본값으로 돌렸어요.');}if(key==='magnetHold'||key==='magnetRadius'||key==='magnetSwirl'){for(const p of inputs()){p.held=0;p.stable=0;p.ready=false;}}draw();});
+window.MungExtra.connect(key=>{if(key==='quality')applyQuality();if(key==='hueFlow'){if(!extra.hueFlow){hueShift=0;window.MungSpace.set('main',world.main);}applyHue();}if(key==='soundStyle')tone();if(key==='ambience'||key==='ambienceLevel')syncAmbience();if(key==='fps'){fpsAt=0;$('#fps').textContent='— fps';}draw();});
+window.MungEngine={notice,chime,restDone};
 syncVariants();
 addEventListener('blur',()=>{pointers.clear();keyPoint=null;magnetAssist=null;window.MungSettings.cancelHaptics();});
 addEventListener('resize',()=>{resize();draw();});resize();start();
@@ -895,17 +1201,17 @@ addEventListener('resize',()=>{resize();draw();});resize();start();
 (() => {
   'use strict';
   // Selection groups support pressing and sliding; action buttons keep normal click behavior.
-  const groups='.dock, #variants, .settings-tabs, .option-segments, .presets, .scene-grid, .swatches';
-  const choices='.mode, #variants button, [data-settings-tab], .option-segments button, [data-preset], [data-scene], [data-palette]';
+  const groups='.dock, #variants, .settings-tabs, .option-segments, .presets, .scene-grid, .swatches, .glass-presets';
+  const choices='.mode, #variants button, [data-settings-tab], .option-segments button, [data-preset], [data-scene], [data-palette], [data-glass-preset]';
   let drag=null,suppress=null;
   function pick(button){
     if(!drag||!button||button.disabled||!button.matches(choices)||button.closest(groups)!==drag.group)return;
-    const key=button.dataset.mode||button.dataset.settingsTab||button.dataset.scene||button.dataset.palette||button.dataset.preset||button.textContent;
+    const key=button.dataset.mode||button.dataset.settingsTab||button.dataset.scene||button.dataset.palette||button.dataset.preset||button.dataset.glassPreset||button.textContent;
     if(key===drag.key)return;
     drag.button?.classList.remove('scrubbing');drag.key=key;drag.button=button;
     button.click();
     // Variants may rebuild their buttons; highlight the replacement by its stable label.
-    const current=[...drag.group.querySelectorAll('button')].find(b=>(b.dataset.mode||b.dataset.settingsTab||b.dataset.scene||b.dataset.palette||b.dataset.preset||b.textContent)===key);
+    const current=[...drag.group.querySelectorAll('button')].find(b=>(b.dataset.mode||b.dataset.settingsTab||b.dataset.scene||b.dataset.palette||b.dataset.preset||b.dataset.glassPreset||b.textContent)===key);
     drag.button=current||button;drag.button.classList.add('scrubbing');window.MungSettings.pulse(.25,'tap');
   }
   document.addEventListener('pointerdown',e=>{
@@ -950,8 +1256,11 @@ addEventListener('resize',()=>{resize();draw();});resize();start();
   // Tapping outside the phone sheet closes it.
   document.querySelector('#scrim').addEventListener('click',()=>document.querySelector('#settings-close').click());
   // Re-run the intro entrance whenever the play mode changes.
-  const intro=document.querySelector('.intro');
-  document.querySelectorAll('.mode').forEach(b=>b.addEventListener('click',()=>{intro.classList.remove('swap');void intro.offsetWidth;intro.classList.add('swap');}));
+  const intro=document.querySelector('.intro'),title=document.querySelector('#title');
+  // Split the plain part of the title into letters so they can land one after another.
+  function splitTitle(){let i=0;for(const node of [...title.childNodes]){if(node.nodeType!==3)continue;const frag=document.createDocumentFragment();for(const ch of node.textContent){if(ch===' '){frag.append(' ');continue;}const span=document.createElement('span');span.className='ch';span.style.setProperty('--i',String(i++));span.textContent=ch;frag.append(span);}node.replaceWith(frag);}title.style.setProperty('--n',String(i));}
+  document.querySelectorAll('.mode').forEach(b=>b.addEventListener('click',()=>{intro.classList.remove('swap');splitTitle();void intro.offsetWidth;intro.classList.add('swap');}));
+  const panel=document.querySelector('#settings-panel');document.querySelector('.panel-scroll').addEventListener('scroll',e=>panel.classList.toggle('scrolled',e.target.scrollTop>4),{passive:true});
 })();
 
 </script></body></html>
