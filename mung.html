@@ -410,9 +410,9 @@ document.documentElement.style.setProperty('--mung-dream-image','url(\"'+window.
 <h3>유리 스타일</h3><div class="glass-presets" role="group" aria-label="유리 스타일"><button data-glass-preset="clear" aria-pressed="false"><i class="gp-swatch clear"></i><span>클리어</span></button><button data-glass-preset="frost" aria-pressed="false"><i class="gp-swatch frost"></i><span>프로스트</span></button><button data-glass-preset="tint" aria-pressed="false"><i class="gp-swatch tint"></i><span>틴트</span></button><button data-glass-preset="midnight" aria-pressed="false"><i class="gp-swatch midnight"></i><span>미드나잇</span></button></div>
 <h3>손끝의 반응</h3><div id="feel-controls" class="control-group"></div>
 <button id="test-haptic" class="wide">진동 패턴 느껴보기</button><p id="haptic-status" class="help" role="status"></p><p class="help">진동은 지원되는 기기에서만 작동해요. 기기의 ‘동작 줄이기’를 사용하면 강한 움직임과 화면 반동을 줄여요.</p>
-<h3>화질과 성능</h3><div class="control-group"><div class="setting-row"><label>화질 <output id="quality-value">고화질</output></label><div class="option-segments three" role="group" aria-label="화질"><button data-extra="quality" data-value="0" aria-pressed="false">절전</button><button data-extra="quality" data-value="1" aria-pressed="false">균형</button><button data-extra="quality" data-value="2" aria-pressed="false">고화질</button></div></div></div>
+<h3>화질과 성능</h3><div class="control-group"><div class="setting-row"><label>화질 <output id="quality-value">자동</output></label><div class="option-segments" role="group" aria-label="화질"><button data-extra="quality" data-value="3" aria-pressed="false">자동</button><button data-extra="quality" data-value="0" aria-pressed="false">절전</button><button data-extra="quality" data-value="1" aria-pressed="false">균형</button><button data-extra="quality" data-value="2" aria-pressed="false">고화질</button></div></div></div>
 <button id="fps-toggle" class="wide switch-row" role="switch" aria-checked="false" aria-pressed="false">프레임 표시 <span>OFF</span></button>
-<p class="help">끊김이 느껴지면 ‘균형’이나 ‘절전’을 골라 보세요. 선명도를 조금 낮추는 대신 더 부드럽게 움직여요.</p>
+<p class="help">‘자동’은 평소엔 고화질로 두고, 프레임이 떨어질 때만 유리 굴절 갱신과 선명도를 한 단계씩 낮췄다가 여유가 생기면 되돌려요. 프레임 표시를 켜면 지금 배율(×)도 보여요.</p>
 <h3>처음으로</h3><button id="factory-reset" class="wide">모든 설정 처음으로 <span class="hint-text">두 번 눌러 확인</span></button>
 </section>
 <section id="panel-calm" role="tabpanel" aria-labelledby="tab-calm" hidden>
@@ -547,15 +547,15 @@ controls();sync();
 (() => {
 'use strict';
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
-const defaults={soundStyle:0,ambience:false,ambienceLevel:50,breath:0,hueFlow:0,quality:2,fps:false,wakeLock:false};
-const limits={soundStyle:3,breath:3,hueFlow:3,quality:2,ambienceLevel:100};
-const labels={soundStyle:['맑게','오르골','부드럽게','로파이'],hueFlow:['멈춤','느리게','보통','빠르게'],quality:['절전','균형','고화질']};
-let stored={};try{stored=JSON.parse(localStorage.getItem('mung-extra-v1')||'{}')||{};}catch{}
+const defaults={soundStyle:0,ambience:false,ambienceLevel:50,breath:0,hueFlow:0,quality:3,fps:false,wakeLock:false};
+const limits={soundStyle:3,breath:3,hueFlow:3,quality:3,ambienceLevel:100};
+const labels={soundStyle:['맑게','오르골','부드럽게','로파이'],hueFlow:['멈춤','느리게','보통','빠르게'],quality:['절전','균형','고화질','자동']};
+let stored={};try{stored=JSON.parse(localStorage.getItem('mung-extra-v2')||'null')||(()=>{const old=JSON.parse(localStorage.getItem('mung-extra-v1')||'{}')||{};if(old.quality===2)old.quality=3;return old;})();}catch{}
 const values={...defaults,restTimer:0};
 for(const [k,d] of Object.entries(defaults)){const v=stored[k];if(typeof d==='boolean'&&typeof v==='boolean')values[k]=v;else if(typeof d==='number'&&Number.isFinite(v))values[k]=Math.max(0,Math.min(limits[k],Math.round(v)));}
 let notify=()=>{};
 const notice=t=>window.MungEngine?.notice(t);
-function persist(){try{const {restTimer,...keep}=values;localStorage.setItem('mung-extra-v1',JSON.stringify(keep));}catch{}}
+function persist(){try{const {restTimer,...keep}=values;localStorage.setItem('mung-extra-v2',JSON.stringify(keep));}catch{}}
 function setSwitch(el,on){el.setAttribute('aria-pressed',String(on));el.setAttribute('aria-checked',String(on));const t=el.querySelector('span');if(t)t.textContent=on?'ON':'OFF';}
 function sync(){
  $$('[data-extra]').forEach(b=>b.setAttribute('aria-pressed',String(values[b.dataset.extra]===Number(b.dataset.value))));
@@ -634,7 +634,7 @@ $$('[data-glass-preset]').forEach(b=>b.addEventListener('click',()=>{const g=gla
 const reset=$('#factory-reset');let armed=0;
 reset.addEventListener('click',()=>{
  if(!armed){reset.classList.add('armed');reset.firstChild.textContent='한 번 더 누르면 초기화 ';armed=setTimeout(()=>{armed=0;reset.classList.remove('armed');reset.firstChild.textContent='모든 설정 처음으로 ';},3000);return;}
- clearTimeout(armed);for(const k of ['mung-feel-v6','mung-space-v8','mung-extra-v1'])try{localStorage.removeItem(k);}catch{}location.reload();
+ clearTimeout(armed);for(const k of ['mung-feel-v6','mung-space-v8','mung-extra-v1','mung-extra-v2'])try{localStorage.removeItem(k);}catch{}location.reload();
 });
 
 window.MungExtra={values,connect:fn=>{notify=fn;}};
@@ -649,7 +649,7 @@ const surfaces=[...document.querySelectorAll('[data-glass]')].map(element=>{cons
 let frame=0;
 function render(source,dpr){
  // Copying the play canvas waits for its raster, so the lens refreshes every other frame, as the original did.
- if(++frame%((window.MungExtra?.values.quality??2)===0?3:2))return;const amount=window.MungSettings.values.refraction??.65;if(!amount||document.body.classList.contains('immersed'))return;
+ if(++frame%(window.MungLensEvery||2))return;const amount=window.MungSettings.values.refraction??.65;if(!amount||document.body.classList.contains('immersed'))return;
  for(const item of surfaces){const {element,canvas,ctx}=item;if(element.hidden)continue;const r=element.getBoundingClientRect();if(r.width<1||r.height<1||r.bottom<0||r.top>innerHeight)continue;
  const scale=Math.min(devicePixelRatio||1,1.25),cw=Math.round(r.width*scale),ch=Math.round(r.height*scale);if(canvas.width!==cw||canvas.height!==ch){canvas.width=cw;canvas.height=ch;}ctx.clearRect(0,0,cw,ch);
  const zoom=1+.05*amount,sw=r.width/zoom,sh=r.height/zoom,sx=r.left+(r.width-sw)/2,sy=r.top+(r.height-sh)/2;
@@ -849,7 +849,7 @@ window.MungGlass={render};
 (() => {
 'use strict';
 const $=s=>document.querySelector(s), $$=s=>document.querySelectorAll(s);
-const canvas=$('#play'),ctx=canvas.getContext('2d'), reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const canvas=$('#play'),ctx=canvas.getContext('2d',{alpha:false}), reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
 const tune=window.MungSettings.values,world=window.MungSpace.values;
 let material=[window.MungSpace.hsl(world.main),window.MungSpace.hsl(world.second)],previousSky=null,skyBlend=1,skyDirty=false,hazeLayer=null,vignetteLayer=null,meteors=[];
 const camera={x:0,y:0,tx:0,ty:0};
@@ -872,17 +872,26 @@ const rand=(a,b)=>a+Math.random()*(b-a), clamp=(v,a,b)=>Math.min(b,Math.max(a,v)
 // rates scale by H, per-frame decay factors d become d^H, per-frame easing k becomes 1-(1-k)^H.
 const TICK_HZ=120,STEP_MS=1000/TICK_HZ,H=60/TICK_HZ,powCache=new Map();
 const damp=d=>{let v=powCache.get(d);if(v===undefined){v=Math.pow(d,H);powCache.set(d,v);}return v;},ease=k=>1-damp(1-k);
-const col=(h,a,l=70)=>{const distance=c=>Math.abs(((h-c[0]+540)%360)-180),m=distance(material[1])<distance(material[0])?material[1]:material[0];return `hsla(${h},${m[1]}%,${clamp(l+(m[2]-65)*.6,3,98)}%,${clamp(a,0,1)})`;};
+// Colour strings are cached per material; hue and lightness round to whole numbers, alpha to 1/400.
+const colCache=new Map();let colFor=null;
+const col=(h,a,l=70)=>{if(colFor!==material){colFor=material;colCache.clear();}const hi=Math.round(h),aq=Math.round(clamp(a,0,1)*400),li=Math.round(l),key=(hi+2000)*1e6+aq*1e3+li;let v=colCache.get(key);if(v===undefined){const distance=c=>Math.abs(((hi-c[0]+540)%360)-180),m=distance(material[1])<distance(material[0])?material[1]:material[0];v=`hsla(${hi},${m[1]}%,${clamp(li+(m[2]-65)*.6,3,98)}%,${aq/400})`;if(colCache.size>30000)colCache.clear();colCache.set(key,v);}return v;};
 const hue=()=>material[0][0]+rand(-12,12);
 const skyCol=(h,a,l=65,s=65)=>`hsla(${h},${s}%,${l}%,${clamp(a,0,1)})`;
 function sensoryFrame(){return {mode,variant,w,h,sim,reduce,tune,power,col,base:material[0][0],second:material[1][0],inputs:inputs(),rings,sparks,jelly,dust};}
 function center(){return {x:w*.5,y:h*(w<700?.46:.47),r:Math.min(w*.22,h*.2,152)*(mode==='jelly'?tune.jellySize:1)};}
-const dprCap=()=>[1,1.5,2][extra.quality]??2;
-function applyQuality(){dpr=Math.min(devicePixelRatio||1,dprCap());canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);}
+// Auto quality steps down only while frames fall short of the display, and steps back up when smooth.
+const autoLevels=[[2,2],[2,4],[1.6,4],[1.35,6]];let autoLevel=0,autoAt=0,autoFrames=0,peakFps=60,smoothSince=0,holdUntil=0,lastUpAt=-1e9;
+const dprCap=()=>extra.quality===3?autoLevels[autoLevel][0]:[1,1.5,2][extra.quality]??2;
+function autoTune(now){if(extra.quality!==3)return;autoFrames++;if(!autoAt){autoAt=now;autoFrames=0;return;}const span=now-autoAt;if(span<1200)return;const fps=autoFrames*1000/span;autoAt=now;autoFrames=0;
+ peakFps=Math.max(peakFps,Math.min(125,fps));const target=peakFps>90?120:60;
+ if(fps<target*.75&&autoLevel<autoLevels.length-1){if(now-lastUpAt<6000)holdUntil=now+30000;autoLevel++;smoothSince=0;applyQuality();}
+ else if(fps>=target*.9&&autoLevel>0&&now>holdUntil){smoothSince||=now;if(now-smoothSince>3000){autoLevel--;smoothSince=0;lastUpAt=now;applyQuality();}}
+ else smoothSince=0;}
+function applyQuality(){window.MungLensEvery=extra.quality===3?autoLevels[autoLevel][1]:extra.quality===0?3:2;dpr=Math.min(devicePixelRatio||1,dprCap());canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);}
 function hslRgb(h,s,l){s/=100;l/=100;const a=s*Math.min(l,1-l),f=n=>{const k=(n+h/30)%12;return Math.round(255*(l-a*Math.max(-1,Math.min(k-3,9-k,1))));};return [f(0),f(8),f(4)];}
 // Colour flow rotates both play hues and the UI accent together.
 function applyHue(){baseMaterial??=[window.MungSpace.hsl(world.main),window.MungSpace.hsl(world.second)];material=baseMaterial.map(m=>[(m[0]+hueShift)%360,m[1],m[2]]);if(hueShift){const [r,g,b]=hslRgb(...material[0]),root=document.documentElement.style;root.setProperty('--accent-rgb',r+','+g+','+b);root.setProperty('--accent',`rgb(${r},${g},${b})`);}}
-function resize(){w=innerWidth;h=innerHeight;dpr=Math.min(devicePixelRatio||1,dprCap());canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);makeStars();makeSky();reset();}
+function resize(){w=innerWidth;h=innerHeight;window.MungLensEvery=extra.quality===3?autoLevels[autoLevel][1]:extra.quality===0?3:2;dpr=Math.min(devicePixelRatio||1,dprCap());canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);makeStars();makeSky();reset();}
 function makeStars(){stars=Array.from({length:Math.round(starDensity*3)},()=>({x:rand(0,w),y:rand(0,h),r:rand(.4,1.65),phase:rand(0,7),depth:rand(.3,1)}));}
 function makeSky(){
  previousSky=skyLayer;skyBlend=previousSky&&!reduce&&!paused?0:1;skyDirty=false;
@@ -894,16 +903,25 @@ function makeSky(){
  for(let i=0;i<4;i++){const x=sw*(i%2?.85:.1),y=sh*(.2+i*.19),r=Math.max(sw,sh)*(.35+i*.03),g=hz.createRadialGradient(x,y,0,x,y,r);g.addColorStop(0,skyCol(tint+i*24,world.fog*(space==='void'?.012:.1),60,sat));g.addColorStop(.5,skyCol(tint+i*24,world.fog*.035,48,sat));g.addColorStop(1,skyCol(tint,0));hz.fillStyle=g;hz.fillRect(0,0,sw,sh);}
  vignetteLayer=document.createElement('canvas');vignetteLayer.width=sw;vignetteLayer.height=sh;const v=vignetteLayer.getContext('2d'),vg=v.createRadialGradient(sw*.5,sh*.46,Math.min(sw,sh)*.2,sw*.5,sh*.5,Math.max(sw,sh)*.72);vg.addColorStop(0,'rgba(1,5,13,0)');vg.addColorStop(1,'rgba(1,5,13,'+world.vignette*.85+')');v.fillStyle=vg;v.fillRect(0,0,sw,sh);
 }
-function drawSpace(){
- if(skyDirty)makeSky();const motion=reduce?0:world.drift,dx=Math.sin(sim*.0013*motion)*w*.012+camera.x*world.depth,dy=Math.cos(sim*.001*motion)*h*.008+camera.y*world.depth;
+function paintSpace(ctx){
+ ctx.setTransform(dpr,0,0,dpr,0,0);ctx.fillStyle='#050a15';ctx.fillRect(0,0,w,h);const motion=reduce?0:world.drift,dx=Math.sin(sim*.0013*motion)*w*.012+camera.x*world.depth,dy=Math.cos(sim*.001*motion)*h*.008+camera.y*world.depth;
  if(previousSky&&skyBlend<1)ctx.drawImage(previousSky,-w*.03+dx,-h*.03+dy,w*1.06,h*1.06);
  if(skyLayer){ctx.globalAlpha=skyBlend;ctx.drawImage(skyLayer,-w*.03+dx,-h*.03+dy,w*1.06,h*1.06);ctx.globalAlpha=1;}
  if(hazeLayer)ctx.drawImage(hazeLayer,-w*.08-dx*2,-h*.08+dy*2,w*1.16,h*1.16);
  const skyHue=window.MungSpace.hsl(world.sky)[0];
  for(const s of stars){const al=reduce||!twinkle?.5:.35+Math.sin(sim*.009*s.depth+s.phase)*.22,x=((s.x+camera.x*s.depth*3*world.depth+sim*.004*motion*s.depth)%w+w)%w,y=((s.y+camera.y*s.depth*3*world.depth)%h+h)%h,r=s.r*world.starlight;ctx.fillStyle=skyCol(skyHue+s.phase*6,al,91,25);ctx.beginPath();ctx.arc(x,y,r,0,7);ctx.fill();if(s.r>1.45){ctx.strokeStyle=skyCol(skyHue,al*.25,90,25);ctx.lineWidth=.6;ctx.beginPath();ctx.moveTo(x-r*3,y);ctx.lineTo(x+r*3,y);ctx.moveTo(x,y-r*3);ctx.lineTo(x,y+r*3);ctx.stroke();}}
  for(let i=0;i<Math.round(world.particles*.7);i++){const t=i*2.39996,x=((i*93.71+sim*.055*motion*(i%3+1))%w+w)%w,y=((i*71.3+Math.sin(sim*.002*motion+t)*26)%h+h)%h,al=.03+(reduce?.02:(Math.sin(sim*.018+t)+1)*.03);ctx.fillStyle=skyCol(skyHue+30,al,85,30);ctx.beginPath();ctx.arc(x,y,2+i%3,0,7);ctx.fill();}
- if(world.meteors&&!reduce)for(const m of meteors){const tail=ctx.createLinearGradient(m.x,m.y,m.x-m.vx*18,m.y-m.vy*18);tail.addColorStop(0,skyCol(skyHue,m.life*.75,95,20));tail.addColorStop(1,skyCol(skyHue,0));ctx.strokeStyle=tail;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(m.x,m.y);ctx.lineTo(m.x-m.vx*18,m.y-m.vy*18);ctx.stroke();}
  if(vignetteLayer)ctx.drawImage(vignetteLayer,0,0,w,h);
+}
+// The sky, haze, stars and vignette drift slowly, so they are painted into their own
+// layer at most 30 times a second and pasted with one draw per frame.
+let spaceLayer=null,spaceCtx=null,spaceAt=-1e9;
+function drawSpace(){
+ if(skyDirty)makeSky();
+ if(!spaceLayer||spaceLayer.width!==canvas.width||spaceLayer.height!==canvas.height){spaceLayer=document.createElement('canvas');spaceLayer.width=canvas.width;spaceLayer.height=canvas.height;spaceCtx=spaceLayer.getContext('2d',{alpha:false});spaceAt=-1e9;}
+ const now=performance.now();if(paused||skyBlend<1||now-spaceAt>=33){spaceAt=now;paintSpace(spaceCtx);}
+ ctx.drawImage(spaceLayer,0,0,w,h);const motion=reduce?0:world.drift,skyHue=window.MungSpace.hsl(world.sky)[0];
+ if(world.meteors&&!reduce)for(const m of meteors){const tail=ctx.createLinearGradient(m.x,m.y,m.x-m.vx*18,m.y-m.vy*18);tail.addColorStop(0,skyCol(skyHue,m.life*.75,95,20));tail.addColorStop(1,skyCol(skyHue,0));ctx.strokeStyle=tail;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(m.x,m.y);ctx.lineTo(m.x-m.vx*18,m.y-m.vy*18);ctx.stroke();}
 }
 
 function segmentHit(x,y,a,b){const dx=b.x-a.x,dy=b.y-a.y,u=clamp(((x-a.x)*dx+(y-a.y)*dy)/(dx*dx+dy*dy||1),0,1);return Math.hypot(x-a.x-dx*u,y-a.y-dy*u);}
@@ -1069,10 +1087,10 @@ function drawCandy(b){const r=b.r,body=ctx.createRadialGradient(-r*.3,-r*.35,r*.
  ctx.strokeStyle=col(b.hue+30,.1,95);ctx.lineWidth=r*.2;ctx.stroke();ctx.strokeStyle=col(b.hue,.16,97);ctx.lineWidth=r*.08;ctx.stroke();
  ctx.save();ctx.clip();for(let i=0;i<7;i++){const a=i*2.4+(b.phase||0),d=r*(.2+(i%3)*.22);ctx.fillStyle='rgba(255,255,255,'+(.35+.3*Math.sin(sim*.05+i+(b.phase||0)))+')';ctx.beginPath();ctx.arc(Math.cos(a)*d,Math.sin(a)*d,Math.max(.6,r*.03),0,7);ctx.fill();}ctx.restore();
  ctx.fillStyle='rgba(255,255,255,.42)';ctx.beginPath();ctx.ellipse(-r*.32,-r*.42,r*.3,r*.13,-.5,0,7);ctx.fill();}
-function draw(){ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,w,h);ctx.fillStyle='#050a15';ctx.fillRect(0,0,w,h);const c=center(),base=material[0][0],second=material[1][0];drawSpace();
+function draw(){ctx.setTransform(dpr,0,0,dpr,0,0);const c=center(),base=material[0][0],second=material[1][0];drawSpace();
 ctx.save();if(kick>.05&&!reduce)ctx.translate(Math.sin(sim*(kickStyle===1?1.3:2.8))*kick*(kickStyle===2?.35:1),Math.cos(sim*(kickStyle===2?4:2.1))*kick*.65);
 ctx.globalCompositeOperation='lighter';const sensory=sensoryFrame();if(mode==='ripple')window.MungSensory.water(ctx,sensory);
-for(const r of rings){const radius=r.r,al=r.life*clamp(radius/24,0,1);for(let layer=0;layer<3;layer++){ctx.beginPath();for(let i=0;i<=100;i++){const a=i/100*Math.PI*2,rr=radius+Math.sin(a*5+radius*.018+(r.phase||0))*Math.min(5,radius*.035)+Math.sin(a*9-radius*.025)*Math.min(2,radius*.015)+layer*3;const x=r.x+Math.cos(a)*rr,y=r.y+Math.sin(a)*rr*.72;if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);}ctx.lineWidth=layer===0?16:layer===1?2.2:.65;ctx.strokeStyle=col(r.hue+layer*22,al*(layer===0?.035:layer===1?.3:.65),layer===2?94:72);ctx.stroke();}
+for(const r of rings){const radius=r.r,al=r.life*clamp(radius/24,0,1);for(let layer=0;layer<3;layer++){ctx.beginPath();const seg=Math.max(40,Math.min(100,Math.round(radius/3)));for(let i=0;i<=seg;i++){const a=i/seg*Math.PI*2,rr=radius+Math.sin(a*5+radius*.018+(r.phase||0))*Math.min(5,radius*.035)+Math.sin(a*9-radius*.025)*Math.min(2,radius*.015)+layer*3;const x=r.x+Math.cos(a)*rr,y=r.y+Math.sin(a)*rr*.72;if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);}ctx.lineWidth=layer===0?16:layer===1?2.2:.65;ctx.strokeStyle=col(r.hue+layer*22,al*(layer===0?.035:layer===1?.3:.65),layer===2?94:72);ctx.stroke();}
  for(let i=0;i<3;i++){const a=radius*.004+i*2.1;ctx.beginPath();ctx.ellipse(r.x,r.y,Math.max(.1,radius-2),Math.max(.1,radius*.72-1),0,a,a+.45);ctx.lineWidth=1.2;ctx.strokeStyle=col(r.hue+50,al*.7,93);ctx.stroke();}
 }
 if(mode==='ripple'){for(const d of drops){const y0=d.y-d.fall*70;ctx.strokeStyle=col(base,.4*(1-d.fall*.4),92);ctx.lineWidth=1.1;ctx.beginPath();ctx.moveTo(d.x,y0-16);ctx.lineTo(d.x,y0);ctx.stroke();}
@@ -1108,10 +1126,10 @@ for(const p of sparks){
 // Big stars glint now and then with a screen-aligned cross flare.
 if(mode==='stardust'&&tune.twinkleGlint>0&&!reduce)for(const p of sparks){if(p.kind!=='stardust'||p.r<2.7||p.life<.4)continue;const gl=Math.pow(Math.sin(sim*.05+p.phase*4)*.5+.5,8)*tune.twinkleGlint*p.life;if(gl<.08)continue;const L=p.r*9*gl,L2=L*.45;ctx.strokeStyle=col(p.hue,gl*.9,97);ctx.lineWidth=.8;ctx.beginPath();ctx.moveTo(p.x-L,p.y);ctx.lineTo(p.x+L,p.y);ctx.moveTo(p.x,p.y-L);ctx.lineTo(p.x,p.y+L);ctx.stroke();ctx.lineWidth=.5;ctx.beginPath();ctx.moveTo(p.x-L2,p.y-L2);ctx.lineTo(p.x+L2,p.y+L2);ctx.moveTo(p.x+L2,p.y-L2);ctx.lineTo(p.x-L2,p.y+L2);ctx.stroke();}
 if(mode==='stardust'||mode==='magnet')for(const p of inputs()){const a=p.charge||0;for(let i=0;i<4;i++){ctx.fillStyle=col(base,a>i/4?.85:.16,90);ctx.beginPath();ctx.arc(p.x-9+i*6,p.y-25,1.4,0,7);ctx.fill();}const g=ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,45+a*45);g.addColorStop(0,col(base,.16+a*.12,85));g.addColorStop(1,col(base,0));ctx.fillStyle=g;ctx.beginPath();ctx.arc(p.x,p.y,45+a*45,0,7);ctx.fill();}
-const bv=mode==='bubble'?variant:1;
+const bv=mode==='bubble'?variant:1,bubbleInputs=bubbles.length?inputs():[];
 for(const b of bubbles){
  ctx.save();ctx.globalCompositeOperation='source-over';ctx.translate(b.x,b.y);const birth=b.birth??1;ctx.scale(b.squash*birth,birth/b.squash);
- const held=inputs().find(p=>p.bubble===b),pressAngle=held?Math.atan2(held.y-b.y,held.x-b.x):0;const phase=b.phase||0,amp=reduce?.01:(b.wobble||.03),points=[];
+ const held=bubbleInputs.find(p=>p.bubble===b),pressAngle=held?Math.atan2(held.y-b.y,held.x-b.x):0;const phase=b.phase||0,amp=reduce?.01:(b.wobble||.03),points=[];
  for(let i=0;i<16;i++){const a=i*Math.PI/8,dimple=held?Math.pow(Math.max(0,Math.cos(a-pressAngle)),8)*.18*(held.press||0):0,r=b.r*(1-dimple+Math.sin(a*3+phase+sim*(reduce?0:.028))*amp+Math.cos(a*2-phase)*amp*.45);points.push({x:Math.cos(a)*r,y:Math.sin(a)*r});}
  ctx.beginPath();ctx.moveTo((points[15].x+points[0].x)/2,(points[15].y+points[0].y)/2);
  for(let i=0;i<16;i++){const p=points[i],n=points[(i+1)%16];ctx.quadraticCurveTo(p.x,p.y,(p.x+n.x)/2,(p.y+n.y)/2);}ctx.closePath();
@@ -1163,10 +1181,10 @@ ctx.globalAlpha=1;window.MungSensory.details(ctx,sensory);ctx.globalCompositeOpe
 function loop(now){raf=0;if(document.hidden||paused){last=0;draw();return;}const elapsed=last?Math.min(now-last,100):STEP_MS;last=now;acc+=elapsed*speed;let count=0;
 // A small tolerance absorbs vsync jitter so a 120 Hz display gets exactly one tick per frame.
 // Slow frames catch up in ticks (down to 10 fps) instead of turning into slow motion.
-while(acc>=STEP_MS*.8&&count<12){step();acc-=STEP_MS;count++;}if(count){draw();fpsFrames++;}fpsTicks+=count;
-if(extra.fps&&now-fpsAt>=500){if(fpsAt&&now-fpsAt<2000)$('#fps').textContent=Math.round(fpsFrames*1000/(now-fpsAt))+' fps · '+Math.round(fpsTicks*1000/(now-fpsAt))+' Hz';fpsFrames=0;fpsTicks=0;fpsAt=now;}
+while(acc>=STEP_MS*.8&&count<12){step();acc-=STEP_MS;count++;}if(count){draw();fpsFrames++;autoTune(now);}fpsTicks+=count;
+if(extra.fps&&now-fpsAt>=500){if(fpsAt&&now-fpsAt<2000)$('#fps').textContent=Math.round(fpsFrames*1000/(now-fpsAt))+' fps · '+Math.round(fpsTicks*1000/(now-fpsAt))+' Hz · '+dpr.toFixed(2).replace(/0$/,'')+'×';fpsFrames=0;fpsTicks=0;fpsAt=now;}
 raf=requestAnimationFrame(loop);}
-function start(){last=0;acc=0;if(!raf&&!paused&&!document.hidden)raf=requestAnimationFrame(loop);else draw();}
+function start(){last=0;acc=0;autoAt=0;if(!raf&&!paused&&!document.hidden)raf=requestAnimationFrame(loop);else draw();}
 function syncAudio(){if(!audio)return;syncAmbience();if(paused||document.hidden||!sound)audio.suspend().catch(()=>{});else audio.resume().catch(()=>{});}
 $$('.mode').forEach(b=>b.addEventListener('click',()=>{mode=b.dataset.mode;variant=1;const dock=document.querySelector('.dock'),next=Array.from(document.querySelectorAll('.mode')).indexOf(b),prev=Number(dock.style.getPropertyValue('--active-index'))||0;if(next!==prev)dock.dataset.dir=next>prev?'next':'prev';dock.style.setProperty('--active-index',String(next));syncVariants();$$('.mode').forEach(x=>{x.classList.toggle('active',x===b);x.setAttribute('aria-pressed',String(x===b));});const t=copy[mode];$('#number').textContent=t[0];$('#title').innerHTML=t[1]+'<br><em>'+t[2]+'</em>';$('#description').innerHTML=t[3];if(!variantHints[mode])$('#hint').textContent=t[4];document.body.classList.remove('playing');reset();if(mode==='ribbon'){const c=center();trails.set('demo',Array.from({length:36},(_,i)=>({x:c.x+Math.sin(i*.16)*c.r,y:c.y+(i-18)*5,vx:0,vy:0})));}draw();}));
 $$('[data-palette]').forEach(b=>b.addEventListener('click',()=>{palette=b.dataset.palette;window.MungSpace.palette(palette);$$('[data-palette]').forEach(x=>{x.classList.toggle('selected',x===b);x.setAttribute('aria-pressed',String(x===b));});}));
@@ -1195,7 +1213,7 @@ window.MungSpace.connect(key=>{
 });
 $('#fill-bubbles').addEventListener('click',()=>{fillBubbles();draw();engaged();});
 window.MungSettings.connect(key=>{if(key==='magnetAmount'){makeDust();for(const p of inputs()){p.held=0;p.stable=0;p.ready=false;p.ratio=0;}}if(key==='bubbleSize'||key==='bubbleDensity'){if(mode==='bubble')fillBubbles();}if(key==='ribbonLength')trails.clear();if(key==='floaters'&&mode==='ripple')makeFloaters();if(key==='reset'){reset();notice('세부 설정을 기본값으로 돌렸어요.');}if(key==='magnetHold'||key==='magnetRadius'||key==='magnetSwirl'){for(const p of inputs()){p.held=0;p.stable=0;p.ready=false;}}draw();});
-window.MungExtra.connect(key=>{if(key==='quality')applyQuality();if(key==='hueFlow'){if(!extra.hueFlow){hueShift=0;window.MungSpace.set('main',world.main);}applyHue();}if(key==='soundStyle')tone();if(key==='ambience'||key==='ambienceLevel')syncAmbience();if(key==='fps'){fpsAt=0;$('#fps').textContent='— fps';}draw();});
+window.MungExtra.connect(key=>{if(key==='quality'){autoLevel=0;autoAt=0;holdUntil=0;applyQuality();}if(key==='hueFlow'){if(!extra.hueFlow){hueShift=0;window.MungSpace.set('main',world.main);}applyHue();}if(key==='soundStyle')tone();if(key==='ambience'||key==='ambienceLevel')syncAmbience();if(key==='fps'){fpsAt=0;$('#fps').textContent='— fps';}draw();});
 window.MungEngine={notice,chime,restDone};
 syncVariants();
 addEventListener('blur',()=>{pointers.clear();keyPoint=null;magnetAssist=null;window.MungSettings.cancelHaptics();});
