@@ -177,7 +177,7 @@
       const box = $('dialog'), tx = $('dlg-text'), nm = $('dlg-name'), cv = $('dlg-cv'), face = $('dlg-face');
       const info = who && who !== 'sys' ? whoInfo(who) : null;
       box.classList.toggle('narr', !who); box.classList.toggle('sys', who === 'sys');
-      box.classList.toggle('noface', !info || opt.noface);
+      box.classList.toggle('noface', !info || !!opt.noface);
       nm.textContent = info ? info.name : ''; nm.style.setProperty('--nm', info ? info.color : '');
       if (info) {
         const pc = G.portraits.portrait(info.id, info.emo);
@@ -229,13 +229,15 @@
       box.innerHTML = '';
       box.classList.toggle('center', !q);
       let sel = 0;
+      // 대사를 넘기던 손가락이 첫 선택지를 잘못 고르지 않도록 잠깐 확정을 막는다
+      const t0 = performance.now();
+      const early = () => performance.now() - t0 < 220;
       const items = options.map((o, i) => {
         const b = document.createElement('button');
         const off = typeof o === 'object' && o.off;
         b.className = 'ch' + (off ? ' off' : '');
         b.innerHTML = markup(typeof o === 'object' ? o.t : o);
-        b.addEventListener('click', () => pick(i));
-        b.addEventListener('pointerenter', () => { sel = i; draw(); });
+        b.addEventListener('click', () => { if (!early()) pick(i); });
         box.appendChild(b);
         return b;
       });
@@ -244,8 +246,8 @@
       box.hidden = false;
       const L = push({ name: 'ask', repeat: true,
         dir(d) { if (d === 'up') sel = (sel + items.length - 1) % items.length; if (d === 'down') sel = (sel + 1) % items.length; G.audio && G.audio.sfx('move'); draw(); },
-        a() { pick(sel); }, lv() { pick(sel); },
-        b() { if (opt.cancel != null) pick(opt.cancel); } });
+        a() { if (!early()) pick(sel); }, lv() { if (!early()) pick(sel); },
+        b() { if (opt.cancel != null && !early()) pick(opt.cancel); } });
       function pick(i) { const o = options[i]; if (typeof o === 'object' && o.off) { G.audio && G.audio.sfx('buzz'); return; } pop(L); box.hidden = true; hideDialog(); G.audio && G.audio.sfx('select'); res(i); }
     }));
   }
@@ -443,7 +445,14 @@
     if (act === 'preset') { s.ratio = Object.assign({}, PRESETS[ds.k]); E.resetStats(s); s.auto = true; E.autoAlloc(s); toast('능력치를 다시 나눴다.'); }
     if (act === 'reset') { E.resetStats(s); s.auto = false; toast('능력치 포인트를 모두 돌려받았다.'); }
     if (act === 'use') { if (E.usePotion(s, ds.id)) { G.audio.sfx('heal'); toast(D.ITEMS[ds.id].name + '을(를) 썼다.', 'good'); } }
-    if (act === 'eat') { if (E.eat(s, ds.id)) { G.audio.sfx('heal'); toast(D.ITEMS[ds.id].name + ' 냠냠. ' + D.ITEMS[ds.id].desc.split('. ')[1], 'good'); } }
+    if (act === 'eat') {
+      const before = E.eating(s);
+      if (E.eat(s, ds.id)) {
+        G.audio.sfx('heal');
+        toast(D.ITEMS[ds.id].name + ' 냠냠. ' + D.ITEMS[ds.id].desc.split('. ').pop(), 'good');
+        if (before && before.id !== ds.id) toast('배가 불러서 ' + D.ITEMS[before.id].name + '의 효과는 사라졌다.');
+      }
+    }
     if (act === 'equip') { E.equip(s, ds.id); G.audio.sfx('equip'); }
     if (act === 'read') { G.audio.sfx('page'); readBook(ds.id); return; }
     if (act === 'set') { s.settings[ds.k] = !s.settings[ds.k]; G.audio.applySettings(); }

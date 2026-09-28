@@ -50,7 +50,7 @@
     warps: [{ x: 16, y: 2, to: 'deck', tx: 12, ty: 20, dir: 'up' }, { x: 3, y: 10, to: 'station_core', tx: 9, ty: 11, dir: 'up' }, { x: 30, y: 10, to: 'quarters', tx: 5, ty: 6, dir: 'up' }],
     objs: [
       W.sign(18, 22, ['궤도 관측 정거장 — 은빛 왕국 과학원', '← 중앙 관제실   → 승무원 숙소   ↑ 관측 갑판']),
-      W.spot(8, 14, 3), W.spot(24, 14, 3), W.spot(31, 26, 10, true), W.chest('st1', 4, 9, 'p10', 5), W.goldChest('st2', 29, 11, 900000000000000),
+      W.spot(8, 14, 3), W.spot(24, 14, 3), W.spot(31, 26, 10, true), W.chest('st1', 4, 9, 'p10', 5), W.goldChest('st2', 29, 11, 300000000000),
     ],
     mons: { list: ['guarddrone', 'spacejelly', 'voidshard', 'orbitspider', 'zeroslime', 'guarddrone'], n: 12, area: [2, 2, 30, 20] },
     enter: async (c) => {
@@ -115,7 +115,7 @@
       await c.say('stella:sad', ['…틀렸어. 기술자 둘. 틀렸어.', '가시 돋친 말투는… 400년 동안 연습한 거야. 누가 말을 걸면, 다시 떠날 때 덜 아프게.']);
       await c.say('stella', ['「친구는 데이터 형식이 아니야.」 …막내 셋한테 그렇게 말했었지.', '정정한다. 친구는 데이터 형식이야. 나는 그 데이터를 400년 동안 지우지 않았어.']);
       c.quest('q_crew', 'done');
-      c.give('p11', 3); c.gold(9000000000000000);
+      c.give('p11', 3); c.gold(350000000000);
       c.music('space');
       return;
     }
@@ -124,7 +124,7 @@
       c.quest('q_crew', 0);
       return;
     }
-    if (s.quests.q_jelly === 1) { await c.say('stella', '환풍구 개통 확인. …공기가 필요한 건 너희뿐이야. 그래도 고마워. 기록 안 해.'); c.gold(12000000000000000); c.quest('q_jelly', 'done'); return; }
+    if (s.quests.q_jelly === 1) { await c.say('stella', '환풍구 개통 확인. …공기가 필요한 건 너희뿐이야. 그래도 고마워. 기록 안 해.'); c.gold(500000000000); c.quest('q_jelly', 'done'); return; }
     if (s.flags.m_space_truth && s.quests.q_jelly == null) {
       await c.say('stella', '정거장 환풍구를 [y]우주 해파리[/]가 막았어. 8마리만 내보내 줘. …부탁 아니야. 업무 지시야.');
       W.markKills(s, 'spacejelly', 'q_jelly_base');

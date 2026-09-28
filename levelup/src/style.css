@@ -108,6 +108,7 @@ input { font: inherit; }
 .ch { display: flex; gap: 6px; text-align: left; padding: 7px 10px 8px 6px; font-size: 14px; border-radius: 2px; line-height: 1.35; }
 .ch::before { content: '▶'; font-size: 10px; line-height: 20px; color: transparent; }
 .ch.sel { background: var(--ink-3); }
+@media (hover: hover) { .ch:hover { background: var(--ink-3); } }
 .ch.sel::before { color: var(--gold); }
 .ch.off { color: var(--muted); }
 

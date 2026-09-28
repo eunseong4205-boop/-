@@ -175,10 +175,13 @@
     s.hp = Math.min(d.hpMax, s.hp + Math.round(d.hpMax * it.heal));
     return true;
   }
+  /** 음식은 한 번에 하나만: 새로 먹으면 먼저 먹은 음식 효과는 사라진다 */
+  function isFood(b) { const it = ITEMS[b.id]; return !!(it && it.type === 'food'); }
+  function eating(s) { return s.buffs.find((b) => b.until > s.t && isFood(b)) || null; }
   function eat(s, id) {
     const it = ITEMS[id];
     if (!it || it.type !== 'food' || !take(s, id)) return false;
-    s.buffs = s.buffs.filter((b) => b.until > s.t && b.id !== id);
+    s.buffs = s.buffs.filter((b) => b.until > s.t && !isFood(b));
     s.buffs.push({ id, fx: it.fx, until: s.t + it.sec });
     return true;
   }
@@ -262,6 +265,6 @@
   }
 
   G.engine = { VERSION, STATS, newState, derive, addExp, addGold, autoAlloc, allocate, resetStats, expProgress, clickValue, click, registerClick, killReward, enemyDamage,
-    has, give, take, buy, sell, sellPrice, equip, autoEquip, usePotion, eat, rankIdx, lineOpen, lineUnlocked, curLine, canRankUp, rankUp, rankName, tryPassword, meets,
+    has, give, take, buy, sell, sellPrice, equip, autoEquip, usePotion, eat, eating, rankIdx, lineOpen, lineUnlocked, curLine, canRankUp, rankUp, rankName, tryPassword, meets,
     skillUnlocked, skillReady, useSkill, skillOn, tick, serialize, deserialize, toolIndex, ranksTotal, rankClick };
 })();

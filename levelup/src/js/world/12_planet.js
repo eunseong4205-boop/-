@@ -41,7 +41,7 @@
     }),
     builds: [{ x: 22, y: 24, w: 5, h: 4, style: 'boat', talk: async (c) => { await c.say(null, '궤도 셔틀이 조용히 떠 있다. 창밖으로 대륙이 초승달처럼 보인다. 어딘가에 그린 마을이 있다.'); } }],
     edges: { up: { to: 'astra_fort', tx: 16, ty: 29 } },
-    objs: [W.sign(20, 22, ['황금별 아스트라', '↑ 역대 챔피언의 요새 · 봉인의 제단']), W.spot(10, 14, 3), W.spot(27, 8, 3), W.spot(4, 26, 10, true), W.chest('as1', 6, 13, 'p11', 5), W.goldChest('as2', 25, 6, 5e16)],
+    objs: [W.sign(20, 22, ['황금별 아스트라', '↑ 역대 챔피언의 요새 · 봉인의 제단']), W.spot(10, 14, 3), W.spot(27, 8, 3), W.spot(4, 26, 10, true), W.chest('as1', 6, 13, 'p11', 5), W.goldChest('as2', 25, 6, 5e11)],
     mons: { list: ['crystalgolem', 'starknight', 'tendril', 'lighteater', 'crystalgolem'], n: 12, area: [2, 2, 32, 22] },
     npcs: [{ id: 'aurum', x: 11, y: 9, dir: 'down', cond: (s) => !!s.flags.visit_astra_gate, talk: aurumEcho }],
     enter: async (c) => {
@@ -76,7 +76,7 @@
     objs: [
       W.bookObj('b_champions', 13, 2), W.bookObj('b_bella', 19, 2), W.bookObj('b_aurum_last', 7, 8),
       W.gate(16, 2, { lv: 850000, rank: ['r5', 40] }, '봉인의 제단으로 내려가는 계단. 황금빛 결계가 막고 있다. 「무한의 그릇만이 지나갈 수 있다.」', { style: 'light' }),
-      W.spot(7, 14, 3), W.spot(25, 14, 3), W.spot(29, 27, 10, true), W.chest('af1', 8, 8, 'p11', 5), W.goldChest('af2', 24, 18, 2e17),
+      W.spot(7, 14, 3), W.spot(25, 14, 3), W.spot(29, 27, 10, true), W.chest('af1', 8, 8, 'p11', 5), W.goldChest('af2', 24, 18, 9e11),
     ],
     mons: { list: ['starknight', 'crystalgolem', 'tendril', 'lighteater', 'starknight'], n: 12, area: [1, 6, 30, 22] },
     fixed: [{ mon: 'golddragon', x: 16, y: 6, flag: 'beat_golddragon', boss: true, look: { creature: 'beast', tint: '#ffd84a' } }],

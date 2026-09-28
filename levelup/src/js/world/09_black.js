@@ -127,7 +127,7 @@
     s.flags[key] = true;
     G.field.lights.push({ x: o.x, y: o.y, r: 50, c: '#ffffff', dy: 4 });
     const n = lampIds.filter((id) => s.flags['lit_' + id]).length;
-    if (n >= 5) { c.quest('q_lamps', 'done'); c.gold(100000000000); c.give('f8', 3); await c.say('horong:happy', ['다섯 개 전부! 등불 거리가 이렇게 밝았던 적이 있었나!', '이거 받게. 16년 치 야근 수당이야. 허허.']); }
+    if (n >= 5) { c.quest('q_lamps', 'done'); c.gold(70000000000); c.give('f8', 3); await c.say('horong:happy', ['다섯 개 전부! 등불 거리가 이렇게 밝았던 적이 있었나!', '이거 받게. 16년 치 야근 수당이야. 허허.']); }
     else c.quest('q_lamps', n);
   }
   async function keeperTalk(c) {
@@ -136,7 +136,7 @@
       await c.say(null, '{n}은(는) 빛나의 답장을 읽어 주었다.');
       await c.say(null, '「아빠. 불은 켜져 있어. 흰빛으로 켠 불이라 절대 안 꺼져. 그러니까 천천히 와도 돼. 대신 꼭 와. — 빛나」');
       await c.say('oldman:happy', ['……켜져 있다고.', '…그럼 됐다. 눈이 안 보여도 집을 찾을 수 있겠구나.']);
-      c.gold(80000000000);
+      c.gold(50000000000);
       c.quest('q_keeper', 'done');
       return;
     }
@@ -253,7 +253,7 @@
       stamps: [{ x: 15, y: 1, rows: ['S'] }],
     }),
     warps: [{ x: 15, y: 29, to: 'black', tx: 32, ty: 23, dir: 'down' }, { x: 15, y: 1, to: 'castle2', tx: 13, ty: 22, dir: 'up' }],
-    objs: [W.bookObj('b_castle', 12, 2), W.spot(6, 12, 3), W.spot(24, 12, 3), W.spot(2, 27, 10, true), W.chest('ca1', 5, 8, 'p8', 5), W.goldChest('ca2', 25, 18, 300000000000)],
+    objs: [W.bookObj('b_castle', 12, 2), W.spot(6, 12, 3), W.spot(24, 12, 3), W.spot(2, 27, 10, true), W.chest('ca1', 5, 8, 'p8', 5), W.goldChest('ca2', 25, 18, 100000000000)],
     mons: { list: ['skelknight', 'spider', 'lantern', 'skelknight', 'nightmare'], n: 12, area: [1, 5, 30, 22] },
     fixed: [{ mon: 'gargoyle', x: 15, y: 5, flag: 'beat_gargoyle', boss: true, look: { creature: 'beast', tint: '#6a6a78' } }],
   });

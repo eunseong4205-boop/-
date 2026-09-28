@@ -141,7 +141,7 @@
     await c.sys('화면 아래 커다란 [y]렙업![/] 버튼을 눌러 보자. (키보드는 스페이스)');
     await c.waitClick(1);
     await c.wait(0.2);
-    c.exp(Math.max(0, 13 - c.s.exp));
+    c.exp(Math.max(0, G.data.totalExp(2) - c.s.exp));
     c.light(90);
     c.flash('#ffffff', 1000);
     c.music(null);
@@ -157,6 +157,8 @@
     await c.say('dotori:happy', '찍! 맡겨 줘! 나 레벨 9야!');
     await c.say('gran', '니는 16년째 레벨 9다 아이가.');
     await c.say('dotori:sad', '…찍.');
+    await c.say('gran', ['아, 그라고 하나 더. 땅바닥에 [y]금가루가 빙빙 도는 자리[/] 보이거든 그 위에 서서 눌러라.', '[y]수련 샘[/]이라 카는 긴데, 기운이 세 배로 모인다. 버튼이 금빛으로 빛나믄 제대로 선 기다.']);
+    await c.say('dotori:happy', ['찍! 그리고 그리고! [y]3초 안에 스물네 번[/] 막 누르면 [y]피버[/]야! 8초 동안 두 배!', '…나는 한 번도 못 해 봤지만.']);
     c.npc('dotori').hide();
     c.follow('dotori');
     c.give('p0', 3);
@@ -572,7 +574,7 @@
     objs: [
       W.sign(2, 12, ['새싹 들판 — 슬라임 주의! 특히 말랑한 녀석.', '← 그린 마을']),
       W.spot(20, 3, 3), W.spot(35, 22, 3), W.spot(10, 25, 10, true),
-      W.chest('gf1', 21, 2, 'p0', 3), W.goldChest('gf2', 36, 21, 150), W.chest('gf3', 13, 25, 'f0', 2),
+      W.chest('gf1', 21, 2, 'p0', 3), W.goldChest('gf2', 36, 21, 1000), W.chest('gf3', 13, 25, 'f0', 2),
     ],
     mons: { list: ['slime', 'slime', 'rabbit', 'bee', 'mole'], n: 8, area: [4, 3, 34, 25] },
     npcs: [{ id: 'merchant', x: 23, y: 15, dir: 'down', talk: async (c) => { await c.say('merchant', ['떠돌이 약장수라네. 들판 한가운데서 파는 약이 제일 비싸지. 발품 값이야.', '…농담일세. 마을이랑 값은 같아.']); await c.shop('green'); } }],

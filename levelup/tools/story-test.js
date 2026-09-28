@@ -6,7 +6,6 @@
 const path = require('path');
 const { chromium } = require(process.env.PLAYWRIGHT || '/opt/node22/lib/node_modules/playwright');
 const FILE = path.resolve(process.argv[2] || path.join(__dirname, '..', '..', 'levelup.html'));
-
 // [이름, 준비(state), 대상, 기대(state) , 선택 답]
 const SCENES = [
   ['프롤로그: 버튼', { map: 'home', x: 7, y: 3, dir: 'right' }, { npc: 'gran' }, (s) => s.flags.m_button && s.quests.m0 === 1],
@@ -109,10 +108,23 @@ const SCENES = [
       const st = await p.evaluate(() => ({ run: G.script.running, top: G.ui.top() && G.ui.top().name, bat: G.battle.active, modal: !document.getElementById('modal').hidden, title: (document.querySelector('.m-title') || {}).textContent || '' }));
       if (!st.run && !st.bat && st.top === 'base') return 'done';
       if (st.top === 'battle' || st.bat) { await p.evaluate(() => { if (G.battle.mon && G.battle.phase === 'fight') G.battle.mon.hp = Math.min(G.battle.mon.hp, 0.5); }); await p.keyboard.press('Space'); await p.waitForTimeout(40); continue; }
-      if (st.top === 'ask') { const k = await p.evaluate(() => (window.__answers.length ? window.__answers.shift() : 0)); for (let i = 0; i < k; i++) await p.keyboard.press('ArrowDown'); await p.keyboard.press('z'); await p.waitForTimeout(20); continue; }
+      if (st.top === 'ask') {
+        // 선택지는 뜬 직후 잠깐 확정을 받지 않는다 → 기다렸다가 고른다
+        await p.waitForTimeout(260);
+        const k = await p.evaluate(() => (window.__answers.length ? window.__answers.shift() : 0));
+        for (let i = 0; i < k; i++) await p.keyboard.press('ArrowDown');
+        await p.keyboard.press('z'); await p.waitForTimeout(40); continue;
+      }
       if (st.modal) {
-        const kp = await p.evaluate(() => window.__keypad || null);
-        if (kp && document.querySelector('.keypad')) { await p.evaluate((code) => { for (const ch of code) document.querySelector('[data-act="k"][data-n="' + ch + '"]').click(); document.querySelector('[data-act="ok"]').click(); window.__keypad = null; }, kp); continue; }
+        const typed = await p.evaluate(() => {
+          const code = window.__keypad;
+          if (!code || !document.querySelector('.keypad')) return false;
+          for (const ch of code) document.querySelector('[data-act="k"][data-n="' + ch + '"]').click();
+          document.querySelector('[data-act="ok"]').click();
+          window.__keypad = null;
+          return true;
+        });
+        if (typed) { await p.waitForTimeout(60); continue; }
         const ru = await p.evaluate(() => window.__rankup);
         if (ru != null) { await p.evaluate((i) => { const b = document.querySelector('[data-act="rankup"][data-i="' + i + '"]'); if (b) b.click(); window.__rankup = null; }, ru); await p.waitForTimeout(100); continue; }
         await p.keyboard.press('x'); await p.waitForTimeout(30); continue;

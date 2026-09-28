@@ -83,7 +83,7 @@
       c.shake(500, 5);
       c.flash('#ffd84a', 500);
       await c.say('ppeong:happy', ['쾅! 봤어? 마을 절반이 날아갔어!', '…앞머리 조금 탔어. 절반은 과장이야. 근데 기분은 절반 날아간 기분이야!']);
-      c.gold(8000000000000); c.give('f9', 3);
+      c.gold(120000000000); c.give('f9', 3);
       c.quest('q_powder', 'done');
       return;
     }
@@ -254,7 +254,7 @@
     }),
     builds: [{ x: 29, y: 1, w: 3, h: 4, style: 'lighthouse', lit: () => true, talk: fwTowerDoor }],
     edges: { left: { to: 'colorful', tx: 37, ty: 14 } },
-    objs: [W.sign(3, 14, ['알록달록 곶', '→ 불꽃놀이 탑 (천발이 주의)']), W.spot(28, 24, 3), W.spot(4, 26, 10, true), W.chest('cp1', 25, 22, 'p9', 5), W.goldChest('cp2', 33, 25, 20000000000000),
+    objs: [W.sign(3, 14, ['알록달록 곶', '→ 불꽃놀이 탑 (천발이 주의)']), W.spot(28, 24, 3), W.spot(4, 26, 10, true), W.chest('cp1', 25, 22, 'p9', 5), W.goldChest('cp2', 33, 25, 150000000000),
       { t: 'sign', x: 20, y: 22, text: '불꽃놀이 리허설장', talk: rehearsal }],
     mons: { list: ['firefairy', 'balloonbear', 'toysoldier', 'firebird', 'firefairy'], n: 12, area: [2, 2, 34, 26] },
   });
@@ -266,7 +266,7 @@
     if (!(await c.yes(null, 'inventor', '점화!', '나중에'))) return;
     const n = await c.clickRace(10);
     c.sfx('firework');
-    if (n >= 130) { c.flash('#ffd84a', 800); await c.say('inventor', [n + '발! 하늘이 대낮 같아!', '블랙 마을 사람들이 해 뜬 줄 알겠다!']); c.gold(15000000000000); c.give('f9', 5); c.quest('q_rehearsal', 'done'); }
+    if (n >= 130) { c.flash('#ffd84a', 800); await c.say('inventor', [n + '발! 하늘이 대낮 같아!', '블랙 마을 사람들이 해 뜬 줄 알겠다!']); c.gold(250000000000); c.give('f9', 5); c.quest('q_rehearsal', 'done'); }
     else await c.say('inventor', n + '발… 조금 모자라! 다시 해 보자!');
   }
   async function fwTowerDoor(c) { await c.warp('fw_tower', 14, 26, 'up'); }

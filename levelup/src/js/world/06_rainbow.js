@@ -118,14 +118,14 @@
     if (s.quests.m6 === 5) {
       await c.say('chaesaek:happy', ['폭풍 구름을 쫓아냈다고요? 이제 천년제 날 비는 안 오겠네요!', '고마워요, 흰빛 손님. 천년제 날엔 꼭 와요. 제일 좋은 자리를 비워 둘게요.']);
       await c.say('chaesaek', ['그리고… 성녀 루미에 님이 당신을 찾으셨어요. 동쪽 설원길 너머 [y]화이트 마을[/] 대성당으로 오래요.', '설원길은 성기사단이 지켜요. [b]덕후 5차[/]는 돼야 들여보내 줘요.']);
-      c.gold(80000000);
+      c.gold(400000000);
       c.quest('m6', 6);
       return;
     }
     if (s.quests.q_cloud === 0 && E.has(s, 'm11', 10)) {
       c.take('m11', 10);
       await c.say('chaesaek:happy', '솜구름 열 개! 이걸로 광장을 폭신폭신하게 꾸밀 수 있겠어요!');
-      c.gold(30000000); c.give('f5', 5);
+      c.gold(200000000); c.give('f5', 5);
       c.quest('q_cloud', 'done');
       return;
     }
@@ -155,7 +155,7 @@
     if (s.quests.m6 === 2) return loloScene(c);
     if (s.quests.q_star === 1) {
       await c.say('lolo:happy', ['별똥 꼬마들이 하늘로 돌아갔다고? 오늘 밤 별이 여섯 개 늘겠네!', '고마워. 그 녀석들, 서커스 천막 위에서 매일 울었거든. 집에 가고 싶다고.']);
-      c.gold(40000000); c.give('p5', 5);
+      c.gold(200000000); c.give('p5', 5);
       c.quest('q_star', 'done');
       return;
     }
@@ -166,7 +166,7 @@
     if (s.quests.q_applause === 0) {
       if (!(await c.yes('박수를 칠까?', 'lolo', '짝짝짝!', '나중에'))) return;
       const n = await c.clickRace(10);
-      if (n >= 90) { await c.say('lolo:happy', n + '번! 천막이 무너질 것 같아! 최고의 관객이야!'); c.gold(50000000); c.give('f5', 3); c.quest('q_applause', 'done'); if (s.quests.q_star == null) { await c.say('lolo', ['아 참, 구름 바다에 [y]별똥 꼬마[/]들이 떨어져서 울고 있어. 쓰러뜨려 주면 하늘로 돌아갈 수 있대.', '여섯 마리만 돌려보내 줄래?']); W.markKills(s, 'shootstar', 'q_star_base'); c.quest('q_star', 0); } }
+      if (n >= 90) { await c.say('lolo:happy', n + '번! 천막이 무너질 것 같아! 최고의 관객이야!'); c.gold(300000000); c.give('f5', 3); c.quest('q_applause', 'done'); if (s.quests.q_star == null) { await c.say('lolo', ['아 참, 구름 바다에 [y]별똥 꼬마[/]들이 떨어져서 울고 있어. 쓰러뜨려 주면 하늘로 돌아갈 수 있대.', '여섯 마리만 돌려보내 줄래?']); W.markKills(s, 'shootstar', 'q_star_base'); c.quest('q_star', 0); } }
       else await c.say('lolo', n + '번… 좀 더 크게! 관객 한 명이 백 명처럼 쳐 줘야 해!');
       return;
     }
@@ -307,7 +307,7 @@
       clear: [[2, 11, 6, 6, 'c'], [26, 20, 7, 5, 'c']],
     }),
     edges: { down: { to: 'rainbow', tx: 19, ty: 0 }, up: { to: 'whale_isle', tx: 14, ty: 21 } },
-    objs: [W.sign(22, 28, ['구름 바다', '↑ 구름고래 섬   구멍 조심! 떨어지면 무지개 마을 광장이다. (아프다)']), W.spot(4, 14, 3), W.spot(30, 22, 3), W.spot(38, 4, 10, true), W.chest('cs1', 3, 12, 'p5', 5), W.goldChest('cs2', 31, 21, 60000000)],
+    objs: [W.sign(22, 28, ['구름 바다', '↑ 구름고래 섬   구멍 조심! 떨어지면 무지개 마을 광장이다. (아프다)']), W.spot(4, 14, 3), W.spot(30, 22, 3), W.spot(38, 4, 10, true), W.chest('cs1', 3, 12, 'p5', 5), W.goldChest('cs2', 31, 21, 600000000)],
     mons: { list: ['cloudsheep', 'rainbird', 'candy', 'balloon', 'clowndoll', 'shootstar'], n: 13, area: [2, 2, 38, 28] },
   });
   W.map('whale_isle', {

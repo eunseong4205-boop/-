@@ -49,7 +49,7 @@
       clear: [[14, 2, 8, 5], [6, 23, 7, 5]],
     }),
     edges: { left: { to: 'rainbow', tx: 37, ty: 15 }, right: { to: 'white', tx: 0, ty: 15 } },
-    objs: [W.sign(3, 17, ['설원길 — 화이트 성지', '→ 화이트 마을 · 이리스 대성당']), W.spot(18, 4, 3), W.spot(9, 25, 3), W.spot(36, 4, 10, true), W.chest('sf1', 16, 3, 'p6', 5), W.goldChest('sf2', 8, 26, 300000000)],
+    objs: [W.sign(3, 17, ['설원길 — 화이트 성지', '→ 화이트 마을 · 이리스 대성당']), W.spot(18, 4, 3), W.spot(9, 25, 3), W.spot(36, 4, 10, true), W.chest('sf1', 16, 3, 'p6', 5), W.goldChest('sf2', 8, 26, 2000000000)],
     mons: { list: ['snowwolf', 'yeti', 'icebat', 'snowman', 'snowwolf'], n: 12, area: [2, 2, 36, 26] },
     npcs: [{ id: 'snowflake', x: 11, y: 24, dir: 'down', mark: (s) => (s.quests.q_yeti == null || (s.quests.q_yeti === 0 && E.has(s, 'm12', 10)) ? '!' : null), talk: snowflakeYeti }],
     enter: async (c) => {
@@ -67,7 +67,7 @@
       c.take('m12', 10);
       await c.say('snowflake:happy', ['눈 결정 열 개! 이걸로 엄마 설인을 만들 수 있어!', '(뚝딱뚝딱) …짠! 아기 설인아, 엄마야!']);
       await c.say(null, '어딘가에서 커다란 아기 설인이 뒤뚱뒤뚱 걸어와 눈사람 옆에 앉았다. 그리고 잠들었다.');
-      c.gold(150000000); c.give('f6', 3);
+      c.gold(2500000000); c.give('f6', 3);
       c.quest('q_yeti', 'done');
       return;
     }
@@ -290,7 +290,7 @@
     edges: { down: { to: 'white', tx: 18, ty: 0 } },
     objs: [
       W.bookObj('b_ice_altar', 14, 2), { t: 'orbshine', orb: 'o_y3', x: 15, y: 3, need: (s) => s.quests.m7 != null && s.quests.m7 >= 2, hint: '제단 위 얼음 속에 노란 구슬이 박혀 있다.', talk: altar },
-      W.spot(8, 12, 3), W.spot(22, 16, 3), W.spot(3, 26, 10, true), W.chest('it1', 12, 3, 'p6', 5), W.goldChest('it2', 25, 25, 800000000),
+      W.spot(8, 12, 3), W.spot(22, 16, 3), W.spot(3, 26, 10, true), W.chest('it1', 12, 3, 'p6', 5), W.goldChest('it2', 25, 25, 4000000000),
     ],
     mons: { list: ['icespirit', 'penguin', 'icebat', 'snowman', 'penguin'], n: 12, area: [2, 6, 26, 22] },
   });

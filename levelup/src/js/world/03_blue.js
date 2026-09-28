@@ -450,7 +450,7 @@
     warps: [{ x: 31, y: 3, to: 'seacave', tx: 16, ty: 28, dir: 'up' }],
     objs: [
       W.sign(21, 23, ['파도 해변', '해저 동굴 입구는 북동쪽 바위틈. 썰물 때만 들어갈 수 있음.']),
-      W.spot(26, 18, 3), W.spot(4, 20, 10, true), W.chest('bc1', 15, 7, 'p2', 5), W.goldChest('bc2', 6, 22, 60000),
+      W.spot(26, 18, 3), W.spot(4, 20, 10, true), W.chest('bc1', 15, 7, 'p2', 5), W.goldChest('bc2', 6, 22, 120000),
     ],
     mons: { list: ['starfish', 'wslime', 'pirat', 'sandcrab', 'gull'], n: 10, area: [2, 2, 34, 22] },
   });
@@ -465,7 +465,7 @@
       clear: [[12, 1, 9, 4]],
     }),
     warps: [{ x: 16, y: 29, to: 'beach', tx: 31, ty: 4, dir: 'down' }],
-    objs: [W.spot(26, 16, 3), W.spot(3, 25, 10, true), W.chest('sc1', 13, 2, 'p3', 3), W.goldChest('sc2', 27, 15, 150000)],
+    objs: [W.spot(26, 16, 3), W.spot(3, 25, 10, true), W.chest('sc1', 13, 2, 'p3', 3), W.goldChest('sc2', 27, 15, 300000)],
     mons: { list: ['eel', 'skelsailor', 'jelly', 'wslime', 'eel'], n: 10, area: [1, 5, 30, 23] },
     fixed: [
       { mon: 'clam', x: 5, y: 20, flag: 'beat_clam', boss: true, look: { creature: 'slime', tint: '#e8d8f0' } },

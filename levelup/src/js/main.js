@@ -36,11 +36,13 @@
 
   /* ───────── 장소 ───────── */
   function mapRegion(m) { return (m && m.region) || 'green'; }
+  /** 장소의 기운 = 그 땅이 머금은 빛의 농도를 레벨로 나타낸 값 (멀고 위험한 곳일수록 높다) */
+  function placeLevel() { const m = F.map; return m ? m.ki || D.REG[mapRegion(m)].lv[0] : 1; }
   function placeBase() {
     const m = F.map;
     if (!m) return { exp: 1, gold: 1 };
     if (m.click) return m.click;
-    const L = m.ki || D.REG[mapRegion(m)].lv[0];
+    const L = placeLevel();
     const k = D.clickBase(L, m.kiMul || 1);
     return { exp: k, gold: k * D.B.goldRatio };
   }
@@ -209,7 +211,9 @@
   function clickField(force) {
     if (!G.state || (!force && S.running) || B.active) return;
     const s = G.state;
-    if (s.flags.button_stolen) { if (performance.now() - M.toastT > 1200) { M.toastT = performance.now(); UI.toast('시작의 버튼이 없다! 까치를 쫓아가자.', 'bad'); G.audio.sfx('buzz'); } return; }
+    const noButton = (msg) => { if (performance.now() - M.toastT > 1200) { M.toastT = performance.now(); UI.toast(msg, 'bad'); G.audio.sfx('buzz'); } };
+    if (s.flags.button_stolen) return noButton('시작의 버튼이 없다! 까치를 쫓아가자.');
+    if (!E.has(s, 'button')) return noButton('아직 누를 버튼이 없다. 부엌의 할머니가 부르신다.');
     const d = E.derive(s);
     if (E.registerClick(s)) { G.audio.sfx('fever'); UI.toast('[y]피버![/] 8초 동안 경험치·골드 두 배!', 'gold'); }
     const mult = spotMult();
@@ -373,9 +377,9 @@
     const s = G.state, d = E.derive(s);
     const base = placeBase(), mult = spotMult();
     const v = E.clickValue(s, base, mult, d);
-    $('lv-val').textContent = B.active ? '두드려서 공격' : '+' + U.fmt(v.exp) + ' EXP';
+    $('lv-val').textContent = B.active ? '두드려서 공격' : !E.has(s, 'button') ? '버튼 없음' : '+' + U.fmt(v.exp) + ' EXP';
     $('lvup').classList.toggle('spot', mult > 1 && !B.active);
-    $('place-ki').textContent = '기운 ' + U.fmt(base.exp) + (mult > 1 ? ' ×' + mult : '');
+    $('place-ki').textContent = '기운 ' + U.fmtInt(placeLevel()) + (mult > 1 ? ' ×' + mult : '');
     $('pi-left').textContent = F.map ? F.map.name : '';
     $('pi-right').textContent = '경험 ' + U.fmtMult(d.expM * d.tool) + ' · 골드 ' + U.fmtMult(d.goldM * d.tool);
   }

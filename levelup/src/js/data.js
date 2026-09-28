@@ -17,11 +17,32 @@
     regen: 0.06,
     feverClicks: 24,     // 3초 안에 24번 누르면 피버
     feverTime: 8,
+    expK: 16,            // 긴 여정의 무게: 레벨 하나에 드는 경험치 배율
+    expRamp: 10,         // 레벨 1에서는 ×1, 이 레벨까지 서서히 ×expK로 무거워진다
   };
-  function need(L) { return 10 + 3 * L; }
-  function totalExp(L) { return 10 * (L - 1) + 1.5 * L * (L - 1); }
+  /* 레벨 L → L+1 에 드는 경험치 = (10 + 3L) × 무게(L).
+     무게는 레벨 1~expRamp 동안 1에서 expK까지 곧게 오르고 그 뒤로는 expK. 누적값은 닫힌 식으로 구한다. */
+  function weight(L) { const R = B.expRamp; return L >= R ? B.expK : 1 + (B.expK - 1) * (L - 1) / (R - 1); }
+  function need(L) { return (10 + 3 * L) * weight(L); }
+  /** 오르막 구간 합: l = 1..n 의 (10 + 3l)(a + c·l) */
+  function rampSum(n) {
+    const c = (B.expK - 1) / (B.expRamp - 1), a = 1 - c;
+    return 10 * a * n + (10 * c + 3 * a) * n * (n + 1) / 2 + 3 * c * n * (n + 1) * (2 * n + 1) / 6;
+  }
+  /** 레벨 L이 되기까지 모은 경험치 총량 */
+  function totalExp(L) {
+    const R = B.expRamp;
+    if (L <= R) return rampSum(L - 1);
+    return rampSum(R - 1) + B.expK * (10 * (L - R) + 1.5 * ((L - 1) * L - (R - 1) * R));
+  }
   function levelFromTotal(E) {
-    let lv = Math.max(1, Math.floor((-8.5 + Math.sqrt(72.25 + 6 * (10 + E))) / 3));
+    const R = B.expRamp, K = B.expK;
+    let lv = 1;
+    if (E >= totalExp(R)) {
+      // R 위에서는 2차식: 1.5K·L² + K(10 - 1.5)L + (C - 10KR - 1.5K(R-1)R) = E
+      const a = 1.5 * K, b = 8.5 * K, c = rampSum(R - 1) - 10 * K * R - 1.5 * K * (R - 1) * R - E;
+      lv = Math.max(R, Math.floor((-b + Math.sqrt(b * b - 4 * a * c)) / (2 * a)));
+    }
     while (totalExp(lv + 1) <= E) lv++;
     while (lv > 1 && totalExp(lv) > E) lv--;
     return lv;
@@ -75,7 +96,9 @@
   }
   function rankTierCost(rk, t) {
     const L = rankTierLevel(rk, t);
-    return Math.max(50, Math.round(targetClick(L) * B.goldRatio * (rk.id === 'r1' ? 90 : 260) / 10) * 10);
+    // 평민 줄은 첫걸음이라 가볍게(1차 등록은 레벨 5에 모은 돈으로 바로), 그 뒤 줄은 여정의 무게를 조금 따른다
+    const f = rk.id === 'r1' ? (t === 1 ? 30 : 90) : 260 * Math.max(1, weight(L) * 0.15);
+    return Math.max(50, Math.round(targetClick(L) * B.goldRatio * f / 10) * 10);
   }
   /** 기대 등급 배율 (차수 합 n일 때 대략) */
   function expectedRankClick(n) { return 1 + n * 0.28; }
@@ -103,8 +126,15 @@
     return { atk, hp, def, r };
   }
 
-  /* ───────── 가격 ───────── */
-  function price(i, factor) { return Math.max(10, Math.round(REGIONS[Math.min(i, REGIONS.length - 1)].click * B.goldRatio * factor)); }
+  /* ───────── 가격 ─────────
+     값 = 그 지역 클릭 1번의 골드 × 배수 × 여정의 무게.
+     레벨이 무거워지면(expK) 한 지역에서 누르는 횟수도 늘어나므로, 값도 그 무게를 따라 오른다.
+     wf는 물건마다 무게를 얼마나 따르는지(장갑 0.75 · 장비 0.25 · 음식 1.5 …). 그린 마을은 늘 ×1. */
+  function price(i, factor, wf) {
+    const r = REGIONS[Math.min(i, REGIONS.length - 1)];
+    const w = Math.max(1, weight(r.lv[0]) * (wf || 0));
+    return Math.max(10, Math.round(r.click * B.goldRatio * factor * w));
+  }
 
   /* ───────── 아이템 ───────── */
   const ITEMS = {};
@@ -117,7 +147,7 @@
     ['그림자 장갑', '그림자처럼 소리 없이 누른다.'], ['폭죽 장갑', '누를 때마다 작은 불꽃이 튄다.'], ['별빛 장갑', '400년 전 정거장 조종사들이 끼던 장갑.'],
     ['아스트라 장갑', '절대 강자 행성의 황금 수정으로 만든 장갑.'], ['무한 장갑', '끝이 없는 손. 이 장갑을 낀 자는 아직 없다.'],
   ];
-  TOOLS.forEach(([n, d], i) => { if (i) item('t' + i, { name: n, type: 'tool', mult: TOOL_MULT[i], price: price(i - 1, 900), desc: d, stat: '클릭 경험치·골드 ×' + TOOL_MULT[i] }); });
+  TOOLS.forEach(([n, d], i) => { if (i) item('t' + i, { name: n, type: 'tool', mult: TOOL_MULT[i], price: price(i - 1, 900, 0.75), desc: d, stat: '클릭 경험치·골드 ×' + TOOL_MULT[i] }); });
 
   const WEAPONS = [
     ['목검', '그린 마을 아이들이 휘두르는 나무 칼. 손에 익으면 제법 맵다.'], ['불꽃 철검', '레드 마을 대장간의 기본 검. 날에 불꽃 무늬.'],
@@ -127,14 +157,14 @@
     ['그림자 단검', '블랙 마을 그림자 길드의 단검. 소리 없이 벤다.'], ['폭죽 망치', '팡팡 박사의 발명품. 때리면 터진다.'],
     ['궤도 광선검', '하늘 정거장 무기고에서 400년 잠든 검.'], ['아스트라 성검', '역대 챔피언이 쓰던 황금 수정의 검.'],
   ];
-  WEAPONS.forEach(([n, d], i) => item('w' + i, { name: n, type: 'weapon', atk: REGIONS[i].weapon, price: price(i, 520), desc: d }));
+  WEAPONS.forEach(([n, d], i) => item('w' + i, { name: n, type: 'weapon', atk: REGIONS[i].weapon, price: price(i, 520, 0.25), desc: d }));
   const ARMORS = [
     ['무명 옷', '할머니가 기워 준 옷. 팔꿈치에 새싹 무늬 덧댐.'], ['불꽃 가죽 갑옷', '화산 도마뱀 가죽. 불에 강하다.'], ['비늘 갑옷', '푸른 물고기 비늘을 엮었다.'],
     ['사막 로브', '모래바람을 막는 두꺼운 천.'], ['별자리 망토', '밤하늘 무늬가 수놓인 망토.'], ['축제 예복', '너무 화려해서 적이 눈이 부시다.'],
     ['백은 갑주', '성기사의 갑옷. 기도로 단련되었다.'], ['강철 외골격', '그레이의 기계 갑옷. 삐걱거린다.'], ['밤의 외투', '밤을 한 벌 잘라 만든 옷.'],
     ['불꽃놀이 조끼', '터지지는 않는다. 아마도.'], ['우주복', '400년 된 우주복. 의외로 냄새가 안 난다.'], ['아스트라 갑주', '입으면 별이 된 기분이다.'],
   ];
-  ARMORS.forEach(([n, d], i) => item('a' + i, { name: n, type: 'armor', hp: REGIONS[i].armor, def: Math.round(REGIONS[i].armor * 0.25), price: price(i, 420), desc: d }));
+  ARMORS.forEach(([n, d], i) => item('a' + i, { name: n, type: 'armor', hp: REGIONS[i].armor, def: Math.round(REGIONS[i].armor * 0.25), price: price(i, 420, 0.25), desc: d }));
   const ACCS = [
     ['x0', '새싹 목걸이', { crit: 0.03 }, 0, '할머니가 걸어 준 목걸이. 치명타 +3%'],
     ['x1', '행운의 편자', { gold: 0.3 }, 1, '대장간 벽에 걸려 있던 편자. 골드 +30%'],
@@ -148,10 +178,10 @@
     ['x9', '별의 심장', { exp: 1, gold: 1, crit: 0.1 }, -1, '스텔라가 준 부품. 경험치·골드 +100%, 치명타 +10%'],
     ['x10', '도토리 깃털', { exp: 0.2, gold: 0.2, crit: 0.05 }, -1, '도토리가 처음 날던 날 빠진 털. 모든 것 조금씩 +'],
   ];
-  ACCS.forEach(([id, n, fx, reg, d]) => item(id, { name: n, type: 'acc', fx, price: reg >= 0 ? price(reg, 650) : 0, desc: d }));
+  ACCS.forEach(([id, n, fx, reg, d]) => item(id, { name: n, type: 'acc', fx, price: reg >= 0 ? price(reg, 650, 0.25) : 0, desc: d }));
   const POTIONS = [['빨간 약초', 0.3], ['불꽃 물약', 0.35], ['파도 물약', 0.4], ['선인장 즙', 0.45], ['달빛 이슬', 0.5], ['무지개 사탕', 0.55],
     ['성수', 0.6], ['수리 키트', 0.65], ['밤의 꿀', 0.7], ['폭죽 캔디', 0.75], ['우주 식량', 0.8], ['황금 넥타르', 1]];
-  POTIONS.forEach(([n, h], i) => item('p' + i, { name: n, type: 'potion', heal: h, price: price(i, 6), desc: '전투 중 HP를 ' + Math.round(h * 100) + '% 회복한다.' }));
+  POTIONS.forEach(([n, h], i) => item('p' + i, { name: n, type: 'potion', heal: h, price: price(i, 6, 0.5), desc: '전투 중 HP를 ' + Math.round(h * 100) + '% 회복한다.' }));
   const FOODS = [
     ['옥수수빵', { exp: 1 }, '그린 마을 명물. 5분간 경험치 ×2'], ['화산 떡볶이', { atk: 1 }, '입에서 불이 난다. 5분간 공격력 ×2'],
     ['파도 우동', { gold: 1 }, '국물까지 마시면 운이 트인다. 5분간 골드 ×2'], ['모래 커피', { exp: 1, gold: 1 }, '잠이 안 온다. 5분간 경험치·골드 ×2'],
@@ -160,7 +190,7 @@
     ['밤하늘 젤리', { exp: 3, gold: 3 }, '5분간 경험치·골드 ×4'], ['폭죽 팝콘', { exp: 4, atk: 2 }, '5분간 경험치 ×5, 공격력 ×3'],
     ['우주 아이스크림', { exp: 4, gold: 4 }, '얼려서 말린 아이스크림. 5분간 경험치·골드 ×5'], ['별사탕', { exp: 5, atk: 3, gold: 3 }, '5분간 경험치 ×6, 공격력·골드 ×4'],
   ];
-  FOODS.forEach(([n, fx, d], i) => item('f' + i, { name: n, type: 'food', fx, sec: 300, price: price(i, 60), desc: d }));
+  FOODS.forEach(([n, fx, d], i) => item('f' + i, { name: n, type: 'food', fx, sec: 300, price: price(i, 60, 1.5), desc: d }));
 
   const KEYS = {
     button: ['시작의 버튼', '「모든 성장은 한 번의 누름에서 시작된다 — A.」 누르면 흰빛이 스며 나온다.'],
@@ -191,7 +221,7 @@
     ['m6', '갈매기 깃털', 2], ['m7', '전갈 독침', 3], ['m8', '선인장 꽃', 3], ['m9', '반딧불 가루', 4], ['m10', '달버섯', 4], ['m11', '솜구름', 5],
     ['m12', '눈 결정', 6], ['m13', '녹슨 톱니', 7], ['m14', '그림자 실', 8], ['m15', '폭죽 화약', 9], ['m16', '우주 먼지', 10], ['m17', '황금 수정', 11],
   ];
-  MATS.forEach(([id, n, reg]) => item(id, { name: n, type: 'mat', price: price(reg, 14), desc: '몬스터가 떨어뜨린 재료. 상점에 팔거나 의뢰에 쓴다.' }));
+  MATS.forEach(([id, n, reg]) => item(id, { name: n, type: 'mat', price: price(reg, 14, 0.5), desc: '몬스터가 떨어뜨린 재료. 상점에 팔거나 의뢰에 쓴다.' }));
 
   /* ───────── 몬스터 ─────────
      [id, 이름, 형태, 주색, 보조색, 강조색, 지역, 레벨 위치(0~1), 역할, 설명, 떨굼] */

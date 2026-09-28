@@ -215,7 +215,7 @@
       await c.say('miru:sad', '…또 틀렸다. 7년째야.');
       await c.say('@', '예쁜데?');
       await c.say('miru:happy', ['…정말? 예뻐?', '베라 교수님도 그랬어. 「틀린 주문이 늘 틀린 건 아니란다.」 …고마워!']);
-      c.give('f4', 3); c.gold(3000000);
+      c.give('f4', 3); c.gold(15000000);
       c.quest('q_miru', 'done');
       return;
     }
@@ -258,7 +258,7 @@
       W.sign(21, 30, ['보랏빛 숲', '↑ 숲 한가운데   → 진실의 거울 연못']),
       W.bookObj('b_moon', 23, 4),
       W.spot(5, 18, 3), W.spot(31, 26, 3), W.spot(35, 5, 10, true),
-      W.chest('pf1', 4, 16, 'p4', 5), W.goldChest('pf2', 32, 25, 6000000),
+      W.chest('pf1', 4, 16, 'p4', 5), W.goldChest('pf2', 32, 25, 25000000),
       { t: 'pickup', id: 'moonherb1', x: 21, y: 4, item: 'moon_herb', c: '#f0e8a0', cond: (s) => (s.quests.m5 != null && s.quests.m5 >= 2) || s.chests.moonherb1, text: '반쯤 핀 달맞이꽃이다. 16년째 밤을 기다리고 있다.' },
     ],
     mons: { list: ['moonbat', 'fairyfire', 'poison', 'shadowfox', 'witchcat', 'witchcat'], n: 12, area: [3, 3, 34, 28] },
@@ -290,7 +290,7 @@
     if (s.quests.q_ghost === 0 && W.killsSince(s, 'mirrorghost', 'q_ghost_base') >= 8) c.quest('q_ghost', 1);
     if (s.quests.q_ghost === 1) {
       await c.say('bichu', '…물이 맑아졌구나. 거울 유령들이 흉내 낼 얼굴을 잃었나 보다. 고맙다, 흰빛의 아이야.');
-      c.gold(8000000); c.give('p5', 3);
+      c.gold(30000000); c.give('p5', 3);
       c.quest('q_ghost', 'done');
       return;
     }
