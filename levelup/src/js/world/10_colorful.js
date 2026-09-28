@@ -180,6 +180,18 @@
     await c.say('gran:sad', ['……그래. 그렇겠지.', '니 엄마는 말이다. 늘 웃었다. 흰빛을 부끄러워하던 아가 커서, 그 빛을 온 동네에 나눠 주고 다녔다.']);
     await c.say('gran:sad', ['983년에 니를 안고 천년성을 나설 때, 나는 다짐했다. 니는 그냥 평범하게 키우겠다고. 그린 마을 촌구석에서 밭이나 매면서.', '…버튼을 장롱에 16년 넣어 둔 것도 그래서다. 누르지 않으면, 흰빛도 없을 끼라고.']);
     await c.say('gran', ['그런데 생일날 니가 버튼 누르는 거 보고 알았다. 빛은 숨기는 기 아이라는 거.', '니 엄마가 맞았다. 나눠야 되는 기다.']);
+    const known = !!s.flags.kairon_father;
+    const gq = await c.ask(null, [known ? '…왜 아빠 얘기는 안 해 줬어?' : '할머니. 카이론은… 나한테 어떤 사람이야?', '(묻지 않는다)']);
+    if (gq === 0) {
+      if (!known) {
+        await c.say('gran:sad', ['……', '…니 아빠다.', '981년 봄, 우리 오두막 옆 참나무 아래서 둘이 혼례를 올렸다. 증인은 나랑 녹턴 둘뿐이었다. 세린이 S를 새기고, 그 고집불통이 K를 새겼다. 자로 잰 것맨치로.']);
+        s.flags.kairon_father = true; s.flags.father_from = 'gran';
+      }
+      await c.say('gran:sad', ['말 못 했다. 니가 그 사람을 미워하게 될까 봐 무서웠고…', '…미워하지 않게 될까 봐 더 무서웠다. 미워하지 않으믄 니가 그 사람한테 가 버릴까 봐. 16년 키운 걸 하루 만에 뺏길까 봐.']);
+      await c.say('gran', ['할매가 욕심쟁이다. 약초를 네 잎 따는 놈이 욕심쟁이라 캤는데, 할매가 네 잎을 땄다.', '…이제 돌려줄 때가 됐다. 니를. 니 아빠한테가 아이라, 니한테.']);
+      c.set('gran_confessed');
+      c.bond('gran', 2);
+    }
     await c.say('gran', ['가거라. 카이론 그 고집불통한테 가서 전해라.', '「스승이 기다린다. 밥 먹으러 온나.」 …그거면 된다.']);
     await c.say('@', '…응. 다녀올게, 할머니.');
     await c.say('gran:happy', ['오냐. 오늘도 렙업.', '……내일도 렙업. 꼭 돌아와서 대답해래이.']);
@@ -188,7 +200,7 @@
     c.spawn({ id: 'rud', x: 10, y: 12, dir: 'up' });
     await c.npc('lea').walk('UU');
     await c.npc('rud').walk('UU');
-    await c.say('lea', ['늦지 않았군. 새벽단도 배웅하러 왔어.', '볼트한테 들었어. 역류 장치. 천년성 중앙 제어실에 끼우면 모든 탑이 뒤집힌다고.']);
+    await c.say('lea', s.flags.d_festival === 'warn' ? ['…늦지 않았군. 배웅하러 온 건 아니야. 할 일이 있어서 왔어.', '볼트한테 들었어. 역류 장치. 천년성 중앙 제어실에 끼우면 모든 탑이 뒤집힌다고. 폭약 없이. 네 방식이네.'] : ['늦지 않았군. 새벽단도 배웅하러 왔어.', '볼트한테 들었어. 역류 장치. 천년성 중앙 제어실에 끼우면 모든 탑이 뒤집힌다고.']);
     await c.say('@', '…이건 레아랑 루드한테 맡길게. 나는 하늘에 있을 거니까.');
     c.take('reverser');
     await c.say('rud', ['…맡아 두지. 천년제 날 밤, 천년성 중앙 제어실.', '타이밍은 하늘 정거장 인공지능이 알려 준다고 했지? 숫자는 거짓말 안 해. 1초도 안 틀린다.']);
@@ -226,17 +238,26 @@
     n.mark = (s) => (cond(s) && (!markCond || markCond(s)) ? '!' : om ? om(s) : null);
   }
   wrapTalk('workshop', 'bolt', (s) => s.quests.m10 === 2 && !E.has(s, 'gear_heart'), async (c) => {
-    await c.say('bolt', ['…팡팡의 로켓인가. 쓸데없는 말은 연료 낭비다.', '톱니 심장. 역류 장치 만들고 남은 부품으로 만들었다. 이 심장은 멈추지 않는다. 내 아내 심장은 멈췄지만.']);
+    await c.say('bolt', ['…팡팡의 로켓인가. 쓸데없는 말은 연료 낭비다.', c.s.flags.d_bolt === 'talk' ? '톱니 심장. 역류 장치 만들고 남은 부품으로 만들었다. …요즘은 밤에 잔다. 그 목소리가 자라고 했으니까.' : '톱니 심장. MK-7의 심장을 뜯어서 다시 깎았다. 네가 쓰러뜨린 기계의 심장이다. 이제 날게 해 주지.']);
+    await c.say('bolt', '이 심장은 멈추지 않는다. 내 아내 심장은 멈췄지만.');
     c.give('gear_heart');
     await c.say('bolt', '…하늘 정거장의 인공지능한테 전해라. 612년의 경고, 늦게라도 읽었다고.');
   });
   wrapTalk('palace', 'goldie', (s) => s.quests.m10 === 2 && !E.has(s, 'gold_bond') && !!s.flags.m_yellow_bond, async (c) => {
     await c.say('goldie', ['로켓 값? 하하. 그 폭발 발명가한테 대라고?', '…공짜는 없어, 꼬마. 세상은 원래 그래.']);
+    const dg = c.s.flags.d_goldie;
+    if (dg === 'expose') await c.say('goldie', ['장부를 뿌린 녀석한테 채권을 달라고? 뻔뻔하군.', '…그 애들 중 몇은 굶었고, 몇은 사하라 대상단에서 셈을 배운다. 계산해 보니 반반이다. 반반이면… 줄 만하지.']);
+    else if (dg === 'contract') await c.say('goldie', '계약서 증인이 로켓을 탄다라. 증인이 하늘에서 떨어지면 계약이 무효가 되니까, 투자하는 거다. 순전히 장사야.');
+    if (c.s.flags.d_kkachi === 'report') await c.say('kkachi', '(골디 옆에서 장부를 들고 있던 까치가 채권을 건넨다) …금화왕이 직접 주기 싫대. 멋없대. 그래서 내가 줘. …가, 흰빛.');
     await c.say('goldie', ['그러니까 이건 공짜가 아니야. [y]백지 채권[/]이다. 액수는 네가 적어. 갚는 건… 세린이 돌아오면 그 여자가 갚게 해.', '979년에 빌린 동전, 이자까지 쳐서 이걸로 퉁 치자고. …장사 참 못 하네, 나.']);
     c.give('gold_bond');
     c.set('m_yellow_bond');
   });
   wrapTalk('cathedral', 'lumie', (s) => s.quests.m10 === 2 && !E.has(s, 'prayer_crystal') && !!s.flags.m_white_lumie, async (c) => {
+    const dp = c.s.flags.d_patient;
+    if (dp === 'lumie') await c.say('lumie', ['(루미에는 의자에 기대 앉아 있다. 머리칼이 눈처럼 하얗다) …일어나지 못해서 미안해요. 하얀이는 매일 와요. 사탕을 가져와요. 제가 주던 걸 이제 저한테.', '…당신이 맡겨 줘서 기뻤다고 했죠. 거짓말은 아니었어요. 그런데 하얀이 얼굴을 볼 때마다, 당신이 거절해 줬으면 어땠을까 생각해요.']);
+    else if (dp === 'herb') await c.say('lumie', '하얀이가 매일 얼음 신전에 가요. 그 틈에 약초를 다시 심겠대요. 세린처럼. 다음 사람을 위해.');
+    else if (dp === 'own') await c.say('lumie', '앞머리, 아직 하얗네요. …그건 제가 16년 동안 달고 다닌 거랑 같은 색이에요. 이제 우리 둘이 나눠 가졌네요.');
     await c.say('lumie', ['로켓의 방어막이 필요하군요. 기도의 수정… 16년 동안 세린을 위해 기도한 빛을 모은 수정이에요.', '가두는 데 쓰던 기도를, 이제 지키는 데 쓸게요. 약속했잖아요.']);
     c.give('prayer_crystal');
     await c.say('lumie', '세린을 만나면… 미안하다고 전해 줘요. 아니, 고맙다고. …둘 다요.');
@@ -298,6 +319,39 @@
     await c.say(null, ['천발이가 마지막으로 불꽃 한 발을 쏘아 올렸다. 탑 위 하늘에 커다란 꽃이 피었다.', '처음이자 마지막 한 발. 천발이는 만족한 듯 조용해졌다.']);
     await c.say('dotori', '…천 발은 못 쐈지만, 한 발은 쐈네. 찍.');
   }
+
+  /* ───────── 알록달록의 결: 소품 · 혼잣말 · 곁의 이야기 · 떠나기 전날 밤 ───────── */
+  W.addObjs('colorful', [
+    W.prop('bench', 10, 24, '바닷가 벤치. 등받이에 폭죽 그을음이 별 모양으로 찍혀 있다.'),
+    W.prop('fire', 24, 23, '폭죽 불씨로 피운 모닥불. 불꽃이 가끔 초록, 가끔 보라로 튄다. 아무도 이유를 모른다.'),
+    W.prop('board', 13, 12, (s) => ['마을 게시판. 「무한호 발사 D-?? — 폭발 확률: 박사님 말로는 3%, 뻥이 말로는 97%」', s.flags.launched ? '그 아래 큼직하게: 「129번째는 안 터졌다!!!」' : '「로켓 부품 제보 받음: 톱니 심장 · 금화왕 채권 · 기도의 수정 · 밤의 열쇠 · 별빛 연료」']),
+    W.prop('statue', 22, 16, '폭발 기념비. 128개의 작은 금속 조각이 탑처럼 쌓여 있다. 무한호 1호기부터 128호기까지의 파편. 「모두 성공 직전이었다」', { c: '#ff9a5a' }),
+  ]);
+  W.barks('colorful', { ppeong: ['쾅!', '하늘이 두 쪽!'], inventor: ['재밌는 것만 알아!'], kid2: ['나 레벨 35!', '폭발은 실패가 아니야!'], clerk_c: ['퇴근 중~'] });
+  W.barks('hangar', { pangpang: (s) => (s.flags.launched ? ['안 터졌다!'] : ['129번째는 안 터져!', '콜록!']) });
+
+  /* 도토리와의 이야기 (10장) */
+  G.story.talks.push(
+    { id: 'cf_notower', map: 'colorful', run: async (c) => {
+      await c.say('dotori', ['여기 애들은 레벨 35래. 다른 마을 애들은 9인데.', '탑 하나 없는 게 이렇게 달라. …우리가 16년 동안 뭘 잃었는지 여기 와서 알았어.']);
+    } },
+    { id: 'cf_parts', when: (s) => PARTS.filter((p) => E.has(s, p)).length >= 3, run: async (c) => {
+      await c.say('dotori', ['볼트 아저씨 심장, 골디 아저씨 채권, 루미에 언니 수정, 녹턴 아저씨 열쇠.', '엄마 친구들이 하나씩 내놨어. 16년 동안 서로 말도 안 하던 사람들이.']);
+      await c.say('dotori:happy', '팡팡 박사님이 그랬잖아. 혼자서는 하늘에 못 간다고. 이 로켓이 그 증거야. 찍.');
+    } },
+  );
+  /* 쉬는 밤 (10장): 떠나기 전날 */
+  G.story.nights.push(
+    { id: 'cf_after', when: (s) => s.quests.m10 === 4 || (s.quests.m10 === 2 && PARTS.every((p) => E.has(s, p))), intro: '폭죽 여관. 밤새 폭죽이 터진다. 도토리가 창틀에 앉아 불꽃을 세고 있다. 백열둘, 백열셋…', run: async (c) => {
+      await c.say('dotori', ['…{n}. 다 끝나면 뭐 할 거야?', '하늘 갔다 오고, 흑점이든 뭐든 다 끝나면.']);
+      const k = await c.ask(null, ['그린 마을로 돌아가서 약초 캘래.', '대륙을 한 바퀴 더 돌 거야. 이번엔 천천히.', '…끝난 다음은 생각 안 해 봤어.']);
+      c.set('after_plan', ['home', 'road', 'none'][k]);
+      if (k === 0) await c.say('dotori:happy', ['…좋다. 할머니가 세 잎만 따라고 잔소리하겠지.', '나는 네 옆에서 도토리 굴릴게. 백 개. …아흔 개.']);
+      else if (k === 1) await c.say('dotori:happy', ['천천히! 레드 떡볶이 다시 먹고, 블루 도서관에서 해미 언니 수수께끼 풀고, 옐로에서 까치 만나고…', '…이번엔 세금 안 떼이고 렙업하는 애들 얼굴 보러 가자.']);
+      else await c.say('dotori', ['……', '…그럼 내가 생각해 둘게. 너는 돌아오는 것만 생각해. 약속.']);
+      c.bond('dotori', 1);
+    } },
+  );
 
   G.world.nodes.push({ region: 'colorful', label: '알록달록', x: 52, y: 46, color: '#ff9a5a', maps: ['colorful', 'cape', 'fw_tower', 'hangar', 'colorful_rank', 'colorful_inn', 'invent_shop'] });
 })();

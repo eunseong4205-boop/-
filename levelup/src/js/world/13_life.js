@@ -133,6 +133,11 @@
       const n = Object.values(LETTER_AT).filter((b) => s.books[b]).length;
       if (n === 1) await c.say('dotori:surprise', ['…이 글씨. 나, 이 글씨 알아.', '둥글고 작은 글씨. 비석 뒤에 「성장은 나누는 거예요」라고 쓴 사람이야.']);
       else if (n === 8) await c.say('dotori:sad', ['여덟 통. 세린은 지나는 물마다 한 통씩 던졌던 거야.', '…16년 동안 물속에서 너를 기다렸네.']);
+      if (lid === 'l_black' && !s.flags.kairon_father) {
+        await c.say('dotori:surprise', ['…챔피언. 대륙에서 가장 강한 사람.', '{n}. 975년부터 지금까지 챔피언은 한 사람뿐이야.']);
+        await c.say('dotori:sad', '……카이론.');
+        s.flags.kairon_father = true; s.flags.father_from = 'letter';
+      }
       return;
     }
     // 순이의 미끼: 귀한 물고기가 두 배로 잘 문다

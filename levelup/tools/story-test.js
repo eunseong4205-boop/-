@@ -30,6 +30,7 @@ const SCENES = [
   ['항해 허가증', { map: 'blue', x: 21, y: 23, dir: 'right' }, { npc: 'captain' }, (s) => s.quests.m3 === 6 && s.inv.ferry_pass],
   ['고등어호 · 옐로 도착', { lv: 650, map: 'blue', x: 23, y: 25, dir: 'right' }, { build: 'ferryTalk' }, (s) => s.flags.button_stolen && s.quests.m4 === 1],
   ['그늘 골목: 까치', { map: 'hideout', x: 5, y: 4, dir: 'up' }, { npc: 'kkachi' }, (s) => s.flags.button_back && s.quests.m4 === 2 && s.inv.button],
+  ['참새단의 두목', { map: 'yellow', x: 6, y: 21, dir: 'down' }, { hook: true }, (s) => s.flags.d_kkachi === 'spare'],
   ['경험 거래소', { map: 'yellow', x: 29, y: 12, dir: 'up' }, { obj: [29, 11] }, (s) => s.quests.m4 === 3],
   ['황금궁 문지기', { gold: 2e6, map: 'yellow', x: 21, y: 9, dir: 'up' }, { npc: 'guard' }, (s) => s.flags.palace_open && s.quests.m4 === 4],
   ['금화왕 골디', { lv: 2000, map: 'palace', x: 9, y: 4, dir: 'up' }, { npc: 'goldie' }, (s) => s.quests.m4 === 6 && s.flags.m_yellow_bond],
@@ -50,6 +51,7 @@ const SCENES = [
   ['설원길', { lv: 26000, map: 'snowfield', x: 1, y: 18 }, { enter: true }, (s) => s.quests.m7 === 1],
   ['루미에', { map: 'cathedral', x: 9, y: 5, dir: 'up' }, { npc: 'lumie' }, (s) => s.quests.m7 === 2],
   ['얼음 신전 제단', { lv: 50000, map: 'ice_temple', x: 15, y: 4, dir: 'up' }, { obj: [15, 3] }, (s) => s.orbs.o_y3 && s.quests.m7 === 3],
+  ['마지막 단계의 아이', { map: 'cathedral', x: 9, y: 13, dir: 'up' }, { hook: true }, (s) => s.flags.d_patient === 'own'],
   ['루미에의 부탁', { map: 'cathedral', x: 9, y: 5, dir: 'up' }, { npc: 'lumie' }, (s) => s.quests.m7 === 4, [0]],
   ['에델', { map: 'cathedral', x: 11, y: 6, dir: 'up' }, { npc: 'edel' }, (s) => s.quests.m7 === 5],
   ['루미에와의 싸움', { lv: 60000, map: 'cathedral', x: 9, y: 5, dir: 'up' }, { npc: 'lumie' }, (s) => s.quests.m7 === 6 && s.flags.m_white_lumie],
@@ -75,7 +77,7 @@ const SCENES = [
   ['하늘 정거장', { map: 'station', x: 16, y: 26 }, { enter: true }, (s) => s.quests.m11 === 0],
   ['스텔라', { map: 'station_core', x: 9, y: 5, dir: 'up' }, { npc: 'stella' }, (s) => s.quests.m11 === 2],
   ['흑점의 전령', { lv: 600000, map: 'deck', x: 12, y: 8, dir: 'up' }, { fixed: 'herald' }, (s) => s.quests.m11 === 3],
-  ['스텔라: 셔틀', { map: 'station_core', x: 9, y: 5, dir: 'up' }, { npc: 'stella' }, (s) => s.quests.m11 === 4 && s.inv.x9],
+  ['스텔라: 셔틀', { map: 'station_core', x: 9, y: 5, dir: 'up' }, { npc: 'stella' }, (s) => s.quests.m11 === 4 && s.flags.stella_ally && s.flags.kairon_father],
   ['궤도 셔틀', { lv: 650000, ranks: { r5: 20 }, map: 'deck', x: 12, y: 5, dir: 'up' }, { obj: [12, 4] }, (s) => s.map === 'astra_gate'],
   ['아스트라', { map: 'astra_gate', x: 18, y: 28 }, { enter: true }, (s) => s.quests.m12 === 0],
   ['봉인의 제단 · 결말', { lv: 900000, ranks: { r5: 40 }, quests: { m12: 2 }, map: 'astra_seal', x: 12, y: 8, dir: 'up' }, { npc: 'kairon' }, (s) => s.flags.ending && s.map === 'festival'],
@@ -158,6 +160,7 @@ const SCENES = [
       else if (t.enter) { if (m.enter) G.script.run(m.enter); }
       else if (t.obj) { const o = F.objAt(t.obj[0], t.obj[1]); if (!o) throw new Error('오브젝트 없음 ' + t.obj); F.onInteract({ type: 'obj', obj: o }); }
       else if (t.pickup) { const o = F.objs.find((x) => x.id === t.pickup); if (!o) throw new Error('줍기 없음'); F.onInteract({ type: 'obj', obj: o }); }
+      else if (t.hook) { for (const h of G.hooks.enter) h(F.id); }
       else if (t.build) { const bb = F.builds.find((x) => x.talk && x.talk.name === t.build); if (!bb) throw new Error('건물 없음 ' + t.build); F.onInteract({ type: 'door', b: bb }); }
     }, target).catch((e) => errs.push(name + ': ' + e.message));
     const res = await drive(90000);

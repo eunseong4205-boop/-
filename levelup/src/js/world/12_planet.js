@@ -88,7 +88,13 @@
     await c.say('bella', ['…또 흰빛이 왔네. 이번엔 누구랑 같이 왔어?', '나는 벨라. 612년에 여기서 혼자 싸웠지. 이겼어. 그리고 혼자 잠들었어.']);
     await c.say('bella', ['나는 나누는 법을 몰랐어. 강하면 된다고 생각했거든.', '너는 달라 보여. 옆에 털뭉치도 있고. 뒤에 대륙도 있고.']);
     await c.say('dotori:angry', '털뭉치 아니야! 도토리야! 레벨 10이야!');
-    await c.say('bella:happy', '…하하. 좋다. 혼자가 아니구나. 그럼 괜찮아. 가.');
+    await c.say('bella:happy', '…하하. 좋다. 혼자가 아니구나.');
+    if (!(c.s.truth && c.s.truth.t_bella)) {
+      await c.say('bella', ['하나만 가져가. 612년에 아무도 못 들은 말. 잠들기 직전에 한 말이야.', '「우리가 모였기 때문에 그것이 왔다. 이긴 뒤에는 빛을 흩어라. 다시는 한곳에 모으지 마라.」']);
+      await c.say('bella', '…은빛 왕국 사람들은 대광맥에 모였고, 나는 여기 혼자 모였지. 빛이 한 사람한테 모여도 똑같아. 기억해.');
+      c.truth('t_bella');
+    }
+    await c.say('bella', '그럼 괜찮아. 가.');
   }
 
   /* ───────── 봉인의 제단 ───────── */
@@ -104,6 +110,47 @@
     enter: async (c) => { if (c.s.quests.m12 === 1) c.quest('m12', 2); },
   });
 
+  /* ───────── 결말 ─────────
+     카이론: 증거(진실의 조각 + 증인)로 설득하거나, 검으로 증명하거나.
+     흑점: 빛을 보내 준 마을이 여덟 이상이면 흩을 수 있다.
+     나눔(흩음 + 설득) · 나눔(흩음) · 속죄(설득했지만 모자람) · 잔광(둘 다 모자람) */
+  const TRUTH_ORDER = ['t_chart', 't_log', 't_colors', 't_serin', 't_612', 't_design', 't_stella', 't_bella'];
+  const KAIRON_REPLY = {
+    t_chart: ['은하수 영감의 관측표.', '993년에 그 영감이 편지를 보냈다. 나는 「우연」이라고 답장했다. …나도 여백에 같은 문장을 적었다. 「우연이어야 한다.」'],
+    t_log: ['등대지기의 일지. 「조각은 빛이 모인 곳으로 간다.」', '그 사내가 천년성 앞에서 눈이 멀었다는 보고를 받았다. 나는 그 보고서를 서랍에 넣었다.'],
+    t_colors: ['아우룸이 빛을 쪼갰다…', '천 년 동안 모두가 여신의 뜻이라 믿은 것을, 챔피언이 16년 만에 되돌려 모았군. 첫 번째 흰빛이 한 일을.'],
+    t_serin: ['……세린의 글씨.', '「K가 이걸 믿어 주면 좋을 텐데. 그 사람은 증명된 것만 믿으니까.」 …그래. 증명된 것만 믿었다. 그래서 너를 믿지 않았다, 세린.'],
+    t_612: ['잿빛의 사흘.', '612년 기록은 나도 읽었다. 읽고… 우리는 은빛 왕국보다 빠를 거라고 계산했다. 흑점보다 빨리 모으면 된다고.'],
+    t_design: ['볼트의 편지. 소인이 없군.', '…부쳤어도 나는 읽지 않았을 거다. 볼트는 그걸 알고 안 부쳤겠지.'],
+    t_stella: ['정거장의 400년 기록.', '16년 동안 매일 밤 신호를 보냈다. 답장이 없었지. …답장이 없었던 게 아니었군. 내가 들을 준비가 안 돼 있었다.'],
+    t_bella: ['벨라의 유언. 「이긴 뒤에는 빛을 흩어라.」', '…나는 이기기도 전에 모았다.'],
+  };
+  async function persuade(c) {
+    const s = c.s;
+    const have = TRUTH_ORDER.filter((k) => s.truth && s.truth[k]);
+    const power = have.length + (s.flags.nocturne_ally ? 1 : 0) + (s.flags.stella_ally ? 1 : 0);
+    await c.say('@', '증명할게요. 싸우지 않고.');
+    await c.say('kairon', '…말로? 숫자로 가져와라. 느낌은 계산에 넣지 않는다.');
+    for (const k of have) {
+      const T = G.story.truths[k];
+      await c.narr('[p]진실의 조각[/] — ' + T.title + '\n' + T.text);
+      await c.say('kairon', KAIRON_REPLY[k]);
+    }
+    if (!have.length) await c.say('kairon', '…빈손이군.');
+    if (s.flags.nocturne_ally) {
+      c.spawn({ id: 'nocturne', x: 14, y: 8, dir: 'left' });
+      await c.say('nocturne', ['카이론. 이 아이에게 약속을 받았다. 너를 해치지 않고 멈추겠다고. 밤 사람들의 방식으로.', '16년 동안 나는 대답하지 않았다. 오늘은 대답한다. …멈춰라.']);
+    }
+    if (s.flags.stella_ally) await c.say('stella', ['(목도리에 매달린 단말기에서) 여기는 S.T.E.L.L.A. 16년 치 네 신호에 이제 답장한다.', '「계산이 맞지 않는다.」 맞아. 네 식에는 변수가 하나 빠졌어. 「쏠림」. 400년 전에 보낸 답이야.']);
+    if (power < G.story.TRUTH_NEED) {
+      await c.say('kairon', ['……' + power + '개.', '네 말이 옳을 수도 있다. 하지만 「옳을 수도 있다」로는 대륙을 걸 수 없어. 16년을 뒤집기엔 모자라다.', '…검을 들어라. 증명은 빛으로 해라.']);
+      return false;
+    }
+    await c.narr('카이론이 오래 말이 없었다. 품에서 계산 노트를 꺼냈다가, 펼치지 않고 수정 발치에 내려놓았다.');
+    await c.say('kairon', ['……' + power + '개. 전부 한 방향을 가리키는군.', '숫자는 거짓말 안 한다. 레드의 견습 기사가 하던 말이라지. …내가 16년 동안 틀렸다.']);
+    return true;
+  }
+
   async function finale(c) {
     const s = c.s;
     c.music('mother');
@@ -111,6 +158,8 @@
     c.npc('kairon').face('D');
     await c.say('kairon', ['…왔군. 세린의 아이.', '늦지 않게 왔어. 천년성에서 쏜 빛이 곧 도착한다. 16년 치, 대륙 전부의 빛이.']);
     await c.say('kairon', ['계산은 끝났다. 그 빛으로 흑점을 태운다. 태우지 못하면…', '…너를 새 봉인으로 삼는다. 세린이 그랬던 것처럼.']);
+    if (s.flags.d_report === 'truth') await c.say('kairon', '그린 마을 징수 기사의 보고서. 「그 아이가 마을을 구했다.」 …세 번 읽었다. 기사가 보고서에 감상을 적으면 안 되는데.');
+    else if (s.flags.d_report === 'lie') await c.say('kairon', '그린 마을 보고서에는 「번개」라고 적혀 있더군. 16년 동안 그 마을엔 번개가 친 적이 없다. 그날 알았다. 네가 버튼을 눌렀다는 걸.');
     await c.say('@', '할머니가 전하래.');
     await c.say('@', '「스승이 기다린다. 밥 먹으러 온나.」');
     await c.emote('kairon', '…');
@@ -118,11 +167,30 @@
     await c.say(null, '카이론의 어깨가 아주 조금 떨렸다. 16년 동안 한 번도 떨리지 않은 어깨였다.');
     await c.say('kairon', ['……늦었다. 빛은 이미 출발했어. 계산을 멈추면… 전부 무너진다.', '증명해라. 네 방식이 옳다는 것을. 모으지 않고, 나눠서, 흑점을 이길 수 있다는 것을.']);
     c.quest('m12', 3);
-    const win = await c.battle('kairon', { noFlee: true, music: 'kairon' });
-    if (!win) { await c.say('kairon', '…아직이다. 빛이 도착하기 전에, 다시 와라.'); return; }
-    c.music(null);
-    await c.say(null, '황금 검이 바닥에 떨어졌다. 카이론이 무릎을 꿇었다.');
-    await c.say('kairon', ['……졌군.', '계산이… 틀렸다. 처음으로. 아니, 처음부터.']);
+    const have = TRUTH_ORDER.filter((k) => s.truth && s.truth[k]).length + (s.flags.nocturne_ally ? 1 : 0) + (s.flags.stella_ally ? 1 : 0);
+    const how = await c.ask('카이론에게 증명한다', ['증거를 내민다 (' + have + ' / ' + G.story.TRUTH_NEED + ')', '검을 든다']);
+    let persuaded = false;
+    if (how === 0) persuaded = await persuade(c);
+    if (!persuaded) {
+      if (s.flags.d_nocturne === 'promise') await c.say('dotori:worry', '{n}… 녹턴 아저씨한테 약속했어. 해치지 않고 멈추겠다고. 이기되, 멈추는 데까지만.');
+      const win = await c.battle('kairon', { noFlee: true, music: 'kairon' });
+      if (!win) { await c.say('kairon', '…아직이다. 빛이 도착하기 전에, 다시 와라.'); return; }
+      c.music(null);
+      await c.say(null, '황금 검이 바닥에 떨어졌다. 카이론이 무릎을 꿇었다.');
+      await c.say('kairon', ['……졌군.', '계산이… 틀렸다. 처음으로. 아니, 처음부터.']);
+      c.decide('kairon', 'fight', '카이론과 검으로 싸워 멈추게 했다');
+    } else c.decide('kairon', 'persuade', '진실의 조각으로 카이론을 설득했다');
+    s.flags.kairon_persuaded = persuaded;
+    // 아버지라고 부를 것인가
+    if (s.flags.kairon_father) {
+      const f = await c.ask(null, ['「…아버지.」', '「카이론.」', '(아무 말도 하지 않는다)']);
+      if (f === 0) {
+        c.set('called_father');
+        await c.narr('그 말이 제단에 떨어지자, 카이론은 한참을 움직이지 않았다. 얼굴이 무너지는 것을, 16년 동안 쌓은 무언가가 무너지는 것을 사람들은 처음 보았다.');
+        await c.say('kairon', ['……그 말을 들을 자격이 없다.', '983년에, 네가 0세 1일이던 날부터… 날마다 네 나이를 셌다. 셀 줄만 알았다. 부를 줄은 몰랐다.']);
+      } else if (f === 1) await c.say('kairon', ['…그래. 그게 맞다. 16년 동안 이름 말고 준 게 없으니.', '…이름도 스승님이 지어 주셨지.']);
+      else await c.say('kairon', '……침묵이 제일 무섭군. 계산할 수가 없어.');
+    }
     // 빛의 도착
     c.shake(1500, 6);
     c.flash('#b89aff', 900);
@@ -141,7 +209,7 @@
     c.spawn({ id: 'rud', x: 8, y: 3, dir: 'up' });
     c.spawn({ id: 'lea', x: 10, y: 4, dir: 'up' });
     c.spawn({ id: 'bolt', x: 9, y: 4, dir: 'up' });
-    c.spawn({ id: 'nocturne', x: 12, y: 5, dir: 'up' });
+    if (!s.flags.nocturne_ally) c.spawn({ id: 'nocturne', x: 12, y: 5, dir: 'up' });
     await c.fadeIn(500);
     await c.say('bolt', '신호 왔다. 끼워!');
     await c.say('rud', ['숫자는 거짓말 안 해.', '3…', '2…', '1…']);
@@ -150,25 +218,15 @@
     c.flash('#ffffff', 1200);
     c.shake(1000, 5);
     await c.say(null, '철컥—. 역류 장치가 제어판 홈에 맞물렸다. 대륙의 모든 탑이 동시에 떨렸다. 그리고— 흐름이 뒤집혔다.');
-    await c.say('nocturne', '……카이론. 이제 쉬어도 돼.');
+    if (!s.flags.nocturne_ally) await c.say('nocturne', '……카이론. 이제 쉬어도 돼.');
+    else await c.say('lea', '녹턴은 아스트라로 갔어. 약속 지키는지 보러 간대. …밤 사람들 참 고집스럽다.');
     c.despawn('rud'); c.despawn('lea'); c.despawn('bolt'); c.despawn('nocturne');
-    // 몽타주
+    // 몽타주: 대륙이 뒤집히는 밤. 각 장의 선택이 그대로 남는다.
     c.music('title');
     await c.fadeOut(600, true);
-    const mont = [
-      ['green', '그린 마을. 무너진 탑 자리에서 초록 빛이 솟았다. 봄이가 레벨 11이 되었다. 철이는 12가 되었다. 둘은 또 싸웠다.'],
-      ['red', '레드 마을. 대장간 굴뚝에서 붉은 빛이 솟았다. 루카와 루미의 머리칼이 끝에서부터 붉게 물들었다.'],
-      ['blue', '블루 마을. 등대의 흰 불빛 옆으로 파란 빛이 솟았다. 대도서관의 금서 봉인이 풀렸다. 먹물 관장이 먹물을 뿜었다.'],
-      ['yellow', '옐로 마을. 경험 거래소 창구에서 빛이 쏟아져 나와 아이들에게 돌아갔다. 까치가 레벨 30이 되었다. 골디는 창구 문을 닫고 웃었다.'],
-      ['purple', '퍼플 마을. 16년 만에 해가 졌다. 그리고 밤이 왔다. 베라 교수가 첫 번째 별을 보며 따뜻한 차를 마셨다.'],
-      ['rainbow', '무지개 마을. 무지개 샘이 일곱 빛깔을 합쳐 하얗게 빛났다. 천년제가 시작되었다.'],
-      ['white', '화이트 마을. 대성당의 환자들이 일어나 앉았다. 루미에가 16년 만에 울었다. 기도하지 않고, 그냥 울었다.'],
-      ['gray', '그레이 마을. 612에서 멈춰 있던 계기판 바늘이 움직였다. 잿빛 땅에 풀색이 번졌다. 노을이 그걸 보고 「예쁘다」고 했다.'],
-      ['black', '블랙 마을. 16년 만에… 해가 떴다. 호롱 영감은 등불을 끄고 퇴근했다.'],
-      ['colorful', '알록달록 마을. 사람들은 원래 하던 대로 불꽃을 쏘아 올렸다. 흩어지는 빛이 대륙의 빛과 섞였다.'],
-    ];
-    for (const [reg, line] of mont) {
-      G.main.enterMap(reg, G.world.towns.find((t) => t.map === reg).x, G.world.towns.find((t) => t.map === reg).y, 'down', { noBanner: true, keepMusic: true });
+    for (const [reg, line] of montage(s)) {
+      const t = G.world.towns.find((x) => x.map === reg);
+      G.main.enterMap(reg, t.x, t.y, 'down', { noBanner: true, keepMusic: true });
       await c.fadeIn(350);
       await c.say(null, line);
       await c.fadeOut(350, true);
@@ -177,39 +235,119 @@
     await c.warp('astra_seal', 12, 10, 'up', { instant: true, noBanner: true, keepMusic: true, noEnter: true });
     G.field.hideHero = false;
     c.npc('kairon').to(9, 9, 'up');
+    if (s.flags.nocturne_ally) c.spawn({ id: 'nocturne', x: 15, y: 9, dir: 'up' });
     await c.fadeIn(700);
     await c.say(null, ['아스트라로 향하던 빛의 기둥이 뚝 끊겼다. 모여 있던 빛이 대륙 전체로 흩어졌다.', '길을 잃은 흑점이 수정 밖으로 터져 나왔다. 성난 듯 온 방을 삼키며 부풀어 오른다.']);
     c.spawn({ id: 'blacksun_npc', x: 12, y: 4, dir: 'down', look: { creature: 'ghost', tint: '#0b0a1c' } });
     await c.say('blacksun', ['………빛이………흩어졌다………', '………그렇다면………너를………먹겠다………가장………하얀………빛………']);
-    await c.say('kairon', ['……나도 싸운다. 16년 동안 모은 빛은 흩어졌지만, 내 빛은 아직 여기 있다.', '…아니. 네 옆에 서겠다. 앞이 아니라.']);
+    await c.say('kairon', persuaded ? ['…내 빛은 아직 여기 있다. 16년 동안 모은 건 흩어졌지만.', '앞이 아니라 네 옆에 서겠다. 이번에는 계산 없이.'] : ['……나도 싸운다. 졌지만, 빛은 아직 남았다.', '…네 옆에 서겠다. 앞이 아니라.']);
     await c.say('dotori:angry', ['찍! 나도! 레벨 10이지만!', '{n}! 대륙이 보고 있어! 다들 버튼을 누르고 있을 거야!']);
+    // 빛을 보내 줄 마을: 각 장에서 쌓은 것
+    const sup = G.story.support(s);
+    const all = SUPPORT_TEXT;
+    const support = sup.map((x, i) => (x.ok ? all[i] : null)).filter(Boolean);
+    const missing = sup.filter((x) => !x.ok);
+    if (missing.length) await c.say('dotori:worry', ['…{n}. 빛이 안 오는 데가 있어.', missing.map((x) => TOWN_NAME[x.id]).join(', ') + '… 거기선 우리를 위해 누를 이유가 없나 봐.', '괜찮아. 온 빛만큼 싸우자.']);
+    else await c.say('dotori:happy', '…전부 와! 대륙 전부야! 하나도 빠짐없이!');
     c.music('final');
-    const support = [
-      { text: '[g]그린 마을[/]의 빛이 닿았다! 할머니가 지팡이를 들고 버튼을 누르고 있다.', short: '그린의 빛!', c: '#6ad86a' },
-      { text: '[r]레드 마을[/]의 빛이 닿았다! 대장장이들이 망치 대신 버튼을 두드린다.', short: '레드의 빛!', c: '#ff6a4a' },
-      { text: '[b]블루 마을[/]의 빛이 닿았다! 등대가 하늘을 향해 불빛을 돌렸다.', short: '블루의 빛!', c: '#4dabf7' },
-      { text: '[y]옐로 마을[/]의 빛이 닿았다! 그늘 참새단이 떼로 누른다. 골디도 몰래 누른다.', short: '옐로의 빛!', c: '#ffd43b' },
-      { text: '[p]퍼플 마을[/]의 빛이 닿았다! 미루의 주문이 처음으로 한 글자도 안 틀렸다.', short: '퍼플의 빛!', c: '#c49bff' },
-      { text: '무지개 마을의 빛이 닿았다! 롤로가 분홍 머리를 흔들며 관객들과 함께 누른다.', short: '무지개의 빛!', c: '#ff8ac8' },
-      { text: '화이트 마을의 빛이 닿았다! 루미에와 에델이 나란히 서서 누른다. 기도 대신.', short: '화이트의 빛!', c: '#ffffff' },
-      { text: '그레이 마을의 빛이 닿았다! 볼트가 웃으면서 누른다. 노을이 그걸 기록한다.', short: '그레이의 빛!', c: '#a8a8b8' },
-      { text: '블랙 마을의 빛이 닿았다! 미드나잇이 앞발로 누른다. 고등어 한 마리 값이다.', short: '블랙의 빛!', c: '#8a7ab8' },
-      { text: '하늘 정거장의 빛이 닿았다! 「계산 안 해. 그냥 누를게.」 — 스텔라', short: '정거장의 빛!', c: '#8ab0e0' },
-      { text: '알록달록 마을의 불꽃 천 발이 동시에 터졌다! 흩어지는 빛이 전부 여기로!', short: '천 발의 불꽃!', c: '#ff9a5a' },
-    ];
     const win2 = await c.battle('blacksun', { noFlee: true, music: 'final', support, supportEvery: 6, supportFirst: 3, boss: true });
     c.despawn('blacksun_npc');
     if (!win2) { await c.say('kairon', '…일어나라. 흑점은 아직 여기 있다. 대륙의 빛도 아직 너를 향하고 있어. 다시.'); c.unset('ending_try'); return; }
-    await ending(c);
+    const E2 = G.story.ending(s);
+    const type = E2.share ? 'share' : persuaded ? 'atone' : 'glow';
+    s.flags.ending_type = type;
+    await ending(c, type, persuaded);
+  }
+  const TOWN_NAME = { green: '그린', red: '레드', blue: '블루', yellow: '옐로', purple: '퍼플', rainbow: '무지개', white: '화이트', gray: '그레이', black: '블랙', space: '정거장', colorful: '알록달록' };
+  const SUPPORT_TEXT = [
+    { text: '[g]그린 마을[/]의 빛이 닿았다! 할머니가 지팡이를 들고 버튼을 누르고 있다.', short: '그린의 빛!', c: '#6ad86a' },
+    { text: '[r]레드 마을[/]의 빛이 닿았다! 대장장이들이 망치 대신 버튼을 두드린다.', short: '레드의 빛!', c: '#ff6a4a' },
+    { text: '[b]블루 마을[/]의 빛이 닿았다! 등대가 하늘을 향해 불빛을 돌렸다.', short: '블루의 빛!', c: '#4dabf7' },
+    { text: '[y]옐로 마을[/]의 빛이 닿았다! 그늘 참새단이 떼로 누른다. 골디도 몰래 누른다.', short: '옐로의 빛!', c: '#ffd43b' },
+    { text: '[p]퍼플 마을[/]의 빛이 닿았다! 미루의 주문이 처음으로 한 글자도 안 틀렸다.', short: '퍼플의 빛!', c: '#c49bff' },
+    { text: '무지개 마을의 빛이 닿았다! 롤로가 분홍 머리를 흔들며 관객들과 함께 누른다.', short: '무지개의 빛!', c: '#ff8ac8' },
+    { text: '화이트 마을의 빛이 닿았다! 루미에와 에델이 나란히 서서 누른다. 기도 대신.', short: '화이트의 빛!', c: '#ffffff' },
+    { text: '그레이 마을의 빛이 닿았다! 볼트가 웃으면서 누른다. 노을이 그걸 기록한다.', short: '그레이의 빛!', c: '#a8a8b8' },
+    { text: '블랙 마을의 빛이 닿았다! 미드나잇이 앞발로 누른다. 등불 거리의 모든 불이 한꺼번에 켜졌다.', short: '블랙의 빛!', c: '#8a7ab8' },
+    { text: '「계산 안 해. 그냥 누를게.」 — 목도리의 단말기에서 스텔라의 빛!', short: '스텔라의 빛!', c: '#8ab0e0' },
+    { text: '알록달록 마을의 불꽃 천 발이 동시에 터졌다! 흩어지는 빛이 전부 여기로!', short: '천 발의 불꽃!', c: '#ff9a5a' },
+  ];
+  function montage(s) {
+    const f = s.flags, q = s.quests;
+    return [
+      ['green', f.d_report === 'lie' ? '그린 마을. 무너진 탑 자리에서 초록 빛이 솟았다. 봄이가 레벨 11이 되었다. 콩순 아줌마는 레드 광산 쪽 하늘을 보며 도시락을 쌌다.' : '그린 마을. 무너진 탑 자리에서 초록 빛이 솟았다. 봄이가 레벨 11이 되었다. 철이는 12가 되었다. 둘은 또 싸웠다.'],
+      ['red', f.d_ledger === 'burn' ? '레드 마을. 장부가 타 버린 마을의 대장간 굴뚝마다 붉은 빛이 솟았다. 루카와 루미의 머리칼이 끝에서부터 붉게 물들었다.' : f.d_ledger === 'rud' ? '레드 마을. 루드가 다시 센 장부의 숫자가 빛이 되어 집집마다 돌아갔다. 루카와 루미의 머리칼이 붉게 물들었다.' : '레드 마을. 대장간 굴뚝에서 붉은 빛이 솟았다. 초소의 장부 위로 빛이 쏟아져 숫자들이 하얗게 지워졌다. 루카와 루미의 머리칼이 붉게 물들었다.'],
+      ['blue', q.q_light === 'done' ? '블루 마을. 등대의 흰 불빛 옆으로 파란 빛이 솟았다. 대도서관의 금서 봉인이 풀렸다. 먹물 관장이 먹물을 뿜었다.' : '블루 마을. 3년 동안 꺼져 있던 등대에 흩어진 빛이 스스로 내려앉아 불이 켜졌다. 빛나는 등대 계단에서 울었다.'],
+      ['yellow', f.d_goldie === 'expose' ? '옐로 마을. 문 닫은 거래소 앞 광장에 빛이 쏟아졌다. 사하라의 대상단 천막에서 셈을 배우던 아이들이 고개를 들었다.' : f.d_goldie === 'contract' ? '옐로 마을. 거래소 금고에서 빛이 쏟아져 나와 계약서의 이름들에게 돌아갔다. 스무 살이 되기 전에. 골디는 손해를 계산하다 말고 웃었다.' : '옐로 마을. 경험 거래소 창구에서 빛이 쏟아져 나와 아이들에게 돌아갔다.'],
+      ['purple', '퍼플 마을. 16년 만에 해가 졌다. 그리고 밤이 왔다. 베라 교수가 첫 번째 별을 보며 따뜻한 차를 마셨다.'],
+      ['rainbow', f.d_festival === 'bomb' ? '무지개 마을. 첫 불꽃과 함께 중계탑이 무너졌다. 바람이 불었다. 롤로의 무대 한쪽이 기울었다. 롤로는 팔에 붕대를 감은 채 공연을 끝까지 했다.' : f.d_festival === 'third' ? '무지개 마을. 금 간 채 서 있던 중계탑 자리에서 무지개 샘이 일곱 빛깔을 합쳐 하얗게 빛났다. 천년제가 시작되었다.' : '무지개 마을. 성기사단이 지키던 중계탑이 역류 장치에 스스로 무너졌다. 아무도 다치지 않았다. 천년제가 시작되었다.'],
+      ['white', f.d_patient === 'lumie' ? '화이트 마을. 대성당의 환자들이 일어나 앉았다. 하얗게 센 루미에가 하얀의 손을 잡고 울었다. 기도하지 않고, 그냥 울었다.' : '화이트 마을. 대성당의 환자들이 일어나 앉았다. 루미에가 16년 만에 울었다. 기도하지 않고, 그냥 울었다.'],
+      ['gray', f.d_bolt === 'talk' ? '그레이 마을. 612에서 멈춰 있던 계기판 바늘이 움직였다. 잿빛 땅에 풀색이 번졌다. 볼트가 노을의 녹음을 한 번 더 틀었다. 이번엔 끝까지 들었다.' : '그레이 마을. 612에서 멈춰 있던 계기판 바늘이 움직였다. 잿빛 땅에 풀색이 번졌다. 노을이 그걸 보고 「예쁘다」고 했다.'],
+      ['black', '블랙 마을. 16년 만에… 해가 떴다. 호롱 영감은 등불을 끄고 퇴근했다. 밤 사람들은 처음 보는 해를 눈부셔하며 서로 모른 척했다. 세 번째 규칙이 16년 만에 쓰였다.'],
+      ['colorful', '알록달록 마을. 사람들은 원래 하던 대로 불꽃을 쏘아 올렸다. 흩어지는 빛이 대륙의 빛과 섞였다.'],
+    ];
   }
 
-  async function ending(c) {
+  async function ending(c, type, persuaded) {
+    const s = c.s;
     c.set('ending');
     c.set('champion');
     c.music(null);
     c.flash('#ffffff', 2000);
     c.light(150);
-    await c.say(null, ['흰빛이 터졌다. 대륙에서 날아온 모든 빛과 섞여, 온 방을 가득 채웠다.', '흑점은 비명을 지르지 않았다. 그저… 흩어졌다. 수천, 수만 개의 작은 조각으로.', '조각들은 하늘로 흩어져, 하나씩 하나씩 작은 별이 되었다.']);
+    if (type === 'share') {
+      await c.say(null, ['흰빛이 터졌다. 대륙에서 날아온 모든 빛과 섞여, 온 방을 가득 채웠다.', '흑점은 비명을 지르지 않았다. 그저… 흩어졌다. 수천, 수만 개의 작은 조각으로.', '조각들은 하늘로 흩어져, 하나씩 하나씩 작은 별이 되었다.']);
+      await serinWakes(c);
+      if (persuaded) {
+        await c.say('kairon:sad', ['……세린.', '미안하다. 16년 동안… 계산만 했다. 네가 틀렸다고 믿어야 버틸 수 있었어.']);
+        await c.say('serin', ['알아, 카이론. 계산하지 말고 차나 마셔.', '…그리고 울어도 돼. 16년 치.']);
+        await c.say(null, '카이론이 울었다. 대륙의 절대 강자가, 열아홉 살 소년처럼.');
+      } else {
+        await c.say('kairon', ['……세린.', '…나는 졌다. 검으로. 그래서 아직 모르겠다. 내가 틀렸는지.']);
+        await c.say('serin', ['괜찮아. 모르는 채로 와도 돼. 스승님이 밥 차려 놓고 기다리신대.', '틀렸는지는… 밥 먹으면서 천천히 세. 당신 세는 거 잘하잖아.']);
+        await c.say(null, '카이론은 울지 않았다. 대신 세린이 내민 손을 아주 오래 보다가, 잡았다.');
+      }
+      await dotoriFlies(c);
+      await c.say('kairon', ['…챔피언의 자리는 너의 것이다. 대륙의 절대 강자.', '경험세는 오늘로 폐지한다. 탑은… 나눔탑으로 바꾸자. 볼트가 좋아하겠군.']);
+      c.give('serin_glove');
+      c.give('t13');
+      await c.say('serin', '이건 엄마가 끼던 장갑이야. 버튼 누를 때 끼렴. …그리고 이건 아우룸 할아버지가 남긴 무한 장갑. 수정 속에서 16년 동안 쥐고 있었어.');
+    } else if (type === 'atone') {
+      await c.say(null, ['흰빛이 터졌다. 대륙에서 날아온 빛과 섞여 흑점을 찢었다.', '…그러나 모자랐다. 흩어지지 못한 검은 조각 하나가 수정 위에서 다시 뭉치기 시작했다.']);
+      await c.say('kairon', ['……계산하지 않겠다. 이번엔.', '빛이 모자라면 그릇이 필요하지. 16년 동안 대륙의 빛을 모은 그릇이 여기 하나 있다. 흰빛은 아니지만, 무게는 충분하다.']);
+      await c.say('@', '안 돼! 그럼 엄마랑 똑같잖아!');
+      await c.say('kairon', ['똑같지 않다. 세린은 혼자 삼켰다. 나는… 네가 흩다 남긴 것만 삼킨다. 조각 하나.', '그리고 기한이 있다. 대륙이 나누는 법을 다 배울 때까지. 네가 가르쳐라. 16년보다는 짧게.']);
+      await serinWakes(c, true);
+      await c.say('kairon', ['세린. 차는… 다음에 마시자.', '스승님께는… 밥은 다음에 먹으러 간다고 전해 줘.']);
+      await c.narr(['카이론이 수정에 손을 얹었다. 검은 조각이 그를 향해 쏟아졌다. 황금빛 수정이 이번엔 그를 감쌌다.', '수정 속에서 그는 처음으로, 계산하지 않는 얼굴로 잠들었다.']);
+      if (s.flags.called_father) await c.say('@', '……아버지. 금방 올게. 아니, 금방은 단위가 아니지. …꼭 올게.');
+      await c.say('serin:sad', '…바보. 16년 늦게 배워 놓고, 배우자마자 쓰네.');
+      c.give('serin_glove');
+      c.give('t13');
+      await c.say('serin', '이건 엄마가 끼던 장갑이야. 그리고 이건 아우룸 할아버지가 남긴 무한 장갑. …둘 다 끼고 가르치러 가자. 나누는 법을. 저 사람 꺼내러.');
+    } else {
+      await c.say(null, ['흰빛이 터졌다. 대륙에서 날아온 빛과 섞여 흑점을 찢었다. 흑점은 수천 개의 별이 되었다.', '…그러나 수정 속 가장 깊은 곳에, 조각 하나가 남았다. 세린의 그릇이 16년 동안 품었던, 가장 오래된 조각.']);
+      await c.say(null, '수정에 금이 갔다가, 다시 닫혔다. 안에서 세린이 아주 잠깐 눈을 떴다.');
+      await c.say('serin', ['……많이 컸네.', '미안. 아직 못 나가. 마지막 조각이 내 안에 뿌리를 내렸어. 이건… 대륙이 다 같이 나눠야 흩어져.']);
+      await c.say('@', '……엄마.');
+      await c.say('serin', ['응. 엄마야. 그 말 들었으니까, 16년 더 버틸 수 있어.', '…아니. 16년까지 안 걸릴 거야. 네가 벌써 이만큼 나눴잖아. 조금만 더.']);
+      await c.narr('수정이 다시 닫혔다. 세린은 웃는 얼굴로 눈을 감았다. 수정 표면에 새 글씨가 떠올랐다. 둥글고 작은 글씨. 「오늘도 렙업.」');
+      await c.say('kairon', ['……내가 지키겠다. 이번엔 계산하지 않고, 그냥 곁에서.', '…너는 대륙으로 돌아가라. 사람들한테 가르쳐라. 모으지 말고 나누는 법을. 그게 이 수정을 여는 열쇠다.']);
+      if (s.flags.called_father) await c.say('kairon', '…아버지라고 불러 줬지. 그 말만으로, 16년 치 계산보다 무겁다.');
+      c.give('serin_glove');
+      c.give('t13');
+      await c.say(null, '수정 발치에 흰 장갑 한 켤레와 낡은 무한 장갑이 놓여 있었다. 세린이 16년 동안 쥐고 있던 것들이다.');
+    }
+    c.quest('m12', 'done');
+    await c.fadeOut(1200, true);
+    c.music('rainbow');
+    await c.narr(['그날 밤, 무한호는 두 번째로 폭발하지 않았다.', '천년력 1000년 새싹의 달 11일. 무지개 마을. 천년제.']);
+    c.quest('m13', 0);
+    await c.warp('festival', 19, 20, 'up', { instant: true, noBanner: true });
+    await c.fadeIn(1000);
+    await c.say('dotori:happy', type === 'share' ? ['찍! 다들 왔어! 대륙 사람들 전부!', '한 명씩 인사하자! 할머니랑 엄마는 샘 앞에서 기다린대!'] : type === 'atone' ? ['…다들 왔어. 엄마도 왔어.', '한 명씩 인사하자. 할머니랑 엄마가 샘 앞에서 기다려. …자리 하나는 비워 뒀대.'] : ['…다들 왔어. 대륙 사람들 전부.', '한 명씩 인사하자. 할머니가 샘 앞에서 기다려. 옆자리 둘은 비워 뒀대.']);
+  }
+  async function serinWakes(c, quiet) {
     c.music('mother');
     await c.say(null, '쨍그랑—. 봉인의 수정이 깨졌다. 흰 머리칼의 여인이 천천히 눈을 떴다.');
     await c.npc('serin').walk('DDD', 0.6);
@@ -218,25 +356,15 @@
     await c.say('serin:happy', ['응. 엄마야.', '…오늘도 렙업?']);
     await c.say('@', '…내일도 렙업.');
     await c.say(null, '세린이 {n}을(를) 안았다. 16년 치의 포옹이었다.');
-    await c.say('serin', ['수정 속에서 다 들렸어. 네가 등대를 켜고, 롤로 머리를 분홍으로 물들이고, 도토리를 날게 한 거.', '…나보다 훨씬 잘했어. 나는 혼자 삼켰는데, 너는 나눴잖아.']);
-    await c.say('kairon:sad', ['……세린.', '미안하다. 16년 동안… 계산만 했다. 네가 틀렸다고 믿어야 버틸 수 있었어.']);
-    await c.say('serin', ['알아, 카이론. 계산하지 말고 차나 마셔.', '…그리고 울어도 돼. 16년 치.']);
-    await c.say(null, '카이론이 울었다. 대륙의 절대 강자가, 열아홉 살 소년처럼.');
+    const f = c.s.flags;
+    if (f.mom_feel_angry) await c.say('serin', ['…원망했지. 수정 속에서도 다 들렸어. 도토리한테 한 말.', '원망해도 돼. 그 말 들으려고 16년 버텼어. 원망은 살아 있는 사람한테만 할 수 있으니까.']);
+    else await c.say('serin', ['수정 속에서 다 들렸어. 네가 등대를 켜고, 롤로 머리를 분홍으로 물들이고, 도토리를 날게 한 거.', '…나보다 훨씬 잘했어. 나는 혼자 삼켰는데, 너는 나눴잖아.']);
+    if (!quiet && f.hero_streak) await c.say('serin:sad', '…앞머리. 하얀 한 가닥. 누구한테 나눠 줬구나. 엄마는 화 안 낼게. 대신 쓰다듬게 해 줘.');
+  }
+  async function dotoriFlies(c) {
     await c.say('dotori:happy', ['찍… 찍찍! 다들 울면 나도 울어!', '…어? 어어? {n}! 나 봐! 나 떠 있어! 3초 지났는데 계속 떠 있어!']);
     await c.say(null, '도토리가 날았다. 3초가 아니라, 제단을 세 바퀴 도는 동안 내내. 도토리는 날면서 울었다.');
-    await c.say('serin:happy', ['도토리. 내가 쓰다듬어 준 게 16년 전인데, 기억하는구나.', '거봐. 날 수 있다고 했잖아.']);
-    await c.say('kairon', ['…챔피언의 자리는 너의 것이다. 대륙의 절대 강자.', '경험세는 오늘로 폐지한다. 탑은… 나눔탑으로 바꾸자. 볼트가 좋아하겠군.']);
-    c.give('serin_glove');
-    c.give('t13');
-    await c.say('serin', '이건 엄마가 끼던 장갑이야. 버튼 누를 때 끼렴. …그리고 이건 아우룸 할아버지가 남긴 무한 장갑. 수정 속에서 16년 동안 쥐고 있었어.');
-    c.quest('m12', 'done');
-    await c.fadeOut(1200, true);
-    c.music('rainbow');
-    await c.narr(['그날 밤, 무한호는 두 번째로 폭발하지 않았다.', '천년력 1000년 새싹의 달 11일. 무지개 마을. 천년제.']);
-    c.quest('m13', 0);
-    await c.warp('festival', 19, 20, 'up', { instant: true, noBanner: true });
-    await c.fadeIn(1000);
-    await c.say('dotori:happy', ['찍! 다들 왔어! 대륙 사람들 전부!', '한 명씩 인사하자! 할머니랑 엄마는 샘 앞에서 기다린대!']);
+    await c.say('serin:happy', ['도토리. 내가 쓰다듬어 준 게 16년 전인데, 기억하는구나.', '약속 지켜 줘서 고마워. 이제 너도 커도 돼. 이 아이 이제 다 컸으니까.']);
   }
 
   /* ───────── 에필로그: 천년제 밤 ───────── */
@@ -271,34 +399,73 @@
     ppeong: ['박사님이 하늘에 갔다 왔어! 폭발 없이! 거의! 대륙 역사상 가장 위대한 발명이야! 과장 아니야!'], hunjang: ['허허. 연대기 5권은 네 이야기로 쓰마. 「세 번째 흰빛, 나누다.」 빈칸 없이.'],
     park: ['두더지들이 휴전을 제안해 왔다. 27년 전쟁이 끝났다. …감자 반을 주기로 했다.'],
   };
+  // 선택에 따라 달라지는 천년제의 한마디
+  const ET = (s) => s.flags.ending_type || 'share';
+  const LINES2 = {
+    kongsun: (s) => (s.flags.d_report === 'lie' ? ['어머어머, 챔피언이 우리 동네 출신이라니! …우리 양반 봤어? 광산에서 곧장 왔대. 도시락 먹으면서.', '그 양반이 그러는데, 번개 본 날이 인생에서 제일 잘한 날이래. 어머, 번개는 본 적도 없으면서.'] : LINES.kongsun),
+    dolsoe: (s) => (s.flags.d_report === 'truth' ? ['천년성 정문 경비가 이제 할 일이 없다. 기사단이 해체됐거든.', '사실대로 쓴 보고서 한 장이 여기까지 왔네. …철이한테 자랑할 거다. 이번엔 진짜로.'] : s.flags.d_report === 'lie' ? ['광산 문지기 마지막 날이었다. 곡괭이 소리 들으면서 퇴근했지.', '「번개」라고 쓴 거, 후회 안 한다. …다음엔 그냥 사실대로 쓸 거지만.'] : LINES.dolsoe),
+    chul: (s) => (s.flags.d_report === 'truth' ? ['흥. 나는 12다. …우리 아빠 봤어? 천년성 정문 경비였대. 멋있지. 흥.'] : LINES.chul),
+    kkachi: (s) => (s.flags.d_kkachi === 'report' ? ['…장부 정리 끝났어. 금화왕이 나한테 거래소 열쇠를 줬어. 「네가 닫든지 열든지 해라.」', '닫았어. 애들 경험 전부 돌려줬어. …너한테 고맙다고는 안 할 거야. 그래도 여기까지 온 건… 네 덕도 조금 있어.'] : LINES.kkachi),
+    goldie: (s) => (s.flags.d_goldie === 'expose' ? ['거래소는 다시 안 연다. 장부를 뿌린 녀석 덕에.', '…사하라 천막에서 셈 배우던 애들이 오늘 나한테 계산서를 들고 왔더군. 16년 치 이자까지. 제대로 배웠어. 나쁘지 않아.'] : s.flags.d_goldie === 'contract' ? ['계약서 증인이 챔피언이 됐군. 이제 그 계약서는 대륙에서 제일 비싼 종이다.', '세린이 돌아왔으니 979년 빚을 받아야지. …아니, 백지 채권으로 퉁 쳤잖아. 장사 못 했다니까, 나.'] : LINES.goldie),
+    lea: (s) => (s.flags.d_festival === 'bomb' ? ['중계탑은 무너졌어. 계획대로. …바람이 불었어. 계산에 없던 바람.', '롤로 팔은 석 달이면 붙는대. 나는 평생 안 붙을 것 같아. 여기가.'] : s.flags.d_festival === 'warn' ? ['새벽단은 해산했어. 부술 탑이 없으니까. 너 때문에 한 번 잡혔고, 에델 때문에 풀려났고.', '…원망은 다 셌어. 루드 식으로. 0이더라.'] : LINES.lea),
+    rud: (s) => ((s.bond || {}).rud >= 2 ? ['숫자는 거짓말 안 해. 천년성 제어실, 오차 0초.', '…빚은 갚았다. 1,000골드, 탑 하나, 그리고 대륙 전부. 이제 네가 나한테 빚진 거야. 숫자로 적어 둘게.'] : ['숫자는 거짓말 안 해. 천년성 제어실, 오차 0초.', '…너한테는 아직 할 말이 정리가 안 됐어. 셀 수 없는 건 셀 수 있을 때까지 미뤄 둘 거야.']),
+    lolo: (s) => (s.flags.d_festival === 'bomb' ? ['(팔에 붕대를 감은 롤로) 오른팔은 쉬는 중! 왼팔로 저글링 세 개! 관객들이 더 좋아해!', '…무대가 기울 때 무서웠어. 근데 공연은 끝까지 했어. 웃음은 색이 없어도 보이니까.'] : LINES.lolo),
+    lumie: (s) => (s.flags.d_patient === 'lumie' ? ['(하얀이 루미에의 휠체어를 민다) 하얀이가 매일 밀어 줘요. 제가 주던 사탕을 이제 제가 받아요.', '기도 대신 박수를 쳤어요. 16년 만에. …손바닥이 아프네요. 이것도 괜찮은 아픔이에요.'] : LINES.lumie),
+    bolt: (s) => (s.flags.d_bolt === 'talk' ? ['탑은 전부 나눔탑으로 바꾼다. 렙업할 때 터진 빛을 옆 사람한테 보내는 탑이다.', '…요즘 밤에 잔다. 아내 목소리가 그러라고 했으니까. 연료 낭비가 아니었다.'] : LINES.bolt),
+    hwaro: (s) => (s.flags.d_ledger === 'burn' ? ['장부 태운 녀석이 챔피언이 됐다며! 약속대로 칼 한 자루 공짜다! 하하!'] : LINES.hwaro),
+    bitna: (s) => (s.quests.q_keeper === 'done' ? LINES.bitna : ['등대 불은 켜져 있어. 아빠는 아직이야.', '…블랙 마을에 눈먼 등대지기가 있다는 소문을 들었어. 내일 배 타고 가 볼 거야.']),
+    kairon: (s) => (s.flags.called_father ? ['스승님께 밥을 얻어먹었다. 16년 만에. …맛있었다.', '아까 네가 부른 그 두 글자. …한 번만 더 들을 수 있겠나. 아니, 됐다. 계산하지 않겠다. 기다리겠다.'] : LINES.kairon),
+    stella: () => ['(도토리 목도리의 단말기) 불꽃 3,812가지. 기록 안 해.', '…거짓말이야. 전부 기록 중. 400년 만에 기록할 게 생겼어. 「돌아온 사람들」.'],
+  };
   W.map('festival', {
     name: '천년제 밤', sub: '천년력 1000년 새싹의 달 11일', region: 'rainbow', area: 'festival', theme: 'rainbow', bg: '#1a1040', ki: W.ki('planet', 1), music: 'rainbow', weather: 'spark', dark: 200, darkColor: 'rgba(10,6,30,0.5)',
     grid: G.maps.rainbow.grid,
     builds: G.maps.rainbow.builds.filter((b) => b.style !== 'tower'),
     lights: [{ x: 19, y: 13, r: 80, c: '#ffffff' }, { x: 10, y: 15, r: 60, c: '#ff8ac8' }, { x: 28, y: 15, r: 60, c: '#ffd84a' }],
     edges: { left: { to: 'rainbow_bridge', tx: 43, ty: 7 }, up: { to: 'cloud_sea', tx: 21, ty: 31 } },
-    npcs: FEST.map(([id, x, y, dir, key]) => ({ id, x, y, dir, talk: key ? W.chatter('fest_' + key, LINES[key], id) : festFamily })),
+    npcs: FEST.concat([['stella', 21, 20, 'up', 'stella']]).map(([id, x, y, dir, key]) => ({
+      id, x, y, dir,
+      cond: id === 'serin' ? (s) => ET(s) !== 'glow' : id === 'kairon' || id === 'nocturne' ? (s) => ET(s) === 'share' : id === 'stella' ? (s) => !!s.flags.stella_ally : undefined,
+      talk: key ? W.chatter('fest_' + key, LINES2[key] || LINES[key], id) : festFamily,
+    })),
     objs: [],
   });
+  const ENDING_NAME = { share: '나눔', atone: '속죄', glow: '잔광' };
+  const ENDING_DESC = {
+    share: '대륙이 빛을 나누어 흑점을 흩었다. 세린은 돌아왔고, 카이론은 계산을 멈췄다.',
+    atone: '빛이 조금 모자랐다. 카이론이 남은 조각을 품고 잠들었다. 이번엔 기한이 있는 봉인이다. 대륙이 나누는 법을 다 배울 때까지.',
+    glow: '흑점은 별이 되었지만, 가장 오래된 조각 하나가 세린 안에 남았다. 수정 곁에는 카이론이 남았다. 잔광이 꺼지기 전에, 대륙이 나누는 법을 배워야 한다.',
+  };
   async function festFamily(c) {
     const s = c.s;
+    const type = ET(s);
     if (s.quests.m13 === 'done') {
-      await c.run(W.chatter('fest_family', [
-        (c2) => c2.say('gran', '오늘도 렙업? …그래, 내일도 렙업. 인자 할매는 그 대답만 들으면 된다.'),
-        (c2) => c2.say('serin', '엄마는 이제 아무 데도 안 가. 대신 네가 가고 싶은 데 같이 가자. 레벨은 무한이니까.'),
+      await c.run(W.chatter('fest_family', type === 'glow' ? [
+        (c2) => c2.say('gran', '오늘도 렙업? …그래, 내일도 렙업. 니 엄마 꺼내러 갈 날까지, 할매는 매일 묻는다.'),
+        (c2) => c2.say('gran', '빈자리 둘. 매일 밥 두 그릇 더 한다. 식어도 괜찮다. 할매는 식은 밥 잘 먹는다.'),
+      ] : [
+        (c2) => c2.say('gran', type === 'atone' ? '오늘도 렙업? …그래. 그 고집불통 꺼내러 가는 날, 할매도 데려가래이. 한 대 쥐어박게.' : '오늘도 렙업? …그래, 내일도 렙업. 인자 할매는 그 대답만 들으면 된다.'),
+        (c2) => c2.say('serin', type === 'atone' ? '매일 밤 수정에 차를 한 잔씩 올려. 식기 전에 나오라고. …그 사람, 계산 안 하고 잘 자고 있더라.' : '엄마는 이제 아무 데도 안 가. 대신 네가 가고 싶은 데 같이 가자. 레벨은 무한이니까.'),
       ], 'gran'));
       return;
     }
     await c.say('gran', ['왔나. …다 인사했나?', '마, 앉아라. 불꽃 보자.']);
-    await c.say('serin', ['엄마랑 할머니 사이에 앉아. 여기가 제일 잘 보여.']);
+    if (type !== 'glow') await c.say('serin', type === 'atone' ? ['엄마랑 할머니 사이에 앉아. 여기가 제일 잘 보여.', '…한 자리는 비워 뒀어. 그 사람 자리. 16년 늦게 배운 사람은 늦게 오는 법이야.'] : ['엄마랑 할머니 사이에 앉아. 여기가 제일 잘 보여.']);
+    else await c.say('gran', ['니 옆에 두 자리 비워 놨다. 니 엄마 자리, 니 아빠 자리.', '…비워 둔 자리는 채우라고 있는 기다. 급할 거 없다. 할매는 16년도 기다렸다.']);
     c.sfx('firework');
     c.flash('#ffd84a', 600);
     await c.say(null, '쾅, 쾅, 쾅—. 알록달록 마을의 불꽃 천 발이 무지개 마을 하늘에서 터졌다. 흩어지는 빛이 온 하늘을 덮었다.');
     c.sfx('firework');
     c.flash('#ff8ac8', 600);
-    await c.say('gran', ['세린아. 니 아가 해냈다.', '…니도 해냈고.']);
-    await c.say('serin:happy', ['선생님이 키웠잖아요. 16년 동안.', '…고마워요, 엄마.']);
-    await c.say('gran:sad', ['……엄마는 무슨. 할매다, 할매.', '…마, 눈에 불꽃 들어갔다.']);
+    if (type !== 'glow') {
+      await c.say('gran', ['세린아. 니 아가 해냈다.', '…니도 해냈고.']);
+      await c.say('serin:happy', ['선생님이 키웠잖아요. 16년 동안.', '…고마워요, 엄마.']);
+      await c.say('gran:sad', ['……엄마는 무슨. 할매다, 할매.', '…마, 눈에 불꽃 들어갔다.']);
+    } else {
+      await c.say('gran:sad', ['…세린아. 니 아가 해냈다. 반은.', '나머지 반은 우리가 할 차례다. 대륙이 다 같이. 니가 늘 말하던 대로.']);
+      await c.say(null, '할머니가 하늘을 올려다보았다. 황금별 옆에 작은 빛 하나가 깜빡였다. 잔광처럼.');
+    }
+    if (s.flags.after_plan) await c.say('dotori', s.flags.after_plan === 'home' ? '…내일은 그린 마을로 가자. 약초 캐러. 세 잎만.' : s.flags.after_plan === 'road' ? '…내일부터 한 바퀴 더 돌자. 이번엔 천천히. 세금 안 떼이는 애들 얼굴 보러.' : '…끝난 다음 거, 내가 생각해 뒀어. 내일 말해 줄게.');
     c.sfx('firework');
     c.flash('#6ad86a', 600);
     await c.say('dotori:happy', ['찍! {n}! 마지막 인사 하자! 다 같이!', '하나, 둘, 셋!']);
@@ -306,12 +473,16 @@
     await c.say(null, '[big]「내일도 렙업!」[/]\n무지개 마을 광장에 모인 대륙의 모든 사람이 대답했다.');
     c.music('ending');
     c.quest('m13', 'done');
-    await c.chapter('끝', '무한렙업 대모험', '모든 성장은 한 번의 누름에서 시작된다.');
-    await c.narr([
-      '[y]만든 것들[/]\n이야기 · 그림 · 음악 · 프로그램 — 한 번의 누름에서 시작된 모든 것.\n글꼴 — 갈무리 (Galmuri, SIL Open Font License 1.1)',
-      '[y]고마운 사람들[/]\n오방순, 도토리, 세린, 카이론, 그리고 버튼을 누른 당신.',
-      '이야기는 끝났지만 레벨은 끝이 없다. 무한 장갑을 끼고 계속 렙업할 수 있다.\n가 본 모든 곳을 다시 걸을 수 있다. 오늘도 렙업!',
-    ]);
+    await c.chapter('끝', '무한렙업 대모험', '결말 — ' + ENDING_NAME[type]);
+    // 당신이 걸어온 길: 내린 결정들을 한 장에 여섯 줄씩
+    const E2 = G.story.ending(s);
+    const log = (s.log || []).map((d) => '· ' + d.t);
+    const pages = ['[y]결말 — ' + ENDING_NAME[type] + '[/]\n' + ENDING_DESC[type] + '\n\n빛을 보내 준 곳 ' + E2.sup + ' / 11 · 진실의 조각 ' + E2.truths + ' / ' + Object.keys(G.story.truths).length];
+    for (let i = 0; i < log.length; i += 6) pages.push('[y]당신이 걸어온 길[/]' + (log.length > 6 ? ' (' + (i / 6 + 1) + ')' : '') + '\n' + log.slice(i, i + 6).join('\n'));
+    pages.push('[y]만든 것들[/]\n이야기 · 그림 · 음악 · 프로그램 — 한 번의 누름에서 시작된 모든 것.\n글꼴 — 갈무리 (Galmuri, SIL Open Font License 1.1)');
+    pages.push('[y]고마운 사람들[/]\n오방순, 도토리, 세린, 카이론, 그리고 버튼을 누른 당신.');
+    pages.push(type === 'share' ? '이야기는 끝났지만 레벨은 끝이 없다. 무한 장갑을 끼고 계속 렙업할 수 있다.\n가 본 모든 곳을 다시 걸을 수 있다. 오늘도 렙업!' : '이야기는 여기서 멈췄다. 하지만 끝난 것은 아니다.\n다른 선택, 다른 인연, 다른 진실이 다른 결말로 이어진다. 오늘도 렙업!');
+    await c.narr(pages);
     c.respawnHere();
     G.main.save(true);
   }

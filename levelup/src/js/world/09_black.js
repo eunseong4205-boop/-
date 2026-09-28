@@ -174,6 +174,25 @@
     const s = c.s;
     if (s.flags.castle_open) { await c.warp('castle1', 15, 28, 'up'); return; }
     await c.say(null, ['천년성의 정문. 검은 성벽이 하늘을 가린다. 성문 위에 붉은 등 하나가 켜져 있다.', '문지기 해골 기사가 창을 교차한 채 꼼짝하지 않는다.']);
+    // 사실대로 쓴 보고서의 값: 정직한 기사는 천년성 정문으로 발령났다
+    if (s.flags.d_report === 'truth' && ((s.bond || {}).dolsoe || 0) >= 2 && s.quests.m9 != null && s.quests.m9 >= 1) {
+      c.spawn({ id: 'dolsoe_g', x: 18, y: 5, dir: 'down', look: G.chars.dolsoe.look });
+      await c.say('dolsoe', ['…역시 왔구나. 해골들 사이에 서 있으니 반갑지? 나도 반갑다.', '사실대로 쓴 보고서 덕에 「정직한 기사」로 뽑혀서 천년성 정문 경비로 발령났다. 상인지 벌인지 모르겠다.']);
+      await c.say('dolsoe', ['정문 열쇠는 내 허리에 있다. 규칙서대로라면 너를 막아야 하고.', '…콩순이가 편지에 그랬다. 「그 아이가 오면 문 열어 주소. 안 열면 집에 오지 마소.」 집에는 가야지.']);
+      if (await c.yes('돌쇠가 정문을 열어 준다. 들어갈까?', 'dolsoe', '들어간다', '다른 길로 가겠다')) {
+        c.sfx('unlock');
+        c.set('castle_open');
+        c.decide('castle', 'gate', '돌쇠가 열어 준 천년성 정문으로 들어갔다');
+        c.bond('dolsoe', 1);
+        c.despawn('dolsoe_g');
+        if (s.quests.m9 < 4) c.quest('m9', 4);
+        await c.warp('castle1', 15, 28, 'up');
+        return;
+      }
+      await c.say('dolsoe', '…그래. 뒷길이 있다는 소문은 들었다. 나는 못 들은 걸로 하마.');
+      c.despawn('dolsoe_g');
+      return;
+    }
     await c.say('guard', '「…천년성. 허가 없는 자. 출입. 불가. 교대 시간. 천 년째. 안 옴.」');
   }
   async function graveEntrance(c) {
@@ -184,7 +203,8 @@
       c.set('castle_open');
       c.spawn({ id: 'lea', x: 30, y: 24, dir: 'up' });
       c.spawn({ id: 'rud', x: 34, y: 24, dir: 'up' });
-      await c.say('lea', ['왔군. 새벽단도 같이 간다. 천년성 중앙 제어실… 모든 탑의 빛이 지나가는 곳이야.', '오늘은 부수러 가는 게 아니야. 보러 가는 거지. 거기 뭐가 있는지.']);
+      if (s.flags.d_festival === 'warn') await c.say('lea', ['…놀랐어? 에델이 풀어 줬어. 너 때문에 붙잡혔고, 너 때문에 풀려났지. 루드 식으로 세면 0이야.', '같이 간다. 미워하는 거랑 같은 쪽을 보는 건 다른 문제니까.']);
+      else await c.say('lea', ['왔군. 새벽단도 같이 간다. 천년성 중앙 제어실… 모든 탑의 빛이 지나가는 곳이야.', '오늘은 부수러 가는 게 아니야. 보러 가는 거지. 거기 뭐가 있는지.']);
       await c.say('rud', ['숫자는 거짓말 안 해. 천년성 경비 해골 기사 312. 거미 90. 가고일 1.', '…가고일이 제일 세. 그놈은 네가 맡아.']);
       c.despawn('lea'); c.despawn('rud');
       c.quest('m9', 4);
@@ -202,23 +222,49 @@
   });
   async function midnightTalk(c) {
     const s = c.s;
-    if (s.quests.m9 === 1) {
+    if (!s.flags.midnight_met && s.quests.m9 != null && s.quests.m9 >= 1) {
+      c.set('midnight_met');
       await c.say('midnight', ['…어서 오게. 밤의 정보상, 미드나잇이라네.', '흰빛이로군. 냄새로 알았지. 천 년 만에 맡는 냄새야. …아니, 16년 만인가.']);
-      await c.say('midnight:smug', ['천년성에 들어가고 싶다? 정보는 공짜가 아니지. 금화왕 골디한테 배웠나? 그 녀석보다 나는 싸게 받네.', '[y]황금 고등어[/] 한 마리. 블루 어시장에서 팔지. 돈으로 받으면 거래가 되고, 생선으로 받으면 우정이 되거든.']);
-      c.quest('m9', 2);
-      if (!E.has(s, 'fish_gold')) return;
+      await c.say('midnight:smug', s.flags.castle_open ? ['천년성엔 벌써 들어갔다며? 그럼 나한테 살 건 없겠군. …아니, 있지. 구슬 하나, 옛날이야기 하나.', '[y]황금 고등어[/] 한 마리. 돈으로 받으면 거래가 되고, 생선으로 받으면 우정이 되거든.'] : ['천년성에 들어가고 싶다? 정보는 공짜가 아니지. 금화왕 골디한테 배웠나? 그 녀석보다 나는 싸게 받네.', '[y]황금 고등어[/] 한 마리. 블루 어시장에서 팔지. 돈으로 받으면 거래가 되고, 생선으로 받으면 우정이 되거든.']);
+      if (s.quests.m9 === 1) c.quest('m9', 2);
     }
-    if (s.quests.m9 === 2) {
-      if (!E.has(s, 'fish_gold')) { await c.say('midnight', '황금 고등어는? …없군. 블루 어시장. 5만 골드. 싸지?'); return; }
-      c.take('fish_gold');
-      await c.say(null, '미드나잇이 황금 고등어를 앞발로 받아 들고, 한참 냄새를 맡았다. 그리고 수염을 떨었다.');
-      await c.say('midnight:happy', ['…좋은 고등어군. 거래 성립. 아니, 우정 성립.', '천년성 뒷길 지도라네. 마을 남동쪽 묘지의 기울어진 비석. 고양이 발자국을 따라가게.']);
-      c.give('secret_map');
+    // 값은 두 가지: 황금 고등어(우정), 또는 네 것인 비밀 하나(약속). 뒷문으로 이미 성에 들어갔어도 거래는 열려 있다.
+    if (!s.flags.m_black_midnight && s.quests.m9 != null && s.quests.m9 >= 2) {
+      const fish = E.has(s, 'fish_gold');
+      const secrets = [['afraid', '봉인이 되는 게 무서워.'], ['mom', s.flags.mom_feel_angry ? '엄마를 아직 원망해.' : '엄마 얼굴이 기억나지 않아.'], ['father', '아빠가 누군지… 알고 싶지 않은 척했어.']];
+      const opts = (fish ? [['fish', '[y]황금 고등어를 건넨다[/]']] : []).concat([['secret', '비밀 하나를 값으로 치른다'], ['later', '다음에 오겠다']]);
+      if (!fish) await c.say('midnight', '황금 고등어는? …없군. 블루 어시장에서 5만 골드. 아니면… 밤 사람들 식으로 치르든가. [y]네 비밀[/] 하나. 남의 비밀은 안 받네.');
+      const k = await c.ask('미드나잇의 값', opts.map((o) => o[1]), 'midnight');
+      const how = opts[k][0];
+      if (how === 'later') { await c.say('midnight', '밤은 길다네. 16년째.'); return; }
+      if (how === 'fish') {
+        c.take('fish_gold');
+        await c.say(null, '미드나잇이 황금 고등어를 앞발로 받아 들고, 한참 냄새를 맡았다. 그리고 수염을 떨었다.');
+        await c.say('midnight:happy', ['…좋은 고등어군. 거래 성립. 아니, 우정 성립.', s.fishLog && s.fishLog.fish_gold ? '…직접 낚았군. 손에서 바다 냄새가 나. 천 년 동안 직접 낚아 온 녀석은 둘뿐이었네. 아우룸, 그리고 너.' : '어시장 냄새가 나는군. 괜찮네. 돈 주고 산 것도 마음이지.']);
+        c.decide('midnight', 'fish', '미드나잇에게 황금 고등어를 건넸다');
+      } else {
+        const j = await c.ask('어떤 비밀을 말할까', secrets.map((x) => x[1]));
+        c.set('midnight_secret', secrets[j][0]);
+        await c.narr('미드나잇이 눈을 가늘게 떴다. 가게 안의 등불이 한 칸 낮아졌다. 목소리를 낮추어 말했다.');
+        await c.say('midnight', j === 0 ? ['…무섭다라. 좋은 비밀이군. 용감한 척하는 녀석들은 그걸 절대 안 말하지.', '천 년 전에 똑같은 말을 한 녀석이 있었네. 그 녀석은 결국 무서운 채로 갔지. 무서운 채로 가는 게 용기라네.'] : j === 1 ? ['…그렇군. 그건 네 엄마도 알고 있었을 거야. 알고도 갔지.', '비밀은 약속처럼. 이건 이 가게 밖으로 안 나가네.'] : ['…허. 그건 비밀이 아니라 질문이군.', '답은 안 주겠네. 값을 받았으니 대신 이건 말해 주지. 네가 알고 싶지 않은 척하는 그 이름을, 너는 이미 한 번 들었어.']);
+        c.decide('midnight', 'secret', '미드나잇에게 황금 고등어 대신 비밀을 치렀다');
+        c.bond('midnight', 1);
+      }
+      if (!s.flags.castle_open) {
+        await c.say('midnight', '천년성 뒷길 지도라네. 마을 남동쪽 묘지의 기울어진 비석. 고양이 발자국을 따라가게.');
+        c.give('secret_map');
+      } else await c.say('midnight', '…지도는 필요 없겠군. 정문으로 들어갔다며. 정직한 기사 덕에. 밤 사람들은 그런 소문이 제일 빠르지.');
       await c.say('midnight', ['그리고 이건 덤. 보라 구슬. 오래전 어떤 친구가 외상으로 맡기고 간 거지. 「내 후계자가 오면 줘.」', '…그 친구 이름이 아우룸이었던가. 기억이 잘 안 나는군. 고양이는 기억력이 나빠.']);
       await c.orb('o_p1');
       c.set('m_black_midnight');
+      // 천 년 묵은 고양이의 옛날이야기: 다섯 빛깔의 이유
+      if (!(s.truth && s.truth.t_colors) && (await c.yes('「덤을 하나 더 줄까? 천 년 묵은 고양이의 옛날이야기.」', 'midnight', '듣는다', '됐어'))) {
+        await c.say('midnight', ['그 녀석이 흰빛으로 전쟁을 끝낸 밤, 하늘에서 무언가가 눈을 떴네. 나는 봤지. 그 녀석 어깨 위에서.', '그 녀석은 밤새 계산했어. 그리고 빛을 쪼갰네. 다섯 갈래로. 여신 이름을 빌려서. 사람들이 그걸 믿어야 다시 모으지 않을 테니까.']);
+        await c.say('midnight', ['등급도, 구슬도, 전부 같은 까닭이야. 모이지 말라고.', '…천 년 뒤에 누가 그걸 다 모아서 하늘에 쏘아 올리겠다니. 고양이는 웃을 수가 없어. 웃는 근육이 없거든.']);
+        c.truth('t_colors');
+      }
       await c.say('midnight', '천년 치 외상이 이제야 갚아졌군. …가게. 녹턴은 성 꼭대기에 있네. 그 녀석은 16년째 하늘만 보고 있어.');
-      c.quest('m9', 3);
+      if (s.quests.m9 === 2) c.quest('m9', 3);
       return;
     }
     await c.run(W.chatter('midnight', [
@@ -283,19 +329,39 @@
       c.quest('m9', 5);
     }
     if (s.lv < 180000) { await c.say('nocturne', '…아직 약하다. 그 빛으로는 카이론은커녕 나도 넘지 못한다. 더 자라서 와라.'); return; }
-    if (!(await c.yes('녹턴에게 도전할까?', 'nocturne', '도전한다', '아직'))) return;
+    // 밤 사람들의 첫 번째 규칙: 약속은 목숨처럼
+    const k = await c.ask(null, ['녹턴에게 도전한다', '약속한다: 카이론을 해치지 않고 멈추겠다', '아직'], 'nocturne');
+    if (k === 2) return;
+    if (k === 1) {
+      await c.say('nocturne', ['……약속.', '이 도시에서 약속은 목숨이다. 네가 그 말을 지키지 못하면, 너는 이 도시의 규칙으로 목숨을 빚진다.']);
+      const y = await c.yes('「그래도 약속하겠나. 그를 해치지 않고 멈추겠다고.」', 'nocturne', '약속한다', '…아니');
+      if (!y) { await c.say('nocturne', '…그래. 지킬 수 없는 약속은 하지 않는 것도 밤 사람들의 방식이다.'); return; }
+      await c.narr('녹턴이 얼굴을 가린 천을 스스로 내렸다. 지친 눈이 이쪽을 오래 보았다. 그리고 창가에서 한 걸음 비켜섰다.');
+      await c.say('nocturne', ['16년 동안 누군가 그 말을 해 주기를 기다렸다. 「멈추겠다」. 「이기겠다」가 아니라.', '…비키겠다. 그림자가 주인을 떠나는 게 아니다. 주인을 구하러 갈 사람에게 길을 내주는 것이다.']);
+      c.decide('nocturne', 'promise', '녹턴에게 카이론을 해치지 않고 멈추겠다고 약속했다');
+      c.bond('nocturne', 3);
+      await nocturneAfter(c, true);
+      return;
+    }
     const win = await c.battle('nocturne', { noFlee: true, music: 'boss2' });
     if (!win) { await c.say('nocturne', '…다시 와라. 나는 여기 있다. 16년째.'); return; }
-    await nocturneAfter(c);
+    c.decide('nocturne', 'force', '녹턴을 힘으로 넘어섰다');
+    await nocturneAfter(c, false);
   }
-  async function nocturneAfter(c) {
+  async function nocturneAfter(c, promised) {
     c.music('sad');
-    await c.say(null, '녹턴이 무릎을 꿇었다. 얼굴을 가린 천이 흘러내렸다. 지친 눈이었다.');
+    if (!promised) await c.say(null, '녹턴이 무릎을 꿇었다. 얼굴을 가린 천이 흘러내렸다. 지친 눈이었다.');
     await c.say('nocturne', ['……그림자는, 빛이 있어야 생긴다.', '16년 동안 나는 카이론의 그림자였다. 그런데 그의 빛은 16년 전에 꺼졌다. 세린과 함께.']);
     await c.say('nocturne', ['카이론을 구해 다오. 그는 16년 동안 한 번도 잠들지 않았다. 한 번도 울지 않았다.', '그는 괴물이 아니다. 계산을 멈추면 무너질까 봐 무서운… 열아홉 살 소년이다. 아직도.']);
-    await c.say('nocturne', ['이것을 가져가라. [y]밤의 열쇠[/]. 하늘 정거장의 문을 여는 열쇠다. 아우룸 시대부터 천년성에 보관되어 왔다.', '그리고 [y]그림자 브로치[/]. 그림자는 빛을 가장 잘 아는 법이다.']);
-    c.give('night_key');
-    c.give('x8');
+    if (promised) {
+      await c.say('nocturne', ['이것을 가져가라. [y]밤의 열쇠[/]. 하늘 정거장의 문을 여는 열쇠다. 아우룸 시대부터 천년성에 보관되어 왔다.', '그림자 브로치는… 나를 넘은 자의 몫이다. 너는 넘지 않았다. 대신 내가 간다. 천년제 날 밤, 아스트라에. 약속을 지키는지 보러.']);
+      c.give('night_key');
+      c.set('nocturne_ally');
+    } else {
+      await c.say('nocturne', ['이것을 가져가라. [y]밤의 열쇠[/]. 하늘 정거장의 문을 여는 열쇠다. 아우룸 시대부터 천년성에 보관되어 왔다.', '그리고 [y]그림자 브로치[/]. 그림자는 빛을 가장 잘 아는 법이다.']);
+      c.give('night_key');
+      c.give('x8');
+    }
     c.set('m_black_nocturne');
     await c.say('nocturne', '창틀의 보라 구슬도 가져가라. 천년성의 가장 높은 곳. 아우룸이 하늘과 이야기하던 자리다.');
     await c.wait(0.5);
@@ -318,10 +384,73 @@
     c.despawn('kairon');
     c.set('m_black_kairon');
     await c.say('dotori:worry', ['찍… 사라졌어. 저게… 챔피언. 레벨 99만 9999.', '…{n}. 무서워. 그런데 저 사람, 이상하게 슬퍼 보였어.']);
+    // 묻는 사람에게만: 16년 동안 대답하지 않은 것
+    const q = await c.ask(null, ['카이론은… 엄마랑 어떤 사이였어?', '(묻지 않는다)']);
+    if (q === 0) {
+      await c.say('nocturne', ['……', '대답하지 않은 것이 16년 동안 내가 한 일의 전부라고 일지에 썼지. 오늘은 그 일을 그만두겠다.']);
+      await c.say('nocturne', ['세린은 카이론의 아내였다. 981년 봄, 그린 마을 참나무 아래서. 증인은 오방순과 나, 둘뿐이었다.', '그리고 너는… 카이론의 아이다.']);
+      c.music('mother');
+      await c.say('dotori:surprise', '……찍.');
+      await c.say('nocturne', ['그가 너를 「세린의 아이」라고만 부르는 이유를 생각해 봐라.', '「내 아이」라고 부르는 순간, 계산이 멈추니까. 16년 동안 그는 그 두 글자를 한 번도 입에 올리지 않았다.']);
+      c.set('kairon_father');
+      c.set('father_from', 'nocturne');
+    } else if (!c.s.flags.kairon_father) await c.say('nocturne', '…묻지 않는군. 그것도 대답이다. 언젠가는 들어야 할 거다. 가능하면 그의 입으로.');
     await c.say('nocturne', ['아스트라에 가려면 하늘 정거장을 지나야 한다. 정거장에 가려면… 하늘을 날아야 하지.', '남쪽 알록달록 마을의 팡팡이라는 발명가가 평생 로켓을 만들고 있다. 세린과 약속했었다더군. 하늘에 가는 법을.']);
     c.quest('m9', 6);
     c.music('castle');
   }
+
+  /* ───────── 블랙의 결: 우물 · 묘지 · 소품 · 혼잣말 · 곁의 이야기 ───────── */
+  G.maps.midnight_shop.npcs[0].mark = (s) => (!s.flags.m_black_midnight && s.quests.m9 != null && s.quests.m9 >= 1 ? '!' : null);
+  W.addObjs('black', [
+    W.prop('hole', 12, 22, '마을 우물. 두레박 대신 낚싯줄이 여러 가닥 드리워져 있다. 해가 뜨지 않는 도시에서는 우물 물고기가 귀한 반찬이다.', { pool: 'black', ice: false }),
+    W.prop('bench', 21, 8),
+    W.prop('board', 22, 16, (s) => ['등불 거리 게시판. 등불 기름 배급표가 붙어 있다. 「한 집에 한 달 한 병」', s.quests.q_lamps === 'done' ? '그 옆에 호롱 영감의 글씨: 「퇴근합니다. 16년 만에. — 호롱」' : '「꺼진 등불 다섯 개 — 원인 불명. 탑이 먹는다는 소문.」', s.flags.m_black_kairon ? '누군가 새로 붙인 쪽지: 「성 꼭대기에서 금빛이 번쩍였다. 챔피언이 왔다 갔다.」' : ''].filter(Boolean)),
+    W.prop('shrine', 35, 23, '묘지 끝의 작은 사당. 이름 대신 약속이 새겨진 묘비들. 「돌아오겠다」「기다리겠다」「지켜 주겠다」. 지킨 약속은 금빛 칠이 되어 있다. 대부분 칠이 없다.'),
+  ]);
+  W.addObjs('castle2', [W.look(12, 2, (s) => (s.flags.kairon_father ? '가장 높은 창. 창틀에 아주 작은 글씨로 날짜들이 새겨져 있다. 983년부터 하루도 빠짐없이. 매일 밤 누군가 여기 서서 무언가를 셌다. 아이의 나이를.' : '가장 높은 창. 창틀에 아주 작은 글씨로 날짜들이 빼곡히 새겨져 있다. 983년부터 하루도 빠짐없이.'))]);
+  W.barks('black', {
+    horong: (s) => (s.quests.q_lamps === 'done' ? ['퇴근이다!'] : ['기름은 있는데…', '16년째 야근…']),
+    oldman: ['…짠 냄새.', '빛나야…'],
+    shadow: ['약속은 목숨처럼.'],
+    shadow2: ['해는 노랗대.'],
+    engineer: ['소리 없이 누른다.'],
+  });
+  W.barks('midnight_shop', { midnight: ['고등어 냄새…', '외상은 사절.'] });
+  W.barks('castle2', { nocturne: ['……'] });
+
+  /* 도토리와의 이야기 (9장) */
+  G.story.talks.push(
+    { id: 'bl_dark', map: 'night_forest', run: async (c) => {
+      await c.say('dotori:worry', ['네 빛 말고는 아무것도 안 보여.', '…이 동네 사람들은 16년 동안 이렇게 살았어. 해를 그림으로만 봤대.']);
+      await c.say('dotori', '우리가 여기 온 것만으로도 이 사람들한테는 조금 밝아졌을까. 걸어 다니는 등불처럼.');
+    } },
+    { id: 'bl_kairon', when: (s) => !!s.flags.m_black_kairon, pri: 4, run: async (c) => {
+      await c.say('dotori', ['그 사람. 챔피언.', '레벨이 99만이 넘는데, 너를 볼 때 눈을 못 맞췄어. 계속 네 목걸이만 봤어. 새싹 목걸이.']);
+      if (c.s.flags.kairon_father) {
+        const k = await c.ask(null, ['…아빠라는 말, 아직 못 하겠어.', '왜 16년 동안 한 번도 안 왔을까.', '(아무 말도 하지 않는다)']);
+        if (k === 0) await c.say('dotori', ['안 해도 돼. 그 말은 네 거야. 네가 하고 싶을 때 해.', '…아니면 평생 안 해도 돼.']);
+        else if (k === 1) await c.say('dotori', ['녹턴 아저씨가 그랬잖아. 「내 아이」라고 부르면 계산이 멈춘다고.', '…16년 동안 멈추기 싫어서 안 온 거야. 비겁해. 근데… 무서웠던 거겠지.']);
+        else await c.say('dotori', '……응. 나도 옆에서 가만히 있을게.');
+        c.bond('dotori', 1);
+      } else await c.say('dotori', '…이상하게 슬퍼 보였어. 계산만 하는 사람이 왜 그런 눈을 할까.');
+    } },
+    { id: 'bl_promise', when: (s) => s.flags.d_nocturne === 'promise', run: async (c) => {
+      await c.say('dotori', ['녹턴 아저씨한테 약속했잖아. 해치지 않고 멈추겠다고.', '…이 도시에서 약속은 목숨이래. 우리 목숨 걸었어. 찍.']);
+      await c.say('dotori:happy', '괜찮아. 너 약속 잘 지키잖아. 할머니한테 한 「오늘도 렙업」도 매일 지켰잖아.');
+    } },
+  );
+  /* 쉬는 밤 (9장) */
+  G.story.nights.push(
+    { id: 'bl_night', when: (s) => !!s.flags.m_black_kairon, intro: '달 없는 여관. 창밖이 늘 밤이라 언제 자야 할지 모르겠다. 도토리가 먼저 말을 꺼냈다.', run: async (c) => {
+      const f = c.s.flags.kairon_father;
+      await c.say('dotori', f ? ['…{n}. 너한테 아빠가 생겼어. 오늘.', '좋은 거야, 나쁜 거야? 나는 잘 모르겠어.'] : ['…천년제 날 밤이 얼마 안 남았어.', '그 사람이 기다린대. 아스트라에서. 오지 않아도 좋대. 오지 않으면 자기가 끝낸대.']);
+      const k = await c.ask(null, f ? ['나쁜 거야. 아직은.', '…모르겠어. 그래서 가 볼 거야.', '엄마는 그 사람을 사랑했대. 그건 믿어.'] : ['끝내게 두지 않을 거야.', '…무서워.', '그 사람이 뭘 끝낸다는 걸까.']);
+      if (f) await c.say('dotori', k === 0 ? '…응. 「아직은」이라고 했다. 들었어.' : k === 1 ? '…응. 가서 보자. 보고 나서 정해도 늦지 않아.' : '…참나무에 S랑 K 새긴 거. 반듯한 K. 이제 보니까 되게 떨면서 새긴 것 같더라.');
+      else await c.say('dotori', k === 0 ? '…응. 우리가 먼저 가자.' : k === 1 ? '…나도. 무서운 사람 둘이면 조금 덜 무섭대. 할머니 말.' : '…자기 자신을 끝낼 생각인 것 같았어. 그 눈이.');
+      c.bond('dotori', 1);
+    } },
+  );
 
   G.world.nodes.push({ region: 'black', label: '블랙', x: 82, y: 30, color: '#8a7ab8', maps: ['black', 'night_forest', 'castle1', 'castle2', 'midnight_shop', 'black_rank', 'black_inn'] });
 })();
