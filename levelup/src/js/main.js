@@ -389,7 +389,9 @@
   function drawBarks() {
     const box = $('barks');
     if (!box) return;
-    const show = !B.active && !S.running && M.running;
+    // 모험 수첩 · 상점 같은 창이 열려 있으면 말풍선은 숨긴다
+    const top = UI.top();
+    const show = !B.active && !S.running && M.running && (!top || top.name === 'base');
     const k = cv.clientWidth / VW;
     const live = new Set();
     if (show) {

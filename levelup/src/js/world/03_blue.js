@@ -489,7 +489,7 @@
       { mon: 'clam', x: 5, y: 20, flag: 'beat_clam', boss: true, look: { creature: 'slime', tint: '#e8d8f0' } },
       { mon: 'kraken', x: 16, y: 2, flag: 'beat_kraken', boss: true, look: 'octopus', talk: krakenTalk },
     ],
-    enter: async (c) => { if (c.flag('tip_seacave')) return; c.set('tip_seacave'); await c.say('dotori:worry', ['찍… 발밑이 축축해. 벽에서 물이 떨어져.', '가장 안쪽에서 뭔가 커다란 게 꿈틀거리는 소리가 나…']); },
+    enter: async (c) => { if (c.flag('tip_seacave')) return; c.set('tip_seacave'); await c.say('dotori:worry', ['발밑이 축축해. 벽에서 물이 떨어져.', '가장 안쪽에서 뭔가 커다란 게 꿈틀거리는 소리가 나…']); },
   });
   async function krakenTalk(c, mo) {
     await c.say(null, '동굴 가장 안쪽 물웅덩이에서 보랏빛 다리 여덟 개가 솟아올랐다. 가운데 커다란 눈 하나가 번뜩인다.');

@@ -69,7 +69,7 @@
       c.set('ch8');
       c.quest('m7', 'done');
       await c.chapter('8장', '잿빛의 땅', '고개를 넘자 세상에서 색이 빠졌다. 풀도, 하늘도, 사람의 얼굴도 잿빛이었다.');
-      await c.say('dotori:worry', ['찍… {n}. 네 초록 옷만 색이 있어. 나머지는 다 회색이야.', '612년에 은빛 왕국이 무너질 때 땅의 색이 빠졌대. 400년이 지났는데 아직도…']);
+      await c.say('dotori:worry', ['{n}. 네 초록 옷만 색이 있어. 나머지는 다 회색이야.', '612년에 은빛 왕국이 무너질 때 땅의 색이 빠졌대. 400년이 지났는데 아직도…']);
       c.quest('m8', 1);
     },
   });
@@ -125,7 +125,7 @@
       c.light(80);
       await c.say(null, ['흰빛이 노을의 회로로 흘러 들어갔다. 노을의 눈에 박힌 노을빛 렌즈가 깜빡였다.', '…그리고 노을은 멈췄다.']);
       await c.wait(1.5);
-      await c.say('dotori:worry', '…찍? 고장 났어?');
+      await c.say('dotori:worry', '…고장 났어?');
       await c.wait(1.2);
       await c.say('noel:happy', ['……', '…초록. 네 옷. 이게 초록.', '병 안의 이건… 빨강. 파랑. 노랑. 보라. 무지개. 하양.', '…3분 동안 계산했다. 이 감정의 이름을 찾지 못했다.']);
       await c.say('noel:happy', '「예쁘다.」 …이게 예쁘다구나.');
@@ -275,7 +275,7 @@
       const read = s.books.b_silver && s.books.b_report;
       if (!read) { await c.say('dotori', '찍, 벽의 기록판부터 읽어 보자. 612년 기록이랑… 저건 보고서 같아.'); return; }
       await c.say('@', '……빛을 모으면, 흑점이 온다.');
-      await c.say('dotori:worry', ['찍… 그럼 징수탑은… 16년 동안 흑점을 부르고 있었던 거야?', '볼트 아저씨한테 이걸 보여 주자.']);
+      await c.say('dotori:worry', ['그럼 징수탑은… 16년 동안 흑점을 부르고 있었던 거야?', '볼트 아저씨한테 이걸 보여 주자.']);
       c.quest('m8', 3);
     }
   }

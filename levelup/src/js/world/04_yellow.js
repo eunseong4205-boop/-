@@ -475,7 +475,7 @@
     await c.emote('merchant_y', '!');
     await c.say('merchant', ['거기! 방금 그 굴에서 나왔지? 참새단 소굴 맞지?', '그 녀석들한테 우리 노점 셋이 털렸어. 한 집은 문을 닫았고. 두목이 누군지만 알려 줘.']);
     await c.say('guard', ['옐로 경비대다. 참새단 두목에게 현상금이 걸려 있다. 30만 골드.', '협조하면 네 버튼 도난 건도 서류로 처리해 주지.']);
-    await c.say('dotori:worry', '찍… {n}.');
+    await c.say('dotori:worry', '{n}.');
     const k = await c.ask('참새단의 두목을 알려 줄까', ['모르는 애였다고 한다', '까치가 두목이라고 알려 준다']);
     if (k === 0) {
       await c.say('@', '…모르는 애였어요. 버튼은 골목에 떨어져 있었어요.');

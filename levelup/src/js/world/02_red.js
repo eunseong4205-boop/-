@@ -161,7 +161,7 @@
     if (rep === 'truth') {
       await c.say('rud', ['그린 마을 징수탑 보고서, 나도 봤어. 원인 「흰빛」. 담당 기사가 끝에 한 줄을 덧붙였더군.', '「그 아이가 마을을 구했다.」 …기사는 보고서에 감상을 적으면 안 돼. 규칙서 3조.']);
       await c.say('rud', ['흰빛. 초록 옷. 열여섯쯤.', '…너구나.']);
-      await c.say('dotori:worry', '찍… 돌쇠 아저씨, 진짜로 다 썼구나.');
+      await c.say('dotori:worry', '돌쇠 아저씨, 진짜로 다 썼구나.');
       await c.say('rud', ['안심해. 견습한테는 체포 권한이 없어.', '[r]숫자는 거짓말 안 해.[/] 네가 탑을 부순 만큼, 누군가의 방패가 얇아졌어. 그건 알고 다녀.']);
     } else if (rep === 'unknown') {
       await c.say('rud', ['그린 마을 징수탑이 무너졌다는 보고가 올라왔어. 원인 「불명」.', '기사단에서 불명은 조사 대상이란 뜻이야. 조사단이 벌써 그린으로 떠났어.']);
@@ -252,7 +252,7 @@
     await c.emote('hooded', '…');
     await c.say('dawn', ['(지붕 위, 두건 쓴 사람이 중얼거린다)', '…저 아이가 탑을 부순 흰빛이라. 흥미롭군.']);
     c.despawn('hooded');
-    await c.say('dotori:worry', '찍? 방금 지붕 위에 누가 있지 않았어?');
+    await c.say('dotori:worry', '방금 지붕 위에 누가 있지 않았어?');
     c.quest('m2', 3);
     c.music('red');
   }
@@ -267,7 +267,7 @@
       await c.say(null, '철컥—. 16년 동안 잠겨 있던 철문이 무겁게 열렸다.');
       c.set('mine_open');
       if (s.quests.q_mine === 0) c.quest('q_mine', 1);
-      if (s.lv < 250) await c.say('dotori:worry', ['찍… 안에서 무서운 소리가 나. 여기 몬스터들은 엄청 셀 것 같아.', '[y]레벨 250[/]은 넘기고 들어가는 게 좋겠어.']);
+      if (s.lv < 250) await c.say('dotori:worry', ['안에서 무서운 소리가 나. 여기 몬스터들은 엄청 셀 것 같아.', '[y]레벨 250[/]은 넘기고 들어가는 게 좋겠어.']);
       if (await c.yes('광산으로 들어갈까?')) await c.warp('mine1', 14, 27, 'up');
     } else if (code != null) {
       c.sfx('buzz');
@@ -542,7 +542,7 @@
       W.bookObj('b_mine_log', 4, 6),
     ],
     mons: { list: ['minemole', 'minemole', 'goldbat', 'gemgolem'], n: 9, area: [1, 1, 28, 27] },
-    enter: async (c) => { if (c.flag('tip_mine')) return; c.set('tip_mine'); await c.say('dotori:worry', ['찍… 캄캄해. 광차 레일이 안쪽으로 이어져 있어.', '레일을 따라가면 더 깊은 곳으로 내려가는 계단이 있을 거야.']); },
+    enter: async (c) => { if (c.flag('tip_mine')) return; c.set('tip_mine'); await c.say('dotori:worry', ['캄캄해. 광차 레일이 안쪽으로 이어져 있어.', '레일을 따라가면 더 깊은 곳으로 내려가는 계단이 있을 거야.']); },
   });
   W.map('mine2', {
     name: '황금 광산 깊은 굴', sub: '두더지왕의 방', region: 'red', area: 'mine', theme: 'mine', bg: '#0a0806', ki: W.ki('blue', 0.42), music: 'cave', dark: 60, battleBg: 'mine',
@@ -687,7 +687,7 @@
       const k = await c.ask(null, ['숫자 뒤에 숨은 거야.', '그래도 나쁜 짓은 나쁜 짓이야.', '우리도 뭔가 숨고 있을지 몰라.']);
       if (k === 0) await c.say('dotori', '…숨는 데가 숫자면 편하겠다. 숫자는 틀려도 자기 탓이 아니잖아.');
       else if (k === 1) await c.say('dotori', ['…응. 맞아. 화로 아저씨는 세금 때문에 망치를 네 할 더 세게 쳐야 했어.', '그래도… 나빠지는 이유가 있는 사람은, 돌아올 이유도 있을 거야.']);
-      else { await c.say('dotori:worry', ['……', '나는 레벨 얘기만 나오면 딴소리해. 숨는 거 맞아. 찍.']); c.bond('dotori', 1); }
+      else { await c.say('dotori:worry', ['……', '나는 레벨 얘기만 나오면 딴소리해. 숨는 거 맞아.']); c.bond('dotori', 1); }
     } },
     { id: 'r_galaxy', when: (s) => !!s.flags.m_red_galaxy, pri: 2, run: async (c) => {
       await c.say('dotori', ['세린. 너네 엄마 이름.', '이상해. 그 이름 들으니까 가슴이 콕콕 아파. 내가 왜 아프지? 나는 다람쥐인데.']);

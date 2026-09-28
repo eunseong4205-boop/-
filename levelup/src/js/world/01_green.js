@@ -171,7 +171,7 @@
     await c.say('gran', '도토리 니도 따라가라. 우리 {n} 사고 안 치구로 잘 봐래이.');
     await c.say('dotori:happy', '찍! 맡겨 줘! 나 레벨 9야!');
     await c.say('gran', '니는 16년째 레벨 9다 아이가.');
-    await c.say('dotori:sad', '…찍.');
+    await c.say('dotori:sad', '…');
     await c.say('gran', ['아, 그라고 하나 더. 땅바닥에 [y]금가루가 빙빙 도는 자리[/] 보이거든 그 위에 서서 눌러라.', '[y]수련 샘[/]이라 카는 긴데, 기운이 세 배로 모인다. 버튼이 금빛으로 빛나믄 제대로 선 기다.']);
     await c.say('dotori:happy', ['찍! 그리고 그리고! [y]3초 안에 스물네 번[/] 막 누르면 [y]피버[/]야! 8초 동안 두 배!', '…나는 한 번도 못 해 봤지만.']);
     c.npc('dotori').hide();
@@ -723,7 +723,7 @@
     enter: async (c) => {
       if (c.flag('tip_forest')) return;
       c.set('tip_forest');
-      await c.say('dotori:worry', ['찍… 여긴 속삭이는 숲이야. 버섯들이 밤낮으로 수다를 떨어.', '귀 기울이면… 들려. 「흰빛이다」「흰빛이 왔다」…? 찍? 우리 얘기 하는 거야?']);
+      await c.say('dotori:worry', ['여긴 속삭이는 숲이야. 버섯들이 밤낮으로 수다를 떨어.', '귀 기울이면… 들려. 「흰빛이다」「흰빛이 왔다」…? 찍? 우리 얘기 하는 거야?']);
     },
   });
   async function treantTalk(c, mo) {
@@ -757,7 +757,7 @@
     c.give('stick');
     await c.orb('o_r2');
     await c.say('treant', ['흰빛의 아이야… 하나만 기억하렴…', '[p]탑은 빛을 먹는단다[/]… 그런데 너의 빛은… 너무 맛있어 보이는구나…']);
-    await c.say('dotori:worry', '찍… 무슨 뜻이지?');
+    await c.say('dotori:worry', '무슨 뜻이지?');
     if (s.quests.m1 === 2) c.quest('m1', 3);
   }
 
@@ -856,7 +856,7 @@
     { id: 'g_after', when: towerDown, pri: 2, run: async (c) => {
       await c.say('dotori', ['탑이 너를 빨아들일 때… 나 아무것도 못 했어.', '소리만 질렀어. 레벨 9짜리가 할 수 있는 게 그거밖에 없더라.']);
       const k = await c.ask(null, ['네 목소리 들렸어. 그래서 버텼어.', '다음엔 네가 막아 줘.', '…나도 무서웠어.']);
-      if (k === 0) { await c.say('dotori:sad', '…진짜? 거짓말이어도 좋아. 찍.'); c.bond('dotori', 1); }
+      if (k === 0) { await c.say('dotori:sad', '…진짜? 거짓말이어도 좋아.'); c.bond('dotori', 1); }
       else if (k === 1) { await c.say('dotori', '…응. 다음엔 막을 거야. 레벨이 안 올라도. 몸으로라도.'); c.set('dotori_vow'); c.bond('dotori', 1); }
       else { await c.say('dotori', ['…그랬구나. 너도 무서웠구나.', '다행이다. 나만 무서운 줄 알았어.']); c.bond('dotori', 2); }
     } },

@@ -309,7 +309,7 @@
   });
   async function megaTalk(c, mo) {
     await c.say(null, '탑 꼭대기에 사람 키의 다섯 배는 되는 거대한 폭죽이 서 있다. 심지에서 불똥이 투덜투덜 튄다.');
-    await c.say('dotori:worry', ['찍… 저게 천발이야. 천 발을 한 번에 쏘도록 만들었는데 한 번도 못 쐈대.', '쏠 날을 기다리다 성격이 나빠졌대…']);
+    await c.say('dotori:worry', ['저게 천발이야. 천 발을 한 번에 쏘도록 만들었는데 한 번도 못 쐈대.', '쏠 날을 기다리다 성격이 나빠졌대…']);
     const win = await c.battle('megafirework', { noFlee: true });
     if (!win) return;
     G.field.removeMon(mo);
