@@ -270,6 +270,7 @@
       await c.say(null, ['제어판 가운데 홈에 노란 구슬이 박혀 있다. 구슬 안의 숫자가 계기판처럼 깜빡인다.', '612.']);
       await c.orb('o_y4');
     }
+    if (s.books.b_silver && s.books.b_report) c.truth('t_612');
     if (s.quests.m8 === 2) {
       const read = s.books.b_silver && s.books.b_report;
       if (!read) { await c.say('dotori', '찍, 벽의 기록판부터 읽어 보자. 612년 기록이랑… 저건 보고서 같아.'); return; }
@@ -300,7 +301,32 @@
     fixed: [],
   });
   async function boltFight(c) {
+    const s = c.s;
     await c.say('bolt', ['왔군. 이게 MK-7이다. 천년포의 시제품. 대륙에서 제일 큰 기계지.', '내가 16년 동안 옳았다면, 이 녀석이 널 이긴다. 네가 옳다면… 증명해 봐라.']);
+    // 노을이 색을 본 뒤라면: 노을 몸속에 잠긴 목소리를 들려줄 수 있다
+    const canTalk = s.quests.q_noel === 'done';
+    if (canTalk) {
+      c.spawn({ id: 'noel_f', x: 14, y: 25, dir: 'up', look: G.chars.noel.look });
+      await c.say('noel', '…따라왔다. 볼트. 나에게 재생 금지 명령이 걸린 기록이 하나 있다. 990년 가을.');
+      await c.say('bolt', '……노을. 그건 꺼내지 마라.');
+    }
+    const k = canTalk ? await c.ask(null, ['[y]노을에게 기록을 재생해 달라고 한다[/]', '기계로 증명한다']) : 1;
+    if (k === 0) {
+      c.music('mother');
+      await c.say('noel', '재생 금지 명령을… 해제한다. 나의 판단이다. 볼트가 가르쳐 준 대로. 「옳은 쪽의 숫자를 따르라.」');
+      await c.narr(['노을의 가슴에서 치직거리는 소리가 났다. 그리고 낮고 쉰, 다정한 여자 목소리가 공장 안에 퍼졌다.', '「여보. 녹음이 되고 있는 거 맞죠? …이 로봇 참 착해요. 가만히 있네.」', '「내 머리칼이 하얘지는 거, 당신 탑 때문인 거 알아요. 당신도 알죠. 계산 잘하잖아.」', '「탑 멈춰요. 당신이 틀려도 괜찮아요. 나는 틀린 당신도 사랑했어요. 맞는 당신은 좀 재미없었고.」', '「…잠 좀 자요. 연료 낭비라고 하지 말고.」']);
+      await c.wait(0.8);
+      await c.say(null, 'MK-7의 조종석 문이 열린 채로 멈췄다. 볼트는 올라타지 않았다. 대신 바닥에 주저앉았다. 강철 장갑을 벗는 데 한참 걸렸다.');
+      await c.say('bolt', ['……9년 동안 한 번도 안 틀었다. 틀면… 내가 틀린 게 되니까.', '……틀렸군. 9년 동안. 아니, 16년 동안.']);
+      await c.say('bolt', ['싸울 필요 없다. 증명은 끝났다. 저 목소리가 나보다 계산을 잘했다. 늘 그랬다.', '공방으로 와라. 틀렸으면 고쳐야지. 기술자는 그렇게 산다.']);
+      c.decide('bolt', 'talk', '노을의 목소리로 볼트를 설득했다');
+      c.bond('bolt', 2); c.bond('noel', 1);
+      c.despawn('noel_f');
+      c.quest('m8', 5);
+      c.music('gray');
+      return;
+    }
+    if (canTalk) c.despawn('noel_f');
     c.shake(800, 4);
     await c.say(null, '쿠웅— 공장 바닥이 흔들리며 거대한 강철 기계가 일어섰다. 볼트가 조종석에 올라탔다.');
     const win = await c.battle('voltmech', { noFlee: true, music: 'boss2' });
@@ -309,8 +335,63 @@
     await c.say(null, 'MK-7이 무릎을 꿇었다. 연기 속에서 볼트가 조종석에서 내려왔다.');
     await c.say('bolt', ['……증명 끝.', '네가 옳다. 내가 틀렸다. 16년 동안.']);
     await c.say('bolt', ['공방으로 와라. 틀렸으면 고쳐야지. 기술자는 그렇게 산다.']);
+    c.decide('bolt', 'fight', 'MK-7을 쓰러뜨려 볼트에게 증명했다');
     c.quest('m8', 5);
   }
+
+  /* ───────── 그레이의 결: 잠긴 서랍 · 노을의 기록 · 소품 · 혼잣말 · 곁의 이야기 ───────── */
+  W.keyItem('drawer_key', '볼트의 서랍 열쇠', '노을이 몸속에 보관하던 작은 열쇠. 「볼트가 울 수 있게 되면 건네라」는 명령과 함께.');
+  // 노을이 색을 본 뒤: 서랍 열쇠를 건넨다
+  W.wrapNpc('gray', 'noel', (s) => s.quests.q_noel === 'done' && !s.flags.noel_key, async (c) => {
+    c.set('noel_key');
+    await c.say('noel', ['하나 더. 볼트가 내 몸에 넣어 둔 것. 작은 열쇠. 공방 왼쪽 서랍의 열쇠다.', '명령문: 「볼트가 울 수 있게 되면 건네라.」 …볼트는 아직 울지 않았다. 하지만 나는 판단했다. 너에게 건네는 쪽이 울게 만드는 방법에 가깝다.']);
+    c.give('drawer_key');
+    await c.say('noel', '그리고 기록 하나가 더 있다. 990년 가을. 재생 금지. …필요하면 부르라. 폐공장이든 어디든.');
+  });
+  W.addObjs('workshop', [W.look(2, 2, '공방 왼쪽 철제 서랍. 자물쇠가 세 겹이다. 녹 하나 없이 반짝인다. 매일 닦은 모양이다.', { talk: async (c) => {
+    const s = c.s;
+    if (s.truth && s.truth.t_design) { await c.say(null, '비어 있는 서랍. 안쪽 바닥에 오래된 잉크 자국이 번져 있다.'); return; }
+    if (!E.has(s, 'drawer_key') && s.flags.d_bolt !== 'talk') { await c.say(null, '공방 왼쪽 철제 서랍. 자물쇠가 세 겹이다. 녹 하나 없이 반짝인다. 매일 닦은 모양이다.'); return; }
+    await c.say(null, s.flags.d_bolt === 'talk' && !E.has(s, 'drawer_key') ? '서랍이 열려 있다. 볼트가 열어 둔 모양이다.' : '노을의 열쇠를 꽂자 자물쇠 세 개가 한꺼번에 풀렸다.');
+    await c.narr(['서랍 안에는 봉투 하나. 겉봉에 「천년성 · 챔피언 카이론 귀하」. 우표는 붙어 있는데 소인이 없다. 한 번도 부치지 않았다.', '「카이론. 계산을 끝냈다. 탑들이 모은 빛을 한 점으로 쏘아 올리면, 그 점은 방패가 아니라 등대가 된다.」', '「은빛 왕국 대광맥의 세 배. 흑점이 그 불빛을 못 볼 리가 없다.」', '「멈춰라. 틀렸다고 말하는 건 내가 하겠다. 너는 멈추기만 해라. — 990년 가을, 볼트」']);
+    c.truth('t_design');
+    await c.say('dotori:worry', ['…9년 전에 다 알았어. 볼트 아저씨.', '알았는데 못 부쳤어. 아내가 떠난 해에.']);
+  } })]);
+  W.addObjs('gray', [
+    W.prop('bench', 15, 21, '녹슬이가 만든 고철 의자. 「앉아도 됨. 삐걱거려도 안 부러짐. — 녹슬이」'),
+    W.prop('fire', 22, 12, '기름통 모닥불. 그레이 사람들이 모여 손을 쬔다. 불꽃만은 여기서도 주황색이다. 다들 그걸 한참 본다.'),
+    W.prop('board', 14, 12, (s) => ['고철 시장 게시판. 「오늘의 시세 — 녹슨 톱니 3개에 빵 하나」', s.flags.d_bolt ? '그 아래 볼트의 글씨로 짧은 공고: 「천년포 개발 중단. 부품 무료 배포. 연료 낭비 금지.」' : '「천년포 조립 인력 모집 — 볼트 공방」', s.quests.q_noel === 'done' ? '구석에 노을의 반듯한 글씨: 「오늘의 하늘 — 회색. 예쁨.」' : ''].filter(Boolean)),
+  ]);
+  W.barks('gray', { noel: (s) => (s.quests.q_noel === 'done' ? ['초록. 예쁨.', '회색도 예쁨.'] : ['색 수집 중.', '온도 측정 중.']), rusty: ['고철 팝니다!'], engineer: ['톱니 장갑!'], engineer2: ['회색. …웃어도 돼.'], kid: ['초록이 뭐야?'] });
+  W.barks('workshop', { bolt: ['……', '연료 낭비다.'] });
+
+  /* 도토리와의 이야기 (8장) */
+  G.story.talks.push(
+    { id: 'gr_color', map: 'gray', run: async (c) => {
+      await c.say('dotori', ['여기선 네 초록 옷이 제일 시끄러워. 다들 한 번씩 쳐다봐.', '…부러운 걸까, 싫은 걸까. 나는 갈색이라 티도 안 나.']);
+    } },
+    { id: 'gr_beacon', when: (s) => !!s.flags.m_gray_truth, pri: 5, run: async (c) => {
+      await c.say('dotori:worry', ['등대. 볼트 아저씨가 그랬잖아. 16년 동안 흑점한테 등대를 켜 줬다고.', '…그럼 카이론은 하늘을 지킨 게 아니라, 불렀던 거야?']);
+      const k = await c.ask(null, ['카이론은 몰랐을 거야.', '알았어도 멈추지 않았을 거야.', '…우리가 모르는 게 아직 있어.']);
+      if (k === 0) await c.say('dotori', '…볼트 아저씨도 몰랐어. 알고 싶지 않아서. 어른들은 모르고 싶은 걸 참 잘 몰라.');
+      else if (k === 1) await c.say('dotori', '「이유가 있는 잘못은 멈추질 않는다.」 할머니 말이야. 그 사람한테 이유가 뭘까.');
+      else { await c.say('dotori', ['…응. 계산이 안 맞아. 엄마를 잃은 사람이 왜 엄마가 막은 걸 부를까.', '누가 흑점보다 더 무서운 걸까. 그 사람한테는.']); c.bond('dotori', 1); }
+    } },
+    { id: 'gr_noel', when: (s) => s.quests.q_noel === 'done', run: async (c) => {
+      await c.say('dotori', ['노을 언니가 3분 동안 멈췄을 때 고장 난 줄 알았어.', '…나도 처음 날았을 때 3초 멈췄어. 좋은 건 멈추게 하나 봐.']);
+    } },
+  );
+  /* 쉬는 밤 (8장) */
+  G.story.nights.push(
+    { id: 'gr_noel_night', when: (s) => s.quests.q_noel === 'done', intro: '녹슨 톱니 여관. 창밖 가로등 아래 노을이 서 있다. 하늘을 올려다보며, 움직이지 않는다.', run: async (c) => {
+      await c.narr('여관 밖으로 나갔다. 노을이 고개를 돌렸다. 렌즈가 가로등 불빛을 받아 주황색으로 반짝였다.');
+      await c.say('noel', ['잠이 없는 부품이다. 그래서 밤하늘을 본다. 오늘 밤 하늘의 색을 기록 중이다.', '…질문이 있다. 「예쁘다」와 「그립다」는 같은 계산식인가.']);
+      const k = await c.ask(null, ['비슷한데 달라.', '그리운 건 없어진 걸 예뻐하는 거야.', '…나도 잘 몰라.']);
+      if (k === 0) await c.say('noel', '비슷한데 다르다. …사람의 말은 늘 오차가 있다. 그 오차가 좋다.');
+      else if (k === 1) { await c.say('noel', ['없어진 것을 예뻐하는 것.', '…그럼 볼트는 매일 그립다. 아내를. 나를 볼 때마다.', '기록해 둔다. 오늘 처음으로 볼트를 조금 계산했다.']); c.bond('noel', 1); }
+      else await c.say('noel', '모르는 것도 기록한다. 모른다는 기록은 다음 계산의 시작이다. 볼트가 한 말이다.');
+    } },
+  );
 
   G.world.nodes.push({ region: 'gray', label: '그레이', x: 112, y: 32, color: '#a8a8b8', maps: ['gray', 'ash_pass', 'ruins', 'archive', 'factory', 'workshop', 'gray_rank', 'gray_inn'] });
 })();

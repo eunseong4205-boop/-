@@ -272,12 +272,62 @@
     }
     await c.say('lea', ['왔군. 앉아. 차는 없어. 구름 계단 밑이라 불을 못 피워.', '새벽단은 탑을 부순다. 16년째. 부순 탑이 서른한 개, 다시 세워진 탑이 서른한 개.']);
     await c.say('lea', ['탑을 부수는 건 끝이 없어. 기사단이 다시 세우거든. 그런데 너는 달라.', '너는 빛을 [w]나눌 수 있어[/]. 탑이 빛을 모으는 동안, 너는 빛을 흩을 수 있지.']);
-    await c.say('lea', ['천년제 날 밤, 우리는 무지개 샘 옆 대형 탑을 부순다. 16년 치 빛이 쏟아질 거야.', '그 빛을 흩어 줄 사람이 필요해. 흰빛의 사람이.']);
-    const k = await c.ask(null, ['돕겠어', '생각해 볼게']);
-    if (k === 0) await c.say('lea', '…고마워. 단원들한테 널 소개할게. 그리고 이거.');
-    else await c.say('lea', '생각해도 돼. 천년제까진 시간이 있어. 그래도 이건 가져가.');
+    await c.say('lea', ['천년제 날 밤, 개막 공연이 끝나고 첫 불꽃이 오르는 순간. 무지개 샘 옆 중계탑 밑동의 폭약을 터뜨린다.', '경비가 전부 하늘을 보고 있을 때야. 16년 치 빛이 쏟아질 거야. 그 빛을 흩어 줄 사람이 필요해. 흰빛의 사람이.']);
+    await c.say('dotori:worry', '찍…? 개막 공연이면 롤로 아저씨 무대잖아. 무대가 탑 바로 밑인데.');
+    await c.say('lea', ['…알아. 무대는 탑에서 스무 걸음. 폭약은 안쪽으로 무너지게 심었어. 계산상으로는.', '계산상으로는 아무도 안 다쳐. 루드한테 몇 번이나 다시 세게 했어.']);
+    await c.say('rud', '…계산은 맞아. 바람만 안 불면.');
+    await c.say('lea', '16년 동안 서른한 개를 부쉈어. 이번 한 번이면 서른한 개를 합친 것보다 커. 망설일 시간은 없어.');
+    let k = -1;
+    while (k < 0) {
+      const opts = [['bomb', '함께한다. 천년제 날 밤에.'], ['third', '폭약 없이 하겠어. 지금, 내 빛으로.'], ['warn', '안 돼. 채색 위원장에게 알리겠어.']].filter((o) => !(o[0] === 'third' && c.flag('rb_third_failed')));
+      const a = await c.ask('새벽단의 계획', opts.map((o) => o[1]));
+      const id = opts[a][0];
+      if (id === 'third') {
+        await c.say('lea', ['…빛으로? 그린 마을 탑처럼?', '중계탑은 달라. 대륙 모든 탑의 빛이 거쳐 가는 탑이야. 네 빛이 모자라면 오히려 탑이 너를 삼킬 거야.']);
+        await c.say('@', '삼키면 그만큼 흩으면 돼. 해 볼게.');
+        await c.fadeOut(500);
+        c.music('danger');
+        await c.narr(['그날 밤. 무지개 샘 옆, 중계탑 밑동.', '탑의 수정에 두 손을 얹었다. 차갑다. 수정 너머로 16년 동안 모인 빛이 웅웅 울리는 게 느껴진다.']);
+        await c.fadeIn(500);
+        await c.sys('탑에 흰빛을 쏟아부어 수정을 넘치게 하자. 10초 동안 [y]80번[/]!');
+        const n = await c.clickRace(10);
+        if (n >= 80) {
+          c.flash('#ffffff', 1600); c.shake(1000, 4); c.sfx('white');
+          await c.narr(['쩌적—. 수정에 금이 갔다. 폭발은 없었다. 금 사이로 빛이 새어 나와, 무지개 샘으로 조용히 흘러내렸다.', '샘이 아주 잠깐 하얗게 빛났다. 광장에서 밤새 풍선을 불던 사람들이 고개를 들었다.']);
+          c.set('rainbow_tower_cracked');
+          c.decide('festival', 'third', '폭약 대신 흰빛으로 무지개 중계탑을 넘치게 했다');
+          c.bond('lea', 2); c.bond('rud', 2);
+          await c.say('lea', ['……폭약 없이.', '16년 동안 서른한 개를 부쉈는데, 한 번도 이렇게 조용한 적이 없었어. 아무도 안 다쳤어. 계산 안 해도.']);
+          k = 1;
+        } else {
+          c.set('rb_third_failed');
+          await c.narr('수정이 번쩍였다가 가라앉았다. 탑은 금 하나 가지 않았다. 손바닥이 얼얼하다. ' + n + '번. 모자랐다.');
+          await c.say('lea', ['…버텼군. 중계탑은 달라. 거봐.', '다시 묻지. 천년제 날 밤. 함께할 거야?']);
+          c.music('black');
+        }
+        continue;
+      }
+      if (id === 'bomb') {
+        await c.say('lea', ['…고마워. 단원들한테 널 소개할게.', '바람이 불면… 그땐 그때 계산하자.']);
+        c.decide('festival', 'bomb', '천년제 날 밤, 새벽단의 중계탑 폭파에 함께하기로 했다');
+        c.bond('lea', 2); c.bond('rud', 1);
+        k = 0;
+      } else {
+        await c.say('lea', ['……그래. 너는 그런 사람이구나.', '막아도 돼. 그게 네 계산이면. 대신 우리를 막은 다음에… 탑은 누가 멈출 건지 그것도 계산해 둬.']);
+        await c.say('rud', ['…누나를 또 잃게 됐네.', '이번엔 네 손으로.']);
+        c.decide('festival', 'warn', '새벽단의 폭파 계획을 채색 위원장에게 알렸다');
+        c.bond('lea', -3); c.bond('rud', -2);
+        k = 2;
+      }
+    }
     c.give('dawn_scarf');
     c.set('m_rainbow_lea');
+    if (k === 2) {
+      await c.narr(['그날 저녁, 채색 위원장에게 계획을 전했다. 위원장은 한참 말이 없더니 성녀에게 편지를 썼다.', '이틀 뒤, 화이트 성기사단이 구름 계단을 내려갔다. 은신처에 남은 건 장부 한 권과 붉은 목도리 하나였다.']);
+      c.set('lumie_rainbow');
+      c.quest('m6', 4);
+      return;
+    }
     await c.say('rud', '……');
     await c.say('lea', ['루드. 인사해. …아는 사이지?', '(루드에게) 그리고… 미안해. 너를 두고 떠나서. 8년 동안.']);
     await c.say('rud', s.flags.helped_rud ? ['…흥. 누나 사과는 나중에 숫자로 받을 거야.', '(흰빛에게) 빚 갚으러 왔다. 1,000골드. 새벽단 장부에 네 이름 적어 뒀어. 이자는… 탑 하나.'] : ['…흥. 누나 사과는 나중에 숫자로 받을 거야.', '(흰빛에게) 너한테 진 거, 아직 안 잊었어. 이번엔 같은 편에서 숫자를 세 주지.']);
@@ -341,6 +391,72 @@
     await c.say('mungge', ['…………내…………등…………위…………노란…………구슬…………', '…………폭풍이…………지키고…………있어…………가져가…………']);
     if (c.flag('beat_storm')) await c.say('mungge:happy', '…………고마워…………이제…………비…………안…………와…………천년제…………나도…………보러…………갈게…………');
   }
+
+  /* ───────── 무지개의 결: 중계탑의 운명 · 소품 · 혼잣말 · 곁의 이야기 ───────── */
+  const fest = (s) => s.flags.d_festival;
+  {
+    const m = G.maps.rainbow;
+    const tower = m.builds.find((b) => b.style === 'tower');
+    tower.when = (s) => !s.flags.rainbow_tower_cracked;
+    const prevPatch = m.patch;
+    m.patch = (s) => (prevPatch ? prevPatch(s) : []).concat(s.flags.rainbow_tower_cracked ? [[23, 12, 'X'], [24, 11, 'X'], [23, 11, '^']] : []);
+    const look = m.objs.find((o) => o.x === 23 && o.y === 12);
+    look.text = (s) => (s.flags.rainbow_tower_cracked ? ['중계탑이 있던 자리. 금 간 수정 조각이 무지개 샘 가장자리에 흩어져 있다.', '샘에서 솟는 빛이 이제 회색이 되지 않는다. 일곱 빛깔 그대로 하늘로 오른다.'] : ['무지개 샘 옆의 거대한 징수탑. 다른 마을 탑보다 세 배는 크다.', '샘에서 솟는 일곱 빛깔 기운이 탑으로 빨려 들어가 회색이 된다.']);
+  }
+  for (const id of ['lea', 'rud', 'dawn']) { const n = G.maps.dawn_base.npcs.find((x) => x.id === id); n.cond = (s) => fest(s) !== 'warn'; }
+  W.addObjs('dawn_base', [W.look(2, 9, (s) => (fest(s) === 'warn' ? '비어 있는 침상. 붉은 목도리 하나가 개켜져 있다. 누군가 급하게 떠나면서도 목도리만은 개켰다.' : '낡은 침상. 베개 밑에 레드 마을 약방 영수증이 한 뭉치 들어 있다. 8년 치. 받는 사람: 루카, 루미.'))]);
+  W.addObjs('rainbow', [
+    W.prop('bench', 13, 16),
+    W.prop('board', 26, 16, (s) => ['천년제 게시판. 「천년제 D-?? — 개막 공연: 롤로의 무지개 서커스 / 불꽃놀이 천 발: 알록달록 팡팡 박사」', fest(s) === 'warn' ? '그 아래 공고: 「새벽단 검거. 천년제는 예정대로. — 성기사단」 누군가 옆에 작게 적었다. 「누가 일렀대?」' : s.flags.rainbow_tower_cracked ? '그 아래 쪽지: 「어젯밤 샘이 하얗게 빛났다! 전설이 하루 일찍 왔나?」 쪽지마다 다른 색 잉크.' : '그 아래 구석에 붉은 분필로 작은 해 그림. 해가 뜨기 직전의 모양.']),
+    W.prop('shrine', 25, 13, '무지개 샘 옆 작은 사당. 다섯 부족의 표식이 돌 하나에 같이 새겨져 있다. 천 년 전의 약속이라고 한다.'),
+  ]);
+  W.addObjs('rainbow_bridge', [W.prop('bench', 19, 10)]);
+  W.addObjs('cloud_sea', [W.prop('fire', 6, 15, '구름 위의 모닥불. 불꽃이 구름을 태우지 않는다. 구름 양들이 불 옆에 모여 졸고 있다.')]);
+  W.barks('rainbow', {
+    chaesaek: ['풍선은 분홍!', '천 년 만이야!'],
+    clown: ['솜사탕 있어요!'],
+    clown2: ['천년제엔 화려하게!'],
+    kid: ['불꽃 천 발!', '샘이 하얗게?'],
+    villager2: ['보라색으로 렙업해.', '탑이 샘을 먹어.'],
+  });
+  W.barks('circus', { lolo: (s) => (s.flags.m_rainbow_share ? ['분홍 광대 등장!', '하나, 둘, 셋…'] : ['공 다섯 개…', '…손이 안 보여.']) });
+  W.barks('dawn_base', { lea: ['해가 뜨기 직전이…', '계산상으로는.'], rud: ['…0이야.', '31개.'], dawn: ['쉿.'] });
+  W.barks('whale_isle', { mungge: ['…………'] });
+
+  /* 도토리와의 이야기 (6장) */
+  G.story.talks.push(
+    { id: 'rb_bridge', map: 'rainbow_bridge', run: async (c) => {
+      await c.say('dotori:worry', ['…아래 보지 마. 나 안 봐. 구름 밑이 하늘이야.', '하늘다람쥐가 높은 데 무서워하는 거, 웃기지? …웃지 마.']);
+    } },
+    { id: 'rb_fly', when: (s) => !!s.flags.dotori_lv10, pri: 4, run: async (c) => {
+      await c.say('dotori', ['3초.', '3초 동안 세상이 발밑에 있었어. 너도, 롤로 아저씨도, 공도.']);
+      await c.say('dotori', ['…그리고 레벨 10. 16년 만에.', '이상하다. 기쁜데 좀 무서워. 이제 나도 크기 시작하는 거잖아. 크면… 뭐가 달라질까.']);
+      const k = await c.ask(null, ['달라져도 넌 도토리야.', '크면 같이 날자.']);
+      if (k === 0) await c.say('dotori:happy', '…응. 크다가 네 키만큼 커지면 곤란하겠다. 어깨에 못 타잖아. 찍.');
+      else await c.say('dotori:happy', '…약속이야. 3초 말고, 30초. 아니 300초!');
+      c.bond('dotori', 2);
+    } },
+    { id: 'rb_lea', when: (s) => !!fest(s), run: async (c) => {
+      const f = fest(c.s);
+      await c.say('dotori', ['레아 누나 말이야. 「계산상으로는 아무도 안 다쳐」라고 했잖아.', '…카이론도 연못에서 계산 얘기만 했어. 둘이 되게 닮았어.']);
+      if (f === 'bomb') await c.say('dotori:worry', '우리 정말 괜찮을까. 바람이 불면 어떡해. …나 그날 롤로 아저씨 무대 앞자리 안 앉을래.');
+      else if (f === 'third') await c.say('dotori:happy', '근데 너는 계산 안 했잖아. 그냥 했잖아. 그래서 아무도 안 다쳤어. 찍.');
+      else await c.say('dotori:sad', ['루드 형이 은신처에서 나갈 때 너 안 쳐다봤어.', '…옳은 걸 하면 누가 미워해도 되는 걸까. 나는 잘 모르겠어.']);
+    } },
+  );
+  /* 쉬는 밤 (6장) */
+  G.story.nights.push(
+    { id: 'rb_rud', when: (s) => !!s.flags.m_rainbow_lea && fest(s) !== 'warn', intro: '일곱빛 여관의 밤. 누군가 창문을 톡톡 두드린다. 붉은 머리가 보인다.', run: async (c) => {
+      await c.say('rud', ['…자냐. 안 자는 거 알아. 불 켜져 있었어.', '누나가 사과했어. 8년 만에. 숫자로 받겠다고 했는데… 무슨 숫자로 받아야 할지 모르겠어.']);
+      if (c.s.flags.d_ledger === 'rud') await c.say('rud', ['레드 장부, 다 다시 셌어. 12조, 13조 빼고.', '빚이 삼분의 일로 줄었어. 삼분의 이는 원래 없는 숫자였던 거야. …16년 동안 내가 그 숫자를 받으러 다녔어.']);
+      const k = await c.ask(null, ['숫자로 못 받는 것도 있어.', '8년이면 8년 치 약값이잖아.', '누나를 용서했어?']);
+      if (k === 0) await c.say('rud', '……그런 말은 누나가 하던 거야. 어릴 때. 대장간 풀무 앞에서.');
+      else if (k === 1) await c.say('rud', ['…매달 익명으로 들어온 약값. 합치면 딱 8년 치야. 한 달도 안 빠졌어.', '숫자는 거짓말 안 해. 누나도 안 했고.']);
+      else await c.say('rud', ['…모르겠어. 용서는 숫자가 아니잖아. 셀 수가 없어.', '셀 수 없는 건 무서워. 그래서 너한테 온 거야. 넌 셀 수 없는 걸 잘하잖아.']);
+      c.bond('rud', 1);
+      await c.say('rud', '…간다. 이거, 잘 자라는 뜻 아니야. 그냥 간다는 거야.');
+    } },
+  );
 
   G.world.nodes.push({ region: 'rainbow', label: '무지개', x: 136, y: 80, color: '#ff8ac8', maps: ['rainbow', 'rainbow_bridge', 'cloud_sea', 'whale_isle', 'circus', 'festival_hq', 'rainbow_rank', 'rainbow_inn', 'dawn_base'] });
 })();

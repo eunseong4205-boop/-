@@ -179,6 +179,8 @@
       c.quest('q_teacup', 'done');
       return;
     }
+    // 고친 찻잔 받침 밑: 16년 전 베라가 찢어 숨긴 세린 노트의 마지막 장
+    if (s.quests.q_teacup === 'done' && s.flags.vision_seen && !s.flags.vera_page) return veraPage(c);
     if (s.flags.m_purple_vera && s.quests.q_teacup == null && E.has(s, 'teacup')) {
       await c.say('vera', ['그 찻잔… 금이 간 채로 가지고 있었군요.', '혹시 [y]반딧불 가루[/] 5개를 구해 올 수 있나요? 숲의 달빛 박쥐나 도깨비불이 떨어뜨려요. 그걸로 금을 메울 수 있어요.']);
       c.quest('q_teacup', 0);
@@ -189,6 +191,27 @@
       ['세린은 첫 수업에서 이렇게 말했어요. 「교수님, 빛은 왜 나누면 줄어요?」', '나는 대답했지. 「줄지 않는 빛도 있단다.」 그 아이는 그 말을 평생 증명하려고 했어요.'],
       '흰빛을 나누는 법은 간단해요. 누군가를 향해 렙업하면 돼요. 어려운 건 누구를 향할지 정하는 거죠.',
     ]));
+  }
+  async function veraPage(c) {
+    c.set('vera_page');
+    c.music('mother');
+    await c.say('vera', ['앉아요. 찻잔을 고쳐 준 값을 치러야겠어요.', '이 찻잔 받침 밑에… 16년 동안 종이 한 장을 깔아 두었어요.']);
+    await c.narr('베라가 금빛으로 이어 붙인 찻잔을 들어 올렸다. 받침 밑에 누렇게 바랜 종이가 네 번 접혀 있었다. 가장자리가 찢겨 있다.');
+    await c.say('vera', ['세린 연구 노트의 마지막 장이에요. 983년, 천년성 기사들이 연구실을 뒤지러 오기 전날 밤에 내가 찢었어요.', '기사들은 「그릇이 흑점을 삼키는 법」을 찾았어요. 그건 노트에 있었죠. 그래서 가져갔고.']);
+    await c.say('vera', ['그런데 이 마지막 장에는 반대의 이야기가 적혀 있어요. 삼키지 않는 법. 세린이 끝내 증명하지 못한 것.', '이게 천년성에 가면, 누군가는 이걸 반박하려고 더 서두르겠죠. 네가 가지고 있으면… 누군가는 너를 계산에 넣을 거예요.']);
+    await c.narr(['「그릇은 삼키는 것이 아니라 나누는 것이어야 한다.', '삼키면 봉인이고, 나누면 끝이다.', '나에게는 나눌 사람도, 시간도 없었다.」', '그 아래, 더 흐린 글씨. 「K가 이걸 믿어 주면 좋을 텐데. 그 사람은 증명된 것만 믿으니까.」']);
+    const k = await c.ask('세린의 마지막 장', ['가져간다. 증거가 필요한 사람이 있다.', '교수님과 함께 태운다.']);
+    if (k === 0) {
+      await c.say('vera', ['…그래요. 세린도 그렇게 말했을 거예요. 「교수님, 증명은 누가 읽어 줘야 증명이에요.」', '잃어버리지 말아요. 그리고 그걸 들이밀 상대 앞에서는… 떨지 말아요.']);
+      c.decide('serin_page', 'take', '세린 노트의 찢긴 마지막 장을 가져갔다');
+      c.truth('t_serin');
+    } else {
+      await c.narr('베라가 난로 문을 열었다. 종이가 불꽃에 닿자 가장자리부터 천천히 오그라들었다. 둥근 글씨가 하나씩 사라졌다.');
+      await c.say('vera', ['……고마워요. 16년 동안 이걸 태울 용기가 없었어요. 태우면 세린이 한 번 더 사라지는 것 같아서.', '이제 이 문장은 너랑 나, 두 사람의 머릿속에만 있어요. 종이보다는 안전하죠. …증거는 못 되지만.']);
+      c.decide('serin_page', 'burn', '베라 교수와 함께 세린의 마지막 장을 태웠다');
+      c.bond('vera', 2);
+    }
+    c.music('purple');
   }
   async function veraReveal(c) {
     c.music('mother');
@@ -391,6 +414,63 @@
     ],
   });
   G.chars.gran_v = Object.assign({}, G.chars.gran, { id: 'gran_v', name: '오방순 (983년)', face: Object.assign({}, G.chars.gran.face, { hc: '#5a4a3a', acc: [], top: '#2f8a3a', mouth: 'flat', eyes: 'sharp' }) });
+
+  /* ───────── 퍼플의 결: 연구실의 흔적 · 소품 · 혼잣말 · 곁의 이야기 ───────── */
+  W.addObjs('serin_lab', [
+    W.look(10, 6, '작은 침대. 그 옆에 아기 요람이 하나 붙어 있다. 요람 난간에 작은 이빨 자국이 줄지어 나 있다. 누군가 이가 나던 무렵의 흔적이다.', { first: async (c) => { await c.say('dotori', '…이 요람. 너 거야. 나 알아. 난간 갉아 놓은 거, 반은 나야. 찍.'); } }),
+    W.look(3, 1, (s) => ['창틀에 칼로 새긴 글자: 「S · K」', s.flags.look_green_3_2 ? '그린 마을 오두막 옆 참나무에 새겨진 것과 같은 필체다. 둥근 S와 반듯한 K.' : '둥근 S 옆에 자로 잰 듯 반듯한 K.']),
+  ]);
+  W.addObjs('academy', [W.look(4, 1, '창밖은 16년째 노을이다. 창틀 먼지 위에 누군가 손가락으로 쓴 글씨: 「오늘은 밤이 왔으면」. 매일 지워지고 매일 다시 쓰인다.')]);
+  W.addObjs('purple', [
+    W.prop('bench', 24, 22),
+    W.prop('well', 11, 12, '마을 우물. 들여다보면 물에 노을이 비친다. 16년 동안 한 번도 별이 비친 적이 없다.'),
+    W.prop('board', 15, 11, (s) => ['마을 게시판. 누군가 시를 붙여 놓았다.', '「오늘의 시 — 기다리는 것은 / 해가 아니라 / 해가 진 다음이다」', s.flags.vision_seen ? '그 아래 새 종이: 「거울 연못에 다녀온 흰빛의 아이에게 — 차 한 잔 하러 오게. 베라」' : '그 아래: 「라벤더 학원 견학 불가. 차는 식어 있음.」']),
+  ]);
+  W.addObjs('purple_forest', [W.prop('shrine', 20, 7, '숲의 작은 사당. 달 모양 돌이 놓여 있다. 달이 뜨지 않은 지 16년, 사람들은 돌에 대고 달을 빈다.')]);
+  W.addObjs('mirror_pond', [W.prop('bench', 12, 18)]);
+  W.barks('purple', { mage: ['해 질 녘이야.', '여전히 아름다워.'], mage2: ['「오늘도 렙업」…', '운이 안 맞네.'], kid2: ['밤은 어떻게 생겼어?'] });
+  W.barks('academy', { vera: ['…식었군.'], miru: ['타올라라… 아니 피어라?', '7년째…'], mage: ['자습 중…'] });
+  W.barks('mirror_pond', { bichu: ['물이 흔들린다.'] });
+
+  /* 도토리와의 이야기 (5장) */
+  G.story.talks.push(
+    { id: 'p_sunset', map: 'purple', run: async (c) => {
+      await c.say('dotori', ['해가 안 져. 16년째.', '…나처럼 멈춰 있어. 이 숲이랑 나랑 동갑인가 봐.']);
+    } },
+    { id: 'p_lab', when: (s) => !!s.flags.lab_seen, pri: 4, run: async (c) => {
+      await c.say('dotori', ['{n}. 연구실에서 생각났어. 전부는 아니고… 조금.', '그 사람이 나를 쓰다듬으면서 말했어. 「이 아이 좀 봐 줄래? 내가 돌아올 때까지.」']);
+      const k = await c.ask(null, ['그래서 네가 안 컸던 거야?', '…엄마가 너한테 나를 맡겼구나.']);
+      if (k === 0) await c.say('dotori', ['…응. 그런 것 같아. 그 손이 하얗게 빛났거든. 그날부터 나는 레벨 9였어.', '아기 옆에서 계속 아기 볼 수 있게. 내가 먼저 커 버리면… 어른 다람쥐는 요람 옆에 안 있잖아.']);
+      else await c.say('dotori', ['…응. 16년 동안 그 약속을 들고 있었나 봐. 무슨 약속인지도 모르고.', '레벨이 안 오르는 게 벌인 줄 알았어. …벌이 아니었네.']);
+      await c.say('dotori:sad', '…나 이제 커도 되는 걸까? 네가 다 컸으니까.');
+      c.set('dotori_knows');
+      c.bond('dotori', 2);
+    } },
+    { id: 'p_vision', when: (s) => !!s.flags.vision_seen, pri: 5, run: async (c) => {
+      await c.say('dotori', ['…연못에서 본 거. 괜찮아?', '할머니는 창이 부러진 채로 너를 안고 나왔어. 한 번도 안 돌아봤어.']);
+      const k = await c.ask(null, ['카이론을 용서 못 해.', '카이론도… 무너지고 있었어.', '할머니한테 가고 싶어.']);
+      c.set('kairon_view', ['hate', 'pity', 'home'][k]);
+      if (k === 0) await c.say('dotori', ['…응. 용서 안 해도 돼.', '근데 그 사람, 엄마 이름 부를 때 목소리가 찢어졌어. 그건 기억해 두자. 나중에 필요할지도 몰라.']);
+      else if (k === 1) await c.say('dotori', ['…응. 「계산이 안 맞아」라고 할 때, 우는 것 같았어. 눈물은 안 났는데.', '할머니가 그랬잖아. 우는 법을 모르는 제자가 있었다고.']);
+      else await c.say('dotori:sad', ['…나도. 가서 할머니 손 잡고 싶어. 창 들던 손.', '…근데 지금 돌아가면 할머니가 혼낼 거야. 「끝까지 가라」고.']);
+      if (c.s.flags.heard_student) await c.say('dotori', '…{n}. 할머니가 말한 그 제자. 셈 잘하고 우는 법을 모르는 제자. …카이론이었어.');
+    } },
+    { id: 'p_miru', when: (s) => s.quests.q_miru === 'done', run: async (c) => {
+      await c.say('dotori', ['미루 언니 주문, 또 틀렸잖아. 불 대신 꽃.', '「틀린 주문이 늘 틀린 건 아니다.」 …나도 틀린 다람쥐인데. 하늘다람쥐가 못 날잖아. 그것도 늘 틀린 건 아닐까?']);
+    } },
+  );
+  /* 쉬는 밤 (5장) */
+  G.story.nights.push(
+    { id: 'p_dream', when: (s) => !!s.flags.vision_seen, intro: '두꺼운 커튼 틈으로 노을빛이 샌다. 잠이 들었다. 그리고 꿈을 꾸었다.', music: 'mother', run: async (c) => {
+      await c.narr(['황금빛 수정. 그 안에 잠든 사람. 수정 표면에 손을 대자 차가웠다.', '안에서 목소리가 들렸다. 아주 멀리서.', '「…왔어? 아니, 아직이구나. 꿈이구나.」']);
+      const k = await c.ask(null, ['엄마?', '…왜 나를 두고 갔어?', '(아무 말도 하지 않는다)']);
+      if (k === 0) await c.narr(['「응. …그렇게 불러 주는구나. 16년 동안 그 말을 연습했어. 네가 아니라, 내가.」']);
+      else if (k === 1) await c.narr(['「…미안해. 네가 그 말을 할 자격이 있어. 나는 대답할 자격이 없고.」', '「그래도 하나만. 두고 간 게 아니야. 맡기고 간 거야. 할머니한테, 도토리한테, 그리고 앞으로 네가 만날 사람들한테.」']);
+      else await c.narr(['「…말 안 해도 돼. 엄마는 네 숨소리만 들어도 좋아.」']);
+      await c.narr('수정에 금이 가는 소리가 났다. 아주 작게. 눈을 떴다. 도토리가 가슴 위에 올라와 이쪽을 내려다보고 있었다.');
+      await c.say('dotori', '…너 잠꼬대했어. 「엄마」라고. …다시 자. 내가 볼게. 나 원래 그거 잘해.');
+    } },
+  );
 
   G.world.nodes.push({ region: 'purple', label: '퍼플', x: 130, y: 108, color: '#c49bff', maps: ['purple', 'purple_road', 'purple_forest', 'mirror_pond', 'academy', 'serin_lab', 'purple_rank', 'purple_shop', 'purple_inn'] });
   void D;

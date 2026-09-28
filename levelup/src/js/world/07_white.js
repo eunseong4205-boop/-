@@ -310,5 +310,117 @@
     await c.say(null, '얼음 제단. 비문의 세 글씨가 나란히 새겨져 있다. 초대 성녀, S, 그리고 L.');
   }
 
+  /* ───────── 화이트의 결: 마지막 단계의 아이 · 눈꽃 약초 · 소품 · 혼잣말 · 곁의 이야기 ───────── */
+  W.keyItem('snow_herb', '눈꽃 약초', '얼음 신전 틈에 핀 하얀 꽃. 줄기에 종이가 묶여 있다. 「빛바램병 마지막 단계에. 달여서 한 모금. — S, 982」');
+  // 16년 전 세린이 얼음 틈에 심어 둔 약초 (신전 가장 깊은 서쪽 구석)
+  W.addObjs('ice_temple', [{ t: 'pickup', id: 'snowherb', x: 3, y: 5, item: 'snow_herb', c: '#e8f4ff', text: '얼음 틈에 하얀 꽃이 피어 있다. 줄기에 빛바랜 종이가 묶여 있다. 「빛바램병 마지막 단계에. 달여서 한 모금. — S, 982」', after: async (c) => { await c.say('dotori:surprise', '찍…! S. 엄마야. 16년 전에 여기 심어 놓고 간 거야. 누가 필요할 줄 알고.'); } }]);
+  async function patientChild(c) {
+    c.set('patient_arrived');
+    c.music('sad');
+    c.spawn({ id: 'hayan', x: 9, y: 11, dir: 'up', look: { hair: 'pony', hc: '#f4f4f8', top: '#e8e0d0', bottom: '#c8c0b0', skin: '#f4f0ec' } });
+    await c.narr(['대성당 문이 벌컥 열렸다. 수녀 둘이 들것을 들고 뛰어 들어왔다.', '들것 위의 아이는 대여섯 살쯤. 머리칼은 눈처럼 하얗고, 손가락 끝이 유리처럼 비친다. 숨소리가 거의 들리지 않는다.']);
+    await c.say('nun', ['성녀님! 설원길에서 쓰러진 아이예요. 이름은 하얀이래요. 엄마가 업고 사흘을 걸었대요.', '…엄마는 대성당 계단에서 쓰러졌어요.']);
+    await c.say('lumie:sad', ['……마지막 단계네요. 몸이 투명해지기 시작했어요.', '이 단계는 손을 잡고 나누는 걸로는 안 돼요. 누군가의 빛이 통째로 들어가야 해요. 그 사람의 빛이 바래요.']);
+    await c.say('lumie', ['제가 할게요. 16년 동안 해 온 일이에요. 머리칼이 조금 더 하얘질 뿐이에요.', '…조금 더.']);
+    await c.say('edel', '성녀님. 지난달에도 그러셨소. 지난주에도. 이번엔 머리칼이 아니라 숨이 하얘질 거요.');
+    const opts = [['own', '내 빛을 나누겠어요.'], ['lumie', '…성녀님께 맡긴다.']];
+    if (E.has(c.s, 'snow_herb')) opts.unshift(['herb', '[y]얼음 신전의 눈꽃 약초를 달인다[/]']);
+    const k = await c.ask('하얀의 마지막 숨', opts.map((o) => o[1]));
+    const id = opts[k][0];
+    if (id === 'herb') {
+      c.take('snow_herb');
+      await c.narr(['수녀가 약초를 달였다. 김이 오르자 대성당 안에 겨울 아침 냄새가 퍼졌다.', '한 모금. 아이의 손가락 끝에서 투명함이 물러났다. 두 모금. 하얀 머리칼 끝이 연한 갈색으로 물들었다.']);
+      await c.say('lumie:surprise', ['……약초로? 빛을 쓰지 않고?', '얼음 신전에 16년 동안 다녔는데… 저는 한 번도 그 틈을 들여다보지 않았어요. 기도만 했어요.']);
+      await c.say('lumie:sad', '세린. 당신은 희생 말고 다른 걸 심어 두고 갔군요. 누가 찾아 주길 바라면서.');
+      c.decide('patient', 'herb', '세린이 남긴 눈꽃 약초로 하얀을 살렸다');
+      c.bond('lumie', 2);
+    } else if (id === 'own') {
+      await c.sys('하얀의 손을 두 손으로 감싸고 [y]렙업 버튼을 40번[/] 누르자. 내 빛이 통째로 흘러간다.');
+      await c.waitClick(40, (n) => { if (n % 8 === 0) { c.flash('#ffffff', 220); c.light(12); } });
+      c.flash('#ffffff', 1400);
+      await c.narr(['손바닥에서 빛이 빠져나갔다. 강물처럼. 팔이 차가워지고, 시야 가장자리가 하얗게 바랬다.', '아이가 숨을 크게 들이쉬었다. 그리고 울었다. 살아 있는 아이의 우는 소리였다.']);
+      await c.say('dotori:worry', '{n}…! 너 머리… 앞머리 한 가닥이 하얘졌어.');
+      c.s.buffs.push({ id: 'faded', fx: { exp: -0.3 }, until: c.s.t + 600 });
+      c.set('hero_streak');
+      await c.sys('[r]빛바램의 여운[/] — 10분 동안 경험치 -30%. 앞머리 한 가닥은 돌아오지 않았다.');
+      await c.say('lumie:sad', ['……당신도 결국 스스로를 내주는군요. 세린처럼.', '…아니에요. 세린이랑은 달라요. 당신은 나눠 준 뒤에도 서 있잖아요. 가진 걸 전부가 아니라, 필요한 만큼만.']);
+      c.decide('patient', 'own', '내 빛을 통째로 나누어 하얀을 살렸다');
+      c.bond('lumie', 1);
+    } else {
+      await c.narr(['루미에가 아이의 가슴에 손을 얹었다. 금빛이었을 머리칼이 뿌리부터 끝까지, 눈 한 번 깜빡이는 사이에 하얘졌다.', '아이는 살았다. 루미에는 그 자리에 무릎을 꿇은 채 한참 일어나지 못했다. 에델이 투구 속에서 무언가를 삼켰다.']);
+      await c.say('lumie', ['…괜찮아요. 이게 제 일이에요. 한 사람이 모두를 위해 빛나는 것.', '당신이 맡겨 줘서… 기뻐요. 정말로.']);
+      await c.say('edel', '……');
+      c.decide('patient', 'lumie', '하얀의 목숨을 성녀 루미에에게 맡겼다');
+      c.bond('edel', -1);
+    }
+    await c.say('nun', '…하얀이 웃어요. 엄마를 찾아요. 계단에서 쓰러진 엄마도 깨어났대요.');
+    c.despawn('hayan');
+    c.music('white');
+  }
+  G.hooks.enter.push((id) => {
+    const s = G.state;
+    if (id === 'cathedral' && s.quests.m7 === 3 && !s.flags.patient_arrived && !G.script.running) G.script.run(patientChild);
+  });
+  G.chars.hayan = Object.assign({}, G.chars.kid || {}, { id: 'hayan', name: '하얀', title: '설원에서 온 아이' });
+
+  // 새벽단을 고발했다면: 붙잡힌 레아가 성기사단 숙소에
+  W.addNpcs('knight_hall', [{ id: 'lea', x: 2, y: 4, dir: 'right', cond: (s) => s.flags.d_festival === 'warn' && !s.flags.m_white_edel, talk: async (c) => {
+    if (!c.flag('lea_cell')) {
+      c.set('lea_cell');
+      await c.say('lea', ['…왔네. 구경하러? 아니면 확인하러?', '원망 안 해. 네 계산이 그랬던 거잖아. 나도 16년 동안 내 계산대로 살았어.']);
+      const k = await c.ask(null, ['아무도 다치지 않길 바랐어.', '당신 방식은 카이론이랑 똑같았어.']);
+      if (k === 0) await c.say('lea', ['…알아. 그래서 더 화가 나. 나도 그걸 바랐거든.', '바라기만 하면 16년이 가. 그래서 폭약을 샀던 거야.']);
+      else { await c.say('lea', ['……', '…그 말, 루드가 할 줄 알았는데 네가 하는구나.', '그래. 똑같았어. 「계산상으로는」. 나는 카이론을 미워하면서 카이론처럼 말했어.']); c.bond('lea', 1); }
+      return;
+    }
+    await c.run(W.chatter('lea_cell', ['에델이라는 기사, 매일 밥을 직접 가져와. 투구는 안 벗고.', '루드는 면회를 안 와. …숫자로 세고 있겠지. 누나를 또 잃은 날을.'], 'lea'));
+  } }]);
+  W.wrapNpc('cathedral', 'edel', (s) => s.flags.m_white_edel && s.flags.d_festival === 'warn' && !s.flags.edel_freed_lea, async (c, n, orig) => {
+    c.set('edel_freed_lea');
+    await c.say('edel', ['숙소에 붙잡아 둔 새벽단 단장 말이오. 오늘 아침 풀어 주었소. 셋째 조항이오.', '탑을 부수려던 자를 가두는 것이 옳은지, 나는 이제 모르겠소. 모를 때는 문을 여는 쪽을 택하겠소.']);
+    await orig(c, n);
+  });
+
+  W.addObjs('white', [
+    W.prop('fire', 17, 17, '광장의 모닥불. 대성당에서 나온 수녀들이 환자 가족에게 수프를 나눠 준다.'),
+    W.prop('bench', 13, 20),
+    W.prop('board', 21, 16, (s) => ['대성당 게시판. 「빛바램병 환자 가족 쉼터 — 눈꽃 여관 2층」', s.flags.d_patient === 'lumie' ? '「성녀님께서 당분간 치료를 쉬십니다. 기도해 주십시오.」' : s.flags.healed_all ? '「대성당 환자 세 분, 색이 돌아옴! 흰빛의 손님께 감사를.」' : '「올해 환자 4,100명. 성녀님은 한 분도 돌려보내지 않으셨습니다.」']),
+    W.prop('hole', 30, 25, '눈밭 한가운데 얼음 구멍. 아이들이 뚫어 놓은 모양이다. 물이 검푸르다.', { pool: 'white' }),
+  ]);
+  W.addObjs('snowfield', [W.prop('fire', 17, 5, '설원 순례자들의 모닥불 자리. 돌 위에 누군가 두고 간 털장갑 한 짝.'), W.prop('hole', 31, 16, '얼음 구멍. 설원을 건너는 순례자들이 여기서 빙어를 낚아 끼니를 때운다.', { pool: 'white' })]);
+  W.addObjs('cathedral', [W.look(9, 13, (s) => (s.flags.d_patient ? '하얀이 누웠던 들것 자국이 바닥에 남아 있다. 수녀가 그 자리를 닦지 않고 두었다.' : '대성당 바닥. 수백 명이 무릎 꿇은 자리가 반들반들하게 닳았다.'), { solid: false })]);
+  W.barks('white', { snowflake: ['덤벼!', '한 번도 안 졌어!'], kid: ['눈싸움!'], nun: ['쉿…', '기도해요.'], guard: ['질서를 지키오.', '펭귄은 곤란하오.'] });
+  W.barks('cathedral', { lumie: (s) => (s.flags.m_white_lumie ? ['…따뜻하네요.'] : ['여신이여…', '괜찮아요.']), edel: ['……'], nun: ['쉿.'], pat1: ['…춥다.'], pat3: ['…빛이…'] });
+
+  /* 도토리와의 이야기 (7장) */
+  G.story.talks.push(
+    { id: 'w_cold', map: 'snowfield', run: async (c) => {
+      await c.say('dotori', ['…목도리 속에 들어가도 돼? 꼬리만 밖에 내놓을게.', '(목도리 안에서) …따뜻하다. 네 목에서 흰빛 냄새 나. 햇볕 냄새 같은 거.']);
+      c.bond('dotori', 1);
+    } },
+    { id: 'w_seal', when: (s) => !!s.flags.m_white_truth, pri: 5, run: async (c) => {
+      await c.say('dotori:angry', ['새 봉인이라니. 너를 수정 속에 넣는다는 거잖아. 엄마처럼.', '…나 그거 허락 못 해. 다람쥐가 허락하고 말고가 어딨냐고 하겠지만. 못 해.']);
+      const k = await c.ask(null, ['나도 싫어.', '…다른 방법이 없으면?', '엄마는 왜 그걸 골랐을까.']);
+      if (k === 0) await c.say('dotori', '…응. 싫은 거 싫다고 해도 돼. 너 그런 말 잘 안 하잖아.');
+      else if (k === 1) { await c.say('dotori:sad', ['……', '그럼 방법을 만들어. 엄마가 숙제라고 했잖아. 너 숙제 늘 늦게 했어도 결국 했잖아.']); c.bond('dotori', 1); }
+      else await c.say('dotori', ['…나눌 사람도, 시간도 없었대. 엄마 노트에 그렇게 써 있었다며.', '너한테는 있어. 할머니, 나, 롤로 아저씨, 루드 형… 벌써 이만큼.']);
+    } },
+    { id: 'w_patient', when: (s) => !!s.flags.d_patient, run: async (c) => {
+      const d = c.s.flags.d_patient;
+      if (d === 'own') await c.say('dotori', ['앞머리. 하얀 거. 아파?', '…안 아프다고 하지 마. 너 아플 때 코 찡긋하는 거 알아.']);
+      else if (d === 'lumie') await c.say('dotori:sad', ['성녀님 머리 봤어? 한순간에 하얘졌어.', '성녀님은 기쁘다고 했어. 근데 에델 아저씨… 아니, 언니는 투구 속에서 울었을 거야.']);
+      else await c.say('dotori:happy', ['엄마가 16년 전에 심어 둔 꽃이 하얀이를 살렸어.', '엄마는 희생만 한 게 아니었어. 이런 것도 했어. 아무도 모르게.']);
+    } },
+  );
+  /* 쉬는 밤 (7장) */
+  G.story.nights.push(
+    { id: 'w_run', when: (s) => !!s.flags.m_white_truth && !s.flags.m_white_lumie, intro: '눈꽃 여관. 벽난로 불이 작아졌다. 창밖으로 성기사의 횃불이 오간다. 여관을 지키고 있다.', run: async (c) => {
+      await c.say('dotori', ['{n}. 도망가자.', '지금. 창문으로. 나 창문 여는 거 잘해. 설원 건너면 아무도 못 찾아.']);
+      const k = await c.ask(null, ['도망 안 가.', '…도망가고 싶어.']);
+      if (k === 0) await c.say('dotori', ['…그럴 줄 알았어. 그냥 한번 말해 본 거야.', '말해 봐야 네가 안 간다는 걸 내가 확인하니까. 확인하면 나도 안 무서우니까.']);
+      else { await c.say('dotori:sad', ['……', '…처음 들었다. 네가 그런 말 하는 거.', '괜찮아. 도망가고 싶은 거랑 도망가는 거는 달라. 할머니가 그랬어. 할머니도 983년에 도망가고 싶었대.']); c.bond('dotori', 2); c.set('hero_afraid'); }
+    } },
+  );
+
   G.world.nodes.push({ region: 'white', label: '화이트', x: 138, y: 52, color: '#e0ecff', maps: ['white', 'snowfield', 'ice_temple', 'cathedral', 'lumie_room', 'knight_hall', 'white_rank', 'white_shop', 'white_inn'] });
 })();

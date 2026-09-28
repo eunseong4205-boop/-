@@ -3722,7 +3722,7 @@ input { font: inherit; }
     if (tab === 'bag') {
       const groups = ['potion', 'food', 'weapon', 'armor', 'acc', 'tool', 'mat', 'key'];
       let h = '';
-      if (s.buffs.some((b) => b.until > s.t)) h += '<div class="card note">' + s.buffs.filter((b) => b.until > s.t).map((b) => '<b style="color:var(--gold)">' + (D.ITEMS[b.id] ? D.ITEMS[b.id].name : ({ pray: '사당의 온기', support: '대륙의 빛' }[b.id] || '알 수 없는 기운')) + '</b> 효과 ' + U.fmtTime(b.until - s.t) + ' 남음').join('<br>') + '</div>';
+      if (s.buffs.some((b) => b.until > s.t)) h += '<div class="card note">' + s.buffs.filter((b) => b.until > s.t).map((b) => '<b style="color:var(--gold)">' + (D.ITEMS[b.id] ? D.ITEMS[b.id].name : ({ pray: '사당의 온기', support: '대륙의 빛', faded: '빛바램의 여운' }[b.id] || '알 수 없는 기운')) + '</b> 효과 ' + U.fmtTime(b.until - s.t) + ' 남음').join('<br>') + '</div>';
       for (const g of groups) {
         const ids = Object.keys(s.inv).filter((id) => D.ITEMS[id] && D.ITEMS[id].type === g && s.inv[id] > 0);
         if (!ids.length) continue;
@@ -8299,6 +8299,8 @@ input { font: inherit; }
       c.quest('q_teacup', 'done');
       return;
     }
+    // 고친 찻잔 받침 밑: 16년 전 베라가 찢어 숨긴 세린 노트의 마지막 장
+    if (s.quests.q_teacup === 'done' && s.flags.vision_seen && !s.flags.vera_page) return veraPage(c);
     if (s.flags.m_purple_vera && s.quests.q_teacup == null && E.has(s, 'teacup')) {
       await c.say('vera', ['그 찻잔… 금이 간 채로 가지고 있었군요.', '혹시 [y]반딧불 가루[/] 5개를 구해 올 수 있나요? 숲의 달빛 박쥐나 도깨비불이 떨어뜨려요. 그걸로 금을 메울 수 있어요.']);
       c.quest('q_teacup', 0);
@@ -8309,6 +8311,27 @@ input { font: inherit; }
       ['세린은 첫 수업에서 이렇게 말했어요. 「교수님, 빛은 왜 나누면 줄어요?」', '나는 대답했지. 「줄지 않는 빛도 있단다.」 그 아이는 그 말을 평생 증명하려고 했어요.'],
       '흰빛을 나누는 법은 간단해요. 누군가를 향해 렙업하면 돼요. 어려운 건 누구를 향할지 정하는 거죠.',
     ]));
+  }
+  async function veraPage(c) {
+    c.set('vera_page');
+    c.music('mother');
+    await c.say('vera', ['앉아요. 찻잔을 고쳐 준 값을 치러야겠어요.', '이 찻잔 받침 밑에… 16년 동안 종이 한 장을 깔아 두었어요.']);
+    await c.narr('베라가 금빛으로 이어 붙인 찻잔을 들어 올렸다. 받침 밑에 누렇게 바랜 종이가 네 번 접혀 있었다. 가장자리가 찢겨 있다.');
+    await c.say('vera', ['세린 연구 노트의 마지막 장이에요. 983년, 천년성 기사들이 연구실을 뒤지러 오기 전날 밤에 내가 찢었어요.', '기사들은 「그릇이 흑점을 삼키는 법」을 찾았어요. 그건 노트에 있었죠. 그래서 가져갔고.']);
+    await c.say('vera', ['그런데 이 마지막 장에는 반대의 이야기가 적혀 있어요. 삼키지 않는 법. 세린이 끝내 증명하지 못한 것.', '이게 천년성에 가면, 누군가는 이걸 반박하려고 더 서두르겠죠. 네가 가지고 있으면… 누군가는 너를 계산에 넣을 거예요.']);
+    await c.narr(['「그릇은 삼키는 것이 아니라 나누는 것이어야 한다.', '삼키면 봉인이고, 나누면 끝이다.', '나에게는 나눌 사람도, 시간도 없었다.」', '그 아래, 더 흐린 글씨. 「K가 이걸 믿어 주면 좋을 텐데. 그 사람은 증명된 것만 믿으니까.」']);
+    const k = await c.ask('세린의 마지막 장', ['가져간다. 증거가 필요한 사람이 있다.', '교수님과 함께 태운다.']);
+    if (k === 0) {
+      await c.say('vera', ['…그래요. 세린도 그렇게 말했을 거예요. 「교수님, 증명은 누가 읽어 줘야 증명이에요.」', '잃어버리지 말아요. 그리고 그걸 들이밀 상대 앞에서는… 떨지 말아요.']);
+      c.decide('serin_page', 'take', '세린 노트의 찢긴 마지막 장을 가져갔다');
+      c.truth('t_serin');
+    } else {
+      await c.narr('베라가 난로 문을 열었다. 종이가 불꽃에 닿자 가장자리부터 천천히 오그라들었다. 둥근 글씨가 하나씩 사라졌다.');
+      await c.say('vera', ['……고마워요. 16년 동안 이걸 태울 용기가 없었어요. 태우면 세린이 한 번 더 사라지는 것 같아서.', '이제 이 문장은 너랑 나, 두 사람의 머릿속에만 있어요. 종이보다는 안전하죠. …증거는 못 되지만.']);
+      c.decide('serin_page', 'burn', '베라 교수와 함께 세린의 마지막 장을 태웠다');
+      c.bond('vera', 2);
+    }
+    c.music('purple');
   }
   async function veraReveal(c) {
     c.music('mother');
@@ -8511,6 +8534,63 @@ input { font: inherit; }
     ],
   });
   G.chars.gran_v = Object.assign({}, G.chars.gran, { id: 'gran_v', name: '오방순 (983년)', face: Object.assign({}, G.chars.gran.face, { hc: '#5a4a3a', acc: [], top: '#2f8a3a', mouth: 'flat', eyes: 'sharp' }) });
+
+  /* ───────── 퍼플의 결: 연구실의 흔적 · 소품 · 혼잣말 · 곁의 이야기 ───────── */
+  W.addObjs('serin_lab', [
+    W.look(10, 6, '작은 침대. 그 옆에 아기 요람이 하나 붙어 있다. 요람 난간에 작은 이빨 자국이 줄지어 나 있다. 누군가 이가 나던 무렵의 흔적이다.', { first: async (c) => { await c.say('dotori', '…이 요람. 너 거야. 나 알아. 난간 갉아 놓은 거, 반은 나야. 찍.'); } }),
+    W.look(3, 1, (s) => ['창틀에 칼로 새긴 글자: 「S · K」', s.flags.look_green_3_2 ? '그린 마을 오두막 옆 참나무에 새겨진 것과 같은 필체다. 둥근 S와 반듯한 K.' : '둥근 S 옆에 자로 잰 듯 반듯한 K.']),
+  ]);
+  W.addObjs('academy', [W.look(4, 1, '창밖은 16년째 노을이다. 창틀 먼지 위에 누군가 손가락으로 쓴 글씨: 「오늘은 밤이 왔으면」. 매일 지워지고 매일 다시 쓰인다.')]);
+  W.addObjs('purple', [
+    W.prop('bench', 24, 22),
+    W.prop('well', 11, 12, '마을 우물. 들여다보면 물에 노을이 비친다. 16년 동안 한 번도 별이 비친 적이 없다.'),
+    W.prop('board', 15, 11, (s) => ['마을 게시판. 누군가 시를 붙여 놓았다.', '「오늘의 시 — 기다리는 것은 / 해가 아니라 / 해가 진 다음이다」', s.flags.vision_seen ? '그 아래 새 종이: 「거울 연못에 다녀온 흰빛의 아이에게 — 차 한 잔 하러 오게. 베라」' : '그 아래: 「라벤더 학원 견학 불가. 차는 식어 있음.」']),
+  ]);
+  W.addObjs('purple_forest', [W.prop('shrine', 20, 7, '숲의 작은 사당. 달 모양 돌이 놓여 있다. 달이 뜨지 않은 지 16년, 사람들은 돌에 대고 달을 빈다.')]);
+  W.addObjs('mirror_pond', [W.prop('bench', 12, 18)]);
+  W.barks('purple', { mage: ['해 질 녘이야.', '여전히 아름다워.'], mage2: ['「오늘도 렙업」…', '운이 안 맞네.'], kid2: ['밤은 어떻게 생겼어?'] });
+  W.barks('academy', { vera: ['…식었군.'], miru: ['타올라라… 아니 피어라?', '7년째…'], mage: ['자습 중…'] });
+  W.barks('mirror_pond', { bichu: ['물이 흔들린다.'] });
+
+  /* 도토리와의 이야기 (5장) */
+  G.story.talks.push(
+    { id: 'p_sunset', map: 'purple', run: async (c) => {
+      await c.say('dotori', ['해가 안 져. 16년째.', '…나처럼 멈춰 있어. 이 숲이랑 나랑 동갑인가 봐.']);
+    } },
+    { id: 'p_lab', when: (s) => !!s.flags.lab_seen, pri: 4, run: async (c) => {
+      await c.say('dotori', ['{n}. 연구실에서 생각났어. 전부는 아니고… 조금.', '그 사람이 나를 쓰다듬으면서 말했어. 「이 아이 좀 봐 줄래? 내가 돌아올 때까지.」']);
+      const k = await c.ask(null, ['그래서 네가 안 컸던 거야?', '…엄마가 너한테 나를 맡겼구나.']);
+      if (k === 0) await c.say('dotori', ['…응. 그런 것 같아. 그 손이 하얗게 빛났거든. 그날부터 나는 레벨 9였어.', '아기 옆에서 계속 아기 볼 수 있게. 내가 먼저 커 버리면… 어른 다람쥐는 요람 옆에 안 있잖아.']);
+      else await c.say('dotori', ['…응. 16년 동안 그 약속을 들고 있었나 봐. 무슨 약속인지도 모르고.', '레벨이 안 오르는 게 벌인 줄 알았어. …벌이 아니었네.']);
+      await c.say('dotori:sad', '…나 이제 커도 되는 걸까? 네가 다 컸으니까.');
+      c.set('dotori_knows');
+      c.bond('dotori', 2);
+    } },
+    { id: 'p_vision', when: (s) => !!s.flags.vision_seen, pri: 5, run: async (c) => {
+      await c.say('dotori', ['…연못에서 본 거. 괜찮아?', '할머니는 창이 부러진 채로 너를 안고 나왔어. 한 번도 안 돌아봤어.']);
+      const k = await c.ask(null, ['카이론을 용서 못 해.', '카이론도… 무너지고 있었어.', '할머니한테 가고 싶어.']);
+      c.set('kairon_view', ['hate', 'pity', 'home'][k]);
+      if (k === 0) await c.say('dotori', ['…응. 용서 안 해도 돼.', '근데 그 사람, 엄마 이름 부를 때 목소리가 찢어졌어. 그건 기억해 두자. 나중에 필요할지도 몰라.']);
+      else if (k === 1) await c.say('dotori', ['…응. 「계산이 안 맞아」라고 할 때, 우는 것 같았어. 눈물은 안 났는데.', '할머니가 그랬잖아. 우는 법을 모르는 제자가 있었다고.']);
+      else await c.say('dotori:sad', ['…나도. 가서 할머니 손 잡고 싶어. 창 들던 손.', '…근데 지금 돌아가면 할머니가 혼낼 거야. 「끝까지 가라」고.']);
+      if (c.s.flags.heard_student) await c.say('dotori', '…{n}. 할머니가 말한 그 제자. 셈 잘하고 우는 법을 모르는 제자. …카이론이었어.');
+    } },
+    { id: 'p_miru', when: (s) => s.quests.q_miru === 'done', run: async (c) => {
+      await c.say('dotori', ['미루 언니 주문, 또 틀렸잖아. 불 대신 꽃.', '「틀린 주문이 늘 틀린 건 아니다.」 …나도 틀린 다람쥐인데. 하늘다람쥐가 못 날잖아. 그것도 늘 틀린 건 아닐까?']);
+    } },
+  );
+  /* 쉬는 밤 (5장) */
+  G.story.nights.push(
+    { id: 'p_dream', when: (s) => !!s.flags.vision_seen, intro: '두꺼운 커튼 틈으로 노을빛이 샌다. 잠이 들었다. 그리고 꿈을 꾸었다.', music: 'mother', run: async (c) => {
+      await c.narr(['황금빛 수정. 그 안에 잠든 사람. 수정 표면에 손을 대자 차가웠다.', '안에서 목소리가 들렸다. 아주 멀리서.', '「…왔어? 아니, 아직이구나. 꿈이구나.」']);
+      const k = await c.ask(null, ['엄마?', '…왜 나를 두고 갔어?', '(아무 말도 하지 않는다)']);
+      if (k === 0) await c.narr(['「응. …그렇게 불러 주는구나. 16년 동안 그 말을 연습했어. 네가 아니라, 내가.」']);
+      else if (k === 1) await c.narr(['「…미안해. 네가 그 말을 할 자격이 있어. 나는 대답할 자격이 없고.」', '「그래도 하나만. 두고 간 게 아니야. 맡기고 간 거야. 할머니한테, 도토리한테, 그리고 앞으로 네가 만날 사람들한테.」']);
+      else await c.narr(['「…말 안 해도 돼. 엄마는 네 숨소리만 들어도 좋아.」']);
+      await c.narr('수정에 금이 가는 소리가 났다. 아주 작게. 눈을 떴다. 도토리가 가슴 위에 올라와 이쪽을 내려다보고 있었다.');
+      await c.say('dotori', '…너 잠꼬대했어. 「엄마」라고. …다시 자. 내가 볼게. 나 원래 그거 잘해.');
+    } },
+  );
 
   G.world.nodes.push({ region: 'purple', label: '퍼플', x: 130, y: 108, color: '#c49bff', maps: ['purple', 'purple_road', 'purple_forest', 'mirror_pond', 'academy', 'serin_lab', 'purple_rank', 'purple_shop', 'purple_inn'] });
   void D;
@@ -8791,12 +8871,62 @@ input { font: inherit; }
     }
     await c.say('lea', ['왔군. 앉아. 차는 없어. 구름 계단 밑이라 불을 못 피워.', '새벽단은 탑을 부순다. 16년째. 부순 탑이 서른한 개, 다시 세워진 탑이 서른한 개.']);
     await c.say('lea', ['탑을 부수는 건 끝이 없어. 기사단이 다시 세우거든. 그런데 너는 달라.', '너는 빛을 [w]나눌 수 있어[/]. 탑이 빛을 모으는 동안, 너는 빛을 흩을 수 있지.']);
-    await c.say('lea', ['천년제 날 밤, 우리는 무지개 샘 옆 대형 탑을 부순다. 16년 치 빛이 쏟아질 거야.', '그 빛을 흩어 줄 사람이 필요해. 흰빛의 사람이.']);
-    const k = await c.ask(null, ['돕겠어', '생각해 볼게']);
-    if (k === 0) await c.say('lea', '…고마워. 단원들한테 널 소개할게. 그리고 이거.');
-    else await c.say('lea', '생각해도 돼. 천년제까진 시간이 있어. 그래도 이건 가져가.');
+    await c.say('lea', ['천년제 날 밤, 개막 공연이 끝나고 첫 불꽃이 오르는 순간. 무지개 샘 옆 중계탑 밑동의 폭약을 터뜨린다.', '경비가 전부 하늘을 보고 있을 때야. 16년 치 빛이 쏟아질 거야. 그 빛을 흩어 줄 사람이 필요해. 흰빛의 사람이.']);
+    await c.say('dotori:worry', '찍…? 개막 공연이면 롤로 아저씨 무대잖아. 무대가 탑 바로 밑인데.');
+    await c.say('lea', ['…알아. 무대는 탑에서 스무 걸음. 폭약은 안쪽으로 무너지게 심었어. 계산상으로는.', '계산상으로는 아무도 안 다쳐. 루드한테 몇 번이나 다시 세게 했어.']);
+    await c.say('rud', '…계산은 맞아. 바람만 안 불면.');
+    await c.say('lea', '16년 동안 서른한 개를 부쉈어. 이번 한 번이면 서른한 개를 합친 것보다 커. 망설일 시간은 없어.');
+    let k = -1;
+    while (k < 0) {
+      const opts = [['bomb', '함께한다. 천년제 날 밤에.'], ['third', '폭약 없이 하겠어. 지금, 내 빛으로.'], ['warn', '안 돼. 채색 위원장에게 알리겠어.']].filter((o) => !(o[0] === 'third' && c.flag('rb_third_failed')));
+      const a = await c.ask('새벽단의 계획', opts.map((o) => o[1]));
+      const id = opts[a][0];
+      if (id === 'third') {
+        await c.say('lea', ['…빛으로? 그린 마을 탑처럼?', '중계탑은 달라. 대륙 모든 탑의 빛이 거쳐 가는 탑이야. 네 빛이 모자라면 오히려 탑이 너를 삼킬 거야.']);
+        await c.say('@', '삼키면 그만큼 흩으면 돼. 해 볼게.');
+        await c.fadeOut(500);
+        c.music('danger');
+        await c.narr(['그날 밤. 무지개 샘 옆, 중계탑 밑동.', '탑의 수정에 두 손을 얹었다. 차갑다. 수정 너머로 16년 동안 모인 빛이 웅웅 울리는 게 느껴진다.']);
+        await c.fadeIn(500);
+        await c.sys('탑에 흰빛을 쏟아부어 수정을 넘치게 하자. 10초 동안 [y]80번[/]!');
+        const n = await c.clickRace(10);
+        if (n >= 80) {
+          c.flash('#ffffff', 1600); c.shake(1000, 4); c.sfx('white');
+          await c.narr(['쩌적—. 수정에 금이 갔다. 폭발은 없었다. 금 사이로 빛이 새어 나와, 무지개 샘으로 조용히 흘러내렸다.', '샘이 아주 잠깐 하얗게 빛났다. 광장에서 밤새 풍선을 불던 사람들이 고개를 들었다.']);
+          c.set('rainbow_tower_cracked');
+          c.decide('festival', 'third', '폭약 대신 흰빛으로 무지개 중계탑을 넘치게 했다');
+          c.bond('lea', 2); c.bond('rud', 2);
+          await c.say('lea', ['……폭약 없이.', '16년 동안 서른한 개를 부쉈는데, 한 번도 이렇게 조용한 적이 없었어. 아무도 안 다쳤어. 계산 안 해도.']);
+          k = 1;
+        } else {
+          c.set('rb_third_failed');
+          await c.narr('수정이 번쩍였다가 가라앉았다. 탑은 금 하나 가지 않았다. 손바닥이 얼얼하다. ' + n + '번. 모자랐다.');
+          await c.say('lea', ['…버텼군. 중계탑은 달라. 거봐.', '다시 묻지. 천년제 날 밤. 함께할 거야?']);
+          c.music('black');
+        }
+        continue;
+      }
+      if (id === 'bomb') {
+        await c.say('lea', ['…고마워. 단원들한테 널 소개할게.', '바람이 불면… 그땐 그때 계산하자.']);
+        c.decide('festival', 'bomb', '천년제 날 밤, 새벽단의 중계탑 폭파에 함께하기로 했다');
+        c.bond('lea', 2); c.bond('rud', 1);
+        k = 0;
+      } else {
+        await c.say('lea', ['……그래. 너는 그런 사람이구나.', '막아도 돼. 그게 네 계산이면. 대신 우리를 막은 다음에… 탑은 누가 멈출 건지 그것도 계산해 둬.']);
+        await c.say('rud', ['…누나를 또 잃게 됐네.', '이번엔 네 손으로.']);
+        c.decide('festival', 'warn', '새벽단의 폭파 계획을 채색 위원장에게 알렸다');
+        c.bond('lea', -3); c.bond('rud', -2);
+        k = 2;
+      }
+    }
     c.give('dawn_scarf');
     c.set('m_rainbow_lea');
+    if (k === 2) {
+      await c.narr(['그날 저녁, 채색 위원장에게 계획을 전했다. 위원장은 한참 말이 없더니 성녀에게 편지를 썼다.', '이틀 뒤, 화이트 성기사단이 구름 계단을 내려갔다. 은신처에 남은 건 장부 한 권과 붉은 목도리 하나였다.']);
+      c.set('lumie_rainbow');
+      c.quest('m6', 4);
+      return;
+    }
     await c.say('rud', '……');
     await c.say('lea', ['루드. 인사해. …아는 사이지?', '(루드에게) 그리고… 미안해. 너를 두고 떠나서. 8년 동안.']);
     await c.say('rud', s.flags.helped_rud ? ['…흥. 누나 사과는 나중에 숫자로 받을 거야.', '(흰빛에게) 빚 갚으러 왔다. 1,000골드. 새벽단 장부에 네 이름 적어 뒀어. 이자는… 탑 하나.'] : ['…흥. 누나 사과는 나중에 숫자로 받을 거야.', '(흰빛에게) 너한테 진 거, 아직 안 잊었어. 이번엔 같은 편에서 숫자를 세 주지.']);
@@ -8860,6 +8990,72 @@ input { font: inherit; }
     await c.say('mungge', ['…………내…………등…………위…………노란…………구슬…………', '…………폭풍이…………지키고…………있어…………가져가…………']);
     if (c.flag('beat_storm')) await c.say('mungge:happy', '…………고마워…………이제…………비…………안…………와…………천년제…………나도…………보러…………갈게…………');
   }
+
+  /* ───────── 무지개의 결: 중계탑의 운명 · 소품 · 혼잣말 · 곁의 이야기 ───────── */
+  const fest = (s) => s.flags.d_festival;
+  {
+    const m = G.maps.rainbow;
+    const tower = m.builds.find((b) => b.style === 'tower');
+    tower.when = (s) => !s.flags.rainbow_tower_cracked;
+    const prevPatch = m.patch;
+    m.patch = (s) => (prevPatch ? prevPatch(s) : []).concat(s.flags.rainbow_tower_cracked ? [[23, 12, 'X'], [24, 11, 'X'], [23, 11, '^']] : []);
+    const look = m.objs.find((o) => o.x === 23 && o.y === 12);
+    look.text = (s) => (s.flags.rainbow_tower_cracked ? ['중계탑이 있던 자리. 금 간 수정 조각이 무지개 샘 가장자리에 흩어져 있다.', '샘에서 솟는 빛이 이제 회색이 되지 않는다. 일곱 빛깔 그대로 하늘로 오른다.'] : ['무지개 샘 옆의 거대한 징수탑. 다른 마을 탑보다 세 배는 크다.', '샘에서 솟는 일곱 빛깔 기운이 탑으로 빨려 들어가 회색이 된다.']);
+  }
+  for (const id of ['lea', 'rud', 'dawn']) { const n = G.maps.dawn_base.npcs.find((x) => x.id === id); n.cond = (s) => fest(s) !== 'warn'; }
+  W.addObjs('dawn_base', [W.look(2, 9, (s) => (fest(s) === 'warn' ? '비어 있는 침상. 붉은 목도리 하나가 개켜져 있다. 누군가 급하게 떠나면서도 목도리만은 개켰다.' : '낡은 침상. 베개 밑에 레드 마을 약방 영수증이 한 뭉치 들어 있다. 8년 치. 받는 사람: 루카, 루미.'))]);
+  W.addObjs('rainbow', [
+    W.prop('bench', 13, 16),
+    W.prop('board', 26, 16, (s) => ['천년제 게시판. 「천년제 D-?? — 개막 공연: 롤로의 무지개 서커스 / 불꽃놀이 천 발: 알록달록 팡팡 박사」', fest(s) === 'warn' ? '그 아래 공고: 「새벽단 검거. 천년제는 예정대로. — 성기사단」 누군가 옆에 작게 적었다. 「누가 일렀대?」' : s.flags.rainbow_tower_cracked ? '그 아래 쪽지: 「어젯밤 샘이 하얗게 빛났다! 전설이 하루 일찍 왔나?」 쪽지마다 다른 색 잉크.' : '그 아래 구석에 붉은 분필로 작은 해 그림. 해가 뜨기 직전의 모양.']),
+    W.prop('shrine', 25, 13, '무지개 샘 옆 작은 사당. 다섯 부족의 표식이 돌 하나에 같이 새겨져 있다. 천 년 전의 약속이라고 한다.'),
+  ]);
+  W.addObjs('rainbow_bridge', [W.prop('bench', 19, 10)]);
+  W.addObjs('cloud_sea', [W.prop('fire', 6, 15, '구름 위의 모닥불. 불꽃이 구름을 태우지 않는다. 구름 양들이 불 옆에 모여 졸고 있다.')]);
+  W.barks('rainbow', {
+    chaesaek: ['풍선은 분홍!', '천 년 만이야!'],
+    clown: ['솜사탕 있어요!'],
+    clown2: ['천년제엔 화려하게!'],
+    kid: ['불꽃 천 발!', '샘이 하얗게?'],
+    villager2: ['보라색으로 렙업해.', '탑이 샘을 먹어.'],
+  });
+  W.barks('circus', { lolo: (s) => (s.flags.m_rainbow_share ? ['분홍 광대 등장!', '하나, 둘, 셋…'] : ['공 다섯 개…', '…손이 안 보여.']) });
+  W.barks('dawn_base', { lea: ['해가 뜨기 직전이…', '계산상으로는.'], rud: ['…0이야.', '31개.'], dawn: ['쉿.'] });
+  W.barks('whale_isle', { mungge: ['…………'] });
+
+  /* 도토리와의 이야기 (6장) */
+  G.story.talks.push(
+    { id: 'rb_bridge', map: 'rainbow_bridge', run: async (c) => {
+      await c.say('dotori:worry', ['…아래 보지 마. 나 안 봐. 구름 밑이 하늘이야.', '하늘다람쥐가 높은 데 무서워하는 거, 웃기지? …웃지 마.']);
+    } },
+    { id: 'rb_fly', when: (s) => !!s.flags.dotori_lv10, pri: 4, run: async (c) => {
+      await c.say('dotori', ['3초.', '3초 동안 세상이 발밑에 있었어. 너도, 롤로 아저씨도, 공도.']);
+      await c.say('dotori', ['…그리고 레벨 10. 16년 만에.', '이상하다. 기쁜데 좀 무서워. 이제 나도 크기 시작하는 거잖아. 크면… 뭐가 달라질까.']);
+      const k = await c.ask(null, ['달라져도 넌 도토리야.', '크면 같이 날자.']);
+      if (k === 0) await c.say('dotori:happy', '…응. 크다가 네 키만큼 커지면 곤란하겠다. 어깨에 못 타잖아. 찍.');
+      else await c.say('dotori:happy', '…약속이야. 3초 말고, 30초. 아니 300초!');
+      c.bond('dotori', 2);
+    } },
+    { id: 'rb_lea', when: (s) => !!fest(s), run: async (c) => {
+      const f = fest(c.s);
+      await c.say('dotori', ['레아 누나 말이야. 「계산상으로는 아무도 안 다쳐」라고 했잖아.', '…카이론도 연못에서 계산 얘기만 했어. 둘이 되게 닮았어.']);
+      if (f === 'bomb') await c.say('dotori:worry', '우리 정말 괜찮을까. 바람이 불면 어떡해. …나 그날 롤로 아저씨 무대 앞자리 안 앉을래.');
+      else if (f === 'third') await c.say('dotori:happy', '근데 너는 계산 안 했잖아. 그냥 했잖아. 그래서 아무도 안 다쳤어. 찍.');
+      else await c.say('dotori:sad', ['루드 형이 은신처에서 나갈 때 너 안 쳐다봤어.', '…옳은 걸 하면 누가 미워해도 되는 걸까. 나는 잘 모르겠어.']);
+    } },
+  );
+  /* 쉬는 밤 (6장) */
+  G.story.nights.push(
+    { id: 'rb_rud', when: (s) => !!s.flags.m_rainbow_lea && fest(s) !== 'warn', intro: '일곱빛 여관의 밤. 누군가 창문을 톡톡 두드린다. 붉은 머리가 보인다.', run: async (c) => {
+      await c.say('rud', ['…자냐. 안 자는 거 알아. 불 켜져 있었어.', '누나가 사과했어. 8년 만에. 숫자로 받겠다고 했는데… 무슨 숫자로 받아야 할지 모르겠어.']);
+      if (c.s.flags.d_ledger === 'rud') await c.say('rud', ['레드 장부, 다 다시 셌어. 12조, 13조 빼고.', '빚이 삼분의 일로 줄었어. 삼분의 이는 원래 없는 숫자였던 거야. …16년 동안 내가 그 숫자를 받으러 다녔어.']);
+      const k = await c.ask(null, ['숫자로 못 받는 것도 있어.', '8년이면 8년 치 약값이잖아.', '누나를 용서했어?']);
+      if (k === 0) await c.say('rud', '……그런 말은 누나가 하던 거야. 어릴 때. 대장간 풀무 앞에서.');
+      else if (k === 1) await c.say('rud', ['…매달 익명으로 들어온 약값. 합치면 딱 8년 치야. 한 달도 안 빠졌어.', '숫자는 거짓말 안 해. 누나도 안 했고.']);
+      else await c.say('rud', ['…모르겠어. 용서는 숫자가 아니잖아. 셀 수가 없어.', '셀 수 없는 건 무서워. 그래서 너한테 온 거야. 넌 셀 수 없는 걸 잘하잖아.']);
+      c.bond('rud', 1);
+      await c.say('rud', '…간다. 이거, 잘 자라는 뜻 아니야. 그냥 간다는 거야.');
+    } },
+  );
 
   G.world.nodes.push({ region: 'rainbow', label: '무지개', x: 136, y: 80, color: '#ff8ac8', maps: ['rainbow', 'rainbow_bridge', 'cloud_sea', 'whale_isle', 'circus', 'festival_hq', 'rainbow_rank', 'rainbow_inn', 'dawn_base'] });
 })();
@@ -9177,6 +9373,118 @@ input { font: inherit; }
     await c.say(null, '얼음 제단. 비문의 세 글씨가 나란히 새겨져 있다. 초대 성녀, S, 그리고 L.');
   }
 
+  /* ───────── 화이트의 결: 마지막 단계의 아이 · 눈꽃 약초 · 소품 · 혼잣말 · 곁의 이야기 ───────── */
+  W.keyItem('snow_herb', '눈꽃 약초', '얼음 신전 틈에 핀 하얀 꽃. 줄기에 종이가 묶여 있다. 「빛바램병 마지막 단계에. 달여서 한 모금. — S, 982」');
+  // 16년 전 세린이 얼음 틈에 심어 둔 약초 (신전 가장 깊은 서쪽 구석)
+  W.addObjs('ice_temple', [{ t: 'pickup', id: 'snowherb', x: 3, y: 5, item: 'snow_herb', c: '#e8f4ff', text: '얼음 틈에 하얀 꽃이 피어 있다. 줄기에 빛바랜 종이가 묶여 있다. 「빛바램병 마지막 단계에. 달여서 한 모금. — S, 982」', after: async (c) => { await c.say('dotori:surprise', '찍…! S. 엄마야. 16년 전에 여기 심어 놓고 간 거야. 누가 필요할 줄 알고.'); } }]);
+  async function patientChild(c) {
+    c.set('patient_arrived');
+    c.music('sad');
+    c.spawn({ id: 'hayan', x: 9, y: 11, dir: 'up', look: { hair: 'pony', hc: '#f4f4f8', top: '#e8e0d0', bottom: '#c8c0b0', skin: '#f4f0ec' } });
+    await c.narr(['대성당 문이 벌컥 열렸다. 수녀 둘이 들것을 들고 뛰어 들어왔다.', '들것 위의 아이는 대여섯 살쯤. 머리칼은 눈처럼 하얗고, 손가락 끝이 유리처럼 비친다. 숨소리가 거의 들리지 않는다.']);
+    await c.say('nun', ['성녀님! 설원길에서 쓰러진 아이예요. 이름은 하얀이래요. 엄마가 업고 사흘을 걸었대요.', '…엄마는 대성당 계단에서 쓰러졌어요.']);
+    await c.say('lumie:sad', ['……마지막 단계네요. 몸이 투명해지기 시작했어요.', '이 단계는 손을 잡고 나누는 걸로는 안 돼요. 누군가의 빛이 통째로 들어가야 해요. 그 사람의 빛이 바래요.']);
+    await c.say('lumie', ['제가 할게요. 16년 동안 해 온 일이에요. 머리칼이 조금 더 하얘질 뿐이에요.', '…조금 더.']);
+    await c.say('edel', '성녀님. 지난달에도 그러셨소. 지난주에도. 이번엔 머리칼이 아니라 숨이 하얘질 거요.');
+    const opts = [['own', '내 빛을 나누겠어요.'], ['lumie', '…성녀님께 맡긴다.']];
+    if (E.has(c.s, 'snow_herb')) opts.unshift(['herb', '[y]얼음 신전의 눈꽃 약초를 달인다[/]']);
+    const k = await c.ask('하얀의 마지막 숨', opts.map((o) => o[1]));
+    const id = opts[k][0];
+    if (id === 'herb') {
+      c.take('snow_herb');
+      await c.narr(['수녀가 약초를 달였다. 김이 오르자 대성당 안에 겨울 아침 냄새가 퍼졌다.', '한 모금. 아이의 손가락 끝에서 투명함이 물러났다. 두 모금. 하얀 머리칼 끝이 연한 갈색으로 물들었다.']);
+      await c.say('lumie:surprise', ['……약초로? 빛을 쓰지 않고?', '얼음 신전에 16년 동안 다녔는데… 저는 한 번도 그 틈을 들여다보지 않았어요. 기도만 했어요.']);
+      await c.say('lumie:sad', '세린. 당신은 희생 말고 다른 걸 심어 두고 갔군요. 누가 찾아 주길 바라면서.');
+      c.decide('patient', 'herb', '세린이 남긴 눈꽃 약초로 하얀을 살렸다');
+      c.bond('lumie', 2);
+    } else if (id === 'own') {
+      await c.sys('하얀의 손을 두 손으로 감싸고 [y]렙업 버튼을 40번[/] 누르자. 내 빛이 통째로 흘러간다.');
+      await c.waitClick(40, (n) => { if (n % 8 === 0) { c.flash('#ffffff', 220); c.light(12); } });
+      c.flash('#ffffff', 1400);
+      await c.narr(['손바닥에서 빛이 빠져나갔다. 강물처럼. 팔이 차가워지고, 시야 가장자리가 하얗게 바랬다.', '아이가 숨을 크게 들이쉬었다. 그리고 울었다. 살아 있는 아이의 우는 소리였다.']);
+      await c.say('dotori:worry', '{n}…! 너 머리… 앞머리 한 가닥이 하얘졌어.');
+      c.s.buffs.push({ id: 'faded', fx: { exp: -0.3 }, until: c.s.t + 600 });
+      c.set('hero_streak');
+      await c.sys('[r]빛바램의 여운[/] — 10분 동안 경험치 -30%. 앞머리 한 가닥은 돌아오지 않았다.');
+      await c.say('lumie:sad', ['……당신도 결국 스스로를 내주는군요. 세린처럼.', '…아니에요. 세린이랑은 달라요. 당신은 나눠 준 뒤에도 서 있잖아요. 가진 걸 전부가 아니라, 필요한 만큼만.']);
+      c.decide('patient', 'own', '내 빛을 통째로 나누어 하얀을 살렸다');
+      c.bond('lumie', 1);
+    } else {
+      await c.narr(['루미에가 아이의 가슴에 손을 얹었다. 금빛이었을 머리칼이 뿌리부터 끝까지, 눈 한 번 깜빡이는 사이에 하얘졌다.', '아이는 살았다. 루미에는 그 자리에 무릎을 꿇은 채 한참 일어나지 못했다. 에델이 투구 속에서 무언가를 삼켰다.']);
+      await c.say('lumie', ['…괜찮아요. 이게 제 일이에요. 한 사람이 모두를 위해 빛나는 것.', '당신이 맡겨 줘서… 기뻐요. 정말로.']);
+      await c.say('edel', '……');
+      c.decide('patient', 'lumie', '하얀의 목숨을 성녀 루미에에게 맡겼다');
+      c.bond('edel', -1);
+    }
+    await c.say('nun', '…하얀이 웃어요. 엄마를 찾아요. 계단에서 쓰러진 엄마도 깨어났대요.');
+    c.despawn('hayan');
+    c.music('white');
+  }
+  G.hooks.enter.push((id) => {
+    const s = G.state;
+    if (id === 'cathedral' && s.quests.m7 === 3 && !s.flags.patient_arrived && !G.script.running) G.script.run(patientChild);
+  });
+  G.chars.hayan = Object.assign({}, G.chars.kid || {}, { id: 'hayan', name: '하얀', title: '설원에서 온 아이' });
+
+  // 새벽단을 고발했다면: 붙잡힌 레아가 성기사단 숙소에
+  W.addNpcs('knight_hall', [{ id: 'lea', x: 2, y: 4, dir: 'right', cond: (s) => s.flags.d_festival === 'warn' && !s.flags.m_white_edel, talk: async (c) => {
+    if (!c.flag('lea_cell')) {
+      c.set('lea_cell');
+      await c.say('lea', ['…왔네. 구경하러? 아니면 확인하러?', '원망 안 해. 네 계산이 그랬던 거잖아. 나도 16년 동안 내 계산대로 살았어.']);
+      const k = await c.ask(null, ['아무도 다치지 않길 바랐어.', '당신 방식은 카이론이랑 똑같았어.']);
+      if (k === 0) await c.say('lea', ['…알아. 그래서 더 화가 나. 나도 그걸 바랐거든.', '바라기만 하면 16년이 가. 그래서 폭약을 샀던 거야.']);
+      else { await c.say('lea', ['……', '…그 말, 루드가 할 줄 알았는데 네가 하는구나.', '그래. 똑같았어. 「계산상으로는」. 나는 카이론을 미워하면서 카이론처럼 말했어.']); c.bond('lea', 1); }
+      return;
+    }
+    await c.run(W.chatter('lea_cell', ['에델이라는 기사, 매일 밥을 직접 가져와. 투구는 안 벗고.', '루드는 면회를 안 와. …숫자로 세고 있겠지. 누나를 또 잃은 날을.'], 'lea'));
+  } }]);
+  W.wrapNpc('cathedral', 'edel', (s) => s.flags.m_white_edel && s.flags.d_festival === 'warn' && !s.flags.edel_freed_lea, async (c, n, orig) => {
+    c.set('edel_freed_lea');
+    await c.say('edel', ['숙소에 붙잡아 둔 새벽단 단장 말이오. 오늘 아침 풀어 주었소. 셋째 조항이오.', '탑을 부수려던 자를 가두는 것이 옳은지, 나는 이제 모르겠소. 모를 때는 문을 여는 쪽을 택하겠소.']);
+    await orig(c, n);
+  });
+
+  W.addObjs('white', [
+    W.prop('fire', 17, 17, '광장의 모닥불. 대성당에서 나온 수녀들이 환자 가족에게 수프를 나눠 준다.'),
+    W.prop('bench', 13, 20),
+    W.prop('board', 21, 16, (s) => ['대성당 게시판. 「빛바램병 환자 가족 쉼터 — 눈꽃 여관 2층」', s.flags.d_patient === 'lumie' ? '「성녀님께서 당분간 치료를 쉬십니다. 기도해 주십시오.」' : s.flags.healed_all ? '「대성당 환자 세 분, 색이 돌아옴! 흰빛의 손님께 감사를.」' : '「올해 환자 4,100명. 성녀님은 한 분도 돌려보내지 않으셨습니다.」']),
+    W.prop('hole', 30, 25, '눈밭 한가운데 얼음 구멍. 아이들이 뚫어 놓은 모양이다. 물이 검푸르다.', { pool: 'white' }),
+  ]);
+  W.addObjs('snowfield', [W.prop('fire', 17, 5, '설원 순례자들의 모닥불 자리. 돌 위에 누군가 두고 간 털장갑 한 짝.'), W.prop('hole', 31, 16, '얼음 구멍. 설원을 건너는 순례자들이 여기서 빙어를 낚아 끼니를 때운다.', { pool: 'white' })]);
+  W.addObjs('cathedral', [W.look(9, 13, (s) => (s.flags.d_patient ? '하얀이 누웠던 들것 자국이 바닥에 남아 있다. 수녀가 그 자리를 닦지 않고 두었다.' : '대성당 바닥. 수백 명이 무릎 꿇은 자리가 반들반들하게 닳았다.'), { solid: false })]);
+  W.barks('white', { snowflake: ['덤벼!', '한 번도 안 졌어!'], kid: ['눈싸움!'], nun: ['쉿…', '기도해요.'], guard: ['질서를 지키오.', '펭귄은 곤란하오.'] });
+  W.barks('cathedral', { lumie: (s) => (s.flags.m_white_lumie ? ['…따뜻하네요.'] : ['여신이여…', '괜찮아요.']), edel: ['……'], nun: ['쉿.'], pat1: ['…춥다.'], pat3: ['…빛이…'] });
+
+  /* 도토리와의 이야기 (7장) */
+  G.story.talks.push(
+    { id: 'w_cold', map: 'snowfield', run: async (c) => {
+      await c.say('dotori', ['…목도리 속에 들어가도 돼? 꼬리만 밖에 내놓을게.', '(목도리 안에서) …따뜻하다. 네 목에서 흰빛 냄새 나. 햇볕 냄새 같은 거.']);
+      c.bond('dotori', 1);
+    } },
+    { id: 'w_seal', when: (s) => !!s.flags.m_white_truth, pri: 5, run: async (c) => {
+      await c.say('dotori:angry', ['새 봉인이라니. 너를 수정 속에 넣는다는 거잖아. 엄마처럼.', '…나 그거 허락 못 해. 다람쥐가 허락하고 말고가 어딨냐고 하겠지만. 못 해.']);
+      const k = await c.ask(null, ['나도 싫어.', '…다른 방법이 없으면?', '엄마는 왜 그걸 골랐을까.']);
+      if (k === 0) await c.say('dotori', '…응. 싫은 거 싫다고 해도 돼. 너 그런 말 잘 안 하잖아.');
+      else if (k === 1) { await c.say('dotori:sad', ['……', '그럼 방법을 만들어. 엄마가 숙제라고 했잖아. 너 숙제 늘 늦게 했어도 결국 했잖아.']); c.bond('dotori', 1); }
+      else await c.say('dotori', ['…나눌 사람도, 시간도 없었대. 엄마 노트에 그렇게 써 있었다며.', '너한테는 있어. 할머니, 나, 롤로 아저씨, 루드 형… 벌써 이만큼.']);
+    } },
+    { id: 'w_patient', when: (s) => !!s.flags.d_patient, run: async (c) => {
+      const d = c.s.flags.d_patient;
+      if (d === 'own') await c.say('dotori', ['앞머리. 하얀 거. 아파?', '…안 아프다고 하지 마. 너 아플 때 코 찡긋하는 거 알아.']);
+      else if (d === 'lumie') await c.say('dotori:sad', ['성녀님 머리 봤어? 한순간에 하얘졌어.', '성녀님은 기쁘다고 했어. 근데 에델 아저씨… 아니, 언니는 투구 속에서 울었을 거야.']);
+      else await c.say('dotori:happy', ['엄마가 16년 전에 심어 둔 꽃이 하얀이를 살렸어.', '엄마는 희생만 한 게 아니었어. 이런 것도 했어. 아무도 모르게.']);
+    } },
+  );
+  /* 쉬는 밤 (7장) */
+  G.story.nights.push(
+    { id: 'w_run', when: (s) => !!s.flags.m_white_truth && !s.flags.m_white_lumie, intro: '눈꽃 여관. 벽난로 불이 작아졌다. 창밖으로 성기사의 횃불이 오간다. 여관을 지키고 있다.', run: async (c) => {
+      await c.say('dotori', ['{n}. 도망가자.', '지금. 창문으로. 나 창문 여는 거 잘해. 설원 건너면 아무도 못 찾아.']);
+      const k = await c.ask(null, ['도망 안 가.', '…도망가고 싶어.']);
+      if (k === 0) await c.say('dotori', ['…그럴 줄 알았어. 그냥 한번 말해 본 거야.', '말해 봐야 네가 안 간다는 걸 내가 확인하니까. 확인하면 나도 안 무서우니까.']);
+      else { await c.say('dotori:sad', ['……', '…처음 들었다. 네가 그런 말 하는 거.', '괜찮아. 도망가고 싶은 거랑 도망가는 거는 달라. 할머니가 그랬어. 할머니도 983년에 도망가고 싶었대.']); c.bond('dotori', 2); c.set('hero_afraid'); }
+    } },
+  );
+
   G.world.nodes.push({ region: 'white', label: '화이트', x: 138, y: 52, color: '#e0ecff', maps: ['white', 'snowfield', 'ice_temple', 'cathedral', 'lumie_room', 'knight_hall', 'white_rank', 'white_shop', 'white_inn'] });
 })();
 
@@ -9453,6 +9761,7 @@ input { font: inherit; }
       await c.say(null, ['제어판 가운데 홈에 노란 구슬이 박혀 있다. 구슬 안의 숫자가 계기판처럼 깜빡인다.', '612.']);
       await c.orb('o_y4');
     }
+    if (s.books.b_silver && s.books.b_report) c.truth('t_612');
     if (s.quests.m8 === 2) {
       const read = s.books.b_silver && s.books.b_report;
       if (!read) { await c.say('dotori', '찍, 벽의 기록판부터 읽어 보자. 612년 기록이랑… 저건 보고서 같아.'); return; }
@@ -9483,7 +9792,32 @@ input { font: inherit; }
     fixed: [],
   });
   async function boltFight(c) {
+    const s = c.s;
     await c.say('bolt', ['왔군. 이게 MK-7이다. 천년포의 시제품. 대륙에서 제일 큰 기계지.', '내가 16년 동안 옳았다면, 이 녀석이 널 이긴다. 네가 옳다면… 증명해 봐라.']);
+    // 노을이 색을 본 뒤라면: 노을 몸속에 잠긴 목소리를 들려줄 수 있다
+    const canTalk = s.quests.q_noel === 'done';
+    if (canTalk) {
+      c.spawn({ id: 'noel_f', x: 14, y: 25, dir: 'up', look: G.chars.noel.look });
+      await c.say('noel', '…따라왔다. 볼트. 나에게 재생 금지 명령이 걸린 기록이 하나 있다. 990년 가을.');
+      await c.say('bolt', '……노을. 그건 꺼내지 마라.');
+    }
+    const k = canTalk ? await c.ask(null, ['[y]노을에게 기록을 재생해 달라고 한다[/]', '기계로 증명한다']) : 1;
+    if (k === 0) {
+      c.music('mother');
+      await c.say('noel', '재생 금지 명령을… 해제한다. 나의 판단이다. 볼트가 가르쳐 준 대로. 「옳은 쪽의 숫자를 따르라.」');
+      await c.narr(['노을의 가슴에서 치직거리는 소리가 났다. 그리고 낮고 쉰, 다정한 여자 목소리가 공장 안에 퍼졌다.', '「여보. 녹음이 되고 있는 거 맞죠? …이 로봇 참 착해요. 가만히 있네.」', '「내 머리칼이 하얘지는 거, 당신 탑 때문인 거 알아요. 당신도 알죠. 계산 잘하잖아.」', '「탑 멈춰요. 당신이 틀려도 괜찮아요. 나는 틀린 당신도 사랑했어요. 맞는 당신은 좀 재미없었고.」', '「…잠 좀 자요. 연료 낭비라고 하지 말고.」']);
+      await c.wait(0.8);
+      await c.say(null, 'MK-7의 조종석 문이 열린 채로 멈췄다. 볼트는 올라타지 않았다. 대신 바닥에 주저앉았다. 강철 장갑을 벗는 데 한참 걸렸다.');
+      await c.say('bolt', ['……9년 동안 한 번도 안 틀었다. 틀면… 내가 틀린 게 되니까.', '……틀렸군. 9년 동안. 아니, 16년 동안.']);
+      await c.say('bolt', ['싸울 필요 없다. 증명은 끝났다. 저 목소리가 나보다 계산을 잘했다. 늘 그랬다.', '공방으로 와라. 틀렸으면 고쳐야지. 기술자는 그렇게 산다.']);
+      c.decide('bolt', 'talk', '노을의 목소리로 볼트를 설득했다');
+      c.bond('bolt', 2); c.bond('noel', 1);
+      c.despawn('noel_f');
+      c.quest('m8', 5);
+      c.music('gray');
+      return;
+    }
+    if (canTalk) c.despawn('noel_f');
     c.shake(800, 4);
     await c.say(null, '쿠웅— 공장 바닥이 흔들리며 거대한 강철 기계가 일어섰다. 볼트가 조종석에 올라탔다.');
     const win = await c.battle('voltmech', { noFlee: true, music: 'boss2' });
@@ -9492,8 +9826,63 @@ input { font: inherit; }
     await c.say(null, 'MK-7이 무릎을 꿇었다. 연기 속에서 볼트가 조종석에서 내려왔다.');
     await c.say('bolt', ['……증명 끝.', '네가 옳다. 내가 틀렸다. 16년 동안.']);
     await c.say('bolt', ['공방으로 와라. 틀렸으면 고쳐야지. 기술자는 그렇게 산다.']);
+    c.decide('bolt', 'fight', 'MK-7을 쓰러뜨려 볼트에게 증명했다');
     c.quest('m8', 5);
   }
+
+  /* ───────── 그레이의 결: 잠긴 서랍 · 노을의 기록 · 소품 · 혼잣말 · 곁의 이야기 ───────── */
+  W.keyItem('drawer_key', '볼트의 서랍 열쇠', '노을이 몸속에 보관하던 작은 열쇠. 「볼트가 울 수 있게 되면 건네라」는 명령과 함께.');
+  // 노을이 색을 본 뒤: 서랍 열쇠를 건넨다
+  W.wrapNpc('gray', 'noel', (s) => s.quests.q_noel === 'done' && !s.flags.noel_key, async (c) => {
+    c.set('noel_key');
+    await c.say('noel', ['하나 더. 볼트가 내 몸에 넣어 둔 것. 작은 열쇠. 공방 왼쪽 서랍의 열쇠다.', '명령문: 「볼트가 울 수 있게 되면 건네라.」 …볼트는 아직 울지 않았다. 하지만 나는 판단했다. 너에게 건네는 쪽이 울게 만드는 방법에 가깝다.']);
+    c.give('drawer_key');
+    await c.say('noel', '그리고 기록 하나가 더 있다. 990년 가을. 재생 금지. …필요하면 부르라. 폐공장이든 어디든.');
+  });
+  W.addObjs('workshop', [W.look(2, 2, '공방 왼쪽 철제 서랍. 자물쇠가 세 겹이다. 녹 하나 없이 반짝인다. 매일 닦은 모양이다.', { talk: async (c) => {
+    const s = c.s;
+    if (s.truth && s.truth.t_design) { await c.say(null, '비어 있는 서랍. 안쪽 바닥에 오래된 잉크 자국이 번져 있다.'); return; }
+    if (!E.has(s, 'drawer_key') && s.flags.d_bolt !== 'talk') { await c.say(null, '공방 왼쪽 철제 서랍. 자물쇠가 세 겹이다. 녹 하나 없이 반짝인다. 매일 닦은 모양이다.'); return; }
+    await c.say(null, s.flags.d_bolt === 'talk' && !E.has(s, 'drawer_key') ? '서랍이 열려 있다. 볼트가 열어 둔 모양이다.' : '노을의 열쇠를 꽂자 자물쇠 세 개가 한꺼번에 풀렸다.');
+    await c.narr(['서랍 안에는 봉투 하나. 겉봉에 「천년성 · 챔피언 카이론 귀하」. 우표는 붙어 있는데 소인이 없다. 한 번도 부치지 않았다.', '「카이론. 계산을 끝냈다. 탑들이 모은 빛을 한 점으로 쏘아 올리면, 그 점은 방패가 아니라 등대가 된다.」', '「은빛 왕국 대광맥의 세 배. 흑점이 그 불빛을 못 볼 리가 없다.」', '「멈춰라. 틀렸다고 말하는 건 내가 하겠다. 너는 멈추기만 해라. — 990년 가을, 볼트」']);
+    c.truth('t_design');
+    await c.say('dotori:worry', ['…9년 전에 다 알았어. 볼트 아저씨.', '알았는데 못 부쳤어. 아내가 떠난 해에.']);
+  } })]);
+  W.addObjs('gray', [
+    W.prop('bench', 15, 21, '녹슬이가 만든 고철 의자. 「앉아도 됨. 삐걱거려도 안 부러짐. — 녹슬이」'),
+    W.prop('fire', 22, 12, '기름통 모닥불. 그레이 사람들이 모여 손을 쬔다. 불꽃만은 여기서도 주황색이다. 다들 그걸 한참 본다.'),
+    W.prop('board', 14, 12, (s) => ['고철 시장 게시판. 「오늘의 시세 — 녹슨 톱니 3개에 빵 하나」', s.flags.d_bolt ? '그 아래 볼트의 글씨로 짧은 공고: 「천년포 개발 중단. 부품 무료 배포. 연료 낭비 금지.」' : '「천년포 조립 인력 모집 — 볼트 공방」', s.quests.q_noel === 'done' ? '구석에 노을의 반듯한 글씨: 「오늘의 하늘 — 회색. 예쁨.」' : ''].filter(Boolean)),
+  ]);
+  W.barks('gray', { noel: (s) => (s.quests.q_noel === 'done' ? ['초록. 예쁨.', '회색도 예쁨.'] : ['색 수집 중.', '온도 측정 중.']), rusty: ['고철 팝니다!'], engineer: ['톱니 장갑!'], engineer2: ['회색. …웃어도 돼.'], kid: ['초록이 뭐야?'] });
+  W.barks('workshop', { bolt: ['……', '연료 낭비다.'] });
+
+  /* 도토리와의 이야기 (8장) */
+  G.story.talks.push(
+    { id: 'gr_color', map: 'gray', run: async (c) => {
+      await c.say('dotori', ['여기선 네 초록 옷이 제일 시끄러워. 다들 한 번씩 쳐다봐.', '…부러운 걸까, 싫은 걸까. 나는 갈색이라 티도 안 나.']);
+    } },
+    { id: 'gr_beacon', when: (s) => !!s.flags.m_gray_truth, pri: 5, run: async (c) => {
+      await c.say('dotori:worry', ['등대. 볼트 아저씨가 그랬잖아. 16년 동안 흑점한테 등대를 켜 줬다고.', '…그럼 카이론은 하늘을 지킨 게 아니라, 불렀던 거야?']);
+      const k = await c.ask(null, ['카이론은 몰랐을 거야.', '알았어도 멈추지 않았을 거야.', '…우리가 모르는 게 아직 있어.']);
+      if (k === 0) await c.say('dotori', '…볼트 아저씨도 몰랐어. 알고 싶지 않아서. 어른들은 모르고 싶은 걸 참 잘 몰라.');
+      else if (k === 1) await c.say('dotori', '「이유가 있는 잘못은 멈추질 않는다.」 할머니 말이야. 그 사람한테 이유가 뭘까.');
+      else { await c.say('dotori', ['…응. 계산이 안 맞아. 엄마를 잃은 사람이 왜 엄마가 막은 걸 부를까.', '누가 흑점보다 더 무서운 걸까. 그 사람한테는.']); c.bond('dotori', 1); }
+    } },
+    { id: 'gr_noel', when: (s) => s.quests.q_noel === 'done', run: async (c) => {
+      await c.say('dotori', ['노을 언니가 3분 동안 멈췄을 때 고장 난 줄 알았어.', '…나도 처음 날았을 때 3초 멈췄어. 좋은 건 멈추게 하나 봐.']);
+    } },
+  );
+  /* 쉬는 밤 (8장) */
+  G.story.nights.push(
+    { id: 'gr_noel_night', when: (s) => s.quests.q_noel === 'done', intro: '녹슨 톱니 여관. 창밖 가로등 아래 노을이 서 있다. 하늘을 올려다보며, 움직이지 않는다.', run: async (c) => {
+      await c.narr('여관 밖으로 나갔다. 노을이 고개를 돌렸다. 렌즈가 가로등 불빛을 받아 주황색으로 반짝였다.');
+      await c.say('noel', ['잠이 없는 부품이다. 그래서 밤하늘을 본다. 오늘 밤 하늘의 색을 기록 중이다.', '…질문이 있다. 「예쁘다」와 「그립다」는 같은 계산식인가.']);
+      const k = await c.ask(null, ['비슷한데 달라.', '그리운 건 없어진 걸 예뻐하는 거야.', '…나도 잘 몰라.']);
+      if (k === 0) await c.say('noel', '비슷한데 다르다. …사람의 말은 늘 오차가 있다. 그 오차가 좋다.');
+      else if (k === 1) { await c.say('noel', ['없어진 것을 예뻐하는 것.', '…그럼 볼트는 매일 그립다. 아내를. 나를 볼 때마다.', '기록해 둔다. 오늘 처음으로 볼트를 조금 계산했다.']); c.bond('noel', 1); }
+      else await c.say('noel', '모르는 것도 기록한다. 모른다는 기록은 다음 계산의 시작이다. 볼트가 한 말이다.');
+    } },
+  );
 
   G.world.nodes.push({ region: 'gray', label: '그레이', x: 112, y: 32, color: '#a8a8b8', maps: ['gray', 'ash_pass', 'ruins', 'archive', 'factory', 'workshop', 'gray_rank', 'gray_inn'] });
 })();
@@ -10664,9 +11053,9 @@ input { font: inherit; }
     t_chart: { title: '흑점의 걸음', text: '은하수 박사의 관측표. 983년 이후 대륙에 징수탑이 하나씩 설 때마다 흑점의 걸음이 빨라졌다. 박사는 여백에 「우연이어야 한다」고 적었다.', hint: '레드 · 별만 보는 노인의 책상 서랍' },
     t_log: { title: '등대지기의 항해일지', text: '「검은 별의 조각은 빛이 모인 곳으로 간다.」 바다 위에서 본 흑점은 해안의 탑 불빛을 따라 방향을 틀었다.', hint: '블루 · 삼 년째 불 꺼진 등대' },
     t_colors: { title: '다섯 빛깔의 이유', text: '창세 신화의 진짜 모습. 천 년 전 아우룸은 흑점의 눈을 속이려고 한곳에 모인 흰빛을 다섯 빛깔로 쪼개 대륙에 흩었다. 등급 제도도, 구슬도 빛이 다시 한곳에 모이지 않게 하려는 장치였다.', hint: '블루 · 잠긴 서고 가장 안쪽 / 블랙 · 천 년을 산 정보상' },
-    t_serin: { title: '무한의 그릇 · 지워진 마지막 장', text: '세린의 연구 노트. 「그릇은 삼키는 것이 아니라 나누는 것이어야 한다. 삼키면 봉인이고, 나누면 끝이다. 나에게는 나눌 사람도, 시간도 없었다.」', hint: '퍼플 · 16년 동안 잠긴 연구실' },
+    t_serin: { title: '무한의 그릇 · 지워진 마지막 장', text: '세린의 연구 노트. 「그릇은 삼키는 것이 아니라 나누는 것이어야 한다. 삼키면 봉인이고, 나누면 끝이다. 나에게는 나눌 사람도, 시간도 없었다.」', hint: '퍼플 · 베라 교수의 금 간 찻잔' },
     t_612: { title: '잿빛의 사흘', text: '은빛 왕국은 대광맥의 빛을 수도 한 점에 모았다. 사흘 뒤 흑점이 처음 하늘에 나타났고, 왕국의 색이 빠졌다.', hint: '그레이 · 612년에 멈춘 기록 보관소' },
-    t_design: { title: '징수탑 설계도의 주석', text: '볼트의 글씨. 「탑들이 모은 빛을 한 점으로 쏘아 올리면 그 점은 등대가 된다. 983년 겨울, 카이론에게 경고했다. 답장은 없었다.」', hint: '그레이 · 설계자가 잠가 둔 서랍' },
+    t_design: { title: '부치지 않은 편지', text: '볼트의 글씨. 「탑들이 모은 빛을 한 점으로 쏘아 올리면 그 점은 방패가 아니라 등대가 된다. 멈춰라. — 990년 가을」 우표는 붙어 있고 소인은 없다.', hint: '그레이 · 설계자가 잠가 둔 서랍 (열쇠는 노을이)' },
     t_stella: { title: '400년의 관측', text: '하늘 정거장의 기록. 흑점은 빛이 가장 짙은 곳이 아니라 빛이 가장 「쏠린」 곳을 향한다. 스텔라는 400년 전에 이 계산을 끝냈지만, 들어 줄 사람이 없었다.', hint: '하늘 정거장 · 혼자 남은 목소리' },
     t_bella: { title: '벨라의 마지막 말', text: '「우리가 모였기 때문에 그것이 왔다. 이긴 뒤에는 빛을 흩어라. 다시는 한곳에 모으지 마라.」 612년, 두 번째 전설의 유언.', hint: '아스트라 · 두 번째 전설의 요새' },
   });
