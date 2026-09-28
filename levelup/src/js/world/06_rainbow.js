@@ -342,5 +342,5 @@
     if (c.flag('beat_storm')) await c.say('mungge:happy', '…………고마워…………이제…………비…………안…………와…………천년제…………나도…………보러…………갈게…………');
   }
 
-  G.world.nodes.push({ region: 'rainbow', label: '무지개', x: 132, y: 64, color: '#ff8ac8', maps: ['rainbow', 'rainbow_bridge', 'cloud_sea', 'whale_isle', 'circus', 'festival_hq', 'rainbow_rank', 'rainbow_inn', 'dawn_base'] });
+  G.world.nodes.push({ region: 'rainbow', label: '무지개', x: 136, y: 80, color: '#ff8ac8', maps: ['rainbow', 'rainbow_bridge', 'cloud_sea', 'whale_isle', 'circus', 'festival_hq', 'rainbow_rank', 'rainbow_inn', 'dawn_base'] });
 })();

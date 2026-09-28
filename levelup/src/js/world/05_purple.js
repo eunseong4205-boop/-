@@ -392,6 +392,6 @@
   });
   G.chars.gran_v = Object.assign({}, G.chars.gran, { id: 'gran_v', name: '오방순 (983년)', face: Object.assign({}, G.chars.gran.face, { hc: '#5a4a3a', acc: [], top: '#2f8a3a', mouth: 'flat', eyes: 'sharp' }) });
 
-  G.world.nodes.push({ region: 'purple', label: '퍼플', x: 118, y: 96, color: '#c49bff', maps: ['purple', 'purple_road', 'purple_forest', 'mirror_pond', 'academy', 'serin_lab', 'purple_rank', 'purple_shop', 'purple_inn'] });
+  G.world.nodes.push({ region: 'purple', label: '퍼플', x: 130, y: 108, color: '#c49bff', maps: ['purple', 'purple_road', 'purple_forest', 'mirror_pond', 'academy', 'serin_lab', 'purple_rank', 'purple_shop', 'purple_inn'] });
   void D;
 })();

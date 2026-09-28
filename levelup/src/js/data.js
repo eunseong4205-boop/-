@@ -115,8 +115,9 @@
   function clickBase(L, k) { return Math.max(1, (targetClick(L) * (k || 1)) / expectedMult(L, true)); }
 
   /* ───────── 기대 전투력 (몬스터 능력치 산출용) ───────── */
-  function expected(L) {
-    const r = regionAt(L);
+  /** reg: 몬스터가 사는 지역 (지역 끝의 보스가 다음 지역 장비 기준으로 계산되지 않도록) */
+  function expected(L, reg) {
+    const r = reg != null ? REGIONS[reg] : regionAt(L);
     const sp = B.spPerLevel * (L - 1);
     const str = sp * 0.3, vit = sp * 0.2;
     const pm = 1 + r.rank * 0.045;
@@ -230,8 +231,9 @@
     const [id, name, arch, c1, c2, c3, reg, frac, role, desc, drop] = a;
     const r = REGIONS[reg];
     const L = Math.round(r.lv[0] * Math.pow(r.lv[1] / r.lv[0], frac));
-    const P = expected(L);
-    const k = { n: [B.tapsToKill, 1, 1], e: [34, 1.35, 5], b: [150, 1.65, 40], x: [240, 2.0, 120] }[role];
+    const P = expected(L, reg);
+    // [탭 수, 공격 배율, 보상 배율] — 보스는 레벨만 맞추면 물약 없이도 이길 만하게, 강적(사천왕·챔피언)은 물약이나 기술이 한두 번 필요하게
+    const k = { n: [B.tapsToKill, 1, 1], e: [34, 1.35, 5], b: [90, 1.25, 40], x: [170, 1.5, 120] }[role];
     const hp = Math.round(P.atk * k[0]);
     const atk = Math.round((P.hp / B.hitsToDie) * k[1] + P.def);
     const base = targetClick(L) * B.killExp * k[2] / (expectedMult(L, false));
@@ -350,7 +352,7 @@
   // 특별 보정: 이야기 보스
   MON.golem0.hp = Math.round(MON.golem0.hp * 0.35); MON.golem0.atk = Math.round(MON.golem0.atk * 0.5);
   MON.rud1.hp = Math.round(MON.rud1.hp * 0.5);
-  MON.kairon.hp *= 3; MON.blacksun.hp *= 6; MON.blacksun.atk = Math.round(MON.blacksun.atk * 0.8);
+  MON.kairon.hp *= 2; MON.blacksun.hp *= 3; MON.blacksun.atk = Math.round(MON.blacksun.atk * 0.8);   // 흑점은 대륙의 빛(지원)과 함께 싸운다
 
   /* ───────── 구슬 ───────── */
   const ORB_COLORS = {
@@ -371,12 +373,12 @@
 
   /* ───────── 스킬 ───────── */
   const SKILLS = [
-    { id: 'k_rush', name: '연타 폭발', rank: 'r1', tier: 3, cd: 20, dur: 6, desc: '6초간 탭 한 번에 세 번 공격', icon: '👊' },
+    { id: 'k_rush', name: '연타 폭발', rank: 'r1', tier: 3, cd: 20, dur: 5, desc: '5초간 탭 한 번에 두 번 공격', icon: '👊' },
     { id: 'k_guard', name: '새싹 방패', rank: 'r1', tier: 5, cd: 30, dur: 8, desc: '8초간 받는 피해 -70%', icon: '🌱' },
-    { id: 'k_flame', name: '괴짜의 불꽃', rank: 'r2', tier: 1, cd: 25, dur: 0, desc: '공격력 ×25 일격', icon: '🔥' },
-    { id: 'k_focus', name: '덕질 집중', rank: 'r3', tier: 1, cd: 40, dur: 10, desc: '10초간 치명타 100%', icon: '🎯' },
+    { id: 'k_flame', name: '괴짜의 불꽃', rank: 'r2', tier: 1, cd: 25, dur: 0, desc: '공격력 ×15 일격', icon: '🔥' },
+    { id: 'k_focus', name: '덕질 집중', rank: 'r3', tier: 1, cd: 40, dur: 6, desc: '6초간 치명타 100%', icon: '🎯' },
     { id: 'k_heal', name: '짱의 기합', rank: 'r4', tier: 1, cd: 45, dur: 0, desc: 'HP 60% 회복', icon: '💪' },
-    { id: 'k_legend', name: '전설의 일격', rank: 'r5', tier: 1, cd: 60, dur: 0, desc: '공격력 ×200 일격', icon: '⭐' },
+    { id: 'k_legend', name: '전설의 일격', rank: 'r5', tier: 1, cd: 60, dur: 0, desc: '공격력 ×60 일격', icon: '⭐' },
   ];
 
   /* ───────── 상점 ───────── */

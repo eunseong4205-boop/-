@@ -530,6 +530,6 @@
     await c.say('dotori', '광부 대장 아저씨한테 알려 주자! 떡볶이집에 있을 거야!');
   }
 
-  G.world.nodes.push({ region: 'red', label: '레드', x: 58, y: 150, color: '#ff6a4a', maps: ['red', 'red_path', 'red_mountain', 'observatory', 'red_teahouse', 'red_forge', 'red_rank', 'red_ddeok', 'red_post', 'red_rud'] });
-  G.world.nodes.push({ region: 'red', label: '광산', x: 30, y: 158, color: '#ffd84a', maps: ['mine1', 'mine2'] });
+  G.world.nodes.push({ region: 'red', label: '레드', x: 56, y: 150, color: '#ff6a4a', maps: ['red', 'red_path', 'red_mountain', 'observatory', 'red_teahouse', 'red_forge', 'red_rank', 'red_ddeok', 'red_post', 'red_rud'] });
+  G.world.nodes.push({ region: 'red', label: '광산', x: 30, y: 162, color: '#ffd84a', maps: ['mine1', 'mine2'] });
 })();

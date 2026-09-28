@@ -70,8 +70,8 @@
     G.audio.sfx('skill');
     G.ui.flash(id === 'k_legend' ? '#ffe066' : id === 'k_flame' ? '#ff8a3a' : '#ffffff', 300);
     const d = E.derive(s);
-    if (id === 'k_flame') hit(d.atk * 25, true, '괴짜의 불꽃!');
-    if (id === 'k_legend') hit(d.atk * 200, true, '전설의 일격!');
+    if (id === 'k_flame') hit(d.atk * 15, true, '괴짜의 불꽃!');
+    if (id === 'k_legend') hit(d.atk * 60, true, '전설의 일격!');
     if (id === 'k_heal') { s.hp = Math.min(d.hpMax, s.hp + d.hpMax * 0.6); addFloat('기합! HP 회복', '#6ee7a8', 0.5, 0.78); }
     if (id === 'k_rush') addFloat('연타 폭발!', '#ffd84a', 0.5, 0.78);
     if (id === 'k_guard') addFloat('새싹 방패!', '#8ae08a', 0.5, 0.78);

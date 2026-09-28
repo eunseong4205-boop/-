@@ -318,6 +318,6 @@
 
   // 이야기가 끝나면 징수탑은 사라진다 (나눔탑으로 바뀐다)
   for (const id in G.maps) for (const b of G.maps[id].builds || []) if (b.style === 'tower') { const w = b.when; b.when = (s) => !s.flags.ending && (!w || w(s)); }
-  G.world.nodes.push({ region: 'planet', label: '아스트라', x: 140, y: 14, color: '#ffd84a', sky: true, maps: ['astra_gate', 'astra_fort', 'astra_seal'] });
+  G.world.nodes.push({ region: 'planet', label: '아스트라', x: 142, y: 14, color: '#ffd84a', sky: true, maps: ['astra_gate', 'astra_fort', 'astra_seal'] });
   void E; void D;
 })();

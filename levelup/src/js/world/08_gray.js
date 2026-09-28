@@ -312,5 +312,5 @@
     c.quest('m8', 5);
   }
 
-  G.world.nodes.push({ region: 'gray', label: '그레이', x: 112, y: 22, color: '#a8a8b8', maps: ['gray', 'ash_pass', 'ruins', 'archive', 'factory', 'workshop', 'gray_rank', 'gray_inn'] });
+  G.world.nodes.push({ region: 'gray', label: '그레이', x: 112, y: 32, color: '#a8a8b8', maps: ['gray', 'ash_pass', 'ruins', 'archive', 'factory', 'workshop', 'gray_rank', 'gray_inn'] });
 })();

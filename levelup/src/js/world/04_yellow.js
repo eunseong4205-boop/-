@@ -427,5 +427,5 @@
     c.give('sun_token');
   }
 
-  G.world.nodes.push({ region: 'yellow', label: '옐로', x: 104, y: 124, color: '#ffd43b', maps: ['yellow', 'desert', 'pyramid', 'palace', 'casino', 'hideout', 'yellow_rank', 'yellow_inn', 'caravan'] });
+  G.world.nodes.push({ region: 'yellow', label: '옐로', x: 116, y: 136, color: '#ffd43b', maps: ['yellow', 'desert', 'pyramid', 'palace', 'casino', 'hideout', 'yellow_rank', 'yellow_inn', 'caravan'] });
 })();

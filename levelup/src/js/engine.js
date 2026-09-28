@@ -52,7 +52,7 @@
     const goldM = lukF * rc * (1 + (fx.gold || 0)) * (1 + buffSum(s, 'gold'));
     const tool = TOOL_MULT[toolIndex(s)];
     const feverOn = s.fever > s.t;
-    return { atk: U.fin(atk), hpMax, def, crit, critDmg, expM, goldM, tool, intF, lukF, rc, feverOn, taps: 1 + (fx.tap || 0) + (skillOn(s, 'k_rush') ? 2 : 0), regen: B.regen + (fx.regen || 0) };
+    return { atk: U.fin(atk), hpMax, def, crit, critDmg, expM, goldM, tool, intF, lukF, rc, feverOn, taps: 1 + (fx.tap || 0) + (skillOn(s, 'k_rush') ? 1 : 0), regen: B.regen + (fx.regen || 0) };
   }
 
   /* ───────── 경험치 · 레벨 ───────── */

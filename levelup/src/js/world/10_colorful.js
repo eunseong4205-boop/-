@@ -299,5 +299,5 @@
     await c.say('dotori', '…천 발은 못 쐈지만, 한 발은 쐈네. 찍.');
   }
 
-  G.world.nodes.push({ region: 'colorful', label: '알록달록', x: 66, y: 34, color: '#ff9a5a', maps: ['colorful', 'cape', 'fw_tower', 'hangar', 'colorful_rank', 'colorful_inn', 'invent_shop'] });
+  G.world.nodes.push({ region: 'colorful', label: '알록달록', x: 52, y: 46, color: '#ff9a5a', maps: ['colorful', 'cape', 'fw_tower', 'hangar', 'colorful_rank', 'colorful_inn', 'invent_shop'] });
 })();

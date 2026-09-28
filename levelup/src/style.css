@@ -160,7 +160,7 @@ input { font: inherit; }
 .pw-show { font-family: var(--disp); font-size: 22px; letter-spacing: .15em; text-align: center; padding: 8px; background: #000; border: 2px solid var(--line); border-radius: 4px; min-height: 30px; color: var(--gold); }
 
 /* 지도 */
-.wmap { position: relative; width: 100%; aspect-ratio: 1 / 1.05; max-width: 100%; background: #0d1a2e; border: 2px solid var(--line); border-radius: 4px; overflow: hidden; }
+.wmap { position: relative; width: 100%; aspect-ratio: 160 / 184; max-width: 100%; background: #0d1a2e; border: 2px solid var(--line); border-radius: 4px; overflow: hidden; }
 .wmap canvas { width: 100%; height: 100%; image-rendering: pixelated; display: block; }
 
 /* ── 배너 · 장 제목 ── */

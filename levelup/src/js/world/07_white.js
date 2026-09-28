@@ -310,5 +310,5 @@
     await c.say(null, '얼음 제단. 비문의 세 글씨가 나란히 새겨져 있다. 초대 성녀, S, 그리고 L.');
   }
 
-  G.world.nodes.push({ region: 'white', label: '화이트', x: 138, y: 38, color: '#e0ecff', maps: ['white', 'snowfield', 'ice_temple', 'cathedral', 'lumie_room', 'knight_hall', 'white_rank', 'white_shop', 'white_inn'] });
+  G.world.nodes.push({ region: 'white', label: '화이트', x: 138, y: 52, color: '#e0ecff', maps: ['white', 'snowfield', 'ice_temple', 'cathedral', 'lumie_room', 'knight_hall', 'white_rank', 'white_shop', 'white_inn'] });
 })();

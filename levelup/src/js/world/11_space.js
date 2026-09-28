@@ -186,5 +186,5 @@
     await c.fadeIn(900);
   }
 
-  G.world.nodes.push({ region: 'space', label: '정거장', x: 40, y: 22, color: '#8ab0e0', sky: true, maps: ['station', 'station_core', 'quarters', 'deck'] });
+  G.world.nodes.push({ region: 'space', label: '정거장', x: 22, y: 18, color: '#8ab0e0', sky: true, maps: ['station', 'station_core', 'quarters', 'deck'] });
 })();

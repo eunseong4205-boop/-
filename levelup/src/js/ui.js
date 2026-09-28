@@ -634,7 +634,7 @@
       render() {
         const s = G.state;
         const W = G.world;
-        let h = '<div class="wmap"><canvas id="wmcv" width="160" height="168"></canvas></div>';
+        let h = '<div class="wmap"><canvas id="wmcv" width="160" height="184"></canvas></div>';
         const here = G.maps[s.map];
         h += '<p class="note" style="margin-top:6px">지금 있는 곳: <b style="color:var(--gold)">' + esc(here ? here.name : '?') + '</b>' + (here && here.region ? ' · ' + D.REG[here.region].name + ' 지방' : '') + '</p>';
         const canTravel = s.flags.travel && here && here.town;

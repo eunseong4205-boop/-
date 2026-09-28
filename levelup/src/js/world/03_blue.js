@@ -495,5 +495,5 @@
     if (lv >= 600 && E.has(s, 'ferry_pass') && !s.flags.tip600) { s.flags.tip600 = true; G.ui.toast('레벨 600! 블루 부두의 고등어호를 탈 수 있다.', 'gold'); }
   });
 
-  G.world.nodes.push({ region: 'blue', label: '블루', x: 86, y: 150, color: '#4dabf7', maps: ['blue', 'coast', 'beach', 'seacave', 'library', 'library_stacks', 'lighthouse', 'blue_rank', 'blue_shop', 'blue_inn'] });
+  G.world.nodes.push({ region: 'blue', label: '블루', x: 88, y: 156, color: '#4dabf7', maps: ['blue', 'coast', 'beach', 'seacave', 'library', 'library_stacks', 'lighthouse', 'blue_rank', 'blue_shop', 'blue_inn'] });
 })();

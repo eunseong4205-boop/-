@@ -479,8 +479,9 @@
       }
     }
     // 하늘의 황금별
-    x.fillStyle = s.flags.visit_astra_gate ? '#ffd84a' : '#5a5030'; x.beginPath(); x.arc(w - 14, 14, 5, 0, Math.PI * 2); x.fill();
-    x.fillStyle = '#0b0a1c'; x.beginPath(); x.arc(w - 8, 11, 2.5, 0, Math.PI * 2); x.fill();
+    const star = nodes.find((n) => n.region === 'planet') || { x: w - 18, y: 14 };
+    x.fillStyle = s.flags.visit_astra_gate ? '#ffd84a' : '#5a5030'; x.beginPath(); x.arc(star.x, star.y, 5, 0, Math.PI * 2); x.fill();
+    if (!s.flags.ending) { x.fillStyle = '#0b0a1c'; x.beginPath(); x.arc(star.x + 6, star.y - 3, 2.5, 0, Math.PI * 2); x.fill(); }
     x.textAlign = 'left';
   }
 

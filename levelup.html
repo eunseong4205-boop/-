@@ -172,7 +172,7 @@ input { font: inherit; }
 .pw-show { font-family: var(--disp); font-size: 22px; letter-spacing: .15em; text-align: center; padding: 8px; background: #000; border: 2px solid var(--line); border-radius: 4px; min-height: 30px; color: var(--gold); }
 
 /* 지도 */
-.wmap { position: relative; width: 100%; aspect-ratio: 1 / 1.05; max-width: 100%; background: #0d1a2e; border: 2px solid var(--line); border-radius: 4px; overflow: hidden; }
+.wmap { position: relative; width: 100%; aspect-ratio: 160 / 184; max-width: 100%; background: #0d1a2e; border: 2px solid var(--line); border-radius: 4px; overflow: hidden; }
 .wmap canvas { width: 100%; height: 100%; image-rendering: pixelated; display: block; }
 
 /* ── 배너 · 장 제목 ── */
@@ -575,8 +575,9 @@ input { font: inherit; }
   function clickBase(L, k) { return Math.max(1, (targetClick(L) * (k || 1)) / expectedMult(L, true)); }
 
   /* ───────── 기대 전투력 (몬스터 능력치 산출용) ───────── */
-  function expected(L) {
-    const r = regionAt(L);
+  /** reg: 몬스터가 사는 지역 (지역 끝의 보스가 다음 지역 장비 기준으로 계산되지 않도록) */
+  function expected(L, reg) {
+    const r = reg != null ? REGIONS[reg] : regionAt(L);
     const sp = B.spPerLevel * (L - 1);
     const str = sp * 0.3, vit = sp * 0.2;
     const pm = 1 + r.rank * 0.045;
@@ -690,8 +691,9 @@ input { font: inherit; }
     const [id, name, arch, c1, c2, c3, reg, frac, role, desc, drop] = a;
     const r = REGIONS[reg];
     const L = Math.round(r.lv[0] * Math.pow(r.lv[1] / r.lv[0], frac));
-    const P = expected(L);
-    const k = { n: [B.tapsToKill, 1, 1], e: [34, 1.35, 5], b: [150, 1.65, 40], x: [240, 2.0, 120] }[role];
+    const P = expected(L, reg);
+    // [탭 수, 공격 배율, 보상 배율] — 보스는 레벨만 맞추면 물약 없이도 이길 만하게, 강적(사천왕·챔피언)은 물약이나 기술이 한두 번 필요하게
+    const k = { n: [B.tapsToKill, 1, 1], e: [34, 1.35, 5], b: [90, 1.25, 40], x: [170, 1.5, 120] }[role];
     const hp = Math.round(P.atk * k[0]);
     const atk = Math.round((P.hp / B.hitsToDie) * k[1] + P.def);
     const base = targetClick(L) * B.killExp * k[2] / (expectedMult(L, false));
@@ -810,7 +812,7 @@ input { font: inherit; }
   // 특별 보정: 이야기 보스
   MON.golem0.hp = Math.round(MON.golem0.hp * 0.35); MON.golem0.atk = Math.round(MON.golem0.atk * 0.5);
   MON.rud1.hp = Math.round(MON.rud1.hp * 0.5);
-  MON.kairon.hp *= 3; MON.blacksun.hp *= 6; MON.blacksun.atk = Math.round(MON.blacksun.atk * 0.8);
+  MON.kairon.hp *= 2; MON.blacksun.hp *= 3; MON.blacksun.atk = Math.round(MON.blacksun.atk * 0.8);   // 흑점은 대륙의 빛(지원)과 함께 싸운다
 
   /* ───────── 구슬 ───────── */
   const ORB_COLORS = {
@@ -831,12 +833,12 @@ input { font: inherit; }
 
   /* ───────── 스킬 ───────── */
   const SKILLS = [
-    { id: 'k_rush', name: '연타 폭발', rank: 'r1', tier: 3, cd: 20, dur: 6, desc: '6초간 탭 한 번에 세 번 공격', icon: '👊' },
+    { id: 'k_rush', name: '연타 폭발', rank: 'r1', tier: 3, cd: 20, dur: 5, desc: '5초간 탭 한 번에 두 번 공격', icon: '👊' },
     { id: 'k_guard', name: '새싹 방패', rank: 'r1', tier: 5, cd: 30, dur: 8, desc: '8초간 받는 피해 -70%', icon: '🌱' },
-    { id: 'k_flame', name: '괴짜의 불꽃', rank: 'r2', tier: 1, cd: 25, dur: 0, desc: '공격력 ×25 일격', icon: '🔥' },
-    { id: 'k_focus', name: '덕질 집중', rank: 'r3', tier: 1, cd: 40, dur: 10, desc: '10초간 치명타 100%', icon: '🎯' },
+    { id: 'k_flame', name: '괴짜의 불꽃', rank: 'r2', tier: 1, cd: 25, dur: 0, desc: '공격력 ×15 일격', icon: '🔥' },
+    { id: 'k_focus', name: '덕질 집중', rank: 'r3', tier: 1, cd: 40, dur: 6, desc: '6초간 치명타 100%', icon: '🎯' },
     { id: 'k_heal', name: '짱의 기합', rank: 'r4', tier: 1, cd: 45, dur: 0, desc: 'HP 60% 회복', icon: '💪' },
-    { id: 'k_legend', name: '전설의 일격', rank: 'r5', tier: 1, cd: 60, dur: 0, desc: '공격력 ×200 일격', icon: '⭐' },
+    { id: 'k_legend', name: '전설의 일격', rank: 'r5', tier: 1, cd: 60, dur: 0, desc: '공격력 ×60 일격', icon: '⭐' },
   ];
 
   /* ───────── 상점 ───────── */
@@ -915,7 +917,7 @@ input { font: inherit; }
     const goldM = lukF * rc * (1 + (fx.gold || 0)) * (1 + buffSum(s, 'gold'));
     const tool = TOOL_MULT[toolIndex(s)];
     const feverOn = s.fever > s.t;
-    return { atk: U.fin(atk), hpMax, def, crit, critDmg, expM, goldM, tool, intF, lukF, rc, feverOn, taps: 1 + (fx.tap || 0) + (skillOn(s, 'k_rush') ? 2 : 0), regen: B.regen + (fx.regen || 0) };
+    return { atk: U.fin(atk), hpMax, def, crit, critDmg, expM, goldM, tool, intF, lukF, rc, feverOn, taps: 1 + (fx.tap || 0) + (skillOn(s, 'k_rush') ? 1 : 0), regen: B.regen + (fx.regen || 0) };
   }
 
   /* ───────── 경험치 · 레벨 ───────── */
@@ -3825,7 +3827,7 @@ input { font: inherit; }
       render() {
         const s = G.state;
         const W = G.world;
-        let h = '<div class="wmap"><canvas id="wmcv" width="160" height="168"></canvas></div>';
+        let h = '<div class="wmap"><canvas id="wmcv" width="160" height="184"></canvas></div>';
         const here = G.maps[s.map];
         h += '<p class="note" style="margin-top:6px">지금 있는 곳: <b style="color:var(--gold)">' + esc(here ? here.name : '?') + '</b>' + (here && here.region ? ' · ' + D.REG[here.region].name + ' 지방' : '') + '</p>';
         const canTravel = s.flags.travel && here && here.town;
@@ -4143,8 +4145,8 @@ input { font: inherit; }
     G.audio.sfx('skill');
     G.ui.flash(id === 'k_legend' ? '#ffe066' : id === 'k_flame' ? '#ff8a3a' : '#ffffff', 300);
     const d = E.derive(s);
-    if (id === 'k_flame') hit(d.atk * 25, true, '괴짜의 불꽃!');
-    if (id === 'k_legend') hit(d.atk * 200, true, '전설의 일격!');
+    if (id === 'k_flame') hit(d.atk * 15, true, '괴짜의 불꽃!');
+    if (id === 'k_legend') hit(d.atk * 60, true, '전설의 일격!');
     if (id === 'k_heal') { s.hp = Math.min(d.hpMax, s.hp + d.hpMax * 0.6); addFloat('기합! HP 회복', '#6ee7a8', 0.5, 0.78); }
     if (id === 'k_rush') addFloat('연타 폭발!', '#ffd84a', 0.5, 0.78);
     if (id === 'k_guard') addFloat('새싹 방패!', '#8ae08a', 0.5, 0.78);
@@ -5683,7 +5685,7 @@ input { font: inherit; }
     if (lv >= 12 && s.quests.m1 === 0) { G.main.setQuest('m1', 1); G.ui.toast('할머니가 부르신다. 언덕 위 오두막으로 가 보자.', 'gold'); }
   });
 
-  G.world.nodes.push({ region: 'green', label: '그린', x: 40, y: 128, color: '#6ad86a', maps: ['green', 'home', 'green_field', 'green_forest', 'green_shop', 'green_rank', 'green_school', 'green_chief'] });
+  G.world.nodes.push({ region: 'green', label: '그린', x: 30, y: 130, color: '#6ad86a', maps: ['green', 'home', 'green_field', 'green_forest', 'green_shop', 'green_rank', 'green_school', 'green_chief'] });
   void U;
 })();
 
@@ -6220,8 +6222,8 @@ input { font: inherit; }
     await c.say('dotori', '광부 대장 아저씨한테 알려 주자! 떡볶이집에 있을 거야!');
   }
 
-  G.world.nodes.push({ region: 'red', label: '레드', x: 58, y: 150, color: '#ff6a4a', maps: ['red', 'red_path', 'red_mountain', 'observatory', 'red_teahouse', 'red_forge', 'red_rank', 'red_ddeok', 'red_post', 'red_rud'] });
-  G.world.nodes.push({ region: 'red', label: '광산', x: 30, y: 158, color: '#ffd84a', maps: ['mine1', 'mine2'] });
+  G.world.nodes.push({ region: 'red', label: '레드', x: 56, y: 150, color: '#ff6a4a', maps: ['red', 'red_path', 'red_mountain', 'observatory', 'red_teahouse', 'red_forge', 'red_rank', 'red_ddeok', 'red_post', 'red_rud'] });
+  G.world.nodes.push({ region: 'red', label: '광산', x: 30, y: 162, color: '#ffd84a', maps: ['mine1', 'mine2'] });
 })();
 
 /* js/world/03_blue.js */
@@ -6722,7 +6724,7 @@ input { font: inherit; }
     if (lv >= 600 && E.has(s, 'ferry_pass') && !s.flags.tip600) { s.flags.tip600 = true; G.ui.toast('레벨 600! 블루 부두의 고등어호를 탈 수 있다.', 'gold'); }
   });
 
-  G.world.nodes.push({ region: 'blue', label: '블루', x: 86, y: 150, color: '#4dabf7', maps: ['blue', 'coast', 'beach', 'seacave', 'library', 'library_stacks', 'lighthouse', 'blue_rank', 'blue_shop', 'blue_inn'] });
+  G.world.nodes.push({ region: 'blue', label: '블루', x: 88, y: 156, color: '#4dabf7', maps: ['blue', 'coast', 'beach', 'seacave', 'library', 'library_stacks', 'lighthouse', 'blue_rank', 'blue_shop', 'blue_inn'] });
 })();
 
 /* js/world/04_yellow.js */
@@ -7155,7 +7157,7 @@ input { font: inherit; }
     c.give('sun_token');
   }
 
-  G.world.nodes.push({ region: 'yellow', label: '옐로', x: 104, y: 124, color: '#ffd43b', maps: ['yellow', 'desert', 'pyramid', 'palace', 'casino', 'hideout', 'yellow_rank', 'yellow_inn', 'caravan'] });
+  G.world.nodes.push({ region: 'yellow', label: '옐로', x: 116, y: 136, color: '#ffd43b', maps: ['yellow', 'desert', 'pyramid', 'palace', 'casino', 'hideout', 'yellow_rank', 'yellow_inn', 'caravan'] });
 })();
 
 /* js/world/05_purple.js */
@@ -7553,7 +7555,7 @@ input { font: inherit; }
   });
   G.chars.gran_v = Object.assign({}, G.chars.gran, { id: 'gran_v', name: '오방순 (983년)', face: Object.assign({}, G.chars.gran.face, { hc: '#5a4a3a', acc: [], top: '#2f8a3a', mouth: 'flat', eyes: 'sharp' }) });
 
-  G.world.nodes.push({ region: 'purple', label: '퍼플', x: 118, y: 96, color: '#c49bff', maps: ['purple', 'purple_road', 'purple_forest', 'mirror_pond', 'academy', 'serin_lab', 'purple_rank', 'purple_shop', 'purple_inn'] });
+  G.world.nodes.push({ region: 'purple', label: '퍼플', x: 130, y: 108, color: '#c49bff', maps: ['purple', 'purple_road', 'purple_forest', 'mirror_pond', 'academy', 'serin_lab', 'purple_rank', 'purple_shop', 'purple_inn'] });
   void D;
 })();
 
@@ -7902,7 +7904,7 @@ input { font: inherit; }
     if (c.flag('beat_storm')) await c.say('mungge:happy', '…………고마워…………이제…………비…………안…………와…………천년제…………나도…………보러…………갈게…………');
   }
 
-  G.world.nodes.push({ region: 'rainbow', label: '무지개', x: 132, y: 64, color: '#ff8ac8', maps: ['rainbow', 'rainbow_bridge', 'cloud_sea', 'whale_isle', 'circus', 'festival_hq', 'rainbow_rank', 'rainbow_inn', 'dawn_base'] });
+  G.world.nodes.push({ region: 'rainbow', label: '무지개', x: 136, y: 80, color: '#ff8ac8', maps: ['rainbow', 'rainbow_bridge', 'cloud_sea', 'whale_isle', 'circus', 'festival_hq', 'rainbow_rank', 'rainbow_inn', 'dawn_base'] });
 })();
 
 /* js/world/07_white.js */
@@ -8218,7 +8220,7 @@ input { font: inherit; }
     await c.say(null, '얼음 제단. 비문의 세 글씨가 나란히 새겨져 있다. 초대 성녀, S, 그리고 L.');
   }
 
-  G.world.nodes.push({ region: 'white', label: '화이트', x: 138, y: 38, color: '#e0ecff', maps: ['white', 'snowfield', 'ice_temple', 'cathedral', 'lumie_room', 'knight_hall', 'white_rank', 'white_shop', 'white_inn'] });
+  G.world.nodes.push({ region: 'white', label: '화이트', x: 138, y: 52, color: '#e0ecff', maps: ['white', 'snowfield', 'ice_temple', 'cathedral', 'lumie_room', 'knight_hall', 'white_rank', 'white_shop', 'white_inn'] });
 })();
 
 /* js/world/08_gray.js */
@@ -8536,7 +8538,7 @@ input { font: inherit; }
     c.quest('m8', 5);
   }
 
-  G.world.nodes.push({ region: 'gray', label: '그레이', x: 112, y: 22, color: '#a8a8b8', maps: ['gray', 'ash_pass', 'ruins', 'archive', 'factory', 'workshop', 'gray_rank', 'gray_inn'] });
+  G.world.nodes.push({ region: 'gray', label: '그레이', x: 112, y: 32, color: '#a8a8b8', maps: ['gray', 'ash_pass', 'ruins', 'archive', 'factory', 'workshop', 'gray_rank', 'gray_inn'] });
 })();
 
 /* js/world/09_black.js */
@@ -8865,7 +8867,7 @@ input { font: inherit; }
     c.music('castle');
   }
 
-  G.world.nodes.push({ region: 'black', label: '블랙', x: 84, y: 20, color: '#8a7ab8', maps: ['black', 'night_forest', 'castle1', 'castle2', 'midnight_shop', 'black_rank', 'black_inn'] });
+  G.world.nodes.push({ region: 'black', label: '블랙', x: 82, y: 30, color: '#8a7ab8', maps: ['black', 'night_forest', 'castle1', 'castle2', 'midnight_shop', 'black_rank', 'black_inn'] });
 })();
 
 /* js/world/10_colorful.js */
@@ -9170,7 +9172,7 @@ input { font: inherit; }
     await c.say('dotori', '…천 발은 못 쐈지만, 한 발은 쐈네. 찍.');
   }
 
-  G.world.nodes.push({ region: 'colorful', label: '알록달록', x: 66, y: 34, color: '#ff9a5a', maps: ['colorful', 'cape', 'fw_tower', 'hangar', 'colorful_rank', 'colorful_inn', 'invent_shop'] });
+  G.world.nodes.push({ region: 'colorful', label: '알록달록', x: 52, y: 46, color: '#ff9a5a', maps: ['colorful', 'cape', 'fw_tower', 'hangar', 'colorful_rank', 'colorful_inn', 'invent_shop'] });
 })();
 
 /* js/world/11_space.js */
@@ -9362,7 +9364,7 @@ input { font: inherit; }
     await c.fadeIn(900);
   }
 
-  G.world.nodes.push({ region: 'space', label: '정거장', x: 40, y: 22, color: '#8ab0e0', sky: true, maps: ['station', 'station_core', 'quarters', 'deck'] });
+  G.world.nodes.push({ region: 'space', label: '정거장', x: 22, y: 18, color: '#8ab0e0', sky: true, maps: ['station', 'station_core', 'quarters', 'deck'] });
 })();
 
 /* js/world/12_planet.js */
@@ -9686,7 +9688,7 @@ input { font: inherit; }
 
   // 이야기가 끝나면 징수탑은 사라진다 (나눔탑으로 바뀐다)
   for (const id in G.maps) for (const b of G.maps[id].builds || []) if (b.style === 'tower') { const w = b.when; b.when = (s) => !s.flags.ending && (!w || w(s)); }
-  G.world.nodes.push({ region: 'planet', label: '아스트라', x: 140, y: 14, color: '#ffd84a', sky: true, maps: ['astra_gate', 'astra_fort', 'astra_seal'] });
+  G.world.nodes.push({ region: 'planet', label: '아스트라', x: 142, y: 14, color: '#ffd84a', sky: true, maps: ['astra_gate', 'astra_fort', 'astra_seal'] });
   void E; void D;
 })();
 
@@ -10172,8 +10174,9 @@ input { font: inherit; }
       }
     }
     // 하늘의 황금별
-    x.fillStyle = s.flags.visit_astra_gate ? '#ffd84a' : '#5a5030'; x.beginPath(); x.arc(w - 14, 14, 5, 0, Math.PI * 2); x.fill();
-    x.fillStyle = '#0b0a1c'; x.beginPath(); x.arc(w - 8, 11, 2.5, 0, Math.PI * 2); x.fill();
+    const star = nodes.find((n) => n.region === 'planet') || { x: w - 18, y: 14 };
+    x.fillStyle = s.flags.visit_astra_gate ? '#ffd84a' : '#5a5030'; x.beginPath(); x.arc(star.x, star.y, 5, 0, Math.PI * 2); x.fill();
+    if (!s.flags.ending) { x.fillStyle = '#0b0a1c'; x.beginPath(); x.arc(star.x + 6, star.y - 3, 2.5, 0, Math.PI * 2); x.fill(); }
     x.textAlign = 'left';
   }
 

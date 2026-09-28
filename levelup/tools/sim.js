@@ -81,6 +81,20 @@ function run(P, verbose) {
   };
   const bestFood = () => { let f = null; for (const i of shopsOpen) for (const id of D.SHOPS[D.REGIONS[i].id].items) if (D.ITEMS[id].type === 'food' && D.ITEMS[id].fx.exp && (!f || D.ITEMS[id].fx.exp > D.ITEMS[f].fx.exp)) f = id; return f; };
 
+  const fights = [];
+  /** 보스 앞에 선 순간의 전투 어림: 탭 수 · 이기는 데 걸리는 시간 · 버티는 시간 */
+  const judge = (id) => {
+    const md = D.MON[id], d = E.derive(s);
+    const hpM = id === 'kairon' ? 1 : 1;   // 이미 data.js에서 보정됨
+    const perTap = d.atk * (1 + d.crit * (d.critDmg - 1)) * d.taps;
+    const taps = Math.ceil(md.hp * hpM / perTap);
+    const every = D.B.enemyEvery * (md.role === 'x' ? 0.85 : 1);
+    const hitDmg = Math.max(md.atk * 0.12, md.atk - d.def);
+    const hits = Math.ceil(d.hpMax / Math.max(1, hitDmg));
+    const survive = 1.6 + (hits - 1) * every;             // 쓰러지기까지 걸리는 초
+    const tps = 6;
+    fights.push({ id, name: md.name, lv: s.lv, mlv: md.lv, taps, win: taps / tps, survive, hits, gear: (s.eq.weapon || '-') + '/' + (s.eq.armor || '-') + ' ' + E.rankName(s) });
+  };
   for (const ch of CHAPTERS) {
     const c0 = clicks, t0 = sec, b0 = battles, g0 = s.tot.gold, sp0 = Object.assign({}, spent);
     let lag = 0;   // 레벨은 됐는데 등급 값이 모자라 더 누른 시간
@@ -92,8 +106,10 @@ function run(P, verbose) {
     const food = P.food > 0 ? bestFood() : null;
     let foodPaid = 0;
     // 1초 단위로 누른다
+    const pending = (ch.bosses || []).slice();
     while (!done()) {
       buyBest();
+      for (let i = pending.length - 1; i >= 0; i--) if (s.lv >= boss(pending[i])) { judge(pending[i]); pending.splice(i, 1); }
       if (s.lv >= goalLv) lag++;
       // 이길 수 있는 맵 가운데 기운이 가장 높은 곳에서 수련한다
       const mapsOk = ch.maps.filter((k) => k <= s.lv * 1.15);
@@ -123,6 +139,7 @@ function run(P, verbose) {
       if (sec > 60 * 3600) { console.log('!! 60시간 넘게 막힘: ' + ch.name + ' Lv' + s.lv); return null; }
     }
     buyBest();
+    for (const id of pending) judge(id);
     const read = (hangul(ch.file) * 0.8) / P.read;       // 대사 · 책의 80%를 읽는다
     const walk = ch.walk * 60 * P.walk;                    // 이동 · 탐험 · 상점
     const bossT = (ch.bosses || []).length * 40;            // 보스전
@@ -133,6 +150,10 @@ function run(P, verbose) {
   if (verbose) {
     console.log('장'.padEnd(12) + '레벨'.padStart(10) + '클릭'.padStart(9) + '수련(분)'.padStart(9) + '전투'.padStart(6) + '이야기(분)'.padStart(10) + '누적(시간)'.padStart(10) + '등급대기'.padStart(8) + '  등급 · 장갑 · 남은 골드');
     for (const r of rows) console.log(r.ch.padEnd(12) + U.fmtInt(r.lv).padStart(10) + String(Math.round(r.clicks)).padStart(9) + r.grind.toFixed(1).padStart(9) + String(r.battles).padStart(6) + r.story.toFixed(1).padStart(10) + r.total.toFixed(2).padStart(10) + r.lag.toFixed(1).padStart(8) + '  ' + r.ranks + ' · t' + r.tool + ' · ' + U.fmt(r.gold));
+    if (OPT.boss) {
+      console.log('\n보스'.padEnd(18) + '내 레벨'.padStart(9) + '보스 레벨'.padStart(10) + '탭'.padStart(6) + '이기기(초)'.padStart(10) + '버티기(초)'.padStart(10) + '  (초당 6탭, 물약·기술 없이)');
+      for (const f of fights) console.log(f.name.padEnd(16) + U.fmtInt(f.lv).padStart(9) + U.fmtInt(f.mlv).padStart(10) + String(f.taps).padStart(6) + f.win.toFixed(1).padStart(10) + f.survive.toFixed(1).padStart(10) + (f.win > f.survive ? '  ← 물약·기술 필요' : '') + '  ' + f.gear);
+    }
     if (OPT.gold) {
       console.log('\n장'.padEnd(13) + '번 골드'.padStart(10) + '장갑%'.padStart(7) + '장비%'.padStart(7) + '등급%'.padStart(7) + '음식%'.padStart(7));
       for (const r of rows) console.log(r.ch.padEnd(12) + U.fmt(r.earned).padStart(10) + ['tool', 'gear', 'rank', 'food'].map((k) => (100 * r.sp[k] / r.earned).toFixed(0).padStart(7)).join(''));

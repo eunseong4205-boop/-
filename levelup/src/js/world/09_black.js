@@ -323,5 +323,5 @@
     c.music('castle');
   }
 
-  G.world.nodes.push({ region: 'black', label: '블랙', x: 84, y: 20, color: '#8a7ab8', maps: ['black', 'night_forest', 'castle1', 'castle2', 'midnight_shop', 'black_rank', 'black_inn'] });
+  G.world.nodes.push({ region: 'black', label: '블랙', x: 82, y: 30, color: '#8a7ab8', maps: ['black', 'night_forest', 'castle1', 'castle2', 'midnight_shop', 'black_rank', 'black_inn'] });
 })();

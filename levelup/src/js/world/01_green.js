@@ -641,6 +641,6 @@
     if (lv >= 12 && s.quests.m1 === 0) { G.main.setQuest('m1', 1); G.ui.toast('할머니가 부르신다. 언덕 위 오두막으로 가 보자.', 'gold'); }
   });
 
-  G.world.nodes.push({ region: 'green', label: '그린', x: 40, y: 128, color: '#6ad86a', maps: ['green', 'home', 'green_field', 'green_forest', 'green_shop', 'green_rank', 'green_school', 'green_chief'] });
+  G.world.nodes.push({ region: 'green', label: '그린', x: 30, y: 130, color: '#6ad86a', maps: ['green', 'home', 'green_field', 'green_forest', 'green_shop', 'green_rank', 'green_school', 'green_chief'] });
   void U;
 })();
