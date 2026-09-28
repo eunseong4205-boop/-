@@ -91,7 +91,7 @@
       { x: 4, y: 18, w: 6, h: 4, door: 3, roof: '#c86a3a', wall: 'wood', icon: 'bed', to: 'purple_inn', tx: 5, ty: 6 },
       { x: 18, y: 15, w: 2, h: 3, style: 'tower' },
     ],
-    edges: { down: { to: 'purple_road', tx: 16, ty: 0 }, up: { to: 'purple_forest', tx: 20, ty: 33 }, right: { to: 'rainbow_bridge', tx: 0, ty: 20, req: { lv: 6000, rank: ['r2', 1] }, msg: '동쪽 무지개 다리. 다리 앞 푯말: 「괴짜 이상만 건널 수 있음 — 천년제 위원회」' } },
+    edges: { down: { to: 'purple_road', tx: 16, ty: 0 }, up: { to: 'purple_forest', tx: 20, ty: 33 }, right: { to: 'rainbow_bridge', tx: 0, ty: 7, req: { lv: 6000, rank: ['r2', 1] }, msg: '동쪽 무지개 다리. 다리 앞 푯말: 「괴짜 이상만 건널 수 있음 — 천년제 위원회」' } },
     objs: [
       W.sign(17, 26, ['퍼플 마을 — 늘 해 질 녘인 숲', '↑ 라벤더 학원 · 보랏빛 숲   → 무지개 다리 (괴짜 1차 · 레벨 6000)']),
       W.bookObj('b_poems', 23, 20),

@@ -30,8 +30,22 @@ function load() {
   return sandbox.G;
 }
 
+// 대본 속 순간이동(c.warp('맵', x, y))도 입구로 친다
+function scriptEntries() {
+  const out = {};
+  const wdir = path.join(SRC, 'world');
+  const files = fs.readdirSync(wdir).filter((f) => f.endsWith('.js')).map((f) => path.join(wdir, f)).concat([path.join(SRC, 'main.js')]);
+  for (const f of files) {
+    const txt = fs.readFileSync(f, 'utf8');
+    const re = /warp\('([a-z0-9_]+)',\s*(\d+),\s*(\d+)/g;
+    let m;
+    while ((m = re.exec(txt))) (out[m[1]] = out[m[1]] || []).push([+m[2], +m[3], path.basename(f) + ' 대본']);
+  }
+  return out;
+}
 function check(G) {
   const T = G.tiles, D = G.data;
+  const SCRIPT_IN = scriptEntries();
   const errs = [], warns = [];
   const maps = G.maps;
   const gridOf = (m) => { const W = Math.max(...m.grid.map((r) => r.length)); return m.grid.map((r) => r.padEnd(W, '#')); };
@@ -54,7 +68,7 @@ function check(G) {
     if (m.grid.some((r) => r.length !== m.grid[0].length)) warns.push(id + ': 줄 길이가 들쭉날쭉하다');
     // 막히는 오브젝트 · NPC
     const solid = new Set();
-    for (const o of m.objs || []) if (o.t === 'chest' || o.t === 'sign' || o.t === 'prop' || o.t === 'statue' || o.t === 'pickup') solid.add(o.x + ',' + o.y);
+    for (const o of m.objs || []) if (o.t === 'chest' || o.t === 'sign' || o.t === 'prop' || o.t === 'statue' || o.t === 'pickup' || o.t === 'lamp' || o.t === 'book') solid.add(o.x + ',' + o.y);
     for (const n of m.npcs || []) solid.add(n.x + ',' + n.y);
     for (const f of m.fixed || []) solid.add(f.x + ',' + f.y);
     const pass = (x, y) => walk(x, y) && !solid.has(x + ',' + y);
@@ -67,6 +81,7 @@ function check(G) {
       for (const k in sm.edges || {}) { const e = sm.edges[k]; if (e.to === id && e.tx != null) entries.push([e.tx, e.ty, sid + ' 가장자리 ' + k]); }
     }
     for (const t of G.world.towns) if (t.map === id) entries.push([t.x, t.y, '마을 이동']);
+    for (const e of SCRIPT_IN[id] || []) entries.push(e);
     if (id === 'home') entries.push([6, 7, '시작']);
     for (const [x, y, from] of entries) if (!walk(x, y)) errs.push(where(x, y) + ': 도착 칸이 막혀 있다 (' + from + ', 타일 ' + (I.grid[y] ? I.grid[y][x] : '?') + ')');
     // 닿는 곳

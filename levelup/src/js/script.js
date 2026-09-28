@@ -164,7 +164,7 @@
     S.depth++;
     const outer = S.depth === 1;
     if (outer) { S.running = true; F.busy = true; F.held = null; }
-    try { await fn(ctx()); }
+    try { await fn(S.ctx()); }
     catch (e) { console.error(e); G.ui.toast('이야기 진행 중 문제가 생겼다: ' + (e && e.message), 'bad'); }
     finally {
       S.depth--;

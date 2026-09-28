@@ -238,6 +238,17 @@
       if (b.door !== undefined) { const dx = x0 + b.door * TS + 3, dy = y0 + h - 13; rect(g, dx, dy, 10, 13, '#5a3a22'); px(g, dx + 7, dy + 7, '#ffd84a'); }
       return;
     }
+    if (style === 'rocket') {
+      const cx = x0 + w / 2;
+      for (let i = 0; i < h - 12; i++) { const ww = Math.round(Math.min(w - 16, 6 + i * 1.3)); rect(g, cx - ww / 2, y0 + 8 + i, ww, 1, i % 9 === 0 ? '#9aa4ae' : i % 9 < 3 ? '#eef0f4' : '#d8dce4'); }
+      rect(g, cx - 3, y0 + 3, 6, 6, '#e84a4a'); rect(g, cx - 1, y0, 2, 3, '#e84a4a');
+      rect(g, cx - 5, y0 + 22, 10, 10, '#3a4a6a'); rect(g, cx - 4, y0 + 23, 8, 8, b.lit ? '#ffe08a' : '#8ad8ff'); px(g, cx - 2, y0 + 25, '#ffffff');
+      rect(g, x0 + 5, y0 + h - 22, 7, 16, '#e84a4a'); rect(g, x0 + w - 12, y0 + h - 22, 7, 16, '#e84a4a'); rect(g, cx - 1, y0 + h - 20, 2, 14, '#c83a3a');
+      rect(g, cx - 8, y0 + h - 7, 16, 3, '#6a7280');
+      for (let i = 0; i < 6; i++) rect(g, cx - 10 + i * 4, y0 + 40 + (i % 2) * 7, 2, 2, '#4a4450');
+      if (b.lit) { const f = Math.round(Math.sin((t || 0) * 22) * 2); rect(g, cx - 6, y0 + h - 4, 12, 4, '#ffd84a'); rect(g, cx - 4, y0 + h, 8, 3 + f, '#ff8a3a'); }
+      return;
+    }
     if (style === 'boat') {
       const hy = y0 + h - 12;
       rect(g, x0 + 4, hy, w - 8, 10, '#6a4a2a'); rect(g, x0 + 2, hy - 2, w - 4, 3, '#8a6a3a'); rect(g, x0 + 8, hy + 10, w - 16, 2, '#4a3218');

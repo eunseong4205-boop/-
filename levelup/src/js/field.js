@@ -34,7 +34,7 @@
       else if (ch === ':' || ch === 's' || ch === '=') nbs.forEach((n, i) => { if (isGrassy(n)) nb |= 1 << i; });
       g.drawImage(T.tile(theme, ch, x, y, nb, 0), x * TS, y * TS);
     }
-    for (const b of F.builds) if (b.style !== 'tower' && b.style !== 'lighthouse') T.drawBuilding(g, b, theme, 0, 0, 0);
+    for (const b of F.builds) if (b.style !== 'tower' && b.style !== 'lighthouse' && b.style !== 'rocket') T.drawBuilding(g, b, theme, 0, 0, 0);
     F.layer = c;
   }
 
@@ -87,6 +87,7 @@
       }
       for (const b of F.builds) if (b.night || b.style === 'tower') F.lights.push({ x: b.x + Math.floor(b.w / 2), y: b.y + b.h - 1, r: 40, c: b.style === 'tower' ? '#b89aff' : '#ffd86a', dy: 0 });
       for (const L of m.lights || []) F.lights.push(Object.assign({ r: 40, dy: 8 }, L));
+      for (const o of m.objs || []) if (o.t === 'lamp' && o.lit && o.lit(s)) F.lights.push({ x: o.x, y: o.y, r: 50, c: '#ffffff', dy: 2 });
     }
     // NPC
     F.npcs = (m.npcs || []).map((n) => Object.assign({ dir: 'down', px: n.x * TS, py: n.y * TS, mt: 0, moving: false, hidden: false, frame: 0, wt: Math.random() * 3 }, n))
@@ -160,7 +161,7 @@
   function objOn(o) { return !o.gone && (!o.cond || o.cond(G.state)); }
   function objAt(x, y) { return F.objs.find((o) => o.x === x && o.y === y && objOn(o)); }
   function gateOpen(o) { return o.t === 'gate' && (o.open ? o.open(G.state) : E.meets(G.state, o.req)); }
-  function objSolid(o) { if (o.t === 'gate') return !gateOpen(o); if (o.solid !== undefined) return o.solid; return o.t === 'chest' || o.t === 'sign' || o.t === 'book' || o.t === 'statue' || o.t === 'prop' || (o.t === 'pickup' && !G.state.chests[o.id]); }
+  function objSolid(o) { if (o.t === 'gate') return !gateOpen(o); if (o.solid !== undefined) return o.solid; return o.t === 'chest' || o.t === 'sign' || o.t === 'book' || o.t === 'statue' || o.t === 'prop' || o.t === 'lamp' || (o.t === 'pickup' && !G.state.chests[o.id]); }
   function buildingAt(x, y) { return F.builds.find((b) => x >= b.x && x < b.x + b.w && y >= b.y && y < b.y + b.h); }
   function npcAt(x, y) { return F.npcs.find((n) => !n.hidden && n.x === x && n.y === y && (!n.cond || n.cond(G.state))); }
   function monAt(x, y) { return F.mons.find((m) => m.x === x && m.y === y); }
@@ -257,6 +258,7 @@
     } else if (F.held && !F.busy) tryMove(F.held);
     for (let i = F.emotes.length - 1; i >= 0; i--) { F.emotes[i].life -= dt; if (F.emotes[i].life <= 0) F.emotes.splice(i, 1); }
     if (p.jump) { p.jump += dt * 3; if (p.jump >= 1) p.jump = 0; }
+    if (F.follower && F.follower.jump) { F.follower.jump += dt * 3; if (F.follower.jump >= 1) F.follower.jump = 0; }
     if (F.aura > 0) F.aura = Math.max(0, F.aura - dt * 1.6);
     const fo = F.follower;
     if (fo && fo.moving) {
@@ -420,7 +422,7 @@
       }
     }
     // 징수탑
-    for (const b of F.builds) if (b.style === 'tower' || b.style === 'lighthouse') T.drawBuilding(g, typeof b.lit === 'function' ? Object.assign({}, b, { lit: b.lit(s) }) : b, F.map.theme, -cx, -cy, F.t);
+    for (const b of F.builds) if (b.style === 'tower' || b.style === 'lighthouse' || b.style === 'rocket') T.drawBuilding(g, typeof b.lit === 'function' ? Object.assign({}, b, { lit: b.lit(s) }) : b, F.map.theme, -cx, -cy, F.t);
     // 바닥 오브젝트
     for (const o of F.objs) {
       if (!objOn(o)) continue;
@@ -445,6 +447,13 @@
       if (o.t === 'orbshine' && !s.orbs[o.orb]) ents.push({ y: o.y * TS, draw: () => { const k = Math.floor(F.t * 3) % 3; g.fillStyle = '#ffffff'; if (k) g.fillRect(ox + 7, oy + 6, 2, 2); if (k === 2) { g.fillRect(ox + 5, oy + 7, 1, 1); g.fillRect(ox + 10, oy + 7, 1, 1); g.fillRect(ox + 8, oy + 4, 1, 1); g.fillRect(ox + 8, oy + 9, 1, 1); } } });
       if (o.t === 'book' && !s.books[o.id]) ents.push({ y: o.y * TS + 1, draw: () => { if (Math.floor(F.t * 2 + o.x) % 3 === 0) { g.fillStyle = '#ffe066'; g.fillRect(ox + 12, oy + 2, 1, 3); g.fillRect(ox + 11, oy + 3, 3, 1); } } });
       if (o.t === 'gate' && !gateOpen(o)) ents.push({ y: o.y * TS, draw: () => drawGate(g, ox, oy, o) });
+      if (o.t === 'lamp') ents.push({ y: o.y * TS, draw: () => {
+        const on = o.lit && o.lit(s);
+        g.fillStyle = '#16101f'; g.fillRect(ox + 6, oy + 3, 4, 13); g.fillRect(ox + 4, oy + 13, 8, 3); g.fillRect(ox + 4, oy - 1, 8, 6);
+        g.fillStyle = '#3a3450'; g.fillRect(ox + 7, oy + 4, 2, 11); g.fillRect(ox + 5, oy + 14, 6, 1);
+        g.fillStyle = on ? '#ffffff' : '#4a4458'; g.fillRect(ox + 5, oy, 6, 4);
+        if (on && Math.floor(F.t * 4) % 2) { g.fillStyle = '#fff8d0'; g.fillRect(ox + 6, oy + 1, 1, 1); }
+      } });
       if (o.t === 'pickup' && !s.chests[o.id]) ents.push({ y: o.y * TS - 1, draw: () => {
         const c = o.c || '#ff5a4a';
         g.fillStyle = '#2a6a2a'; g.fillRect(ox + 7, oy + 8, 2, 6); g.fillRect(ox + 5, oy + 10, 2, 1); g.fillRect(ox + 9, oy + 11, 2, 1);
@@ -466,7 +475,7 @@
     const hs = heroSprite(s);
     if (!F.hideHero) ents.push({ y: p.py + 0.1, draw: () => { const jy = p.jump ? Math.round(Math.sin(p.jump * Math.PI) * 6) : 0; if (F.aura > 0) { g.globalAlpha = Math.min(1, F.aura) * 0.5; g.fillStyle = '#ffffff'; g.beginPath(); g.arc(p.px - cx + 8, p.py - cy + 8, 10 + (1 - Math.min(1, F.aura)) * 14, 0, Math.PI * 2); g.fill(); g.globalAlpha = 1; } drawSprite(g, hs[p.dir], p.px - cx, p.py - cy - jy, pf); } });
     const fo = F.follower;
-    if (fo && !F.hideHero) ents.push({ y: fo.py, draw: () => { const ff = fo.moving ? Math.floor(F.t * 8) % 2 : Math.floor(F.t * 2) % 2; const dir = fo.dir === 'right' || fo.dir === 'up' ? 'right' : 'left'; drawSprite(g, fo.sprite[dir] || fo.sprite.left, fo.px - cx, fo.py - cy - (fo.id === 'dotori' ? 0 : 0), ff); } });
+    if (fo && !F.hideHero) ents.push({ y: fo.py, draw: () => { const ff = fo.moving ? Math.floor(F.t * 8) % 2 : Math.floor(F.t * 2) % 2; const dir = fo.dir === 'right' || fo.dir === 'up' ? 'right' : 'left'; drawSprite(g, fo.sprite[dir] || fo.sprite.left, fo.px - cx, fo.py - cy - (fo.jump ? Math.round(Math.sin(fo.jump * Math.PI) * 6) : 0) - (fo.fly || 0), ff); } });
     ents.sort((a, b) => a.y - b.y);
     for (const e of ents) e.draw();
     for (const em of F.emotes) { const e = em.ent; if (!e || e.hidden) continue; const jy = e.jump ? Math.round(Math.sin(e.jump * Math.PI) * 6) : 0; drawEmote(g, Math.round(e.px - cx), Math.round(e.py - cy) - jy + (em.life > 1.2 ? 2 : 0), em.sym); }

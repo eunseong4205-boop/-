@@ -19,15 +19,28 @@
     const walk = (ch) => G.tiles.walkable(ch);
     const inB = (x, y) => (def.builds || []).some((b) => x >= b.x && x < b.x + b.w && y >= b.y && y < b.y + b.h);
     const ground = grid.groundCh || '.';
+    // 길의 시작점에서 닿는 칸 = 본 연결망
+    const main = new Set();
+    const flood = (sx, sy) => {
+      const st = [[sx, sy]];
+      while (st.length) {
+        const [x, y] = st.pop(); const k = x + ',' + y;
+        if (main.has(k) || x < 0 || y < 0 || x >= Wd || y >= H || !walk(rows[y][x]) || inB(x, y)) continue;
+        main.add(k);
+        for (const [dx, dy] of DIR4) st.push([x + dx, y + dy]);
+      }
+    };
+    for (const [sx, sy] of grid.seeds || []) flood(sx, sy);
     const connect = (x, y) => {
       if (x < 1 || y < 1 || x >= Wd - 1 || y >= H - 1) return;
       if (!walk(rows[y][x])) rows[y][x] = ground;
+      if (main.has(x + ',' + y)) return;
       const prev = new Map([[x + ',' + y, null]]);
       const q = [[x, y]];
       let found = null;
       while (q.length) {
         const [cx, cy] = q.shift();
-        if ((cx !== x || cy !== y) && (rows[cy][cx] === grid.pathCh || rows[cy][cx] === 'S')) { found = [cx, cy]; break; }
+        if ((cx !== x || cy !== y) && (main.size ? main.has(cx + ',' + cy) : rows[cy][cx] === grid.pathCh || rows[cy][cx] === 'S')) { found = [cx, cy]; break; }
         for (const [dx, dy] of DIR4) {
           const nx = cx + dx, ny = cy + dy, k = nx + ',' + ny;
           if (nx < 1 || ny < 1 || nx >= Wd - 1 || ny >= H - 1 || prev.has(k) || inB(nx, ny)) continue;
@@ -36,6 +49,7 @@
       }
       let k = found;
       while (k) { const [kx, ky] = k; if (!walk(rows[ky][kx])) rows[ky][kx] = rows[ky][kx] === '~' || rows[ky][kx] === 'L' ? (grid.bridgeCh || ground) : ground; k = prev.get(kx + ',' + ky); }
+      if (found && main.size) flood(x, y);
     };
     const solidAt = new Set();
     for (const o of def.objs || []) if (o.t === 'chest' || o.t === 'pickup' || o.t === 'sign') solidAt.add(o.x + ',' + o.y);
@@ -54,7 +68,7 @@
       if (nb) connect(nb[0], nb[1]);
     }
     const out = rows.map((r) => r.join(''));
-    out.pathCh = grid.pathCh; out.groundCh = grid.groundCh;
+    out.pathCh = grid.pathCh; out.groundCh = grid.groundCh; out.seeds = grid.seeds;
     def.grid = out;
   }
   W.map = (id, def) => { def.id = id; autofix(def); G.maps[id] = def; return def; };
@@ -148,6 +162,7 @@
     for (const st of o.stamps || []) st.rows.forEach((row, dy) => { for (let dx = 0; dx < row.length; dx++) if (row[dx] !== ' ') set(st.x + dx, st.y + dy, row[dx]); });
     const out = g.map((row) => row.join(''));
     out.pathCh = pth; out.groundCh = o.ground || '.'; out.bridgeCh = o.bridge;
+    out.seeds = (o.paths || []).map((l) => [Math.min(Math.max(l[0][0], 0), Wd - 1), Math.min(Math.max(l[0][1], 0), H - 1)]);
     return out;
   };
 

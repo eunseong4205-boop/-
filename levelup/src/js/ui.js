@@ -366,7 +366,7 @@
     if (tab === 'bag') {
       const groups = ['potion', 'food', 'weapon', 'armor', 'acc', 'tool', 'mat', 'key'];
       let h = '';
-      if (s.buffs.some((b) => b.until > s.t)) h += '<div class="card note">' + s.buffs.filter((b) => b.until > s.t).map((b) => '<b style="color:var(--gold)">' + D.ITEMS[b.id].name + '</b> 효과 ' + U.fmtTime(b.until - s.t) + ' 남음').join('<br>') + '</div>';
+      if (s.buffs.some((b) => b.until > s.t)) h += '<div class="card note">' + s.buffs.filter((b) => b.until > s.t).map((b) => '<b style="color:var(--gold)">' + (D.ITEMS[b.id] ? D.ITEMS[b.id].name : '대륙의 빛') + '</b> 효과 ' + U.fmtTime(b.until - s.t) + ' 남음').join('<br>') + '</div>';
       for (const g of groups) {
         const ids = Object.keys(s.inv).filter((id) => D.ITEMS[id] && D.ITEMS[id].type === g && s.inv[id] > 0);
         if (!ids.length) continue;

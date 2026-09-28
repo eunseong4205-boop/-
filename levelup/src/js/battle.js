@@ -31,6 +31,7 @@
     B.mon = { md, id: monId, hp: md.hp * (opt.hpMul || 1), max: md.hp * (opt.hpMul || 1), atk: md.atk * (opt.atkMul || 1), boss, scale, flash: 0, knock: 0, dead: 0, sprite, white };
     B.opt = opt; B.phase = 'intro'; B.t = 0; B.enemyT = (opt.firstDelay || 1.6); B.floats = []; B.slashes = []; B.parts = []; B.result = null; B.hurtT = 0; B.lunge = 0; B.taps = 0;
     B.theme = opt.theme || (G.field.map && (G.field.map.battleBg || G.field.map.theme)) || 'green';
+    B.supportT = opt.support ? (opt.supportFirst || 5) : 0; B.supportI = 0;
     B.active = true;
     G.field.busy = true; G.field.held = null;
     G.audio.sfx('encounter');
@@ -111,6 +112,16 @@
   }
   function addFloat(text, color, fx, fy, size) { B.floats.push({ text, color, fx, fy, size: size || 8, life: 0.9 }); if (B.floats.length > 18) B.floats.shift(); }
 
+  /** 먼 곳에서 빛이 닿는다: 회복 + 12초 공격력 두 배 */
+  function support(sp) {
+    const s = G.state, d = E.derive(s);
+    s.hp = Math.min(d.hpMax, s.hp + d.hpMax * 0.35);
+    s.buffs.push({ id: 'support', fx: { atk: 1, exp: 1 }, until: s.t + 12 });
+    G.ui.toast(sp.text, 'white');
+    G.ui.flash(sp.c || '#ffffff', 350);
+    addFloat(sp.short || '빛이 닿았다!', sp.c || '#ffffff', 0.5, 0.18, 10);
+    G.audio.sfx('white');
+  }
   function enemyAttack() {
     const s = G.state, m = B.mon;
     const dmg = E.enemyDamage(s, m.atk);
@@ -184,6 +195,10 @@
     B.t += dt;
     const m = B.mon;
     if (B.phase === 'intro' && B.t > 0.55) { B.phase = 'fight'; if (m.boss && !B.opt.noIntro) G.ui.banner(m.md.name, m.md.role === 'x' ? '강적' : '보스'); }
+    if (B.phase === 'fight' && B.opt.support && B.supportI < B.opt.support.length) {
+      B.supportT -= dt;
+      if (B.supportT <= 0) { B.supportT = B.opt.supportEvery || 7; support(B.opt.support[B.supportI++]); }
+    }
     if (B.phase === 'fight') {
       B.enemyT -= dt;
       if (B.enemyT <= 0) { B.enemyT = (B.opt.every || D.B.enemyEvery) * (m.md.role === 'x' ? 0.85 : 1); enemyAttack(); }
