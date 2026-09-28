@@ -1,0 +1,63 @@
+<div id="app">
+  <div id="shell">
+    <header id="hud">
+      <div class="hud-top">
+        <span id="hud-name" class="hud-name"></span>
+        <span id="hud-rank" class="hud-rank"></span>
+        <span class="hud-sp"></span>
+        <span id="hud-gold" class="hud-gold"></span>
+      </div>
+      <div class="hud-bars">
+        <div class="hud-lv">Lv <b id="hud-lv">1</b></div>
+        <div class="bars">
+          <div class="bar exp"><i id="hud-exp-f"></i><b id="hud-exp-t"></b></div>
+          <div class="bar hp"><i id="hud-hp-f"></i><b id="hud-hp-t"></b></div>
+        </div>
+      </div>
+    </header>
+    <div id="screen">
+      <canvas id="cv"></canvas>
+      <div id="place"><b id="place-name"></b><span id="place-ki"></span></div>
+      <div id="fever" hidden>FEVER ×2</div>
+      <div id="toasts"></div>
+      <div id="bhud" hidden>
+        <div class="bh-mon"><span id="bh-mname"></span><span id="bh-mlv"></span><div class="bar mhp"><i id="bh-mhp-f"></i><b id="bh-mhp-t"></b></div></div>
+        <div id="bh-cmd"></div>
+      </div>
+      <div id="dialog" hidden>
+        <div id="dlg-face"><canvas id="dlg-cv" width="34" height="34"></canvas></div>
+        <div id="dlg-body">
+          <div id="dlg-name"></div>
+          <div id="dlg-text"></div>
+        </div>
+        <div id="dlg-next">▼</div>
+      </div>
+      <div id="choices" hidden></div>
+      <div id="modal" hidden></div>
+      <div id="banner" hidden><small id="banner-sub"></small><b id="banner-title"></b></div>
+      <div id="chapter" hidden><small id="chapter-no"></small><b id="chapter-title"></b><span id="chapter-sub"></span></div>
+      <div id="fade"></div>
+    </div>
+    <div id="pad">
+      <div id="padinfo"><span id="pi-left"></span><span id="pi-right"></span></div>
+      <div id="dpad" aria-label="방향키">
+        <button class="dp up" data-dir="up" aria-label="위">▲</button>
+        <button class="dp left" data-dir="left" aria-label="왼쪽">◀</button>
+        <span class="dp mid"></span>
+        <button class="dp right" data-dir="right" aria-label="오른쪽">▶</button>
+        <button class="dp down" data-dir="down" aria-label="아래">▼</button>
+      </div>
+      <button id="lvup" aria-label="렙업 버튼"><span class="lv-top">렙업!</span><span id="lv-val" class="lv-val"></span></button>
+      <div id="ab">
+        <button id="bB" class="round b" aria-label="B 버튼">B</button>
+        <button id="bA" class="round a" aria-label="A 버튼">A</button>
+      </div>
+      <div id="sys">
+        <button id="bMenu" class="pill">메뉴</button>
+        <button id="bMap" class="pill">지도</button>
+        <button id="bBag" class="pill">가방</button>
+      </div>
+    </div>
+  </div>
+  <div id="title" hidden></div>
+</div>
