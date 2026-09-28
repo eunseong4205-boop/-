@@ -149,6 +149,8 @@
       return;
     }
     if (ev.type === 'obj') { const o = ev.obj; S.run((c) => objAction(c, o)); return; }
+    if (ev.type === 'critter') { const n = ev.npc; S.run((c) => (G.story.critter ? G.story.critter(c, n) : c.say(null, '작은 동물이 고개를 갸웃한다.'))); return; }
+    if (ev.type === 'follower') { if (G.story.companion) S.run((c) => G.story.companion(c)); return; }
     if (ev.type === 'door') {
       const b = ev.b;
       if (b.cond && !b.cond(s)) { S.run((c) => c.say(null, b.locked || '문이 잠겨 있다.')); return; }
@@ -160,6 +162,7 @@
     if (ev.type === 'none') {
       const ch = ev.ch, m = F.map;
       if (m.examine) { const r = m.examine(ev.x, ev.y, ch); if (r) { S.run(typeof r === 'function' ? r : (c) => c.say(null, r)); return; } }
+      if ((ch === '~' || ch === 'v') && G.story.canFish && G.story.canFish(s)) { S.run((c) => G.story.fishing(c, ev.x, ev.y)); return; }
       if (ch === 'n') { const [dx, dy] = F.DIRS[F.player.dir]; const n2 = F.npcAt(ev.x + dx, ev.y + dy); if (n2) { F.onInteract({ type: 'npc', npc: n2 }); n2.dir = { up: 'down', down: 'up', left: 'right', right: 'left' }[F.player.dir]; return; } }
       const txt = { h: '책이 빼곡하다. 딱히 눈에 띄는 책은 없다.', '~': '물이 맑다. 얼굴이 비친다.', q: '푹신해 보이는 침대다.', b: '통 안에서 짭짤한 냄새가 난다.', d: '책상 위에 쓰다 만 편지가 있다. 남의 편지는 읽지 않는다.', p: '잘 가꾼 화분이다.', f: '꽃이 예쁘게 피었다.', g: '이름이 닳아 지워진 비석이다.', y: '누군가의 석상이다. 이름표가 없다.', l: '따뜻한 불빛이 흔들린다.', L: '용암이다! 가까이 가면 뜨겁다.', u: '화면에 알 수 없는 숫자가 흐른다.', j: '창밖으로 별이 보인다.', K: '황금빛 수정이 은은하게 빛난다.', '@': '얼음 수정이 차갑게 빛난다.', X: '고철 더미다. 쓸 만한 건 없어 보인다.', R: '오래된 기둥이다. 무늬가 반쯤 지워졌다.', T: '커다란 나무다.', M: '거대한 버섯이다. 포자가 날린다.' }[ch];
       if (txt) S.run((c) => c.say(null, txt));
@@ -168,7 +171,14 @@
   async function objAction(c, o) {
     const s = G.state;
     if (o.talk) { await o.talk(c, o); return; }
-    if (o.t === 'sign') { await c.say(null, o.text); return; }
+    if (o.t === 'sign' || o.t === 'prop') {
+      // 글은 이야기가 흐르며 바뀔 수 있다: text(s)
+      const txt = typeof o.text === 'function' ? o.text(s) : o.text;
+      if (txt) await c.say(null, txt);
+      const key = 'look_' + F.id + '_' + o.x + '_' + o.y;
+      if (o.first && !s.flags[key]) { s.flags[key] = 1; await o.first(c); }
+      return;
+    }
     if (o.t === 'book') { if (!s.books[o.id]) { unlockBook(o.id); G.audio.sfx('page'); } await UI.readBook(o.id); return; }
     if (o.t === 'chest') {
       if (s.chests[o.id]) { await c.say(null, '빈 상자다.'); return; }
@@ -367,11 +377,37 @@
       if (B.active) { B.update(dt); B.render(g, VW, VH); }
       else { F.held = UI.top() && UI.top().name === 'base' ? UI.heldDir : null; F.update(dt); F.render(g, VW, VH); }
       UI.hud();
+      drawBarks();
       M.infoT -= dt;
       if (M.infoT <= 0) { M.infoT = 0.25; padInfo(); }
       if (now - M.lastSave > 20000 && !S.running && !B.active) save();
     }
     requestAnimationFrame(frame);
+  }
+  /* 사람들의 혼잣말: 캔버스 위에 또렷한 글씨로 띄운다 */
+  const barkEls = new Map();
+  function drawBarks() {
+    const box = $('barks');
+    if (!box) return;
+    const show = !B.active && !S.running && M.running;
+    const k = cv.clientWidth / VW;
+    const live = new Set();
+    if (show) {
+      for (const n of F.npcs) {
+        if (!(n.barkLife > 0) || n.hidden || (n.cond && !n.cond(G.state))) continue;
+        live.add(n);
+        let el = barkEls.get(n);
+        if (!el) { el = document.createElement('div'); el.className = 'bark'; box.appendChild(el); barkEls.set(n, el); }
+        if (el.textContent !== n.barkText) el.textContent = n.barkText;
+        const x = cv.offsetLeft + (n.px - F.cam.x + 8) * k, y = cv.offsetTop + (n.py - F.cam.y - 4) * k;
+        el.style.transform = 'translate(' + Math.round(x) + 'px,' + Math.round(y) + 'px) translate(-50%,-100%)';
+        el.style.opacity = n.barkLife < 0.4 ? String(n.barkLife / 0.4) : '1';
+      }
+    }
+    for (const [n, el] of barkEls) if (!live.has(n)) { el.remove(); barkEls.delete(n); }
+    // A 버튼 아래 글씨: 지금 A로 할 수 있는 일
+    const cap = $('a-cap');
+    if (cap) { const t = show && F.prompt ? F.prompt.k : ''; if (cap.textContent !== t) cap.textContent = t; }
   }
   function padInfo() {
     const s = G.state, d = E.derive(s);

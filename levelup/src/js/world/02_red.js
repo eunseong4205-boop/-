@@ -156,9 +156,22 @@
       await c.say(null, '화로 아저씨가 이를 갈며 품에서 수정 증서를 꺼냈다. 붉은 머리 소년이 숫자를 세다가, 문득 고개를 들어 이쪽을 봤다.');
       c.npc('rud_scene').face('U');
     }
-    await c.say('rud', ['…누구야, 넌. 레드 사람 아니지. 초록 옷… 그린 마을?', '그린 마을 징수탑이 무너졌다는 보고가 올라왔어. 원인은 「번개」라더군.', '맑은 날에.']);
-    await c.say('dotori:surprise', '찍! 우, 우리는 모르는 일이야!');
-    await c.say('rud', ['……', '[r]숫자는 거짓말 안 해.[/] 네가 거짓말하는 거라면, 곧 알게 되겠지.']);
+    await c.say('rud', '…누구야, 넌. 레드 사람 아니지. 초록 옷… 그린 마을?');
+    const rep = c.s.flags.d_report;
+    if (rep === 'truth') {
+      await c.say('rud', ['그린 마을 징수탑 보고서, 나도 봤어. 원인 「흰빛」. 담당 기사가 끝에 한 줄을 덧붙였더군.', '「그 아이가 마을을 구했다.」 …기사는 보고서에 감상을 적으면 안 돼. 규칙서 3조.']);
+      await c.say('rud', ['흰빛. 초록 옷. 열여섯쯤.', '…너구나.']);
+      await c.say('dotori:worry', '찍… 돌쇠 아저씨, 진짜로 다 썼구나.');
+      await c.say('rud', ['안심해. 견습한테는 체포 권한이 없어.', '[r]숫자는 거짓말 안 해.[/] 네가 탑을 부순 만큼, 누군가의 방패가 얇아졌어. 그건 알고 다녀.']);
+    } else if (rep === 'unknown') {
+      await c.say('rud', ['그린 마을 징수탑이 무너졌다는 보고가 올라왔어. 원인 「불명」.', '기사단에서 불명은 조사 대상이란 뜻이야. 조사단이 벌써 그린으로 떠났어.']);
+      await c.say('dotori:surprise', '찍! 우, 우리는 모르는 일이야!');
+      await c.say('rud', ['……', '[r]숫자는 거짓말 안 해.[/] 네가 뭘 숨기든, 숫자는 결국 맞춰지게 돼 있어.']);
+    } else {
+      await c.say('rud', ['그린 마을 징수탑이 무너졌다는 보고가 올라왔어. 원인은 「번개」라더군.', '맑은 날에.']);
+      await c.say('dotori:surprise', '찍! 우, 우리는 모르는 일이야!');
+      await c.say('rud', ['……', '[r]숫자는 거짓말 안 해.[/] 네가 거짓말하는 거라면, 곧 알게 되겠지.', '…그 보고서를 쓴 기사도.']);
+    }
     await c.npc('rud_scene').walk('RRRUUUU');
     c.despawn('rud_scene');
     await c.say('hwaro', ['…휴. 고맙다, 꼬마. 저 녀석 이름은 루드야. 징수 기사단 견습이지.', '원래 저런 애가 아니었어. 우리 대장간에서 풀무질하던 착한 녀석이었는데… 동생들이 빛바램병에 걸린 뒤로 기사단에 들어갔지.']);
@@ -176,7 +189,8 @@
     await c.emote('rud', '!');
     await c.say('rud', ['찾았다. 그린 마을 징수탑 파괴 용의자.', '기사단 본부 명령이다. 너를 천년성으로 연행한다.']);
     await c.say('dotori:angry', '찍! 우리는 탑을 부수지 않았어! 탑이 혼자 배탈 난 거야!');
-    await c.say('rud', ['탑이 흰빛을 먹으려다 터졌다는 보고가 있어. 그린 마을 담당 기사는 「번개」라고 썼지만.', '…숫자는 거짓말 안 해. 그 탑이 마지막으로 기록한 빛의 양은, 평민 천 명분이었어.']);
+    const rep = c.s.flags.d_report;
+    await c.say('rud', [rep === 'truth' ? '담당 기사가 사실대로 썼지. 「흰빛」. 덕분에 본부가 움직였어.' : rep === 'lie' ? '그린 마을 담당 기사는 「번개」라고 썼지. 그 기사는 지금 광산 문을 지키고 있어.' : '「원인 불명」. 본부는 불명을 싫어해. 그래서 내가 왔어.', '…숫자는 거짓말 안 해. 그 탑이 마지막으로 기록한 빛의 양은, 평민 천 명분이었어.']);
     await c.say('rud', '저항하면 힘으로 데려간다.');
     const win = await c.battle('rud1', { noFlee: true, music: 'boss' });
     if (!win) { c.unset('red_rud_fight'); c.unset('ev_rud_fight'); c.despawn('rud'); c.despawn('knight_a'); c.despawn('knight_b'); return; }
@@ -191,16 +205,44 @@
     if (k === 0 && c.pay(1000)) {
       c.set('helped_rud');
       await c.say('rud', ['……뭐야, 이거.', '…빚이야. 숫자로 적어 둘 거야. 반드시 갚는다.']);
+      c.decide('rud', 'gold', '쫓겨난 루드에게 약값을 건넸다');
+      c.bond('rud', 2);
     } else if (k === 0) {
       await c.say('@', '…골드가 모자라.');
       await c.say('rud', '…됐어. 동정은 필요 없어.');
+      c.decide('rud', 'none', '루드에게 아무것도 해 주지 못했다');
     } else if (k === 1) {
       c.set('helped_rud_badge');
       c.give('badge_rud');
       await c.say(null, '휘장 뒷면에 작은 글씨가 새겨져 있다. 「루카, 루미」.');
       await c.say('rud', ['…버려. 이제 쓸모없는 거야.', '…아니. 네가 가지고 있어. 내가 다시 찾으러 갈 때까지.']);
+      c.decide('rud', 'badge', '루드의 휘장을 맡아 두었다');
+      c.bond('rud', 1);
     } else {
       await c.say('rud', '……');
+      c.decide('rud', 'leave', '무릎 꿇은 루드를 두고 떠났다');
+    }
+    // 기사들이 도망치며 떨어뜨린 장부: 레드 마을 모든 집의 빚
+    await c.say(null, '기사들이 서 있던 자리에 두꺼운 가죽 장부가 떨어져 있다. 표지에 「레드 징수 구역 미납 장부」.');
+    await c.say('rud', ['…그건 레드 마을 미납 장부야. 내가 한 줄 한 줄 센 숫자지.', '사본은 없어. 초소에 가져가면 기사들이 너한테 상금을 줄 거야. 그게 규칙이니까.']);
+    await c.say('rud', '…우리 집 이름도 거기 있어. 약값 빌린 거.');
+    const L = await c.ask('미납 장부를 어떻게 할까', ['불태운다', '루드에게 맡긴다', '초소에 돌려준다']);
+    if (L === 0) {
+      c.sfx('explode');
+      await c.narr('장부 모서리에 용암 도랑의 불씨를 댔다. 종이가 한 장씩 말려 올라가며 타들어 갔다. 숫자들이 재가 되어 날렸다.');
+      await c.say('rud', ['……숫자를 태운다고 빚이 사라지는 건 아니야.', '…그래도 오늘 밤, 레드 사람들은 오랜만에 계산 안 하고 자겠지.']);
+      await c.say('rud', '기사단은 가만 안 있을 거야. 장부를 태운 녀석을 찾겠지. …그게 너라는 건 나만 알아. 숫자로 적어 두지는 않을게.');
+      c.decide('ledger', 'burn', '레드 마을 미납 장부를 불태웠다');
+    } else if (L === 1) {
+      await c.say('rud', ['…나한테? 나는 이제 기사도 아닌데.', '……']);
+      await c.say('rud', ['알았어. 내가 다시 세 볼게. 이번엔 규칙서 말고, 한 집씩 찾아가서.', '12조, 13조 같은 거 빼고 세면… 숫자가 많이 달라질 거야.']);
+      c.decide('ledger', 'rud', '미납 장부를 루드에게 맡겼다');
+      c.bond('rud', 1);
+    } else {
+      await c.say('rud', ['…그래. 그게 맞아. 숫자는 제자리에 있어야 해.', '…네가 그렇게 하는 게, 이상하게 좀 덜 억울하네.']);
+      c.decide('ledger', 'post', '미납 장부를 징수 기사단 초소에 돌려주기로 했다');
+      c.give('ledger_red');
+      c.bond('rud', 1);
     }
     await c.npc('rud').walk('RRRRRRRRDDDDD');
     c.despawn('rud');
@@ -529,6 +571,150 @@
     if (c.s.quests.q_mine === 1) c.quest('q_mine', 2);
     await c.say('dotori', '광부 대장 아저씨한테 알려 주자! 떡볶이집에 있을 거야!');
   }
+
+  /* ───────── 레드의 결: 장부 · 광산 문지기 · 관측표 · 살펴볼 곳 · 혼잣말 · 곁의 이야기 ───────── */
+  W.keyItem('ledger_red', '레드 미납 장부', '레드 마을 모든 집의 빚이 적힌 가죽 장부. 징수 기사단 초소에 돌려주기로 했다.');
+  const ledger = (s) => s.flags.d_ledger;
+  W.wrapNpc('red_post', 'knight', (s) => E.has(s, 'ledger_red'), async (c) => {
+    c.take('ledger_red');
+    await c.say('knight', ['오! 장부를! 루드 녀석이 잃어버린 걸 네가 찾아 줬구나!', '규칙서 40조. 분실 장부를 반환한 자에게 상금을 준다. 자.']);
+    c.gold(5000);
+    await c.say('knight', ['…솔직히 말하면, 장부가 없어진 줄 알고 좀 좋았어. 석 달은 계량 안 해도 되니까.', '그래도 규칙은 규칙이지. 너도 그렇게 생각했으니까 가져왔겠지.']);
+  });
+  W.wrapNpc('red_post', 'knight', (s) => ledger(s) === 'burn' && !s.flags.post_burn, async (c) => {
+    c.set('post_burn');
+    await c.say('knight', ['장부가 탔대. 누가 태웠는지는 몰라. 본부는 레드 마을 전체를 다시 계량하라더군.', '석 달은 걸릴 거야. …석 달 동안 세금을 못 걷는다는 뜻이지.']);
+    await c.say('knight', '…나는 아무것도 모른다. 그리고 너도 아무것도 모르는 게 좋을 거야.');
+  });
+  W.wrapNpc('red_forge', 'hwaro', (s) => !!ledger(s) && !s.flags.hwaro_ledger, async (c, n, orig) => {
+    c.set('hwaro_ledger');
+    const d = ledger(c.s);
+    if (d === 'burn') {
+      await c.say('hwaro:happy', ['장부가 탔다며! 하하! 누가 했는지 모르지만 그 녀석한테 칼 한 자루 공짜로 벼려 주고 싶구먼!', '…어이, 왜 눈을 피하냐.']);
+      c.bond('hwaro', 2);
+    } else if (d === 'rud') {
+      await c.say('hwaro', ['루드 녀석이 장부를 들고 집집마다 돌아다닌다. 12조, 13조로 붙은 숫자를 하나씩 지우면서.', '우리 대장간 「장사 경험」 3,120도 지웠다. 「그건 원래 없는 숫자였어요」래. …그 녀석이 풀무질하던 얼굴로 돌아왔어.']);
+      c.bond('hwaro', 1);
+    } else {
+      await c.say('hwaro', ['장부를 초소에 돌려줬다며.', '…규칙은 규칙이지. 네가 틀린 건 아니다. 다만 이 마을 사람들은 오늘 밤 잠을 좀 설치겠지.']);
+      c.bond('hwaro', -1);
+    }
+    await orig(c, n);
+  });
+
+  // 거짓 보고의 값: 광산 문지기가 된 돌쇠
+  async function dolsoeMine(c) {
+    const s = c.s;
+    if (!s.flags.dolsoe_mine) {
+      c.set('dolsoe_mine');
+      await c.say('dolsoe', ['…왔냐. 그래, 들통났다.', '조사단장이 맑은 날의 번개를 세 번 물어보더라. 세 번째에 말이 꼬였어.']);
+      await c.say('dolsoe', ['기사는 계속하게 해 줬다. 대신 광산 문지기로.', '여기는 빛이 안 들어서 경험세도 없는 곳이다. 세금 걷던 놈이 세금 없는 데로 쫓겨난 거지. 웃기지.']);
+      const k = await c.ask(null, ['죄송해요.', '고마워요.']);
+      if (k === 0) { await c.say('dolsoe', ['사과하지 마라. 내가 고른 거다.', '네가 사과하면 내가 고른 게 아니게 되잖아.']); c.bond('dolsoe', 1); }
+      else { await c.say('dolsoe', ['……', '…그래. 그 말이 듣고 싶었나 보다. 이상하게 속이 풀리네.']); c.bond('dolsoe', 2); }
+    }
+    if (E.has(s, 'lunch2')) {
+      c.take('lunch2');
+      await c.say('dolsoe', ['…또 도시락이냐. 쪽지가 두 장이네.', '「밥은 먹고 다니소.」 …그리고 「자랑스럽소.」']);
+      await c.emote('dolsoe', '…');
+      await c.say('dolsoe', '……광산은 먼지가 많아서 눈이 맵다. 그런 거다.');
+      c.bond('dolsoe', 1);
+    }
+    if (!s.flags.mine_open && !s.flags.dolsoe_code) {
+      await c.say('dolsoe', ['광산 문 비밀번호 때문에 왔지? 곡괭이 영감은 잊어버렸다고 하고.', '문지기는 비밀번호를 안다. 규칙상 말해 주면 안 되지만… 나는 이미 규칙을 한 번 어긴 몸이다.']);
+      if (await c.yes('돌쇠에게 비밀번호를 물어볼까?', null, '물어본다', '스스로 찾겠다')) {
+        c.set('dolsoe_code');
+        await c.say('dolsoe', ['[y]999[/]. 별 번호 387에 은빛 왕국이 무너진 해 612를 더한 거다.', '안에 두더지왕이 산다. 그건 문지기가 대신 못 해 준다. 레벨 250은 넘기고 가라.']);
+      } else await c.say('dolsoe', '…그래. 스스로 찾은 건 안 잊어버리지. 관측소 영감 책장을 뒤져 봐라.');
+      return;
+    }
+    await c.run(W.chatter('dolsoe_mine', [
+      '광산 안에서 곡괭이 소리가 나기 시작했다. 16년 만이란다. 문지기는 그 소리를 제일 먼저 듣는 사람이지.',
+      '콩순이한테 편지를 썼다. 기사가 된 뒤로 처음이다. 할 말이 이렇게 많은 줄 몰랐다.',
+      '철이 녀석이 편지에 그림을 그려 보냈다. 광산 앞에 선 기사. …투구가 너무 크게 그려졌어. 사실이지만.',
+    ], 'dolsoe'));
+  }
+  W.addNpcs('red', [{ id: 'dolsoe', x: 7, y: 25, dir: 'down', cond: (s) => s.flags.d_report === 'lie' && !!s.flags.red_intro, mark: (s) => (E.has(s, 'lunch2') || !s.flags.dolsoe_mine ? '!' : null), talk: dolsoeMine }]);
+
+  // 진실의 조각 · 흑점의 걸음 — 박사의 책상 서랍
+  W.addObjs('observatory', [W.look(10, 2, '잠긴 서랍이다. 박사의 허락 없이는 열 수 없을 것 같다.', { talk: async (c) => {
+    const s = c.s;
+    if (!s.flags.m_red_galaxy) { await c.say(null, '잠긴 서랍이다. 서랍 틈으로 종이 모서리가 삐져나와 있다.'); return; }
+    if (s.truth && s.truth.t_chart) { await c.say(null, '관측표 뭉치. 983년부터 한 해도 빠짐없이. 여백의 「우연이어야 한다」가 여러 번 덧그려져 있다.'); return; }
+    await c.say(null, ['서랍 손잡이를 당기자 끼익 소리가 났다. 잠겨 있지 않았다. 잠그는 걸 잊은 모양이다.', '안에 관측표 뭉치가 들어 있다. 칸마다 날짜와 숫자. 그리고 대륙 지도 위에 찍힌 점들.']);
+    await c.narr(['983년 여름 — 그린 마을 징수탑. 흑점 없음.', '984년 — 레드, 블루. 흑점 없음.', '…', '991년 — 여덟 번째 탑, 블랙. 망원경에 처음으로 희미한 점.', '999년 — 탑 열한 개. 점이 해마다 빨라진다.']);
+    await c.say(null, '맨 아래 여백에 떨리는 글씨: 「우연이어야 한다.」 같은 문장이 세 번 덧그려져 있다.');
+    c.truth('t_chart');
+    await c.say('galaxy', ['……그걸 봤구나.', '탑이 하나 설 때마다 그 녀석 걸음이 빨라졌다. 숫자는 그렇게 말한다.']);
+    const k = await c.ask(null, ['탑이 흑점을 부르는 거예요?', '왜 아무한테도 말 안 했어요?']);
+    if (k === 0) await c.say('galaxy', ['모른다. 나는 숫자만 안다.', '숫자는 두 번까지는 우연일 수 있다. 여덟 번은… 모르겠다. 그래서 「우연이어야 한다」고 적었다. 바라는 걸 적은 거지.']);
+    else await c.say('galaxy', ['누구한테? 카이론한테? …편지를 썼다. 993년에. 답장은 없었다.', '방순이한테는 말 못 했다. 그 녀석은 탑이 선 날부터 16년을 버텼는데, 그게 거꾸로였다고 말할 수가 없더라.']);
+  } })]);
+
+  W.addObjs('red', [
+    W.prop('board', 12, 7, (s) => {
+      const r = s.flags.d_report;
+      const wanted = r === 'truth' ? '「수배 — 흰빛의 아이. 초록 옷, 열여섯쯤. 발견 즉시 초소로.」 그림 속 아이 옆에 곰만 한 다람쥐가 그려져 있다.' : r === 'lie' ? '「그린 마을 「맑은 날 번개」 목격자 찾음. — 징수 기사단 조사단」' : '「그린 마을 징수탑 붕괴 — 원인 불명. 제보 바람.」';
+      const extra = ledger(s) === 'burn' ? '「미납 장부 소실. 레드 전 구역 재계량 실시.」 누군가 그 위에 숯으로 불꽃을 그려 놓았다.' : s.flags.m_red_rud ? '「견습 기사 루드 — 임무 실패로 해임.」' : '「제31조: 흰빛을 보거나 들은 자는 즉시 보고할 것.」';
+      return ['징수 기사단 게시판.', wanted, extra];
+    }),
+    W.prop('well', 7, 12, '대장장이들이 달군 쇠를 식히는 물통이다. 「마셔도 됨」이라고 적혀 있다. 쇠 맛이 난다.'),
+    W.prop('bench', 30, 16),
+    W.prop('fire', 6, 10, '대장간 밖 풀무 화덕. 망치질 쉬는 사람들이 여기서 손을 녹인다.'),
+    W.look(12, 19, '용암 도랑. 열기가 얼굴을 때린다. 반쯤 녹은 망치 하나가 도랑 가장자리에 걸려 있다. 탑이 선 해에 누가 던졌다고 한다.'),
+  ]);
+  W.addObjs('red_mountain', [W.prop('bench', 16, 6)]);
+  W.addObjs('red_rud', [W.look(4, 1, (s) => (s.quests.q_herb === 'done' ? '벽에 루미의 그림이 붙어 있다. 회색 대장간, 회색 형. 하늘에 동그라미 두 개. 형의 머리만 빨간 색연필로 칠해져 있다.' : '벽에 아이 그림이 몇 장 붙어 있다. 전부 회색이다. 색연필이 없는 게 아니라 색이 안 보이는 것이다.'))]);
+  W.barks('red', {
+    knight: ['세금은 자동이다.', '…번개라니.'],
+    smith: ['렙업! 렙업!', '세 할은 탑이…'],
+    villager2: ['떡볶이 먹었어?', '에취, 재가…'],
+    kid: ['용암 조심!', '두더지왕 봤어?'],
+    rud: ['…3,120.', '숫자는 거짓말 안 해.'],
+  });
+  W.barks('red_path', {});
+
+  /* 도토리와의 이야기 (2장) */
+  G.story.talks.push(
+    { id: 'r_path', map: 'red_path', run: async (c) => {
+      await c.say('dotori', ['…뒤돌아보면 그린 마을이 안 보여.', '안 돌아볼래. 돌아보면 돌아가고 싶어질 것 같아.']);
+      const k = await c.ask(null, ['나도 안 돌아볼게.', '한 번만 돌아보자.']);
+      if (k === 0) await c.say('dotori', '…응. 앞만 보자. 찍.');
+      else { await c.narr('둘이 동시에 뒤를 돌아보았다. 산등성이 너머로 초록빛이 아주 조금 보였다.'); await c.say('dotori:happy', '…보였다. 됐다. 이제 진짜 안 돌아볼래.'); c.bond('dotori', 1); }
+    } },
+    { id: 'r_rud', when: (s) => !!s.flags.m_red_rud, run: async (c) => {
+      await c.say('dotori', ['루드 형 말이야. 처음엔 나빴는데, 이제 잘 모르겠어.', '「숫자는 거짓말 안 해」. 그 말 할 때마다 표정이 아파 보였어.']);
+      const k = await c.ask(null, ['숫자 뒤에 숨은 거야.', '그래도 나쁜 짓은 나쁜 짓이야.', '우리도 뭔가 숨고 있을지 몰라.']);
+      if (k === 0) await c.say('dotori', '…숨는 데가 숫자면 편하겠다. 숫자는 틀려도 자기 탓이 아니잖아.');
+      else if (k === 1) await c.say('dotori', ['…응. 맞아. 화로 아저씨는 세금 때문에 망치를 네 할 더 세게 쳐야 했어.', '그래도… 나빠지는 이유가 있는 사람은, 돌아올 이유도 있을 거야.']);
+      else { await c.say('dotori:worry', ['……', '나는 레벨 얘기만 나오면 딴소리해. 숨는 거 맞아. 찍.']); c.bond('dotori', 1); }
+    } },
+    { id: 'r_galaxy', when: (s) => !!s.flags.m_red_galaxy, pri: 2, run: async (c) => {
+      await c.say('dotori', ['세린. 너네 엄마 이름.', '이상해. 그 이름 들으니까 가슴이 콕콕 아파. 내가 왜 아프지? 나는 다람쥐인데.']);
+      const k = await c.ask(null, ['너도 엄마를 알았던 거 아니야?', '다람쥐도 아플 수 있지.']);
+      if (k === 0) await c.say('dotori', ['……모르겠어. 16년 전 일은 안개 같아.', '근데 안개 속에서 누가 계속 웃어. 웃음이 헤픈 사람이야.']);
+      else await c.say('dotori', '…그렇지? 다람쥐도 아플 수 있지. 찍.');
+      if (c.s.flags.heard_serin) await c.say('dotori', '…할머니가 그랬잖아. 웃음이 헤픈 아였다고. 내 안개 속 그 사람이랑 똑같아.');
+    } },
+    { id: 'r_twins', when: (s) => s.quests.q_herb === 'done', run: async (c) => {
+      await c.say('dotori', ['루미 눈에는 내가 회색으로 보이겠지. 나 원래 갈색인데.', '…빛이 빠지면 색이 빠진대. 레벨이 안 오르는 거랑 비슷한 걸까?']);
+      await c.say('dotori', '나는 16년째 같은 색이야. 빠지지도 않고, 짙어지지도 않고. 그게 다행인지 모르겠어.');
+    } },
+    { id: 'r_mine', map: 'mine1', run: async (c) => {
+      await c.say('dotori:worry', ['캄캄하다. 할머니 장롱 생각나. 나 어릴 때 거기 숨어서 너 우는 소리 들었어.', '…어릴 때? 나는 16년 동안 이 모습이었는데. 내 어릴 때는 언제였지?']);
+    } },
+  );
+  /* 쉬는 밤 (2장) */
+  G.story.nights.push(
+    { id: 'r_father', when: (s) => !!s.flags.m_red_rud && s.quests.m3 == null, intro: '떡볶이 냄새가 밴 이불. 아래층에서 할매가 솥을 긁는 소리가 들린다.', run: async (c) => {
+      await c.say('dotori', ['…{n}. 루드 형은 형이 동생들 아빠 노릇 하잖아.', '너는… 아빠 얘기 한 번도 안 물어봤지. 할머니한테.']);
+      const k = await c.ask(null, ['궁금하지 않아.', '궁금해. 무서워서 안 물어봤어.', '할머니가 안 하는 데는 이유가 있겠지.']);
+      c.set('asked_father_' + ['no', 'afraid', 'trust'][k]);
+      if (k === 0) await c.say('dotori', ['…거짓말. 너 거짓말할 때 코 찡긋해.', '…그래도 알았어. 안 궁금한 걸로 할게.']);
+      else if (k === 1) { await c.say('dotori', ['…나도 무서워. 알게 되면 뭔가가 바뀔 것 같아서.', '같이 무서워하자. 그럼 반만 무섭잖아.']); c.bond('dotori', 1); }
+      else await c.say('dotori', '…할머니가 그 얘기 할 때마다 부엌에 가더라. 된장 항아리 뚜껑을 한참 만지작거리다가 와.');
+    } },
+  );
 
   G.world.nodes.push({ region: 'red', label: '레드', x: 56, y: 150, color: '#ff6a4a', maps: ['red', 'red_path', 'red_mountain', 'observatory', 'red_teahouse', 'red_forge', 'red_rank', 'red_ddeok', 'red_post', 'red_rud'] });
   G.world.nodes.push({ region: 'red', label: '광산', x: 30, y: 162, color: '#ffd84a', maps: ['mine1', 'mine2'] });

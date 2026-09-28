@@ -86,6 +86,11 @@ input { font: inherit; }
 #place span { color: var(--gold); white-space: nowrap; }
 #fever { position: absolute; right: 6px; top: 6px; padding: 3px 7px; font-family: var(--disp); font-size: 12px; color: #fff; background: linear-gradient(90deg, #ff4a7a, #ffb84a); border-radius: 3px; animation: fever .5s steps(2) infinite; pointer-events: none; }
 @keyframes fever { 50% { filter: brightness(1.4); } }
+#barks { position: absolute; inset: 0; pointer-events: none; z-index: 8; overflow: hidden; }
+.bark { position: absolute; left: 0; top: 0; max-width: 150px; padding: 3px 7px 4px; background: rgba(248, 244, 232, .96); color: #1e1628; border: 2px solid #16101f;
+  border-radius: 6px; font-size: 11px; line-height: 1.35; white-space: normal; word-break: keep-all; text-align: center; box-shadow: 0 2px 0 rgba(0, 0, 0, .35); transition: opacity .2s; }
+.bark::after { content: ''; position: absolute; left: 50%; bottom: -6px; margin-left: -4px; border: 4px solid transparent; border-top-color: #16101f; border-bottom: 0; }
+#a-cap { position: absolute; right: 0; top: 64px; width: 60px; text-align: center; font-size: 11px; color: var(--paper-dim, #d8d0c0); pointer-events: none; white-space: nowrap; text-shadow: 0 1px 0 rgba(0, 0, 0, .6); }
 #toasts { position: absolute; left: 50%; top: 34px; transform: translateX(-50%); display: grid; gap: 4px; justify-items: center; pointer-events: none; width: 92%; z-index: 13; }
 .toast { padding: 5px 10px 6px; background: rgba(18, 14, 30, .92); border: 1px solid var(--line); border-radius: 3px; font-size: 12px; animation: toast 2.6s forwards; text-align: center; max-width: 100%; box-shadow: 0 2px 0 #000; }
 .toast.gold { border-color: var(--gold-d); color: var(--gold); }
@@ -302,6 +307,7 @@ input { font: inherit; }
     </header>
     <div id="screen">
       <canvas id="cv"></canvas>
+      <div id="barks" aria-hidden="true"></div>
       <div id="place"><b id="place-name"></b><span id="place-ki"></span></div>
       <div id="fever" hidden>FEVER ×2</div>
       <div id="toasts"></div>
@@ -336,6 +342,7 @@ input { font: inherit; }
       <div id="ab">
         <button id="bB" class="round b" aria-label="B 버튼">B</button>
         <button id="bA" class="round a" aria-label="A 버튼">A</button>
+        <span id="a-cap" aria-live="polite"></span>
       </div>
       <div id="sys">
         <button id="bMenu" class="pill">메뉴</button>
@@ -882,6 +889,10 @@ input { font: inherit; }
       ranks: {}, pw: {}, orbs: {},
       flags: {}, quests: {}, seen: {}, chests: {}, secrets: {}, beaten: {}, books: {}, spots: {}, colors: {},
       codex: {}, buffs: [], cd: {}, clickLog: [], fever: 0,
+      bond: {},     // 인연: 인물 id → 점수 (음수면 멀어진 사이)
+      log: [],      // 결정의 기록: [{k, v, t, ch}]
+      truth: {},    // 진실의 조각
+      fishLog: {},  // 낚은 것: id → 마리 수
       tot: { clicks: 0, taps: 0, kills: 0, bossKills: 0, gold: 0, exp: 0, playTime: 0, steps: 0, faints: 0, maxHit: 0 },
       respawn: { map: 'home', x: 5, y: 5 },
       follower: null,
@@ -2734,12 +2745,14 @@ input { font: inherit; }
       for (const b of F.builds) if (b.night || b.style === 'tower') F.lights.push({ x: b.x + Math.floor(b.w / 2), y: b.y + b.h - 1, r: 40, c: b.style === 'tower' ? '#b89aff' : '#ffd86a', dy: 0 });
       for (const L of m.lights || []) F.lights.push(Object.assign({ r: 40, dy: 8 }, L));
       for (const o of m.objs || []) if (o.t === 'lamp' && o.lit && o.lit(s)) F.lights.push({ x: o.x, y: o.y, r: 50, c: '#ffffff', dy: 2 });
+      for (const o of m.objs || []) if (o.t === 'prop' && (o.kind === 'fire' || o.kind === 'lantern' || o.kind === 'shrine') && (!o.cond || o.cond(s))) F.lights.push({ x: o.x, y: o.y, r: o.kind === 'fire' ? 44 : 30, c: '#ffb84a', dy: o.kind === 'fire' ? 9 : 3 });
     }
     // NPC
     F.npcs = (m.npcs || []).map((n) => Object.assign({ dir: 'down', px: n.x * TS, py: n.y * TS, mt: 0, moving: false, hidden: false, frame: 0, wt: Math.random() * 3 }, n))
       .map((n) => { n.hx = n.x; n.hy = n.y; n.sprite = spriteFor(n.look || n.id, s); return n; });
     // 오브젝트
     F.objs = (m.objs || []).map((o) => Object.assign({}, o));
+    F.barkT = 2 + Math.random() * 2; F.lastBark = null;
     // 몬스터
     F.mons = [];
     if (m.mons) for (let i = 0; i < m.mons.n; i++) spawnMon();
@@ -2756,7 +2769,47 @@ input { font: inherit; }
     if (s.follower) F.follower = { id: s.follower, x, y, px: x * TS, py: y * TS, dir: p.dir, sprite: spriteFor(s.follower, s), moving: false };
     else F.follower = null;
     F.particles = [];
+    if (m.critters) spawnCritters(typeof m.critters === 'function' ? m.critters(s) : m.critters);
     snapCam();
+  }
+
+  /* ───────── 들짐승 · 새 (사람을 보면 비킨다) ───────── */
+  const CRITTER = {
+    cat: { look: 'cat', bark: ['야옹.', '(하품)', '…', '냐아.'] },
+    bird: { look: 'bird', bark: ['짹.', '짹짹.', '(푸드덕)'] },
+    squirrel: { look: 'squirrel', bark: ['(오물오물)', '…'] },
+  };
+  function spawnCritters(list) {
+    const p = F.player;
+    list.forEach((spec, i) => {
+      const kind = typeof spec === 'string' ? spec : spec.k;
+      const C = CRITTER[kind] || CRITTER.cat;
+      for (let k = 0; k < 80; k++) {
+        const x = 1 + Math.floor(Math.random() * (F.W - 2)), y = 1 + Math.floor(Math.random() * (F.H - 2));
+        if (!freeTile(x, y) || objAt(x, y) || (F.map.warps || []).some((w) => w.x === x && w.y === y)) continue;
+        if (Math.abs(x - p.x) + Math.abs(y - p.y) < 4) continue;
+        const n = { id: 'critter_' + i, critter: kind, x, y, hx: x, hy: y, px: x * TS, py: y * TS, dir: U.pick(['left', 'right']), mt: 0, moving: false, hidden: false, frame: 0,
+          wt: Math.random() * 3, wander: 4, speed: 1.5, bark: spec.bark || C.bark, look: { creature: C.look, tint: spec.tint } };
+        n.sprite = spriteFor(n.look, G.state);
+        F.npcs.push(n);
+        break;
+      }
+    });
+  }
+  /** 가까이 오면 한 칸 도망친다 */
+  function critterFlee(n) {
+    const p = F.player;
+    const d0 = Math.abs(n.x - p.x) + Math.abs(n.y - p.y);
+    if (d0 > 2) return false;
+    let best = null, bd = d0;
+    for (const [dx, dy] of Object.values(DIRS)) {
+      const tx = n.x + dx, ty = n.y + dy;
+      if (!freeTile(tx, ty) || objAt(tx, ty)) continue;
+      const d = Math.abs(tx - p.x) + Math.abs(ty - p.y);
+      if (d > bd) { bd = d; best = [tx, ty]; }
+    }
+    if (best) { stepNpc(n, best[0], best[1]); n.hx = best[0]; n.hy = best[1]; return true; }
+    return false;
   }
   function refreshNpcs() {
     const s = G.state;
@@ -2815,9 +2868,12 @@ input { font: inherit; }
   function tryMove(dir) {
     const p = F.player;
     if (p.moving || F.busy) return;
+    const prevDir = p.dir;
     p.dir = dir;
     const [dx, dy] = DIRS[dir];
     const nx = p.x + dx, ny = p.y + dy;
+    // 동행 쪽으로는 먼저 돌아서기만 한다 (한 번 더 누르면 지나간다) → 마주 보고 말을 걸 수 있다
+    if (F.follower && F.follower.x === nx && F.follower.y === ny && prevDir !== dir && !F.follower.moving) return;
     const mo = monAt(nx, ny);
     if (mo) { if (F.onEncounter) F.onEncounter(mo); return; }
     const b = buildingAt(nx, ny);
@@ -2829,7 +2885,7 @@ input { font: inherit; }
     if (nx < 0 || ny < 0 || nx >= F.W || ny >= F.H) { const w = edgeWarp(nx, ny); if (w && F.onStep) F.onStep({ warp: w }); return; }
     if (F.block[ny][nx]) return;
     const n = npcAt(nx, ny);
-    if (n) return;
+    if (n && !n.critter) return;
     const o = objAt(nx, ny);
     if (o && objSolid(o)) { if (o.t === 'gate' && F.onInteract && !F.gateCool) { F.gateCool = true; setTimeout(() => { F.gateCool = false; }, 600); F.onInteract({ type: 'obj', obj: o }); } return; }
     // 이동 시작
@@ -2874,7 +2930,9 @@ input { font: inherit; }
     if (F.busy || F.player.moving) return;
     const f = facing();
     const n = npcAt(f.x, f.y);
-    if (n) { n.dir = opposite(F.player.dir); return F.onInteract && F.onInteract({ type: 'npc', npc: n }); }
+    if (n) { n.dir = opposite(F.player.dir); return F.onInteract && F.onInteract({ type: n.critter ? 'critter' : 'npc', npc: n }); }
+    const fo = F.follower;
+    if (fo && !F.hideHero && fo.x === f.x && fo.y === f.y) return F.onInteract && F.onInteract({ type: 'follower' });
     const mo = monAt(f.x, f.y);
     if (mo) return F.onEncounter && F.onEncounter(mo);
     const o = objAt(f.x, f.y) || objAt(F.player.x, F.player.y);
@@ -2913,9 +2971,26 @@ input { font: inherit; }
       fo.px = U.lerp(fo.fx, fo.x, f) * TS; fo.py = U.lerp(fo.fy, fo.y, f) * TS;
       if (f >= 1) { fo.moving = false; fo.px = fo.x * TS; fo.py = fo.y * TS; }
     }
+    // 혼잣말: 가까운 사람 하나가 가끔 한마디 한다
+    F.barkT = (F.barkT || 0) - dt;
+    if (F.barkT <= 0) {
+      F.barkT = 3.2 + Math.random() * 4;
+      if (!F.busy) {
+        const st = G.state;
+        const cands = F.npcs.filter((n) => !n.hidden && n.bark && (!n.cond || n.cond(st)) && !(n.barkLife > 0) && n !== F.lastBark &&
+          Math.abs(n.x - p.x) + Math.abs(n.y - p.y) <= 7 && Math.abs(n.x - p.x) + Math.abs(n.y - p.y) >= 1);
+        if (cands.length) {
+          const n = U.pick(cands);
+          const L = typeof n.bark === 'function' ? n.bark(st) : n.bark;
+          if (L && L.length) { n.barkText = U.nameSub(U.pick(L), st.name); n.barkLife = 3.4 + n.barkText.length * 0.05; F.lastBark = n; }
+        }
+      }
+    }
     // NPC 산책
     for (const n of F.npcs) {
       if (n.hidden) continue;
+      if (n.barkLife > 0) n.barkLife -= dt;
+      if (n.critter && !n.moving && !F.busy && critterFlee(n)) continue;
       if (n.jump) { n.jump += dt * 3; if (n.jump >= 1) n.jump = 0; }
       if (n.moving) {
         n.mt += dt; const f = Math.min(1, n.mt / (STEP * (n.path && n.path.length || n.speed ? 1.3 / (n.speed || 1) : 1.8)));
@@ -2960,6 +3035,29 @@ input { font: inherit; }
     }
     updateParticles(dt);
     updateCam(dt);
+    F.prompt = promptAt();
+  }
+  /** 바라보는 칸에서 A로 할 수 있는 일 → 머리 위 표시와 A 버튼 글씨 */
+  function promptAt() {
+    const p = F.player;
+    if (p.moving || F.busy || !F.map) return null;
+    const f = facing(), s = G.state;
+    const n = npcAt(f.x, f.y);
+    if (n) return { x: f.x, y: f.y, k: n.critter ? '살펴보기' : '말 걸기' };
+    const fo = F.follower;
+    if (fo && !F.hideHero && fo.x === f.x && fo.y === f.y) return { x: f.x, y: f.y, k: '이야기' };
+    if (monAt(f.x, f.y)) return { x: f.x, y: f.y, k: '싸우기' };
+    const o = objAt(f.x, f.y);
+    if (o && o.t !== 'spot' && !(o.t === 'chest' && s.chests[o.id] && !o.talk) && !(o.t === 'pickup' && s.chests[o.id]) && !(o.t === 'orbshine' && s.orbs[o.orb])) {
+      return { x: f.x, y: f.y, k: o.t === 'book' ? '읽기' : o.t === 'chest' ? '열기' : o.t === 'pickup' ? '줍기' : o.t === 'gate' ? '살펴보기' : o.verb || '살펴보기', hidden: o.invisible };
+    }
+    const b = buildingAt(f.x, f.y);
+    if (b && b.door !== undefined && f.x === b.x + b.door && f.y === b.y + b.h - 1) return { x: f.x, y: f.y, k: b.talk ? '두드리기' : '들어가기' };
+    if (b && (b.style === 'tower' || b.talk)) return { x: f.x, y: f.y, k: '살펴보기' };
+    const ch = charAt(f.x, f.y);
+    if (F.map.examine && F.map.examine(f.x, f.y, ch)) return { x: f.x, y: f.y, k: '살펴보기', hidden: true };
+    if ((ch === '~' || ch === 'v') && G.story.canFish && G.story.canFish(s)) return { x: f.x, y: f.y, k: '낚시', hidden: true };
+    return null;
   }
   function stepNpc(n, tx, ty, force) {
     if (!force && !freeTile(tx, ty)) return false;
@@ -3100,6 +3198,7 @@ input { font: inherit; }
         g.fillStyle = on ? '#ffffff' : '#4a4458'; g.fillRect(ox + 5, oy, 6, 4);
         if (on && Math.floor(F.t * 4) % 2) { g.fillStyle = '#fff8d0'; g.fillRect(ox + 6, oy + 1, 1, 1); }
       } });
+      if (o.t === 'prop') ents.push({ y: o.y * TS, draw: () => drawProp(g, ox, oy, o) });
       if (o.t === 'pickup' && !s.chests[o.id]) ents.push({ y: o.y * TS - 1, draw: () => {
         const c = o.c || '#ff5a4a';
         g.fillStyle = '#2a6a2a'; g.fillRect(ox + 7, oy + 8, 2, 6); g.fillRect(ox + 5, oy + 10, 2, 1); g.fillRect(ox + 9, oy + 11, 2, 1);
@@ -3124,6 +3223,14 @@ input { font: inherit; }
     if (fo && !F.hideHero) ents.push({ y: fo.py, draw: () => { const ff = fo.moving ? Math.floor(F.t * 8) % 2 : Math.floor(F.t * 2) % 2; const dir = fo.dir === 'right' || fo.dir === 'up' ? 'right' : 'left'; drawSprite(g, fo.sprite[dir] || fo.sprite.left, fo.px - cx, fo.py - cy - (fo.jump ? Math.round(Math.sin(fo.jump * Math.PI) * 6) : 0) - (fo.fly || 0), ff); } });
     ents.sort((a, b) => a.y - b.y);
     for (const e of ents) e.draw();
+    // A로 할 수 있는 일이 있으면 그 칸 위에 작은 표시
+    const pr = F.prompt;
+    if (pr && !F.hideHero) {
+      const bx = pr.x * TS - cx + 5, by = pr.y * TS - cy - 9 + Math.round(Math.sin(F.t * 6) * 1);
+      g.fillStyle = '#16101f'; g.fillRect(bx, by, 7, 7);
+      g.fillStyle = pr.hidden ? '#fff0b0' : '#ffffff'; g.fillRect(bx + 1, by + 1, 5, 5);
+      g.fillStyle = '#c83a3a'; g.fillRect(bx + 2, by + 2, 3, 1); g.fillRect(bx + 2, by + 3, 1, 2); g.fillRect(bx + 4, by + 3, 1, 2); g.fillRect(bx + 3, by + 4, 1, 1);
+    }
     for (const em of F.emotes) { const e = em.ent; if (!e || e.hidden) continue; const jy = e.jump ? Math.round(Math.sin(e.jump * Math.PI) * 6) : 0; drawEmote(g, Math.round(e.px - cx), Math.round(e.py - cy) - jy + (em.life > 1.2 ? 2 : 0), em.sym); }
     // 파티클
     for (const q of F.particles) {
@@ -3161,6 +3268,59 @@ input { font: inherit; }
     }
     g.globalAlpha = 1; g.textAlign = 'left';
   }
+  /** 소품: 우물 · 벤치 · 게시판 · 사당 · 상자 · 모닥불 · 석상 */
+  function drawProp(g, x, y, o) {
+    const k = o.kind, t = F.t;
+    const R = (c, a, b, w, h) => { g.fillStyle = c; g.fillRect(x + a, y + b, w, h); };
+    if (k === 'well') {
+      R('#16101f', 1, 6, 14, 10); R('#8a8a92', 2, 7, 12, 8); R('#6a6a74', 2, 11, 12, 1); R('#5a5a64', 5, 7, 1, 8); R('#5a5a64', 10, 7, 1, 8);
+      R('#1a3050', 4, 8, 8, 2); R('#16101f', 2, 0, 1, 7); R('#16101f', 13, 0, 1, 7); R('#8a5a32', 1, -1, 14, 2); R('#6a4222', 1, 0, 14, 1);
+      R('#c8a060', 7, 2, 2, 3); R('#16101f', 8, 0, 1, 2);
+      return;
+    }
+    if (k === 'bench') {
+      R('#16101f', 1, 7, 14, 6); R('#a8703e', 2, 8, 12, 2); R('#8a5a32', 2, 10, 12, 1); R('#16101f', 2, 11, 2, 4); R('#16101f', 12, 11, 2, 4); R('#6a4222', 2, 5, 12, 2);
+      return;
+    }
+    if (k === 'board') {
+      R('#16101f', 2, 1, 12, 10); R('#8a5a32', 3, 2, 10, 8); R('#16101f', 3, 11, 2, 5); R('#16101f', 11, 11, 2, 5);
+      R('#f4f0e8', 4, 3, 3, 4); R('#f0e0a0', 8, 3, 4, 3); R('#f4f0e8', 8, 7, 3, 2); R('#c83a3a', 5, 3, 1, 1); R('#c83a3a', 9, 3, 1, 1);
+      return;
+    }
+    if (k === 'shrine') {
+      R('#16101f', 4, 4, 8, 12); R('#a8a8b0', 5, 9, 6, 6); R('#8a8a92', 3, 3, 10, 2); R('#16101f', 6, 5, 4, 4); R('#c8c8d0', 7, 0, 2, 3);
+      const f = Math.floor(t * 6) % 2; R(f ? '#ffd84a' : '#ffb84a', 7, 6, 2, 2); R('#fff8d0', 7 + f, 5, 1, 1);
+      return;
+    }
+    if (k === 'hole') {
+      // 얼음 구멍(밝은 테두리) 또는 돌 테두리 우물 구멍
+      const ice = o.ice !== false;
+      R('#16101f', 1, 4, 14, 10); R(ice ? '#e8f4ff' : '#6a6a74', 2, 5, 12, 8); R(ice ? '#b8d8f0' : '#4a4a54', 2, 11, 12, 2);
+      R('#0a1a30', 4, 6, 8, 5); R('#1a3a6a', 5, 7, 6, 3);
+      const f = Math.floor(t * 2) % 2; R('#8ab8e8', 6 + f * 2, 8, 2, 1);
+      return;
+    }
+    if (k === 'crate') {
+      R('#16101f', 2, 4, 12, 12); R('#b87a42', 3, 5, 10, 10); R('#8a5a32', 3, 9, 10, 1); R('#8a5a32', 7, 5, 1, 10); R('#e0a060', 3, 5, 10, 1);
+      return;
+    }
+    if (k === 'fire') {
+      R('#16101f', 3, 12, 10, 3); R('#6a4222', 4, 12, 8, 2); R('#8a5a32', 5, 11, 6, 1);
+      const f = Math.floor(t * 8) % 3;
+      R('#ff5a1a', 5, 6 + f % 2, 6, 6 - f % 2); R('#ffb84a', 6, 8, 4, 4); R('#fff0a0', 7, 10 - f, 2, 2);
+      if (Math.random() < 0.08) F.particles.push({ x: o.x * TS + 8, y: o.y * TS + 6, vx: (Math.random() - 0.5) * 6, vy: -16, c: '#ffb84a', life: 0.7 });
+      return;
+    }
+    if (k === 'statue') {
+      R('#16101f', 3, 12, 10, 4); R('#8a8a92', 4, 13, 8, 2); R('#16101f', 5, 0, 6, 13); R(o.c || '#b8b8c0', 6, 1, 4, 11); R('#e8e8f0', 7, 1, 2, 3); R('#8a8a92', 6, 7, 4, 1);
+      return;
+    }
+    if (k === 'lantern') {
+      R('#16101f', 7, 4, 2, 12); R('#16101f', 4, 0, 8, 6); R('#ffd86a', 5, 1, 6, 4); R('#fff8d0', 6 + (Math.floor(t * 4) % 2), 2, 1, 1);
+      return;
+    }
+    R('#16101f', 3, 3, 10, 10); R('#8a8a92', 4, 4, 8, 8);
+  }
   function drawGate(g, x, y, o) {
     if (o.style === 'light') { // 징수 기사단의 빛 장벽
       const a = 0.55 + 0.25 * Math.sin(F.t * 5 + x);
@@ -3185,7 +3345,7 @@ input { font: inherit; }
     else { g.fillRect(x + 7, y - 6 + bob, 3, 1); g.fillRect(x + 8, y - 7 + bob, 1, 3); }
   }
 
-  Object.assign(F, { load, tryMove, interact, update, render, setView, addFloat, burst, spotHere, facing, charAt, objAt, npcAt, monAt, removeMon, spawnMon, refreshNpcs, setFollower,
+  Object.assign(F, { load, tryMove, interact, update, render, setView, addFloat, burst, spotHere, facing, charAt, objAt, npcAt, monAt, removeMon, spawnMon, refreshNpcs, setFollower, isWater,
     walkNpc, stepNpc, snapCam, heroSprite, spriteFor, freeTile, dirTo, DIRS, buildingAt, forceMove, stepFollower, addNpc, removeNpc, emote, gateOpen, objOn });
   G.field = F;
 })();
@@ -3541,6 +3701,7 @@ input { font: inherit; }
       const p = E.expProgress(s);
       const statDesc = { str: ['힘', '공격력 +2'], vit: ['체력', '최대 HP +10, 방어 +0.5'], agi: ['민첩', '치명타 확률·피해'], int: ['지능', '클릭 경험치 배율'], luk: ['행운', '클릭 골드 배율'] };
       let h = '<div class="row" style="border:0"><canvas class="portrait-sm" data-face="@"></canvas><div class="nm"><b>' + esc(s.name) + ' · ' + (s.flags.champion ? '챔피언' : E.rankName(s)) + '</b><small>Lv ' + U.fmtInt(s.lv) + ' · 다음 레벨까지 ' + U.fmt(p.need - p.cur) + ' EXP</small></div></div>';
+      if (s.follower && G.chars[s.follower] && G.story.companion) h += '<button class="btn pri" style="width:100%;margin:2px 0 8px" data-act="companion">' + esc(U.josa(G.chars[s.follower].name, '과/와')) + ' 이야기하기</button>';
       h += '<dl class="kv card"><dt>HP</dt><dd>' + U.fmt(Math.ceil(s.hp)) + ' / ' + U.fmt(d.hpMax) + '</dd><dt>공격력</dt><dd>' + U.fmt(d.atk) + '</dd><dt>방어</dt><dd>' + U.fmt(d.def) + '</dd>' +
         '<dt>치명타</dt><dd>' + Math.round(d.crit * 100) + '% · ×' + d.critDmg.toFixed(2) + '</dd><dt>클릭 경험치 배율</dt><dd>' + U.fmtMult(d.expM) + '</dd><dt>클릭 골드 배율</dt><dd>' + U.fmtMult(d.goldM) + '</dd>' +
         '<dt>도구</dt><dd>' + U.fmtMult(d.tool) + '</dd><dt>등급 배율</dt><dd>' + U.fmtMult(d.rc) + '</dd></dl>';
@@ -3561,7 +3722,7 @@ input { font: inherit; }
     if (tab === 'bag') {
       const groups = ['potion', 'food', 'weapon', 'armor', 'acc', 'tool', 'mat', 'key'];
       let h = '';
-      if (s.buffs.some((b) => b.until > s.t)) h += '<div class="card note">' + s.buffs.filter((b) => b.until > s.t).map((b) => '<b style="color:var(--gold)">' + (D.ITEMS[b.id] ? D.ITEMS[b.id].name : '대륙의 빛') + '</b> 효과 ' + U.fmtTime(b.until - s.t) + ' 남음').join('<br>') + '</div>';
+      if (s.buffs.some((b) => b.until > s.t)) h += '<div class="card note">' + s.buffs.filter((b) => b.until > s.t).map((b) => '<b style="color:var(--gold)">' + (D.ITEMS[b.id] ? D.ITEMS[b.id].name : ({ pray: '사당의 온기', support: '대륙의 빛' }[b.id] || '알 수 없는 기운')) + '</b> 효과 ' + U.fmtTime(b.until - s.t) + ' 남음').join('<br>') + '</div>';
       for (const g of groups) {
         const ids = Object.keys(s.inv).filter((id) => D.ITEMS[id] && D.ITEMS[id].type === g && s.inv[id] > 0);
         if (!ids.length) continue;
@@ -3586,9 +3747,12 @@ input { font: inherit; }
       for (const id of G.CHAR_ORDER) {
         const c = G.chars[id];
         if (!s.seen[id]) { h += '<div class="row"><span class="ic">?</span><span class="nm"><b style="color:var(--muted)">???</b><small>아직 만나지 못했다.</small></span></div>'; continue; }
-        const lines = c.bio.filter((b) => !b[1] || s.flags[b[1]]).map((b) => esc(U.nameSub(b[0], s.name)));
+        const lines = c.bio.filter((b) => !b[1] || (typeof b[1] === 'function' ? b[1](s) : s.flags[b[1]])).map((b) => esc(U.nameSub(b[0], s.name)));
         const more = c.bio.length - lines.length;
-        h += '<div class="row" style="align-items:flex-start"><canvas class="portrait-sm" data-face="' + id + '"></canvas><span class="nm"><b style="color:' + c.color + '">' + esc(c.name) + '</b><small>' + esc(c.title || '') + '</small><small style="color:var(--paper-dim);margin-top:4px">' + lines.join('<br>') + (more ? '<br><span style="color:var(--muted)">… 아직 모르는 이야기가 ' + more + '개 있다.</span>' : '') + '</small></span></div>';
+        const bv = (s.bond || {})[id];
+        const bl = bv != null ? G.script.bondLevel(bv) : null;
+        const bond = bl ? ' <span class="chip" style="font-size:10px;padding:0 5px;color:' + (bv < 0 ? '#ff8a8a' : bv >= 3 ? '#ffd84a' : 'var(--paper-dim)') + '">' + (bv < 0 ? '♡ ' : '♥ ') + bl.name + '</span>' : '';
+        h += '<div class="row" style="align-items:flex-start"><canvas class="portrait-sm" data-face="' + id + '"></canvas><span class="nm"><b style="color:' + c.color + '">' + esc(U.nameSub(c.name, s.name)) + bond + '</b><small>' + esc(c.title || '') + '</small><small style="color:var(--paper-dim);margin-top:4px">' + lines.join('<br>') + (more ? '<br><span style="color:var(--muted)">… 아직 모르는 이야기가 ' + more + '개 있다.</span>' : '') + '</small></span></div>';
       }
       return h;
     }
@@ -3604,7 +3768,14 @@ input { font: inherit; }
       return h;
     }
     if (tab === 'books') {
-      const ids = Object.keys(G.books || {});
+      // 선택에 따라 갈리는 책(group)은 한 권으로 센다: 얻은 것만, 아직 없으면 하나만 ???로
+      const seenG = {};
+      const ids = Object.keys(G.books || {}).filter((id) => {
+        const g = G.books[id].group; if (!g) return true;
+        const any = Object.keys(G.books).some((k) => G.books[k].group === g && s.books[k]);
+        if (any) return !!s.books[id];
+        if (seenG[g]) return false; seenG[g] = 1; return true;
+      });
       const got = ids.filter((id) => s.books[id]);
       let h = '<p class="note">모은 이야기 ' + got.length + ' / ' + ids.length + ' · 책장과 비석, 쪽지를 살펴보면 모인다.</p>';
       for (const id of ids) {
@@ -3661,6 +3832,7 @@ input { font: inherit; }
     }
     if (act === 'wipe') { if (!UI.wipeArm) { UI.wipeArm = true; setTimeout(() => { UI.wipeArm = false; }, 4000); } else { UI.wipeArm = false; G.main.wipe(); return; } }
     if (act === 'rankup') { G.main.doRankUp(+ds.i); }
+    if (act === 'companion') { api.close(); if (!G.script.running) G.script.run((c) => G.story.companion(c)); return; }
     api.refresh();
   }
 
@@ -3769,7 +3941,20 @@ input { font: inherit; }
     };
     h += '<div class="sec">이야기</div>' + (main.filter((id) => s.quests[id] !== 'done').map(line).join('') || '<p class="note">지금은 따라갈 이야기가 없다.</p>');
     const act = side.filter((id) => s.quests[id] !== 'done');
-    h += '<div class="sec" style="margin-top:10px">부탁 · ' + act.length + '개 진행 중</div>' + (act.map(line).join('') || '<p class="note">받아 둔 부탁이 없다. 머리 위에 [y]![/]가 뜬 사람에게 말을 걸어 보자.</p>');
+    h += '<div class="sec" style="margin-top:10px">부탁 · ' + act.length + '개 진행 중</div>' + (act.map(line).join('') || '<p class="note">' + markup('받아 둔 부탁이 없다. 머리 위에 [y]![/]가 뜬 사람에게 말을 걸어 보자.') + '</p>');
+    // 진실의 조각: 어느 순서로 모아도 된다. 많이 알수록 마지막에 할 수 있는 말이 늘어난다.
+    const T = G.story.truths || {};
+    const tids = Object.keys(T);
+    if (tids.length && Object.keys(s.truth || {}).length) {
+      const got = tids.filter((k) => s.truth[k]);
+      h += '<div class="sec" style="margin-top:10px">진실의 조각 ' + got.length + ' / ' + tids.length + '</div>' +
+        tids.map((k) => (s.truth[k] ? '<div class="row" style="align-items:flex-start"><span class="ic" style="color:var(--r5)">◆</span><span class="nm"><b>' + esc(T[k].title) + '</b><small>' + markup(T[k].text) + '</small></span></div>'
+          : '<div class="row"><span class="ic" style="color:var(--muted)">◇</span><span class="nm"><small style="color:var(--muted)">' + esc(T[k].hint || '아직 모르는 조각') + '</small></span></div>')).join('');
+    }
+    // 결정의 기록
+    if ((s.log || []).length) {
+      h += '<div class="sec" style="margin-top:10px">내가 내린 결정</div>' + s.log.map((d) => '<div class="row"><span class="ic" style="color:var(--gold)">▸</span><span class="nm"><b>' + esc(U.nameSub(d.t || d.k, s.name)) + '</b><small>' + esc(d.ch || '') + '</small></span></div>').join('');
+    }
     const dn = side.filter((id) => s.quests[id] === 'done').concat(main.filter((id) => s.quests[id] === 'done'));
     if (dn.length) h += '<div class="sec" style="margin-top:10px">끝낸 일 ' + dn.length + '</div>' + dn.map(line).join('');
     return h;
@@ -3998,7 +4183,61 @@ input { font: inherit; }
         await c.rest();
         return true;
       },
-      async rest() { await UI.fade(1, 400); G.audio.jingle('rest'); c.heal(); G.main.setRespawn(); await wait(1.4); await UI.fade(0, 400); UI.toast('푹 쉬었다. 이곳이 새 쉼터가 되었다.', 'good'); },
+      async rest() {
+        await UI.fade(1, 400); G.audio.jingle('rest'); c.heal(); G.main.setRespawn(); await wait(1.4);
+        // 쉬는 밤에 나누는 이야기 (조건이 맞는 것 하나)
+        if (G.story.night) await G.story.night(c);
+        await UI.fade(0, 400); UI.toast('푹 쉬었다. 이곳이 새 쉼터가 되었다.', 'good');
+      },
+      /** 되돌릴 수 없는 선택을 기록한다. 이야기의 뒷부분이 이 값을 읽는다. */
+      decide(key, value, text) {
+        const st = s();
+        st.flags['d_' + key] = value;
+        (st.log = st.log || []).push({ k: key, v: value, t: text, ch: chapterName(st) });
+        G.audio.sfx('select');
+        if (text) UI.toast('[y]결정[/] ' + text, 'white');
+        return value;
+      },
+      dec: (key) => s().flags['d_' + key],
+      /** 인연: +는 가까워지고 -는 멀어진다 */
+      bond(id, d, quiet) {
+        const st = s(); st.bond = st.bond || {};
+        const before = bondLevel(st.bond[id] || 0);
+        st.bond[id] = (st.bond[id] || 0) + d;
+        const after = bondLevel(st.bond[id]);
+        if (quiet || !G.chars[id]) return c;
+        const nm = U.nameSub(G.chars[id].name, st.name);
+        if (after.n !== before.n) UI.toast((d > 0 ? '♥ ' : '♡ ') + nm + ' — ' + after.name, d > 0 ? 'good' : 'bad');
+        else UI.toast((d > 0 ? '♥ ' : '♡ ') + nm + (d > 0 ? '의 마음이 조금 가까워졌다' : '의 마음이 조금 멀어졌다'), d > 0 ? 'good' : '');
+        return c;
+      },
+      bondOf: (id) => (s().bond || {})[id] || 0,
+      /** 진실의 조각: 대륙 곳곳에 흩어진, 경험세와 흑점의 진짜 이야기 */
+      truth(id) {
+        const st = s(); st.truth = st.truth || {};
+        if (st.truth[id]) return false;
+        st.truth[id] = 1;
+        const T = G.story.truths || {};
+        const n = Object.keys(st.truth).filter((k) => T[k]).length, all = Object.keys(T).length;
+        G.audio.jingle('secret');
+        UI.toast('[p]진실의 조각[/] ' + n + ' / ' + all + ' — ' + (T[id] ? T[id].title : id), 'white');
+        return true;
+      },
+      truthN: () => Object.keys(s().truth || {}).filter((k) => (G.story.truths || {})[k]).length,
+      /** 낚시 입질: wait초 뒤 찌가 움직이고, win초 안에 A를 누르면 'ok' · 너무 빠르면 'early' · 늦으면 'miss' · B는 'cancel' */
+      bite(waitSec, win) {
+        return new Promise((res) => {
+          let state = 'wait', done = false;
+          const finish = (r) => { if (done) return; done = true; UI.pop(L); res(r); };
+          const press = () => { if (state === 'wait') finish('early'); else if (state === 'bite') finish('ok'); };
+          const L = UI.push({ name: 'fish', dir() {}, b() { finish('cancel'); }, a: press, lv: press, tap: press });
+          setTimeout(() => {
+            if (done) return;
+            state = 'bite'; F.emote(F.player, '!', win + 0.3); G.audio.sfx('surprise');
+            setTimeout(() => finish('miss'), win * 1000);
+          }, waitSec * 1000);
+        });
+      },
       async warp(map, x, y, dir, opt) { await G.main.warp(map, x, y, dir, opt); },
       fadeOut: (ms, white) => UI.fade(1, ms, white),
       fadeIn: (ms) => UI.fade(0, ms),
@@ -4050,6 +4289,15 @@ input { font: inherit; }
     };
     return c;
   }
+  /** 인연 단계 */
+  const BOND = [[-99, '적대'], [-2, '서먹함'], [0, '보통'], [1, '호감'], [3, '믿음'], [5, '깊은 인연']];
+  function bondLevel(v) { let r = { n: 0, name: BOND[0][1] }; BOND.forEach(([th, name], i) => { if (v >= th) r = { n: i, name }; }); return r; }
+  function chapterName(st) {
+    let name = '';
+    for (let i = 0; i <= 13; i++) { const id = 'm' + i; if (st.quests[id] != null && G.quests[id]) name = G.quests[id].name.split(' · ')[0]; }
+    return name;
+  }
+  S.bondLevel = bondLevel;
   function meet(who) {
     const id = String(who).split(':')[0];
     if (id && id !== '@' && G.chars[id] && !G.state.seen[id]) G.state.seen[id] = 1;
@@ -4810,6 +5058,10 @@ input { font: inherit; }
   G.world = G.world || { towns: [], nodes: [] };
   G.hooks = G.hooks || { level: [], rank: [], enter: [], click: [] };
   G.story = G.story || {};
+  // 장마다 덧붙이는 이야기 조각: 동행과의 대화 · 쉬는 밤의 대화 · 진실의 조각
+  G.story.talks = G.story.talks || [];
+  G.story.nights = G.story.nights || [];
+  G.story.truths = G.story.truths || {};
 
   const W = {};
   const DIR4 = [[1, 0], [-1, 0], [0, 1], [0, -1]];
@@ -4998,6 +5250,52 @@ input { font: inherit; }
   W.sign = (x, y, text) => ({ t: 'sign', x, y, text });
   W.bookObj = (id, x, y) => ({ t: 'book', id, x, y });
   W.gate = (x, y, req, msg, extra) => Object.assign({ t: 'gate', x, y, req, msg }, extra || {});
+  /** 살펴볼 곳 (보이지 않는다). text는 문자열 · 배열 · (s) => … 로 이야기에 따라 바뀔 수 있다. opt.first: 처음 볼 때 한 번 */
+  W.look = (x, y, text, opt) => Object.assign({ t: 'sign', invisible: true, solid: false, x, y, text }, opt || {});
+  /** 소품: 우물(물 마시기) · 벤치(앉아 쉬기) · 사당(기도) · 모닥불(불 쬐기) · 낚시 구멍 · 게시판 · 상자 · 석상 · 등불 */
+  const PROP = {
+    well: { text: '돌로 쌓은 우물이다. 두레박 줄이 반들반들하다.', verb: '물 마시기', act: async (c) => { c.s.hp = Math.min(G.engine.derive(c.s).hpMax, c.s.hp + G.engine.derive(c.s).hpMax * 0.4); c.sfx('heal'); await c.say(null, '차가운 물을 한 모금 마셨다. 목 뒤가 서늘해지며 기운이 돌아온다.'); } },
+    bench: { text: null, verb: '앉기', act: async (c) => { await c.fadeOut(300); c.s.hp = Math.min(G.engine.derive(c.s).hpMax, c.s.hp + G.engine.derive(c.s).hpMax * 0.3); await c.wait(0.6); await c.fadeIn(300); await (G.story.benchThought ? G.story.benchThought(c) : c.say(null, '잠깐 앉아 숨을 골랐다.')); } },
+    shrine: { text: '작은 돌 사당이다. 누군가 매일 초를 갈아 끼우는 모양이다.', verb: '기도하기', act: async (c) => {
+      const st = c.s; if ((st.buffs || []).some((b) => b.id === 'pray' && b.until > st.t)) { await c.say(null, '마음이 이미 따뜻하다. 초가 조용히 탄다.'); return; }
+      st.buffs.push({ id: 'pray', fx: { exp: 0.25 }, until: st.t + 180 }); c.sfx('white');
+      await c.say(null, ['두 손을 모았다. 무엇을 빌지는 정하지 못했다. 그래도 촛불이 한 번 크게 흔들렸다.', '[y]사당의 온기[/] — 3분 동안 경험치 +25%']);
+    } },
+    fire: { text: null, verb: '불 쬐기', act: async (c) => { c.s.hp = Math.min(G.engine.derive(c.s).hpMax, c.s.hp + G.engine.derive(c.s).hpMax * 0.5); c.sfx('heal'); await c.say(null, '손을 불에 대고 한참 있었다. 타닥, 타닥. 굳었던 손가락이 풀린다.'); } },
+    board: { text: '게시판이다. 붙은 종이가 바람에 들썩인다.', verb: '읽기' },
+    crate: { text: '나무 상자다. 못이 단단히 박혀 있다.' },
+    statue: { text: '누군가의 석상이다.' },
+    lantern: { text: '등불이 흔들린다.' },
+    // 낚시 구멍: 물이 없는 곳(얼음 구멍 · 우물)에서도 드리울 수 있다. opt.pool = 어느 물의 물고기인지
+    hole: { text: null, verb: '낚시', act: async (c, o) => {
+      if (!(G.story.canFish && G.story.canFish(c.s))) { await c.say(null, o.noRod || '물이 깊다. 낚싯대가 있다면 무언가 걸릴지도 모른다.'); return; }
+      await G.story.fishing(c, o.x, o.y, o.pool);
+    } },
+  };
+  W.prop = (kind, x, y, text, opt) => {
+    const P = PROP[kind] || {};
+    const o = Object.assign({ t: 'prop', kind, x, y, verb: P.verb || '살펴보기' }, opt || {});
+    const txt = text !== undefined ? text : P.text;
+    if (P.act && !o.talk) o.talk = async (c) => { const t = typeof txt === 'function' ? txt(c.s) : txt; if (t) await c.say(null, t); await P.act(c, o); if (o.after) await o.after(c); };
+    else o.text = txt;
+    return o;
+  };
+  /** 이미 등록된 맵에 나중에 덧붙이기: 혼잣말 · 오브젝트 · 들짐승 */
+  W.barks = (mapId, table) => {
+    const m = G.maps[mapId]; if (!m) throw new Error('barks: no map ' + mapId);
+    for (const n of m.npcs || []) { const b = table[n.id]; if (b && !n.bark) n.bark = b; }
+  };
+  W.addObjs = (mapId, objs) => { const m = G.maps[mapId]; if (!m) throw new Error('addObjs: no map ' + mapId); m.objs = (m.objs || []).concat(objs); };
+  W.addNpcs = (mapId, npcs) => { const m = G.maps[mapId]; if (!m) throw new Error('addNpcs: no map ' + mapId); m.npcs = (m.npcs || []).concat(npcs); };
+  W.critters = (mapId, list) => { const m = G.maps[mapId]; if (!m) throw new Error('critters: no map ' + mapId); m.critters = list; };
+  /** 기존 인물의 대사 앞에 끼어드는 장면: 조건이 맞으면 fn, 아니면 원래 대사 */
+  W.wrapNpc = (mapId, npcId, cond, fn) => {
+    const m = G.maps[mapId]; if (!m) throw new Error('wrapNpc: no map ' + mapId);
+    const n = (m.npcs || []).find((x) => x.id === npcId); if (!n) throw new Error('wrapNpc: no npc ' + npcId + ' in ' + mapId);
+    const orig = n.talk;
+    n.talk = async (c, nn) => { if (cond(c.s)) return fn(c, nn, orig); if (orig) return orig(c, nn); };
+    return n;
+  };
 
   /** 지역 레벨 구간에서 frac(0~1) 위치의 레벨 → 맵 기운 */
   W.ki = (region, frac) => { const r = D.REG[region]; return Math.round(r.lv[0] * Math.pow(r.lv[1] / r.lv[0], frac)); };
@@ -5052,6 +5350,8 @@ input { font: inherit; }
   W.keyItem('lunch', '콩순의 도시락', '돌쇠 씨에게 전해 달라는 도시락. 옥수수빵 세 개와 쪽지 한 장.');
   W.keyItem('rod', '느림보 영감의 낚싯대', '40년 동안 물고기 한 마리 못 낚은 낚싯대. 미끼 대신 옥수수빵 조각이 달려 있다.');
   W.keyItem('clover', '네잎클로버', '봄이가 준 네잎클로버. 「전설이 되면 돌려줘.」');
+  W.keyItem('bait_old', '순이의 미끼', '느림보 영감의 아내가 40년 전에 만든 미끼. 한 번도 물에 닿은 적이 없다. 귀한 물고기가 더 잘 걸린다.');
+  W.quest('q_koi', { name: '40년의 약속', where: '그린 마을 연못', stages: ['느림보 영감이 [y]황금 잉어[/]를 한 번 보고 싶어 한다. 그린 지방 물가에서 낚아 오자.'], done: '영감은 40년 만에 약속을 끝냈다.' });
 
   /* ───────── 이야기 ───────── */
   W.quest('m0', { main: true, name: '프롤로그 · 열여섯 번째 생일', where: '할머니의 오두막', stages: [
@@ -5123,7 +5423,7 @@ input { font: inherit; }
     objs: [W.bookObj('b_album', 4, 2), W.bookObj('b_herb', 5, 2)],
     examine: (x, y, ch) => {
       if (ch === 'q' && x === 1) return async (c) => { if (await c.yes('내 침대다. 잠깐 누워서 쉴까?', null, '쉰다', '그만둔다')) await c.rest(); };
-      if (ch === 'q') return '할머니 침대다. 이불에서 약초 냄새가 난다.';
+      if (ch === 'q') return G.state.quests.m1 === 'done' ? '할머니 침대다. 침대 밑으로 긴 천 뭉치가 삐져나와 있다. 창 자루만큼 길다. 풀어 보지는 않았다.' : '할머니 침대다. 이불에서 약초 냄새가 난다.';
       if (ch === 'n') return '아궁이 위에서 옥수수죽이 보글보글 끓고 있다.';
       if (ch === 'b') return '된장 항아리다. 할머니 된장은 레드 마을까지 소문났다.';
       return null;
@@ -5160,7 +5460,20 @@ input { font: inherit; }
     if (s.quests.m1 === 3) return swordScene(c);
     if (s.quests.m1 === 5) return letterScene(c);
     if (s.quests.m1 === 4) { await c.say('gran', '광장 쪽이 와 이리 시끄럽노. 함 가 봐라.'); return; }
-    if (s.quests.m1 === 'done' && !s.flags.visit_red) { await c.say('gran', ['레벨 30 되믄 남쪽 산길 기사들이 지나가게 해 줄 끼다.', '편지 잃어버리지 말고. 은하수 그 영감한테 꼭 니 손으로 전해래이.']); return; }
+    if (s.quests.m1 === 'done' && !s.flags.red_intro) { await c.say('gran', ['레벨 30 되믄 남쪽 산길 기사들이 지나가게 해 줄 끼다.', '편지 잃어버리지 말고. 은하수 그 영감한테 꼭 니 손으로 전해래이.']); return; }
+    // 그날 밤 묻지 못한 것: 멀리 다녀와서 들르면 할머니가 먼저 꺼낸다
+    if (s.flags.gran_night && s.flags.red_intro && !s.flags.gran_night3) {
+      const left = ['mom', 'gran', 'tower'].find((q) => !s.flags.gran_night.split(',').includes(q));
+      c.set('gran_night3');
+      await c.say('gran', ['왔나. …그날 밤 니가 하나 못 물어본 기 있제. 할매가 졸아 뿌가.', '물어보지도 않는 거 대답하는 기 늙은이 버릇이다. 들어 봐라.']);
+      await granAnswer(c, left);
+      return;
+    }
+    if (s.flags.red_intro && s.flags.d_report === 'lie' && !s.flags.gran_dolsoe) {
+      c.set('gran_dolsoe');
+      await c.say('gran', ['돌쇠가 레드 광산으로 쫓겨났다 카더라. 번개 본 기사가 번개를 설명을 몬 해서.', '…니 탓 하지 마라. 그 사람이 고른 기다. 어른이 고른 거는 어른이 짊어지는 기다.']);
+      return;
+    }
     if (s.quests.m0 === 1 || s.quests.m0 === 2) {
       if (s.lv < 5) await c.say('gran', '레벨 5 될 때까지 버튼 눌러라. 집 안이라 기운이 약해도 누르다 보믄 된다.');
       else await c.say('gran', '레벨 5 됐나? 그라믄 마을 내려가서 등급소 가 봐라. 광장 서쪽에 파란 지붕이다.');
@@ -5234,7 +5547,24 @@ input { font: inherit; }
     await c.say('gran', ['마, 오늘은 늦었다. 광장에 가서 사람들한테 인사나 하고 온나.', '니 목검 자랑도 좀 하고.']);
     c.quest('m1', 4);
   }
+  /** 그날 밤의 세 가지 물음. 묻지 못한 하나는 나중에 집에 들르면 듣는다. */
+  async function granAnswer(c, id) {
+    if (id === 'mom') {
+      await c.say('gran', ['니 엄마는… 웃음이 헤픈 아였다. 넘어져도 웃고, 혼나도 웃고. 약초를 캐러 가면 약초는 안 캐고 노래만 불렀다.', '그 아가 딱 한 번 안 웃은 날이 있다. 떠나던 날. …니를 내 품에 넘기던 날.']);
+      await c.say('gran:sad', ['이름은 [y]세린[/]이다.', '할매가 지금 니한테 줄 수 있는 거는 그 이름 하나뿐이다. 나머지는… 니가 걸어가서 주워 온나. 할매 입으로 하믄 반쪽밖에 안 된다.']);
+      c.set('heard_serin');
+    } else if (id === 'gran') {
+      await c.say('gran', ['할매는 창을 들었다. 사람들이 [g]초록 창[/]이라 캤지. 싸운 날보다 가르친 날이 더 많았다.', '제자가 여럿 있었다. 다 제멋대로였다. 그중에… 셈을 억수로 잘하는 아가 하나 있었다.']);
+      await c.say('gran:sad', ['뭐든 숫자로 바꿨다. 기쁜 것도, 슬픈 것도. 그래야 견딜 수 있는 아였다.', '그 아는 우는 법을 몰랐다. 할매가 그거 하나를 못 가르쳤다. 창 쓰는 법은 다 가르쳤는데.']);
+      c.set('heard_student');
+    } else {
+      await c.say('gran', ['천년성의 챔피언. [p]카이론[/]이다.', '…니는 그 사람을 미워하게 될 끼다. 미워해도 된다. 할매도 16년 동안 미워했다.']);
+      await c.say('gran:sad', '그런데 하나만 알아 둬라. 그 사람은 이유 없이 그런 짓 할 사람이 아이다. 그래서 더 무서운 기다. 이유가 있는 잘못은… 멈추질 않거든.');
+      c.set('heard_kairon');
+    }
+  }
   async function letterScene(c) {
+    const s = c.s;
     c.music('sad');
     await c.say('gran', ['……앉아 봐라.', '징수 기사단이 올 기다. 탑을 부순 아를 그냥 둘 리가 없다.']);
     await c.say('@', '할머니, 그 빛… 하얀 빛이 뭐야? 왜 탑이 나를 먹으려고 했어?');
@@ -5248,6 +5578,26 @@ input { font: inherit; }
     await c.say('gran', ['떠나는 기 아이다. 크러 가는 기지.', '레벨 30 되믄 산길 기사들이 지나가게 해 줄 끼다. 오늘도 렙업. 알제?']);
     await c.say('@', '…내일도 렙업.');
     await c.say('gran:happy', '하모. 그래야 내 손주지.');
+    // 그날 밤: 무엇을 물을지는 고른다. 다 묻지는 못한다.
+    await c.fadeOut(600);
+    c.music('calm');
+    c.hero.to(6, 4, 'up');
+    c.npc('gran').to(6, 3, 'down');
+    await c.narr('그날 밤. 아궁이 불이 사그라들 무렵에도 할머니는 잠들지 않고 불 앞에 앉아 있었다.');
+    await c.fadeIn(600);
+    await c.say('gran', '…안 자나. 내일 먼 길 갈 아가.');
+    const Q = [['mom', '엄마는 어떤 사람이었어?'], ['gran', '할머니는 젊을 때 뭐 했어?'], ['tower', '그 탑은 누가 세운 거야?']];
+    const asked = [];
+    for (let i = 0; i < 2; i++) {
+      const opts = Q.filter((q) => !asked.includes(q[0]));
+      const k = await c.ask(i ? '할머니 눈꺼풀이 무거워 보인다. 하나만 더 물을 수 있을 것 같다.' : null, opts.map((q) => q[1]));
+      const id = opts[k][0];
+      asked.push(id);
+      await granAnswer(c, id);
+    }
+    s.flags.gran_night = asked.join(',');
+    await c.narr(['할머니의 고개가 천천히 앞으로 기울었다. 코 고는 소리가 났다.', '도토리가 제 몸만 한 이불을 끌고 와서 할머니 어깨에 덮었다. 반쯤은 바닥에 끌렸다.']);
+    await c.say('dotori', '…잘 자, 할머니. 찍.');
     c.quest('m1', 'done');
     c.music('home');
     await c.chapter('1장 끝', '흰빛', '할머니는 편지 봉투에 새싹 도장을 꾹 눌러 찍었다.');
@@ -5407,9 +5757,18 @@ input { font: inherit; }
       return;
     }
     if (s.flags.green_tower_broken) {
-      await c.run(W.chatter('dolsoe_after', [
-        ['보고서를 써야 하는데… 「탑이 스스로 흰빛을 먹으려다 배탈이 났다」고 쓰면 믿어 줄까.', '…농담이다. 사실대로 쓰면 너는 끌려간다. 그러니까 나는 「번개」라고 쓸 거다.'],
-        '기사단에서 조사단이 올 거다. 너는 그 전에 떠나는 게 좋아. 이건 기사로서가 아니라… 콩순이 남편으로서 하는 말이다.',
+      const d = s.flags.d_report;
+      await c.run(W.chatter('dolsoe_after', d === 'truth' ? [
+        ['보고서는 올렸다. 답장은 아직 없어. 천년성은 느리거든… 빨라야 할 때만 빼고.', '기사단이 오기 전에 떠나라. 사실대로 쓴 건 나지만, 끌려가는 건 너니까.'],
+        '콩순이가 이번 일로 나를 다시 봤대. 「거짓말 못 하는 게 당신 유일한 장점」이라나. …칭찬인가?',
+        '철이가 요즘 나한테 말을 건다. 「아빠, 보고서에 뭐라고 썼어?」 …사실대로 말해 줬다. 그 녀석 표정이 처음 보는 표정이더라.',
+      ] : d === 'lie' ? [
+        ['「번개」라고 썼다. 조사단이 오면 번개를 봤다고 할 거다. 한 번도 본 적 없지만.', '…연습 중이다. 「하늘이 번쩍했습니다.」 어때, 그럴듯하냐?'],
+        '너는 신경 쓰지 마라. 들키면 들키는 거고. 망치질하던 시절로 돌아가는 것뿐이다.',
+        '콩순이한테는 아직 말 안 했다. 말하면 내 편을 들 거거든. 그게 더 무섭다.',
+      ] : [
+        '「원인 불명」이라고 썼다. 조사단은 원인 불명을 제일 싫어한다. 그러니까 오래 걸릴 거다. 그 사이에 멀리 가.',
+        '흰빛이 뭔지 나도 궁금하다. 알게 되면… 편지 한 장 써 주든가.',
       ]));
       return;
     }
@@ -5445,7 +5804,40 @@ input { font: inherit; }
   async function slowTalk(c) {
     const s = c.s;
     const q = s.quests.q_rod;
-    if (q === 'done') { await c.run(W.chatter('slow_after', ['……건졌구먼……. 16년…… 동안…… 매일…… 봤지……', '……이제…… 뭘…… 보나……. ……물고기라도…… 봐야겠구먼……'], 'slowpoke')); return; }
+    if (q === 'done') {
+      const k = s.quests.q_koi;
+      if (k == null) {
+        await c.say('slowpoke', ['……건졌구먼……. 16년…… 동안…… 매일…… 봤지……', '……이제…… 뭘…… 보나…….']);
+        await c.say('slowpoke', ['……자네…… 내가 왜…… 40년 동안…… 한 마리도…… 못 낚았는지…… 아나……', '……우리 순이가…… 이 연못을…… 좋아했지……. ……황금 잉어를…… 한 번만…… 보고 싶다고…… 했어……']);
+        await c.say('slowpoke:sad', ['……순이가 가던 해에…… 낚싯대를…… 샀지……', '……그런데…… 낚으면…… 끝나잖나……. ……약속이…… 끝나잖나……. ……그래서…… 미끼를…… 안 달았어……. ……40년 동안……']);
+        await c.say('slowpoke', ['……이제는…… 보고 싶구먼……. ……자네가…… 대신…… 낚아 주겠나……', '……그 낚싯대는…… 이제 자네 거네…….']);
+        c.quest('q_koi', 0);
+        return;
+      }
+      if (k === 0 && G.engine.has(s, 'f_koi')) {
+        await c.say('slowpoke', '……그거…… 그거로구먼…….');
+        await c.narr(['영감은 잉어를 두 손으로 받아 들고 한참을 보았다. 비늘 하나하나에 햇빛이 고였다.', '영감의 입술이 움직였다. 소리는 나지 않았다. 누군가의 이름 같았다.']);
+        const r = await c.ask('……이거…… 놓아줘도…… 되겠나……', ['놓아주세요.', '제가 가져갈게요.'], 'slowpoke');
+        c.take('f_koi');
+        if (r === 0) {
+          c.sfx('splash');
+          await c.narr('잉어가 연못으로 돌아갔다. 수면에 동그란 물결이 번졌다. 영감은 물결이 다 사라질 때까지 보았다.');
+          await c.say('slowpoke:happy', ['……고맙네……. ……40년 만에…… 약속을…… 끝냈구먼……', '……이거…… 받게……. ……순이가…… 만든…… 미끼야……. ……한 번도…… 안 썼지……']);
+          c.give('bait_old');
+          c.bond('slowpoke', 2);
+          await c.sys('[y]순이의 미끼[/]를 받았다. 낚시할 때 귀한 물고기가 더 잘 걸린다.');
+        } else {
+          await c.say('slowpoke', ['……그래……. ……자네가 낚았으니…… 자네 거지…….', '……봤으니…… 됐네……. ……정말로…… 됐어…….']);
+          c.give('f_koi');
+          c.gold(300);
+        }
+        c.quest('q_koi', 'done');
+        return;
+      }
+      if (k === 0) { await c.say('slowpoke', ['……황금 잉어는…… 성미가…… 급하네……', '……찌가 흔들리고…… 머리 위에 [y]![/]가 뜨면…… 바로…… 당기게……. ……늦으면…… 끝이야……']); return; }
+      await c.run(W.chatter('slow_after', ['……요즘은…… 물고기가…… 보이는구먼…… 40년 동안…… 안 보이더니……', '……자네 낚시는…… 급하구먼……. ……젊어서 그래……. ……좋은 거야……', '……순이 얘기를…… 누구한테 한 건…… 자네가…… 처음이네……'], 'slowpoke'));
+      return;
+    }
     if (q === 1) { await c.say('slowpoke', '……낚싯대는…… 천천히…… 돌려주게……. ……한…… 40년 뒤에……'); return; }
     if (q === 0) {
       if (G.engine.has(s, 'f0')) {
@@ -5496,7 +5888,24 @@ input { font: inherit; }
     await c.narr(['무너진 탑에서 16년 동안 갇혀 있던 빛이 쏟아져 나와 마을 곳곳으로 흩어졌다.', '초록빛, 초록빛, 초록빛. 마을 여기저기서 작은 렙업의 빛이 터졌다.']);
     await c.say('bomi:happy', '언니 오빠아! 나 레벨이 올랐어! 레벨 10! 레벨 10이야아!');
     await c.say('ijang:surprise', '탑이… 탑이 무너졌어! 이건 큰일이… 아니, 경사가… 아니…!');
-    await c.say('dolsoe', ['…다들 다친 사람은 없지.', '{n}, 나는 기사단에 보고서를 써야 한다. 「번개」라고 쓸 거다. 그러니까 너는… 할머니한테 가 봐.']);
+    await c.say('dolsoe', ['…다들 다친 사람은 없지.', '{n}. 나는 오늘 밤 안에 기사단에 보고서를 올려야 한다.']);
+    await c.say('dolsoe', ['사실대로 쓰면 「흰빛」 두 글자가 천년성까지 간다. 기사단이 널 찾으러 오겠지.', '거짓으로 쓰면… 조사단이 오는 날 들통난다. 그럼 나는 기사가 아니게 되고, 콩순이는 가게 문을 닫아야 할 거다.']);
+    await c.say('dolsoe', '…네 이름이 걸린 일이다. 네가 정해라.');
+    const k = await c.ask('돌쇠의 보고서', ['사실대로 써 주세요.', '「번개」라고 써 주세요.', '아저씨가 정하세요.']);
+    if (k === 0) {
+      await c.say('dolsoe', ['…그래. 거짓말로 지킨 건 오래 못 간다.', '대신 한 줄 덧붙이마. 「그 아이가 마을을 구했다.」 이건 사실이니까.']);
+      c.decide('report', 'truth', '돌쇠의 보고서에 흰빛을 사실대로 적게 했다');
+      c.bond('dolsoe', 2);
+    } else if (k === 1) {
+      await c.emote('dolsoe', '…');
+      await c.say('dolsoe', ['…알았다. 번개다. 오늘 이 마을엔 번개가 쳤다.', '걱정 마라. 기사가 된 뒤로 처음 해 보는 기사다운 짓이니까.']);
+      c.decide('report', 'lie', '돌쇠에게 「번개」라고 거짓 보고를 부탁했다');
+      c.bond('dolsoe', 1);
+    } else {
+      await c.say('dolsoe', ['…어른한테 떠넘기는 거냐. 하긴, 원래 어른이 할 일이지.', '「원인 불명」이라고 쓰마. 거짓말은 아니다. 나는 정말로 모르니까. 흰빛이 뭔지.']);
+      c.decide('report', 'unknown', '돌쇠의 보고서를 돌쇠에게 맡겼다');
+    }
+    await c.say('dolsoe', '너는… 할머니한테 가 봐.');
     await c.say('dotori', '찍… {n}, 괜찮아? 탑이 왜 너를 먹으려고 했을까.');
     c.quest('m1', 5);
   }
@@ -5666,11 +6075,27 @@ input { font: inherit; }
     await c.say('treant', ['…흰빛… 흰빛의 아이로구나… 수다쟁이 버섯들이 말하더구나…', '16년 전에도… 흰빛이 이 숲을 지나갔지… 긴 머리의… 아가씨였어… 품에 아기를 안고…']);
     await c.emote('@', '!');
     await c.say('treant', ['그 아가씨는… 내 뿌리에 앉아… 아기에게 노래를 불러 주었지… 「오늘도 렙업, 내일도 렙업」…', '…나뭇가지가 필요하냐… 줄 수는 있다… 하지만 흰빛이 진짜인지… 확인해야겠구나…']);
-    const win = await c.battle('treant', { noFlee: true });
-    if (!win) return;
-    G.field.removeMon(mo);
-    c.set('beat_treant');
-    await c.say('treant', ['…진짜로구나… 따뜻한 흰빛이야… 그 아가씨와… 똑같아…', '가져가거라… 내 가장 단단한 가지를… 그리고 이것도…']);
+    // 서당에서 노래를 읽었다면 싸우지 않고 증명할 수 있다
+    const knows = !!s.books.b_song;
+    const k = knows ? await c.ask(null, ['[y]그 노래를 불러 드린다[/]', '힘으로 증명한다']) : 1;
+    if (k === 0) {
+      await c.narr(['서당 책에서 읽은 가사를 떠올렸다. 곡조는 모른다. 그런데 입을 여니 이상하게 곡조가 따라 나왔다.', '「한 번 누르면 새싹이 나고, 두 번 누르면 줄기가 크고…」']);
+      c.music('home');
+      await c.wait(0.6);
+      await c.say('treant', ['……', '…세 번째 줄을… 그 아가씨는 다르게 불렀지…', '「백 번 누르면 나눠 줄 수 있지.」…나무가 되는 게 아니라…']);
+      await c.say('dotori:surprise', '찍…? 나… 그 가사 알아. 어떻게 알지?');
+      c.decide('treant', 'song', '속삭임의 나무 정령에게 노래로 흰빛을 증명했다');
+      G.field.removeMon(mo);
+      c.set('beat_treant');
+      c.music('forest');
+      await c.say('treant', ['…싸울 필요 없구나… 노래가 기억하는 빛이니…', '가져가거라… 내 가장 단단한 가지를… 그리고 이것도…']);
+    } else {
+      const win = await c.battle('treant', { noFlee: true });
+      if (!win) return;
+      G.field.removeMon(mo);
+      c.set('beat_treant');
+      await c.say('treant', ['…진짜로구나… 따뜻한 흰빛이야… 그 아가씨와… 똑같아…', '가져가거라… 내 가장 단단한 가지를… 그리고 이것도…']);
+    }
     c.give('stick');
     await c.orb('o_r2');
     await c.say('treant', ['흰빛의 아이야… 하나만 기억하렴…', '[p]탑은 빛을 먹는단다[/]… 그런데 너의 빛은… 너무 맛있어 보이는구나…']);
@@ -5686,6 +6111,112 @@ input { font: inherit; }
   });
 
   G.world.nodes.push({ region: 'green', label: '그린', x: 30, y: 130, color: '#6ad86a', maps: ['green', 'home', 'green_field', 'green_forest', 'green_shop', 'green_rank', 'green_school', 'green_chief'] });
+
+  /* ───────── 그린의 결: 살펴볼 곳 · 소품 · 혼잣말 · 곁의 이야기 ───────── */
+  const towerDown = (s) => !!s.flags.green_tower_broken;
+  W.addObjs('green', [
+    W.look(3, 2, (s) => (s.flags.kairon_father
+      ? ['나무껍질에 새긴 글자. 「S · K  981」', 'S는 세린. K는… 이제는 안다. 둥근 S 옆에서 K는 자로 잰 듯 반듯하다. 새긴 사람의 성격이 그대로 남았다.']
+      : ['오두막 옆 늙은 참나무. 나무껍질에 누군가 칼끝으로 새긴 글자가 있다.', '「S · K  981」 S는 둥글고 삐뚤빼뚤하다. K는 자로 잰 듯 반듯하다. 두 사람이 한 글자씩 새긴 모양이다.']), { first: async (c) => { if (c.s.follower === 'dotori') await c.say('dotori', '…981년이면 네가 태어나기 2년 전이야. 할머니한테 물어볼까? …아니, 왠지 물어보면 안 될 것 같아.'); } }),
+    W.prop('well', 11, 5, '마을 우물. 두레박 줄이 반들반들하다. 이 마을 사람 모두가 이 물을 마시고 자랐다.'),
+    W.prop('bench', 22, 23),
+    W.prop('board', 22, 14, (s) => {
+      if (s.quests.m13 === 'done' || s.flags.ending) return ['마을 게시판.', '「천년제 기념 렙업 대회 — 1등 상품: 콩순네 옥수수빵 1년치. 심사: 봄이(레벨 23)」'];
+      if (s.flags.launched) return ['마을 게시판.', '「알록달록 곶에서 로켓이 떴다는 소문. 이장 말로는 「번개」라고 함.」', '누군가 밑에 적었다: 「이장님 번개 그만 좀.」'];
+      if (s.quests.m6 != null) return ['마을 게시판.', '「레드, 블루, 옐로에서도 탑이 무너졌다! 우리 마을 아이가 한 일이라는 소문이 있음. — 콩순」', '그 밑에 삐뚤삐뚤한 글씨: 「내 친구임. — 봄이」'];
+      if (s.flags.red_intro) return ['마을 게시판.', '「레드 마을 대장간 화로 아저씨가 방순 할머니 창을 벼렸다는 게 사실인가? 제보 바람. — 콩순」', '「징수 기사단 조사단 방문 예정. 주민들은 협조 바람.」 위에 누가 「번개」라고 낙서했다.'];
+      if (towerDown(s)) return ['마을 게시판.', '「징수탑 붕괴에 관하여: 원인 조사 중. — 이장」', '그 옆에 새 종이: 「봄이 레벨 10 달성!!! 축하해 주세요!!! — 봄이」'];
+      return ['마을 게시판.', '「경험세 체납자 명단」 이름이 빽빽하다. 누군가 명단 위에 옥수수빵 전단지를 붙여 가려 놨다.', '「초록 바구니 잡화점 — 옥수수빵 대륙 제일. 내가 정했음.」'];
+    }),
+    W.look(9, 10, (s) => (s.flags.bomi_lv10 ? '봄이의 허수아비. 가슴팍에 새 천이 덧대어져 있다. 삐뚤빼뚤한 바느질 옆에 글씨: 「1년 동안 고마웠어.」' : '봄이의 허수아비. 가슴팍만 반들반들하다. 누군가 1년 동안 매일 백 번씩 때린 자리다.')),
+    W.look(27, 6, '감자밭 울타리. 밑으로 두더지 굴이 이어진다. 굴마다 나무 팻말에 번호가 붙어 있다. 1,204번까지 있다.'),
+  ]);
+  W.addObjs('home', [W.look(3, 1, (s) => (towerDown(s) ? '창밖으로 광장이 보인다. 탑이 있던 자리로 하늘이 보인다. 16년 만에 처음 보는 하늘이라고 할머니가 말했다.' : '창밖으로 광장의 징수탑이 보인다. 보랏빛이 희미하게 깜빡인다. 누군가 렙업할 때마다.'))]);
+  W.addObjs('green_field', [W.prop('fire', 34, 24, '누군가 피워 둔 모닥불. 떠돌이 약장수가 밤마다 여기서 잔다고 한다.'), W.prop('bench', 22, 4)]);
+  W.addObjs('green_forest', [
+    W.prop('shrine', 23, 7, '아우룸의 쉼터 옆 돌 사당. 이끼 사이로 누군가 갈아 끼운 초가 타고 있다. 버섯들은 「우리가 켰다」고 우긴다.'),
+    W.prop('fire', 3, 21, '꺼진 모닥불 자리에 새 장작이 쌓여 있다. 봄이가 대왕 슬라임을 보러 몰래 왔다 간 흔적 같다.'),
+    ...[[14, 3], [22, 3]].map(([x, y]) => W.look(x, y, (s) => U.pick(s.flags.kairon_father ? ['버섯이 속삭인다. 「아빠래.」「아빠래.」「챔피언이 아빠래.」「쉿. 들린다.」'] : s.flags.m_purple_vision ? ['버섯이 속삭인다. 「엄마를 봤대.」「거울 속에서.」「울었대?」「안 울었대.」「거짓말.」'] : towerDown(s) ? ['버섯이 속삭인다. 「탑이 무너졌대.」「흰빛이 부쉈대.」「16년 전 그 아가씨처럼.」'] : ['버섯이 속삭인다. 「흰빛이다.」「흰빛이 왔다.」「16년 만이다.」', '버섯이 속삭인다. 「다람쥐다.」「그 다람쥐다.」「아직도 9야?」']))),
+  ]);
+  W.barks('green', {
+    ijang: (s) => (towerDown(s) ? ['원래 반대였다니까…', '보고서를… 아니…'] : ['찬성… 아니 반대…', '흠흠.', '회의를 열까… 말까…']),
+    bomi: (s) => (s.flags.bomi_lv10 ? ['레벨 10!', '얍! 얍! 얍!', '전설까지 999,990!'] : ['아흔여덟… 아흔아홉…', '얍!']),
+    chul: ['흥.', '손가락 운동 중…', '45번은 기본이지.'],
+    dolsoe: (s) => (towerDown(s) ? ['보고서…', '하아…'] : ['쿨…', '하아암…', '경험세는… 탑에…']),
+    park: ['두더지 놈들…', '1,204패…', '감자야, 버텨라.'],
+    slowpoke: ['……', '……쉿……'],
+    villager: ['오늘도 렙업!', '밭 갈러 가야지.'],
+    oldwoman: ['방순이가 말이야…', '어머, 내 정신 좀.'],
+    kid: ['하얀 렙업 봤어?', '떡볶이 먹고 싶다.'],
+  });
+  W.barks('green_field', { merchant: ['약 사려~', '발품 값은 무료~'] });
+  // 돌쇠의 보고서가 남긴 것: 아들과 아내
+  W.wrapNpc('green', 'chul', (s) => towerDown(s) && s.flags.d_report && !s.flags.chul_dad && (s.flags.d_report !== 'lie' || s.flags.red_intro), async (c) => {
+    c.set('chul_dad');
+    const d = c.s.flags.d_report;
+    if (d === 'truth') {
+      await c.say('chul', ['야. 우리 아빠가 보고서에 너 얘기를 사실대로 썼대.', '「그 아이가 마을을 구했다」까지. …기사가 그런 거 쓰면 안 된대.']);
+      await c.say('chul:smug', '흥. 멋있는 척하기는. …나도 커서 그런 보고서 쓸 거야.');
+    } else if (d === 'lie') {
+      await c.say('chul', ['…아빠가 레드 광산으로 갔어. 문지기래. 보고서에 번개라고 썼다가 들켰대.', '네 탓 아니래. 아빠가 그랬어. 「내가 고른 거다.」']);
+      await c.say('chul', '…흥. 그러니까 너도 미안한 표정 하지 마. 우리 아빠가 처음으로 멋있었단 말이야.');
+      c.bond('chul', 1);
+    } else {
+      await c.say('chul', ['조사단 아저씨들이 우리 집에 와서 아빠한테 계속 물어봐. 「원인 불명」이 뭐냐고.', '아빠는 계속 「모릅니다」래. …아빠가 모르는 게 이렇게 많은 줄 몰랐어.']);
+    }
+  });
+  W.wrapNpc('green_shop', 'kongsun', (s) => s.flags.d_report === 'lie' && s.flags.red_intro && !s.flags.kongsun_letter, async (c, n, orig) => {
+    c.set('kongsun_letter');
+    await c.say('kongsun', ['{n}… 들었지? 우리 양반, 광산 문지기로 쫓겨났어.', '어머, 표정 봐라. 그러지 마.']);
+    await c.say('kongsun:sad', ['편지가 왔어. 그 양반 입으로 편지를 다 쓰다니. 「처음으로 내가 자랑스럽다」래.', '16년 동안 탑 옆에서 졸기만 하던 사람이. …그러니까 너는 미안해하지 마. 고마워해.']);
+    c.bond('kongsun', 1);
+    await c.say('kongsun', '광산 가거든 도시락 좀 전해 줘. 이번엔 쪽지를 두 장 넣었어.');
+    c.give('lunch2');
+    await orig(c, n);
+  });
+  W.keyItem('lunch2', '콩순의 두 번째 도시락', '레드 광산 문지기 돌쇠에게. 쪽지가 두 장 들어 있다.');
+
+  /* 도토리와의 이야기 (1장) */
+  G.story.talks.push(
+    { id: 'g_tower', map: 'green', when: (s) => s.quests.m0 === 'done' && !towerDown(s), run: async (c) => {
+      await c.say('dotori', ['저 탑 말이야. 볼 때마다 속이 울렁거려.', '저게 선 날 기억나. 너는 할머니 품에서 울고 있었고, 나는… 그날 이후로 레벨이 안 올라.']);
+      const k = await c.ask(null, ['탑 때문일 거야.', '네가 게을러서 아니야?', '…그날 무슨 일이 있었는데?']);
+      if (k === 0) await c.say('dotori', '…그럴까? 다들 탑 때문이래. 근데 이상하지. 마을 애들은 1년 멈췄는데, 나는 16년이야.');
+      else if (k === 1) { await c.say('dotori:angry', '찍! 나 매일 도토리 백 개씩 굴렸거든! …아흔 개쯤.'); await c.say('dotori', '…근데 차라리 그랬으면 좋겠다. 게으른 건 고칠 수 있잖아.'); }
+      else { await c.say('dotori', ['기억이 이상해. 누가 나를 쓰다듬었던 것 같아. 손이 따뜻했어. 하얗게.', '그다음부터는… 시간이 나를 그냥 지나가.']); c.bond('dotori', 1); }
+    } },
+    { id: 'g_field', map: 'green_field', when: (s) => s.quests.m0 === 'done', run: async (c) => {
+      await c.say('dotori', ['들판이 이렇게 넓은 줄 몰랐어. 나 16년 동안 울타리 밑이랑 오두막만 오갔거든.', '넓은 데 오니까… 내가 되게 작다.']);
+      const k = await c.ask(null, ['나도 그래.', '넌 원래 작잖아.']);
+      if (k === 0) { await c.say('dotori:happy', '…그치? 둘이 작으면 좀 덜 작은 거야. 찍.'); c.bond('dotori', 1); }
+      else await c.say('dotori:angry', '찍! 말을 해도! …맞는 말이라 더 화나.');
+    } },
+    { id: 'g_forest', map: 'green_forest', run: async (c) => {
+      await c.say('dotori:worry', ['{n}. 나 여기 와 본 것 같아.', '누가 나를 품에 안고 걸었어. 아니, 내가 누굴 안았나…? 노래가 들렸어.']);
+      await c.say('dotori', '…꿈인가 봐. 다람쥐도 꿈꾸거든. 찍.');
+    } },
+    { id: 'g_after', when: towerDown, pri: 2, run: async (c) => {
+      await c.say('dotori', ['탑이 너를 빨아들일 때… 나 아무것도 못 했어.', '소리만 질렀어. 레벨 9짜리가 할 수 있는 게 그거밖에 없더라.']);
+      const k = await c.ask(null, ['네 목소리 들렸어. 그래서 버텼어.', '다음엔 네가 막아 줘.', '…나도 무서웠어.']);
+      if (k === 0) { await c.say('dotori:sad', '…진짜? 거짓말이어도 좋아. 찍.'); c.bond('dotori', 1); }
+      else if (k === 1) { await c.say('dotori', '…응. 다음엔 막을 거야. 레벨이 안 올라도. 몸으로라도.'); c.set('dotori_vow'); c.bond('dotori', 1); }
+      else { await c.say('dotori', ['…그랬구나. 너도 무서웠구나.', '다행이다. 나만 무서운 줄 알았어.']); c.bond('dotori', 2); }
+    } },
+    { id: 'g_bomi', when: (s) => !!s.flags.bomi_lv10, run: async (c) => {
+      await c.say('dotori', ['봄이가 레벨 10 됐대. 1년 만에.', '나는 16년째 9인데.']);
+      await c.say('dotori', '…축하는 해야겠지. 봄이한테 도토리 하나 줘야겠다. 제일 큰 걸로. 찍.');
+    } },
+  );
+  /* 쉬는 밤 (1장) */
+  G.story.nights.push(
+    { id: 'g_night', when: (s) => towerDown(s) && !s.flags.red_intro, intro: '밤이 깊었다. 풀벌레 소리 사이로 도토리가 뒤척이는 소리가 들린다.', run: async (c) => {
+      await c.say('dotori', ['…안 자? 나도 잠이 안 와.', '할머니 혼자 두고 가도 될까. 할머니 요즘 계단 오를 때 숨소리가 커.']);
+      const k = await c.ask(null, ['빨리 다녀오자.', '할머니는 초록 창이잖아.', '도토리 넌 남을래?']);
+      if (k === 0) await c.say('dotori', '…응. 빨리. 레벨 막 올려서 빨리.');
+      else if (k === 1) await c.say('dotori', '초록 창…? 그게 뭔데? …할머니 옛날 얘기는 나도 몰라. 16년을 같이 살았는데.');
+      else { await c.say('dotori:angry', '찍! 누가 남는대! 할머니가 너 사고 안 치게 보라고 했거든!'); await c.say('dotori', '…그리고 너 혼자 가면 내가 잠을 못 자. 찍.'); c.bond('dotori', 1); }
+    } },
+  );
   void U;
 })();
 
@@ -5848,9 +6379,22 @@ input { font: inherit; }
       await c.say(null, '화로 아저씨가 이를 갈며 품에서 수정 증서를 꺼냈다. 붉은 머리 소년이 숫자를 세다가, 문득 고개를 들어 이쪽을 봤다.');
       c.npc('rud_scene').face('U');
     }
-    await c.say('rud', ['…누구야, 넌. 레드 사람 아니지. 초록 옷… 그린 마을?', '그린 마을 징수탑이 무너졌다는 보고가 올라왔어. 원인은 「번개」라더군.', '맑은 날에.']);
-    await c.say('dotori:surprise', '찍! 우, 우리는 모르는 일이야!');
-    await c.say('rud', ['……', '[r]숫자는 거짓말 안 해.[/] 네가 거짓말하는 거라면, 곧 알게 되겠지.']);
+    await c.say('rud', '…누구야, 넌. 레드 사람 아니지. 초록 옷… 그린 마을?');
+    const rep = c.s.flags.d_report;
+    if (rep === 'truth') {
+      await c.say('rud', ['그린 마을 징수탑 보고서, 나도 봤어. 원인 「흰빛」. 담당 기사가 끝에 한 줄을 덧붙였더군.', '「그 아이가 마을을 구했다.」 …기사는 보고서에 감상을 적으면 안 돼. 규칙서 3조.']);
+      await c.say('rud', ['흰빛. 초록 옷. 열여섯쯤.', '…너구나.']);
+      await c.say('dotori:worry', '찍… 돌쇠 아저씨, 진짜로 다 썼구나.');
+      await c.say('rud', ['안심해. 견습한테는 체포 권한이 없어.', '[r]숫자는 거짓말 안 해.[/] 네가 탑을 부순 만큼, 누군가의 방패가 얇아졌어. 그건 알고 다녀.']);
+    } else if (rep === 'unknown') {
+      await c.say('rud', ['그린 마을 징수탑이 무너졌다는 보고가 올라왔어. 원인 「불명」.', '기사단에서 불명은 조사 대상이란 뜻이야. 조사단이 벌써 그린으로 떠났어.']);
+      await c.say('dotori:surprise', '찍! 우, 우리는 모르는 일이야!');
+      await c.say('rud', ['……', '[r]숫자는 거짓말 안 해.[/] 네가 뭘 숨기든, 숫자는 결국 맞춰지게 돼 있어.']);
+    } else {
+      await c.say('rud', ['그린 마을 징수탑이 무너졌다는 보고가 올라왔어. 원인은 「번개」라더군.', '맑은 날에.']);
+      await c.say('dotori:surprise', '찍! 우, 우리는 모르는 일이야!');
+      await c.say('rud', ['……', '[r]숫자는 거짓말 안 해.[/] 네가 거짓말하는 거라면, 곧 알게 되겠지.', '…그 보고서를 쓴 기사도.']);
+    }
     await c.npc('rud_scene').walk('RRRUUUU');
     c.despawn('rud_scene');
     await c.say('hwaro', ['…휴. 고맙다, 꼬마. 저 녀석 이름은 루드야. 징수 기사단 견습이지.', '원래 저런 애가 아니었어. 우리 대장간에서 풀무질하던 착한 녀석이었는데… 동생들이 빛바램병에 걸린 뒤로 기사단에 들어갔지.']);
@@ -5868,7 +6412,8 @@ input { font: inherit; }
     await c.emote('rud', '!');
     await c.say('rud', ['찾았다. 그린 마을 징수탑 파괴 용의자.', '기사단 본부 명령이다. 너를 천년성으로 연행한다.']);
     await c.say('dotori:angry', '찍! 우리는 탑을 부수지 않았어! 탑이 혼자 배탈 난 거야!');
-    await c.say('rud', ['탑이 흰빛을 먹으려다 터졌다는 보고가 있어. 그린 마을 담당 기사는 「번개」라고 썼지만.', '…숫자는 거짓말 안 해. 그 탑이 마지막으로 기록한 빛의 양은, 평민 천 명분이었어.']);
+    const rep = c.s.flags.d_report;
+    await c.say('rud', [rep === 'truth' ? '담당 기사가 사실대로 썼지. 「흰빛」. 덕분에 본부가 움직였어.' : rep === 'lie' ? '그린 마을 담당 기사는 「번개」라고 썼지. 그 기사는 지금 광산 문을 지키고 있어.' : '「원인 불명」. 본부는 불명을 싫어해. 그래서 내가 왔어.', '…숫자는 거짓말 안 해. 그 탑이 마지막으로 기록한 빛의 양은, 평민 천 명분이었어.']);
     await c.say('rud', '저항하면 힘으로 데려간다.');
     const win = await c.battle('rud1', { noFlee: true, music: 'boss' });
     if (!win) { c.unset('red_rud_fight'); c.unset('ev_rud_fight'); c.despawn('rud'); c.despawn('knight_a'); c.despawn('knight_b'); return; }
@@ -5883,16 +6428,44 @@ input { font: inherit; }
     if (k === 0 && c.pay(1000)) {
       c.set('helped_rud');
       await c.say('rud', ['……뭐야, 이거.', '…빚이야. 숫자로 적어 둘 거야. 반드시 갚는다.']);
+      c.decide('rud', 'gold', '쫓겨난 루드에게 약값을 건넸다');
+      c.bond('rud', 2);
     } else if (k === 0) {
       await c.say('@', '…골드가 모자라.');
       await c.say('rud', '…됐어. 동정은 필요 없어.');
+      c.decide('rud', 'none', '루드에게 아무것도 해 주지 못했다');
     } else if (k === 1) {
       c.set('helped_rud_badge');
       c.give('badge_rud');
       await c.say(null, '휘장 뒷면에 작은 글씨가 새겨져 있다. 「루카, 루미」.');
       await c.say('rud', ['…버려. 이제 쓸모없는 거야.', '…아니. 네가 가지고 있어. 내가 다시 찾으러 갈 때까지.']);
+      c.decide('rud', 'badge', '루드의 휘장을 맡아 두었다');
+      c.bond('rud', 1);
     } else {
       await c.say('rud', '……');
+      c.decide('rud', 'leave', '무릎 꿇은 루드를 두고 떠났다');
+    }
+    // 기사들이 도망치며 떨어뜨린 장부: 레드 마을 모든 집의 빚
+    await c.say(null, '기사들이 서 있던 자리에 두꺼운 가죽 장부가 떨어져 있다. 표지에 「레드 징수 구역 미납 장부」.');
+    await c.say('rud', ['…그건 레드 마을 미납 장부야. 내가 한 줄 한 줄 센 숫자지.', '사본은 없어. 초소에 가져가면 기사들이 너한테 상금을 줄 거야. 그게 규칙이니까.']);
+    await c.say('rud', '…우리 집 이름도 거기 있어. 약값 빌린 거.');
+    const L = await c.ask('미납 장부를 어떻게 할까', ['불태운다', '루드에게 맡긴다', '초소에 돌려준다']);
+    if (L === 0) {
+      c.sfx('explode');
+      await c.narr('장부 모서리에 용암 도랑의 불씨를 댔다. 종이가 한 장씩 말려 올라가며 타들어 갔다. 숫자들이 재가 되어 날렸다.');
+      await c.say('rud', ['……숫자를 태운다고 빚이 사라지는 건 아니야.', '…그래도 오늘 밤, 레드 사람들은 오랜만에 계산 안 하고 자겠지.']);
+      await c.say('rud', '기사단은 가만 안 있을 거야. 장부를 태운 녀석을 찾겠지. …그게 너라는 건 나만 알아. 숫자로 적어 두지는 않을게.');
+      c.decide('ledger', 'burn', '레드 마을 미납 장부를 불태웠다');
+    } else if (L === 1) {
+      await c.say('rud', ['…나한테? 나는 이제 기사도 아닌데.', '……']);
+      await c.say('rud', ['알았어. 내가 다시 세 볼게. 이번엔 규칙서 말고, 한 집씩 찾아가서.', '12조, 13조 같은 거 빼고 세면… 숫자가 많이 달라질 거야.']);
+      c.decide('ledger', 'rud', '미납 장부를 루드에게 맡겼다');
+      c.bond('rud', 1);
+    } else {
+      await c.say('rud', ['…그래. 그게 맞아. 숫자는 제자리에 있어야 해.', '…네가 그렇게 하는 게, 이상하게 좀 덜 억울하네.']);
+      c.decide('ledger', 'post', '미납 장부를 징수 기사단 초소에 돌려주기로 했다');
+      c.give('ledger_red');
+      c.bond('rud', 1);
     }
     await c.npc('rud').walk('RRRRRRRRDDDDD');
     c.despawn('rud');
@@ -6221,6 +6794,150 @@ input { font: inherit; }
     if (c.s.quests.q_mine === 1) c.quest('q_mine', 2);
     await c.say('dotori', '광부 대장 아저씨한테 알려 주자! 떡볶이집에 있을 거야!');
   }
+
+  /* ───────── 레드의 결: 장부 · 광산 문지기 · 관측표 · 살펴볼 곳 · 혼잣말 · 곁의 이야기 ───────── */
+  W.keyItem('ledger_red', '레드 미납 장부', '레드 마을 모든 집의 빚이 적힌 가죽 장부. 징수 기사단 초소에 돌려주기로 했다.');
+  const ledger = (s) => s.flags.d_ledger;
+  W.wrapNpc('red_post', 'knight', (s) => E.has(s, 'ledger_red'), async (c) => {
+    c.take('ledger_red');
+    await c.say('knight', ['오! 장부를! 루드 녀석이 잃어버린 걸 네가 찾아 줬구나!', '규칙서 40조. 분실 장부를 반환한 자에게 상금을 준다. 자.']);
+    c.gold(5000);
+    await c.say('knight', ['…솔직히 말하면, 장부가 없어진 줄 알고 좀 좋았어. 석 달은 계량 안 해도 되니까.', '그래도 규칙은 규칙이지. 너도 그렇게 생각했으니까 가져왔겠지.']);
+  });
+  W.wrapNpc('red_post', 'knight', (s) => ledger(s) === 'burn' && !s.flags.post_burn, async (c) => {
+    c.set('post_burn');
+    await c.say('knight', ['장부가 탔대. 누가 태웠는지는 몰라. 본부는 레드 마을 전체를 다시 계량하라더군.', '석 달은 걸릴 거야. …석 달 동안 세금을 못 걷는다는 뜻이지.']);
+    await c.say('knight', '…나는 아무것도 모른다. 그리고 너도 아무것도 모르는 게 좋을 거야.');
+  });
+  W.wrapNpc('red_forge', 'hwaro', (s) => !!ledger(s) && !s.flags.hwaro_ledger, async (c, n, orig) => {
+    c.set('hwaro_ledger');
+    const d = ledger(c.s);
+    if (d === 'burn') {
+      await c.say('hwaro:happy', ['장부가 탔다며! 하하! 누가 했는지 모르지만 그 녀석한테 칼 한 자루 공짜로 벼려 주고 싶구먼!', '…어이, 왜 눈을 피하냐.']);
+      c.bond('hwaro', 2);
+    } else if (d === 'rud') {
+      await c.say('hwaro', ['루드 녀석이 장부를 들고 집집마다 돌아다닌다. 12조, 13조로 붙은 숫자를 하나씩 지우면서.', '우리 대장간 「장사 경험」 3,120도 지웠다. 「그건 원래 없는 숫자였어요」래. …그 녀석이 풀무질하던 얼굴로 돌아왔어.']);
+      c.bond('hwaro', 1);
+    } else {
+      await c.say('hwaro', ['장부를 초소에 돌려줬다며.', '…규칙은 규칙이지. 네가 틀린 건 아니다. 다만 이 마을 사람들은 오늘 밤 잠을 좀 설치겠지.']);
+      c.bond('hwaro', -1);
+    }
+    await orig(c, n);
+  });
+
+  // 거짓 보고의 값: 광산 문지기가 된 돌쇠
+  async function dolsoeMine(c) {
+    const s = c.s;
+    if (!s.flags.dolsoe_mine) {
+      c.set('dolsoe_mine');
+      await c.say('dolsoe', ['…왔냐. 그래, 들통났다.', '조사단장이 맑은 날의 번개를 세 번 물어보더라. 세 번째에 말이 꼬였어.']);
+      await c.say('dolsoe', ['기사는 계속하게 해 줬다. 대신 광산 문지기로.', '여기는 빛이 안 들어서 경험세도 없는 곳이다. 세금 걷던 놈이 세금 없는 데로 쫓겨난 거지. 웃기지.']);
+      const k = await c.ask(null, ['죄송해요.', '고마워요.']);
+      if (k === 0) { await c.say('dolsoe', ['사과하지 마라. 내가 고른 거다.', '네가 사과하면 내가 고른 게 아니게 되잖아.']); c.bond('dolsoe', 1); }
+      else { await c.say('dolsoe', ['……', '…그래. 그 말이 듣고 싶었나 보다. 이상하게 속이 풀리네.']); c.bond('dolsoe', 2); }
+    }
+    if (E.has(s, 'lunch2')) {
+      c.take('lunch2');
+      await c.say('dolsoe', ['…또 도시락이냐. 쪽지가 두 장이네.', '「밥은 먹고 다니소.」 …그리고 「자랑스럽소.」']);
+      await c.emote('dolsoe', '…');
+      await c.say('dolsoe', '……광산은 먼지가 많아서 눈이 맵다. 그런 거다.');
+      c.bond('dolsoe', 1);
+    }
+    if (!s.flags.mine_open && !s.flags.dolsoe_code) {
+      await c.say('dolsoe', ['광산 문 비밀번호 때문에 왔지? 곡괭이 영감은 잊어버렸다고 하고.', '문지기는 비밀번호를 안다. 규칙상 말해 주면 안 되지만… 나는 이미 규칙을 한 번 어긴 몸이다.']);
+      if (await c.yes('돌쇠에게 비밀번호를 물어볼까?', null, '물어본다', '스스로 찾겠다')) {
+        c.set('dolsoe_code');
+        await c.say('dolsoe', ['[y]999[/]. 별 번호 387에 은빛 왕국이 무너진 해 612를 더한 거다.', '안에 두더지왕이 산다. 그건 문지기가 대신 못 해 준다. 레벨 250은 넘기고 가라.']);
+      } else await c.say('dolsoe', '…그래. 스스로 찾은 건 안 잊어버리지. 관측소 영감 책장을 뒤져 봐라.');
+      return;
+    }
+    await c.run(W.chatter('dolsoe_mine', [
+      '광산 안에서 곡괭이 소리가 나기 시작했다. 16년 만이란다. 문지기는 그 소리를 제일 먼저 듣는 사람이지.',
+      '콩순이한테 편지를 썼다. 기사가 된 뒤로 처음이다. 할 말이 이렇게 많은 줄 몰랐다.',
+      '철이 녀석이 편지에 그림을 그려 보냈다. 광산 앞에 선 기사. …투구가 너무 크게 그려졌어. 사실이지만.',
+    ], 'dolsoe'));
+  }
+  W.addNpcs('red', [{ id: 'dolsoe', x: 7, y: 25, dir: 'down', cond: (s) => s.flags.d_report === 'lie' && !!s.flags.red_intro, mark: (s) => (E.has(s, 'lunch2') || !s.flags.dolsoe_mine ? '!' : null), talk: dolsoeMine }]);
+
+  // 진실의 조각 · 흑점의 걸음 — 박사의 책상 서랍
+  W.addObjs('observatory', [W.look(10, 2, '잠긴 서랍이다. 박사의 허락 없이는 열 수 없을 것 같다.', { talk: async (c) => {
+    const s = c.s;
+    if (!s.flags.m_red_galaxy) { await c.say(null, '잠긴 서랍이다. 서랍 틈으로 종이 모서리가 삐져나와 있다.'); return; }
+    if (s.truth && s.truth.t_chart) { await c.say(null, '관측표 뭉치. 983년부터 한 해도 빠짐없이. 여백의 「우연이어야 한다」가 여러 번 덧그려져 있다.'); return; }
+    await c.say(null, ['서랍 손잡이를 당기자 끼익 소리가 났다. 잠겨 있지 않았다. 잠그는 걸 잊은 모양이다.', '안에 관측표 뭉치가 들어 있다. 칸마다 날짜와 숫자. 그리고 대륙 지도 위에 찍힌 점들.']);
+    await c.narr(['983년 여름 — 그린 마을 징수탑. 흑점 없음.', '984년 — 레드, 블루. 흑점 없음.', '…', '991년 — 여덟 번째 탑, 블랙. 망원경에 처음으로 희미한 점.', '999년 — 탑 열한 개. 점이 해마다 빨라진다.']);
+    await c.say(null, '맨 아래 여백에 떨리는 글씨: 「우연이어야 한다.」 같은 문장이 세 번 덧그려져 있다.');
+    c.truth('t_chart');
+    await c.say('galaxy', ['……그걸 봤구나.', '탑이 하나 설 때마다 그 녀석 걸음이 빨라졌다. 숫자는 그렇게 말한다.']);
+    const k = await c.ask(null, ['탑이 흑점을 부르는 거예요?', '왜 아무한테도 말 안 했어요?']);
+    if (k === 0) await c.say('galaxy', ['모른다. 나는 숫자만 안다.', '숫자는 두 번까지는 우연일 수 있다. 여덟 번은… 모르겠다. 그래서 「우연이어야 한다」고 적었다. 바라는 걸 적은 거지.']);
+    else await c.say('galaxy', ['누구한테? 카이론한테? …편지를 썼다. 993년에. 답장은 없었다.', '방순이한테는 말 못 했다. 그 녀석은 탑이 선 날부터 16년을 버텼는데, 그게 거꾸로였다고 말할 수가 없더라.']);
+  } })]);
+
+  W.addObjs('red', [
+    W.prop('board', 12, 7, (s) => {
+      const r = s.flags.d_report;
+      const wanted = r === 'truth' ? '「수배 — 흰빛의 아이. 초록 옷, 열여섯쯤. 발견 즉시 초소로.」 그림 속 아이 옆에 곰만 한 다람쥐가 그려져 있다.' : r === 'lie' ? '「그린 마을 「맑은 날 번개」 목격자 찾음. — 징수 기사단 조사단」' : '「그린 마을 징수탑 붕괴 — 원인 불명. 제보 바람.」';
+      const extra = ledger(s) === 'burn' ? '「미납 장부 소실. 레드 전 구역 재계량 실시.」 누군가 그 위에 숯으로 불꽃을 그려 놓았다.' : s.flags.m_red_rud ? '「견습 기사 루드 — 임무 실패로 해임.」' : '「제31조: 흰빛을 보거나 들은 자는 즉시 보고할 것.」';
+      return ['징수 기사단 게시판.', wanted, extra];
+    }),
+    W.prop('well', 7, 12, '대장장이들이 달군 쇠를 식히는 물통이다. 「마셔도 됨」이라고 적혀 있다. 쇠 맛이 난다.'),
+    W.prop('bench', 30, 16),
+    W.prop('fire', 6, 10, '대장간 밖 풀무 화덕. 망치질 쉬는 사람들이 여기서 손을 녹인다.'),
+    W.look(12, 19, '용암 도랑. 열기가 얼굴을 때린다. 반쯤 녹은 망치 하나가 도랑 가장자리에 걸려 있다. 탑이 선 해에 누가 던졌다고 한다.'),
+  ]);
+  W.addObjs('red_mountain', [W.prop('bench', 16, 6)]);
+  W.addObjs('red_rud', [W.look(4, 1, (s) => (s.quests.q_herb === 'done' ? '벽에 루미의 그림이 붙어 있다. 회색 대장간, 회색 형. 하늘에 동그라미 두 개. 형의 머리만 빨간 색연필로 칠해져 있다.' : '벽에 아이 그림이 몇 장 붙어 있다. 전부 회색이다. 색연필이 없는 게 아니라 색이 안 보이는 것이다.'))]);
+  W.barks('red', {
+    knight: ['세금은 자동이다.', '…번개라니.'],
+    smith: ['렙업! 렙업!', '세 할은 탑이…'],
+    villager2: ['떡볶이 먹었어?', '에취, 재가…'],
+    kid: ['용암 조심!', '두더지왕 봤어?'],
+    rud: ['…3,120.', '숫자는 거짓말 안 해.'],
+  });
+  W.barks('red_path', {});
+
+  /* 도토리와의 이야기 (2장) */
+  G.story.talks.push(
+    { id: 'r_path', map: 'red_path', run: async (c) => {
+      await c.say('dotori', ['…뒤돌아보면 그린 마을이 안 보여.', '안 돌아볼래. 돌아보면 돌아가고 싶어질 것 같아.']);
+      const k = await c.ask(null, ['나도 안 돌아볼게.', '한 번만 돌아보자.']);
+      if (k === 0) await c.say('dotori', '…응. 앞만 보자. 찍.');
+      else { await c.narr('둘이 동시에 뒤를 돌아보았다. 산등성이 너머로 초록빛이 아주 조금 보였다.'); await c.say('dotori:happy', '…보였다. 됐다. 이제 진짜 안 돌아볼래.'); c.bond('dotori', 1); }
+    } },
+    { id: 'r_rud', when: (s) => !!s.flags.m_red_rud, run: async (c) => {
+      await c.say('dotori', ['루드 형 말이야. 처음엔 나빴는데, 이제 잘 모르겠어.', '「숫자는 거짓말 안 해」. 그 말 할 때마다 표정이 아파 보였어.']);
+      const k = await c.ask(null, ['숫자 뒤에 숨은 거야.', '그래도 나쁜 짓은 나쁜 짓이야.', '우리도 뭔가 숨고 있을지 몰라.']);
+      if (k === 0) await c.say('dotori', '…숨는 데가 숫자면 편하겠다. 숫자는 틀려도 자기 탓이 아니잖아.');
+      else if (k === 1) await c.say('dotori', ['…응. 맞아. 화로 아저씨는 세금 때문에 망치를 네 할 더 세게 쳐야 했어.', '그래도… 나빠지는 이유가 있는 사람은, 돌아올 이유도 있을 거야.']);
+      else { await c.say('dotori:worry', ['……', '나는 레벨 얘기만 나오면 딴소리해. 숨는 거 맞아. 찍.']); c.bond('dotori', 1); }
+    } },
+    { id: 'r_galaxy', when: (s) => !!s.flags.m_red_galaxy, pri: 2, run: async (c) => {
+      await c.say('dotori', ['세린. 너네 엄마 이름.', '이상해. 그 이름 들으니까 가슴이 콕콕 아파. 내가 왜 아프지? 나는 다람쥐인데.']);
+      const k = await c.ask(null, ['너도 엄마를 알았던 거 아니야?', '다람쥐도 아플 수 있지.']);
+      if (k === 0) await c.say('dotori', ['……모르겠어. 16년 전 일은 안개 같아.', '근데 안개 속에서 누가 계속 웃어. 웃음이 헤픈 사람이야.']);
+      else await c.say('dotori', '…그렇지? 다람쥐도 아플 수 있지. 찍.');
+      if (c.s.flags.heard_serin) await c.say('dotori', '…할머니가 그랬잖아. 웃음이 헤픈 아였다고. 내 안개 속 그 사람이랑 똑같아.');
+    } },
+    { id: 'r_twins', when: (s) => s.quests.q_herb === 'done', run: async (c) => {
+      await c.say('dotori', ['루미 눈에는 내가 회색으로 보이겠지. 나 원래 갈색인데.', '…빛이 빠지면 색이 빠진대. 레벨이 안 오르는 거랑 비슷한 걸까?']);
+      await c.say('dotori', '나는 16년째 같은 색이야. 빠지지도 않고, 짙어지지도 않고. 그게 다행인지 모르겠어.');
+    } },
+    { id: 'r_mine', map: 'mine1', run: async (c) => {
+      await c.say('dotori:worry', ['캄캄하다. 할머니 장롱 생각나. 나 어릴 때 거기 숨어서 너 우는 소리 들었어.', '…어릴 때? 나는 16년 동안 이 모습이었는데. 내 어릴 때는 언제였지?']);
+    } },
+  );
+  /* 쉬는 밤 (2장) */
+  G.story.nights.push(
+    { id: 'r_father', when: (s) => !!s.flags.m_red_rud && s.quests.m3 == null, intro: '떡볶이 냄새가 밴 이불. 아래층에서 할매가 솥을 긁는 소리가 들린다.', run: async (c) => {
+      await c.say('dotori', ['…{n}. 루드 형은 형이 동생들 아빠 노릇 하잖아.', '너는… 아빠 얘기 한 번도 안 물어봤지. 할머니한테.']);
+      const k = await c.ask(null, ['궁금하지 않아.', '궁금해. 무서워서 안 물어봤어.', '할머니가 안 하는 데는 이유가 있겠지.']);
+      c.set('asked_father_' + ['no', 'afraid', 'trust'][k]);
+      if (k === 0) await c.say('dotori', ['…거짓말. 너 거짓말할 때 코 찡긋해.', '…그래도 알았어. 안 궁금한 걸로 할게.']);
+      else if (k === 1) { await c.say('dotori', ['…나도 무서워. 알게 되면 뭔가가 바뀔 것 같아서.', '같이 무서워하자. 그럼 반만 무섭잖아.']); c.bond('dotori', 1); }
+      else await c.say('dotori', '…할머니가 그 얘기 할 때마다 부엌에 가더라. 된장 항아리 뚜껑을 한참 만지작거리다가 와.');
+    } },
+  );
 
   G.world.nodes.push({ region: 'red', label: '레드', x: 56, y: 150, color: '#ff6a4a', maps: ['red', 'red_path', 'red_mountain', 'observatory', 'red_teahouse', 'red_forge', 'red_rank', 'red_ddeok', 'red_post', 'red_rud'] });
   G.world.nodes.push({ region: 'red', label: '광산', x: 30, y: 162, color: '#ffd84a', maps: ['mine1', 'mine2'] });
@@ -6586,6 +7303,22 @@ input { font: inherit; }
       c.quest('q_overdue', 0);
       return;
     }
+    // 연체된 책을 찾아 준 뒤에만: 관장님도 모르는 책장
+    if (s.quests.q_overdue === 'done' && !s.flags.haemi_secret) {
+      c.set('haemi_secret');
+      await c.say('haemi', ['저, 저기요. 비밀 하나 말해도 돼요? 관장님도 몰라요.', '잠긴 서고 오른쪽 책장 맨 아래 칸이요. 책등이 없는 책이 한 권 꽂혀 있어요. 제목도, 저자도 없어요.']);
+      await c.say('haemi', ['여섯 살 때 서고에 몰래 들어갔다가 봤어요. 읽다가… 무서워서 도로 꽂았어요.', '지금은 안 무서울 것 같아요. 그, 그래도 혼자 읽긴 싫어서요. 당신이 읽고 저한테 얘기해 주세요.']);
+      c.bond('haemi', 1);
+      return;
+    }
+    if (s.truth && s.truth.t_colors && s.flags.haemi_secret && !s.flags.haemi_told) {
+      c.set('haemi_told');
+      await c.say('haemi', ['읽었어요? …어, 어땠어요?', '……']);
+      await c.say('haemi', ['그랬구나. 다섯 빛깔은 원래 하나였고, 누가 일부러 쪼갠 거였구나.', '저는 여섯 살 때 그 부분에서 덮었어요. 「모이면 온다」는 줄에서요. 그때는 귀신 얘기인 줄 알았거든요.']);
+      await c.say('haemi:happy', '…고, 고마워요. 이제 그 책은 무섭지 않아요. 슬픈 책이에요.');
+      c.bond('haemi', 1);
+      return;
+    }
     await c.run(W.chatter('haemi', [
       '채, 책은 좋아요. 더듬어도 책은 기다려 주거든요.',
       ['세린 씨가 마지막으로 책을 반납하던 날, 저는 여섯 살이었어요.', '그 책의 대출 카드를 아직 가지고 있어요. 「세린. 반납일: 983년 새싹의 달 8일.」 그다음 날 떠나셨대요.'],
@@ -6661,6 +7394,8 @@ input { font: inherit; }
     G.main.unlockBook('b_logbook');
     c.quest('q_light', 'done');
     c.set('q_bitna_done');
+    c.bond('bitna', 2);
+    c.truth('t_log');
   }
 
   /* ───────── 파도 해변 ───────── */
@@ -6705,11 +7440,27 @@ input { font: inherit; }
   async function krakenTalk(c, mo) {
     await c.say(null, '동굴 가장 안쪽 물웅덩이에서 보랏빛 다리 여덟 개가 솟아올랐다. 가운데 커다란 눈 하나가 번뜩인다.');
     await c.say('dotori:surprise', ['새, 새끼라며! 저게 새끼면 엄마는 얼마나 커!', '찍! 저 배 속에서 뭔가 반짝여! 나침반이야!']);
-    const win = await c.battle('kraken', { noFlee: true });
-    if (!win) return;
-    G.field.removeMon(mo);
-    c.set('beat_kraken');
-    await c.say(null, '크라켄이 꾸르륵 하더니 놋쇠 나침반과 파란 구슬을 뱉어 냈다. 그리고 부끄러운 듯 물속으로 숨었다.');
+    await c.say(null, '자세히 보니 크라켄의 다리 끝이 잿빛으로 바래 있다. 웅덩이 바닥에 반짝이는 것들이 수북하다. 병뚜껑, 숟가락, 유리구슬… 빛나는 것만 모아 놓았다.');
+    await c.say('dotori:worry', ['…배고파 보여. 등대지기 아저씨 일지에 그랬잖아. 검은 조각이 떨어진 바다는 물고기가 색을 잃는다고.', '먹을 게 없어서 반짝이는 걸 삼킨 거 아닐까?']);
+    const fish = G.story.fishIn ? G.story.fishIn(c.s) : null;
+    const k = fish ? await c.ask(null, ['[y]낚은 물고기를 던져 준다[/] (' + G.data.ITEMS[fish].name + ')', '싸워서 되찾는다']) : 1;
+    if (k === 0) {
+      c.take(fish);
+      c.sfx('splash');
+      await c.narr(['물고기를 웅덩이로 던졌다. 크라켄의 눈이 커졌다. 다리 하나가 번개처럼 물고기를 낚아챘다.', '꿀꺽. …크라켄이 한참 가만히 있더니, 몸을 부르르 떨었다.']);
+      G.field.removeMon(mo);
+      c.set('beat_kraken');
+      c.decide('kraken', 'feed', '해저 동굴의 새끼 크라켄에게 물고기를 먹였다');
+      await c.say(null, '꾸르륵. 크라켄이 놋쇠 나침반과 파란 구슬을 조심스럽게 뱉어 냈다. 그리고 다리 하나로 숟가락 하나를 이쪽으로 밀어 주었다. 답례인 모양이다.');
+      await c.say('dotori:happy', '찍! 숟가락 줬어! …숟가락은 어디다 쓰지?');
+    } else {
+      const win = await c.battle('kraken', { noFlee: true });
+      if (!win) return;
+      G.field.removeMon(mo);
+      c.set('beat_kraken');
+      c.decide('kraken', 'fight', '해저 동굴의 새끼 크라켄과 싸워 나침반을 되찾았다');
+      await c.say(null, '크라켄이 꾸르륵 하더니 놋쇠 나침반과 파란 구슬을 뱉어 냈다. 그리고 부끄러운 듯 물속으로 숨었다.');
+    }
     c.give('compass');
     await c.orb('o_b2');
     if (c.s.quests.m3 === 4) c.quest('m3', 5);
@@ -6723,6 +7474,73 @@ input { font: inherit; }
     if (lv >= 250 && s.flags.mine_open === undefined && s.quests.q_mine != null && !s.flags.tip250) { s.flags.tip250 = true; G.ui.toast('레벨 250! 황금 광산에 도전할 수 있을 것 같다.', 'gold'); }
     if (lv >= 600 && E.has(s, 'ferry_pass') && !s.flags.tip600) { s.flags.tip600 = true; G.ui.toast('레벨 600! 블루 부두의 고등어호를 탈 수 있다.', 'gold'); }
   });
+
+  /* ───────── 블루의 결: 서고의 책 · 창가 자리 · 소품 · 혼잣말 · 곁의 이야기 ───────── */
+  W.addObjs('library_stacks', [W.look(10, 5, (s) => (s.flags.haemi_secret ? null : '빽빽한 책장. 맨 아래 칸은 먼지가 유난히 두껍다.'), { talk: async (c) => {
+    const s = c.s;
+    if (!s.flags.haemi_secret) { await c.say(null, '빽빽한 책장. 맨 아래 칸은 먼지가 유난히 두껍다. 무언가 더 있을 것 같지만, 어느 책인지 알 수 없다.'); return; }
+    if (s.truth && s.truth.t_colors) { await c.say(null, '책등 없는 책. 해미가 여섯 살 때 덮었던 곳에 이제 먼지 대신 손자국이 남아 있다.'); return; }
+    await c.say(null, ['맨 아래 칸, 책등이 없는 얇은 책. 표지에 아무것도 적혀 있지 않다.', '첫 장을 넘기자 아주 오래된 글씨가 나왔다. 대륙 말이지만, 철자가 천 년 전 것이다.']);
+    await c.narr(['「나는 흰빛으로 전쟁을 끝냈다. 그리고 알았다. 흰빛이 한곳에 모이면, 하늘의 무언가가 눈을 뜬다는 것을.」', '「그래서 나는 빛을 쪼갰다. 초록, 빨강, 파랑, 노랑, 보라. 다섯 땅에 나누어 흩었다. 그것을 여신의 뜻이라고 적게 했다.」', '「등급을 만든 것도, 인장을 구슬로 부순 것도 같은 까닭이다. 빛이, 힘이, 사람이 다시는 한곳에 모이지 않도록.」', '「후대여. 모이면 온다. 나누면 오지 않는다. 이것만은 잊지 마라. — A.」']);
+    c.truth('t_colors');
+    await c.say('dotori:worry', ['…창세 신화가 거짓말이었어? 여신이 나눈 게 아니라, 아우룸이 일부러?', '「모이면 온다」… 그럼 탑이 빛을 모으는 건…']);
+    await c.say('dotori', '…해미 언니한테 얘기해 주자. 혼자 읽기 싫다고 했잖아.');
+  } })]);
+  W.addObjs('library', [W.look(6, 6, (s) => (s.flags.m_blue_book ? ['세린이 늘 앉던 창가 쪽 책상. 모서리에 찻잔 자국이 동그랗게 남아 있다.', '한 방울도 흘리지 않았다더니, 딱 한 번은 흘린 모양이다. 자국 옆에 손톱으로 긁은 작은 글씨: 「K 바보」.'] : '창가 쪽 책상. 모서리에 오래된 찻잔 자국이 동그랗게 남아 있다.'))]);
+  W.addObjs('blue', [
+    W.prop('bench', 30, 22),
+    W.prop('board', 19, 22, (s) => ['어시장 게시판. 「오늘의 시세 — 고등어 3골드, 전갱이 5골드, 황금 고등어 5만 골드 (1년에 한 마리)」', s.flags.lighthouse_lit ? '그 아래 새 종이: 「등대 불 켜짐! 밤배 출항 재개. — 고선장」' : '그 아래 빛바랜 종이: 「밤바다 검은 조각 목격 시 신고 바람. 만지지 말 것.」']),
+    W.prop('shrine', 3, 22, '뱃사람들의 작은 사당. 바다에서 돌아오지 못한 사람들의 이름이 돌에 빼곡하다. 가장 최근 이름은 997년. 「등대지기 한결」.'),
+    W.prop('well', 11, 9, '도서관 앞 우물. 「책 읽다 목마르면 여기서」라고 적혀 있다. 해미 글씨다.'),
+  ]);
+  W.addObjs('coast', [W.prop('bench', 28, 10)]);
+  W.addObjs('beach', [W.prop('fire', 25, 12, '해변의 모닥불 자리. 어부들이 밤에 조개를 굽는 곳이다. 재 속에 조개껍데기가 수북하다.')]);
+  W.barks('blue', {
+    captain: ['우웩… 배 위도 아닌데.', '나침반만 있으면…'],
+    jjanmul: ['고래를 세 번… 네 번!', '파도가 말하길…'],
+    merchant: ['고등어요!', '황금 고등어 한 마리!'],
+    rud: ['…398, 399, 400.', '3골드.'],
+    sailor: ['바람이 좋다.', '검은 별은 없어야 해.'],
+    scholar: ['삼천 권째…', '쉿.'],
+    kid2: ['등대 봤어?', '빨간 머리 형 빨라!'],
+  });
+  W.barks('library', { haemi: ['채, 책은…', '…쉿.'], mukmul: ['여덟 권째…', '어이쿠, 먹물이.'], scholar: ['쉿.'] });
+  W.barks('lighthouse', { bitna: (s) => (s.flags.lighthouse_lit ? ['켜 놨어, 아빠.'] : ['…오늘도 안 켜져.']) });
+
+  /* 도토리와의 이야기 (3장) */
+  G.story.talks.push(
+    { id: 'b_sea', map: 'coast', run: async (c) => {
+      await c.say('dotori', ['바다는 끝이 안 보여.', '엄마도 이 바다를 봤을까? 아스트라로 가는 길에.']);
+      const k = await c.ask(null, ['봤을 거야.', '엄마 얘기 그만하자.']);
+      if (k === 0) await c.say('dotori', '…그럼 우리 지금 엄마랑 같은 걸 보고 있는 거네. 16년 차이로. 찍.');
+      else { await c.say('dotori', '……응. 알았어. 미안.'); c.set('dotori_hush'); }
+    } },
+    { id: 'b_book', when: (s) => !!s.flags.serin_read_scene, pri: 3, run: async (c) => {
+      await c.say('dotori', ['{n}. 엄마 편지 말이야.', '「미안해. 네가 걸음마 하는 걸 보고 싶었는데.」 …너는 어땠어? 읽고 나서.']);
+      const k = await c.ask(null, ['원망스러워. 나를 두고 갔잖아.', '보고 싶어. 한 번만이라도.', '…모르겠어. 아무 느낌이 없어.']);
+      c.set('mom_feel_' + ['angry', 'miss', 'numb'][k]);
+      if (k === 0) await c.say('dotori', ['…원망해도 돼. 편지에 그렇게 써 있었잖아. 「미안해」라고.', '미안하다는 사람은 원망받을 각오가 된 사람이래. 할머니가 그랬어.']);
+      else if (k === 1) await c.say('dotori:sad', ['…응.', '나도. 이상하지. 나는 기억도 안 나는데.']);
+      else await c.say('dotori', ['…그럴 수 있어. 너무 큰 건 처음엔 아무 느낌이 없대.', '나중에 와. 한꺼번에. 그때 옆에 있을게.']);
+      c.bond('dotori', 1);
+    } },
+    { id: 'b_light', when: (s) => !!s.flags.lighthouse_lit, run: async (c) => {
+      await c.say('dotori', ['빛나 누나는 3년 동안 매일 등대에 올라갔대. 켜지지도 않는 불 앞에.', '…기다리는 쪽이 더 힘든 것 같아. 떠난 사람은 적어도 움직이잖아.']);
+      await c.say('dotori', '나도 뭔가를 오래 기다린 것 같은 기분이 들어. 뭘 기다렸는지는 모르겠는데. 찍.');
+    } },
+    { id: 'b_rud', when: (s) => s.quests.q_fish === 'done', run: async (c) => {
+      await c.say('dotori', '루드 형 웃는 거 봤어? 딱 1초. 나 셌어. 형처럼.');
+    } },
+  );
+  /* 쉬는 밤 (3장): 할머니에게 쓰는 편지. 답장은 다음 마을에서 온다. */
+  G.story.nights.push(
+    { id: 'b_letter', when: (s) => !!s.books.b_serin, intro: '갈매기 여관의 밤. 창밖 파도 소리에 잠이 오지 않는다. 여관 주인이 편지지를 빌려주었다.', run: async (c) => {
+      await c.say('dotori', '할머니한테 편지 쓰는 거야? 나도 한 줄 써도 돼? 「도토리 잘 있음. 찍.」');
+      const k = await c.ask('편지에 무엇을 쓸까', ['엄마 책을 찾았어요. 다 읽었어요.', '잘 지내요. 밥도 잘 먹어요.', '왜 엄마 얘기를 안 해 줬어요?']);
+      c.set('letter_gran', ['book', 'fine', 'why'][k]);
+      await c.narr(['편지를 접어 봉투에 넣었다. 도토리가 발바닥에 잉크를 묻혀 봉투 구석에 도장을 찍었다.', '내일 아침 우편선에 실으면 그린 마을까지 닷새가 걸린다고 했다.']);
+    } },
+  );
 
   G.world.nodes.push({ region: 'blue', label: '블루', x: 88, y: 156, color: '#4dabf7', maps: ['blue', 'coast', 'beach', 'seacave', 'library', 'library_stacks', 'lighthouse', 'blue_rank', 'blue_shop', 'blue_inn'] });
 })();
@@ -6846,6 +7664,20 @@ input { font: inherit; }
     await c.sys('시작의 버튼을 잃어버렸다! 렙업 버튼이 작동하지 않는다. 서쪽 [y]그늘 골목[/]으로 쫓아가자.');
   }
   async function kkachiTown(c) {
+    const s = c.s;
+    // 참새단을 지켜 주고 빵까지 나눈 사람에게만: 황금궁 부엌 뒷길
+    if (s.quests.m4 === 3 && !s.flags.palace_open && s.flags.d_kkachi === 'spare' && s.quests.q_sparrow === 'done') {
+      await c.say('kkachi', ['흰빛. 황금궁 들어가려고? 100만 골드는 없어 보이고, 스핑크스는… 무섭지.', '빚 갚을게. 이자는 빼고. 황금궁 부엌으로 이어지는 하수구가 있어. 참새단은 거기로 남은 빵을 가져와.']);
+      if (!(await c.yes('까치의 뒷길로 황금궁에 들어갈까?', 'kkachi', '따라간다', '정문으로 가겠다'))) { await c.say('kkachi', '…그래. 정직한 길이 좋으면 그렇게 해. 금화왕도 그런 거 좋아하더라.'); return; }
+      await c.fadeOut(500);
+      await c.narr(['까치를 따라 골목 끝 배수로 뚜껑을 들어 올렸다. 냄새가… 사막보다 독했다.', '어둠 속을 한참 기어가자 빵 굽는 냄새가 났다. 황금궁 부엌이다. 요리사가 까치를 보고 모르는 척 고개를 돌렸다.']);
+      c.set('palace_open'); c.set('palace_sneak');
+      c.quest('m4', 4);
+      c.decide('palace', 'sneak', '까치가 알려 준 부엌 뒷길로 황금궁에 숨어들었다');
+      await c.warp('palace', 9, 12, 'up', { instant: true });
+      await c.fadeIn(500);
+      return;
+    }
     await c.run(W.chatter('kkachi_town', [
       '어, 흰빛. 오늘은 안 훔쳐. 너한테서는 이제 안 훔쳐. 약속했잖아.',
       ['금화왕은 원래 우리 골목 출신이야. 벽에 「언젠가 금화왕 — G」 봤지? 그게 골디야.', '나도 언젠가 금화왕이 될 거야. 그래서 애들 경험을 전부 다시 사 올 거야.'],
@@ -6874,9 +7706,11 @@ input { font: inherit; }
     if (k === 0) {
       if (!c.pay(1000000)) { await c.say('guard', '돈이 모자라는군. 금화왕님은 외상을 안 하신다.'); return; }
       await c.say('guard', '…정말 냈군. 금화왕님이 좋아하시겠어. 들어가라.');
+      c.decide('palace', 'gold', '100만 골드를 내고 황금궁에 들어갔다');
     } else if (k === 1) {
       if (!E.has(s, 'sun_token')) { await c.say('guard', '증표가 없잖아. 스핑크스는 동쪽 사막 태양 피라미드 가장 안쪽에 있다.'); return; }
       await c.say('guard:surprise', '태양의 증표! 스핑크스를 이겼다고? …들어가라. 금화왕님이 좋아하시겠어.');
+      c.decide('palace', 'token', '태양의 증표를 보이고 황금궁에 들어갔다');
     } else return;
     c.set('palace_open');
     c.quest('m4', 4);
@@ -7024,7 +7858,9 @@ input { font: inherit; }
     const s = c.s;
     if (s.quests.m4 === 4) {
       c.music('castle');
-      await c.say('goldie', ['어서 와. 흰빛의 꼬마.', '버튼을 되찾았다지? 그 골목 꼬마가 공짜로 돌려줬다고? 쯧. 장사를 못 하는 녀석이군.']);
+      const how = s.flags.d_palace;
+      await c.say('goldie', how === 'sneak' ? ['…하수구 냄새가 나는군. 어서 와, 흰빛의 꼬마.', '부엌 뒷길이라. 그 골목 꼬마가 알려 줬겠지. 요리사는 내일 해고… 아니, 됐다. 그 녀석도 그 골목 출신이야.'] : how === 'gold' ? ['어서 와. 흰빛의 꼬마.', '100만 골드를 정말 냈다며? 하하! 입장료를 낸 손님은 3년 만이다. 마음에 드는군. 셈을 아는 녀석이야.'] : ['어서 와. 흰빛의 꼬마.', '스핑크스를 이겼다며? 그 고양이는 나도 못 이겼는데. 기분 나쁘군.']);
+      await c.say('goldie', s.flags.d_kkachi === 'report' ? ['버튼을 되찾았다지? 그리고 그 골목 꼬마를 경비대에 넘겼고.', '…이 도시답게 굴었군. 칭찬은 아니다.'] : ['버튼을 되찾았다지? 그 골목 꼬마가 공짜로 돌려줬다고? 쯧. 장사를 못 하는 녀석이군.']);
       await c.say('goldie', ['나는 금화왕 골디. 사천왕, 노랑의 자리. 대륙의 경험을 사고파는 사람이지.', '이 도시에서는 모든 것에 값이 있어. 너도, 나도, 그 흰빛도.']);
       const k = await c.ask(null, ['아이들 경험을 사는 건 옳지 않아', '엄마… 세린을 알아?', '카이론은 뭘 하려는 거야?']);
       if (k === 0) await c.say('goldie', ['옳지 않다? 그 애들이 굶는 게 옳은가? 나는 그 애들한테 저녁을 사 줬어. 경험을 받고.', '나도 그 골목에서 컸다. 여덟 살 때 첫 경험을 팔았지. 레벨 4어치. 빵 두 개.', '공짜는 없어, 꼬마. 세상은 원래 그래.']);
@@ -7041,10 +7877,13 @@ input { font: inherit; }
       await challengeGoldie(c);
       return;
     }
+    const dg = s.flags.d_goldie;
     await c.run(W.chatter('goldie_after', [
       ['카이론은 뭔가를 기다리고 있어. 16년짜리 뭔가를.', '천년제 날 밤. 그날이 그 16년의 끝이야. 나는 그 계산서를 받아 볼 생각이다.'],
-      '그 골목 꼬마, 까치라고 했나. 내가 여덟 살 때랑 눈빛이 똑같더군. 기분 나빠.',
-      '경험 거래소는 문 닫지 않는다. 대신… 아이들 경험 매입가를 세 배로 올렸다. 계산해 보니 그게 이득이더군. …그런 걸로 해 둬.',
+      s.flags.d_kkachi === 'report' ? '네가 넘긴 그 꼬마, 까치. 감옥 대신 내 밑에 뒀다. 장부를 맡겼더니 셈이 빠르더군. 여덟 살의 나를 보는 것 같아서… 기분 나빠.' : '그 골목 꼬마, 까치라고 했나. 내가 여덟 살 때랑 눈빛이 똑같더군. 기분 나빠.',
+      dg === 'contract' ? '계약서대로 하고 있다. 아이들 매입가 세 배, 스무 살에 되살 권리, 참새단 빵. 계산해 보니… 손해다. 처음으로 손해 보는 장사를 하는군. 나쁘지 않아.'
+        : dg === 'expose' ? ['거래소 문을 닫았다. 네가 장부를 뿌린 다음 날, 창구 앞에 돌이 날아왔지.', '그 애들은 이제 뭘 팔아서 먹을까. …사하라가 대상단 식량을 풀었다더군. 네 덕인지, 네 탓인지는 계산 안 해 봤다.']
+        : '경험 거래소는 문 닫지 않는다. 공짜는 없으니까.',
     ]));
   }
   async function challengeGoldie(c) {
@@ -7057,6 +7896,24 @@ input { font: inherit; }
     await c.say('goldie', ['약속은 약속이지. 공짜로 알려 주마. 평생 처음이자 마지막 공짜다. 잘 들어.']);
     await c.say('goldie', ['16년 전, 카이론과 세린과 녹턴이 아스트라로 갔다. 흑점을 막으러. 나랑 루미에, 볼트는 대륙에 남았고.', '돌아온 건 카이론과 녹턴뿐이었다. 카이론은 그날 밤 경험세를 선포했어.']);
     await c.say('goldie', ['나는 반대하지 않았다. 계산을 해 봤거든. 대륙의 빛을 모아 하늘을 지킨다. 숫자로는 맞아.', '그런데 요즘 계산이 안 맞아. 빛은 16년 동안 모였는데 흑점은 다시 커지고 있어.', '[y]카이론은 뭔가를 기다리고 있다.[/] 16년짜리 뭔가를. 천년제 날 밤이 그 끝이야.']);
+    // 금화왕의 장부: 아이들에게서 산 경험은 어디로 가는가
+    await c.say('goldie', ['공짜 하나 더. 이건 네가 물어보지 않은 거다.', '경험 거래소가 아이들한테서 산 경험, 그 칠 할이 어디로 가는 줄 아나?']);
+    await c.narr('골디가 옥좌 옆 금고에서 두꺼운 장부를 꺼내 펼쳤다. 「천년성 납품」이라는 글씨가 칸마다 찍혀 있다.');
+    await c.say('goldie', ['천년성이다. 옐로의 탑이 16년 동안 한 번도 할당량을 못 채운 적이 없는 이유지.', '가난한 애들의 경험을 사서, 카이론의 하늘에 바친다. 애들은 빵을 먹고, 하늘은 빛을 먹고, 나는 차액을 먹는다. 모두가 배부른 거래지.']);
+    await c.say('goldie', ['…자, 꼬마. 네가 이겼으니 네가 정해라.', '이 장부를 대바자르 광장에 뿌리면 이 도시는 뒤집힐 거다. 아니면 나랑 계약을 하든가. 조건은 네가 쓰고.']);
+    const g = await c.ask('금화왕의 장부', ['계약한다: 아이들 매입가 세 배, 스무 살에 되살 권리', '장부를 광장에 뿌린다']);
+    if (g === 0) {
+      await c.say('goldie', ['……', '하. 조건이 지독하군. 되살 권리라니. 그럼 나는 경험을 빌려주는 전당포가 되는 건가.']);
+      await c.say('goldie', ['좋다. 서명하지. 네 이름은 증인란에.', '…세린이었으면 똑같은 조건을 썼을 거다. 그 여자도 계산은 못 하면서 조건은 잘 썼거든.']);
+      c.decide('goldie', 'contract', '금화왕과 경험 거래소 계약을 맺었다: 아이들 매입가 세 배, 되살 권리');
+      c.bond('goldie', 2);
+    } else {
+      await c.say('goldie', ['……해 봐.', '그럼 내일부터 그 애들은 뭘 팔아서 먹지? 정의는 배를 채워 주지 않아, 꼬마.']);
+      await c.narr(['다음 날 아침, 대바자르 광장에 장부의 사본이 눈처럼 흩날렸다.', '사람들이 창구 앞에 모였다. 누군가 첫 돌을 던졌다. 그늘 골목의 아이들은 멀리서 그걸 보고만 있었다.']);
+      await c.say('goldie', ['…거래소는 오늘부로 문을 닫는다.', '너는 옳은 일을 했다. 그리고 그 값은 네가 아니라 그 애들이 치를 거다. 그걸 잊지 마라.']);
+      c.decide('goldie', 'expose', '금화왕의 장부를 대바자르 광장에 뿌렸다');
+      c.bond('goldie', -1);
+    }
     await c.say('goldie', ['…그리고 이건 덤이다. 세린한테 빌린 동전 값이라고 치지.', '보랏빛 숲의 [y]베라[/]를 만나라. 세린의 스승이다. 그 할망구는 16년 동안 입을 다물고 있지만… 너한테는 열 거다.']);
     c.gold(3000000);
     c.set('m_yellow_bond');
@@ -7156,6 +8013,106 @@ input { font: inherit; }
     await c.say('sphinx', ['「…강하군. 흰빛의 아이.」', '「이것을 가져가라. 태양의 증표다. 황금궁의 문지기는 이것을 알아본다.」']);
     c.give('sun_token');
   }
+
+  /* ───────── 옐로의 결: 참새단의 두목 · 소품 · 혼잣말 · 곁의 이야기 ───────── */
+  // 아지트에서 나오는 순간: 털린 노점 주인과 경비대가 기다리고 있다
+  async function sparrowAsk(c) {
+    c.set('sparrow_asked');
+    c.spawn({ id: 'guard_y', x: 7, y: 21, dir: 'up', look: G.chars.guard.look });
+    c.spawn({ id: 'merchant_y', x: 5, y: 21, dir: 'up', look: G.chars.merchant.look });
+    await c.emote('merchant_y', '!');
+    await c.say('merchant', ['거기! 방금 그 굴에서 나왔지? 참새단 소굴 맞지?', '그 녀석들한테 우리 노점 셋이 털렸어. 한 집은 문을 닫았고. 두목이 누군지만 알려 줘.']);
+    await c.say('guard', ['옐로 경비대다. 참새단 두목에게 현상금이 걸려 있다. 30만 골드.', '협조하면 네 버튼 도난 건도 서류로 처리해 주지.']);
+    await c.say('dotori:worry', '찍… {n}.');
+    const k = await c.ask('참새단의 두목을 알려 줄까', ['모르는 애였다고 한다', '까치가 두목이라고 알려 준다']);
+    if (k === 0) {
+      await c.say('@', '…모르는 애였어요. 버튼은 골목에 떨어져 있었어요.');
+      await c.say('merchant', ['…그래? 쳇. 그 굴에서 나오는 걸 봤는데.', '문 닫은 가게 주인은 애가 넷이야. 그것도 기억해 둬.']);
+      c.decide('kkachi', 'spare', '참새단 두목 까치를 경비대에 넘기지 않았다');
+      c.bond('kkachi', 1);
+    } else {
+      await c.say('guard', '까치. 그 녀석이군. 협조에 감사한다.');
+      c.gold(300000);
+      await c.narr(['그날 저녁, 경비대가 그늘 골목으로 들어갔다. 아이들 몇이 흩어져 달아났다.', '까치는 달아나지 않았다고 한다. 「애들한테 손대지 마. 나 혼자 했어.」']);
+      await c.say('merchant', '…고맙다. 이제 좀 장사를 하겠군. 문 닫은 집도 다시 열 수 있을 거야.');
+      c.decide('kkachi', 'report', '참새단 두목 까치를 경비대에 넘겼다');
+      c.bond('kkachi', -2);
+    }
+    c.despawn('guard_y'); c.despawn('merchant_y');
+  }
+  G.hooks.enter.push((id) => {
+    const s = G.state;
+    if (id === 'yellow' && s.flags.button_back && !s.flags.sparrow_asked && !G.script.running) G.script.run(sparrowAsk);
+  });
+  const reported = (s) => s.flags.d_kkachi === 'report';
+  for (const [mapId, prev] of [['yellow', (s) => s.flags.button_back], ['hideout', () => true]]) {
+    const n = G.maps[mapId].npcs.find((x) => x.id === 'kkachi');
+    n.cond = (s) => prev(s) && !reported(s);
+  }
+  W.addNpcs('palace', [{ id: 'kkachi', x: 12, y: 5, dir: 'left', cond: reported, talk: W.chatter('kkachi_palace', [
+    '……장부 정리 중이야. 말 걸지 마.',
+    ['금화왕이 그러더라. 「감옥이랑 장부 중에 골라.」 …장부를 골랐어.', '애들은 사하라 대상단이 데려갔대. 빵은 먹고 있대. …그거면 됐어.'],
+    '넌 틀린 거 안 했어. 노점 아저씨들도 애가 있으니까. …그러니까 미안한 얼굴 하지 마. 그게 더 싫어.',
+  ]) }]);
+  W.addNpcs('hideout', [{ id: 'kid', x: 5, y: 3, dir: 'down', cond: reported, talk: W.chatter('hide_empty', ['…형 없어. 잡혀갔어.', '누가 일렀대. …너 아니지?']) }]);
+
+  W.addObjs('yellow', [
+    W.prop('well', 17, 20, '오아시스 물을 끌어온 공동 우물. 우물가에 「한 사람 한 바가지」라고 적혀 있다. 누군가 「경험세 없음」이라고 덧붙였다.'),
+    W.prop('bench', 15, 24),
+    W.prop('board', 26, 10, (s) => ['경험 거래소 게시판. 「오늘의 매입가 — 평민 아이 0.3골드」', s.flags.d_goldie === 'contract' ? '그 위에 새 종이: 「아이 매입가 0.9골드. 20세 되살 권리 보장. — 금화왕」' : s.flags.d_goldie === 'expose' ? '종이가 전부 찢겨 있다. 누군가 숯으로 적었다: 「천년성 납품」.' : '구석에 작은 글씨: 「전설의 경험 — 매입 불가」.']),
+    W.prop('shrine', 36, 3, '태양 사당. 사막 사람들은 떠나기 전에 여기서 물 한 방울을 바친다. 돌 위에 물 자국이 셀 수 없이 겹쳐 있다.'),
+  ]);
+  W.addObjs('caravan', [W.prop('fire', 20, 4, '대상단의 모닥불. 사막의 밤은 낮보다 무섭다. 불은 밤새 꺼지지 않는다.')]);
+  W.barks('yellow', {
+    guard: ['금화왕님은 바쁘시다.'],
+    merchant: ['전갈 독침 삽니다!', '정직한 거래!'],
+    merchant2: ['짤랑짤랑!'],
+    kkachi: ['오늘은 안 훔쳐.', '언젠가 금화왕…'],
+    kid: ['…뭘 봐.'],
+    kid2: ['배고파.', '레벨 6…'],
+    oldman: ['집은 있는데…', '레벨이 3이야.'],
+  });
+  W.barks('caravan', { sahara: ['별을 봐.'], merchant: ['물약 넉넉히!'] });
+  W.barks('casino', { lucky: ['확률은 공정합니다.'] });
+
+  /* 도토리와의 이야기 (4장) */
+  G.story.talks.push(
+    { id: 'y_nobutton', when: (s) => !!s.flags.button_stolen, pri: 3, run: async (c) => {
+      await c.say('dotori', ['너 손이 자꾸 주머니를 더듬어. 버튼 없으니까 이상하지?', '…나도 이상해. 버튼이 없으니까 네가 그냥 열여섯 살 애 같아. 원래 그런데.']);
+    } },
+    { id: 'y_kids', when: (s) => !!s.flags.button_back, run: async (c) => {
+      await c.say('dotori', ['까치네 애들은 레벨을 팔아서 밥을 먹는대.', '나는 레벨이 안 올라서 16년 동안 속상했는데. 쟤들은 일부러 내리고 있어.']);
+      const k = await c.ask(null, ['그 애들 잘못이 아니야.', '팔지 않고 버티는 방법도 있을 거야.', '레벨보다 밥이 먼저지.']);
+      if (k === 0) await c.say('dotori', '…응. 그럼 누구 잘못이야? 경험을 사는 사람? 세금을 걷는 탑? 탑을 세운 사람? …다 따라가면 끝에 누가 있을까.');
+      else if (k === 1) await c.say('dotori', ['…배고파 본 적 있어? 나는 겨울에 도토리 다 떨어졌을 때 한 번.', '버티는 건 배부른 사람 말이래. 할머니가 그랬어. 할머니도 옛날에 배고팠대.']);
+      else { await c.say('dotori', '맞아. 레벨은 다시 올릴 수 있지만 굶은 날은 다시 못 먹어.'); c.bond('dotori', 1); }
+    } },
+    { id: 'y_goldie', when: (s) => !!s.flags.m_yellow_bond, run: async (c) => {
+      await c.say('dotori', ['골디 아저씨, 엄마한테 동전 빌리고 못 갚았대.', '16년 동안 갚을 사람이 없는 빚을 들고 있었던 거야. 그래서 그렇게 셈을 따지나 봐.']);
+      if (c.s.flags.d_goldie === 'expose') await c.say('dotori:worry', '…우리가 장부 뿌린 거, 잘한 걸까. 광장에서 돌 던지는 사람들 봤을 때 무서웠어. 애들 표정도.');
+      else if (c.s.flags.d_goldie === 'contract') await c.say('dotori', '계약서에 네 이름이 증인으로 들어갔어. 엄마가 빌려준 동전이 16년 만에 이자가 붙은 것 같아. 찍.');
+    } },
+    { id: 'y_mirage', map: 'desert', run: async (c) => {
+      await c.say('dotori:surprise', ['찍! 저기 누가 서 있어! 긴 머리, 흰 옷…', '…없어졌다. 신기루래. 사막에선 보고 싶은 게 보인대.']);
+      await c.say('dotori', '…나 뭘 보고 싶었던 걸까.');
+    } },
+  );
+  const PS = '\n\n추신. 도토리 발 도장 봤다. 잉크 묻은 발로 이불 밟지 마라 캐라.';
+  W.book('b_reply_book', { title: '할머니의 답장', group: 'reply', where: '오아시스 여관', author: '방순', text:
+    '다 읽었다니. 그 아 글씨는 여전히 둥글더나.\n\n할매는 그 책 끝에 편지가 끼워진 걸 알았다. 16년 동안 알았다. 니가 그 편지를 니 발로 걸어가서 찾기를 바랐다. 할매 손으로 주믄 반쪽밖에 안 되니까.\n\n원망해도 된다. 할매는 원망 들을 자격이 있다.' + PS });
+  W.book('b_reply_why', { title: '할머니의 답장', group: 'reply', where: '오아시스 여관', author: '방순', text:
+    '왜 말 안 해 줬냐고.\n\n무서웠다. 니 엄마 이야기를 하믄, 그 끝에 누가 있는지까지 말해야 되니까. 그 사람 이야기까지.\n\n할매가 비겁했다. 그건 맞다. 그래도 니가 물어봐 줘서 고맙다. 16년 동안 아무도 안 물어봤다. 할매한테 그 아 이야기를.' + PS });
+  W.book('b_reply_fine', { title: '할머니의 답장', group: 'reply', where: '오아시스 여관', author: '방순', text:
+    '밥 잘 먹는다니 됐다. 그거면 된다.\n\n…거짓말하지 마라. 니 글씨는 거짓말할 때 삐뚤어진다. 니 엄마도 그랬다.\n\n힘든 거 있으믄 힘들다 캐라. 할매는 멀리 있어도 그 말 정도는 들을 수 있다.' + PS });
+  /* 쉬는 밤 (4장): 할머니의 답장 */
+  G.story.nights.push(
+    { id: 'y_reply', when: (s) => !!s.flags.letter_gran, intro: '오아시스 여관. 여관 주인이 편지 한 통을 건넸다. 「그린 마을에서 온 우편이에요. 새싹 도장이 찍혀 있네요.」', run: async (c) => {
+      const L = c.s.flags.letter_gran;
+      await c.book('b_reply_' + L);
+      await c.say('dotori', L === 'fine' ? '…들켰다. 찍.' : '…할머니 글씨, 떨렸어. 편지 쓸 때 손이 떨렸나 봐.');
+      c.bond('gran', 1, true);
+    } },
+  );
 
   G.world.nodes.push({ region: 'yellow', label: '옐로', x: 116, y: 136, color: '#ffd43b', maps: ['yellow', 'desert', 'pyramid', 'palace', 'casino', 'hideout', 'yellow_rank', 'yellow_inn', 'caravan'] });
 })();
@@ -9692,6 +10649,244 @@ input { font: inherit; }
   void E; void D;
 })();
 
+/* js/world/13_life.js */
+/* 대륙의 삶: 진실의 조각 · 낚시와 물속의 편지 · 들짐승 · 벤치 · 동행과의 대화 · 쉬는 밤의 대화 · 결말 판정
+   장마다 흩어진 이야기를 한데 묶는다. 어느 순서로 모아도 되고, 모은 만큼 마지막이 달라진다. */
+(function () {
+  'use strict';
+  const G = globalThis.G;
+  const W = G.W, U = G.u, D = G.data, E = G.engine;
+
+  /* ───────── 진실의 조각 ─────────
+     경험세가 모은 빛은 방패가 아니라 등대였다. 흑점은 빛의 「양」이 아니라 「쏠림」을 따라온다.
+     다섯 조각 이상을 알면 마지막에 카이론과 싸우지 않고 말로 설득할 수 있다. */
+  Object.assign(G.story.truths, {
+    t_chart: { title: '흑점의 걸음', text: '은하수 박사의 관측표. 983년 이후 대륙에 징수탑이 하나씩 설 때마다 흑점의 걸음이 빨라졌다. 박사는 여백에 「우연이어야 한다」고 적었다.', hint: '레드 · 별만 보는 노인의 책상 서랍' },
+    t_log: { title: '등대지기의 항해일지', text: '「검은 별의 조각은 빛이 모인 곳으로 간다.」 바다 위에서 본 흑점은 해안의 탑 불빛을 따라 방향을 틀었다.', hint: '블루 · 삼 년째 불 꺼진 등대' },
+    t_colors: { title: '다섯 빛깔의 이유', text: '창세 신화의 진짜 모습. 천 년 전 아우룸은 흑점의 눈을 속이려고 한곳에 모인 흰빛을 다섯 빛깔로 쪼개 대륙에 흩었다. 등급 제도도, 구슬도 빛이 다시 한곳에 모이지 않게 하려는 장치였다.', hint: '블루 · 잠긴 서고 가장 안쪽 / 블랙 · 천 년을 산 정보상' },
+    t_serin: { title: '무한의 그릇 · 지워진 마지막 장', text: '세린의 연구 노트. 「그릇은 삼키는 것이 아니라 나누는 것이어야 한다. 삼키면 봉인이고, 나누면 끝이다. 나에게는 나눌 사람도, 시간도 없었다.」', hint: '퍼플 · 16년 동안 잠긴 연구실' },
+    t_612: { title: '잿빛의 사흘', text: '은빛 왕국은 대광맥의 빛을 수도 한 점에 모았다. 사흘 뒤 흑점이 처음 하늘에 나타났고, 왕국의 색이 빠졌다.', hint: '그레이 · 612년에 멈춘 기록 보관소' },
+    t_design: { title: '징수탑 설계도의 주석', text: '볼트의 글씨. 「탑들이 모은 빛을 한 점으로 쏘아 올리면 그 점은 등대가 된다. 983년 겨울, 카이론에게 경고했다. 답장은 없었다.」', hint: '그레이 · 설계자가 잠가 둔 서랍' },
+    t_stella: { title: '400년의 관측', text: '하늘 정거장의 기록. 흑점은 빛이 가장 짙은 곳이 아니라 빛이 가장 「쏠린」 곳을 향한다. 스텔라는 400년 전에 이 계산을 끝냈지만, 들어 줄 사람이 없었다.', hint: '하늘 정거장 · 혼자 남은 목소리' },
+    t_bella: { title: '벨라의 마지막 말', text: '「우리가 모였기 때문에 그것이 왔다. 이긴 뒤에는 빛을 흩어라. 다시는 한곳에 모으지 마라.」 612년, 두 번째 전설의 유언.', hint: '아스트라 · 두 번째 전설의 요새' },
+  });
+  const TRUTH_NEED = 5;
+  G.story.TRUTH_NEED = TRUTH_NEED;
+
+  /* ───────── 결말 판정 ─────────
+     마지막 싸움에 빛을 보내 주는 마을 (각 장의 선택과 인연이 정한다) */
+  G.story.support = (s) => {
+    const f = s.flags, d = (k) => f['d_' + k], b = (id) => (s.bond || {})[id] || 0;
+    return [
+      { id: 'green', ok: true, why: '할머니' },
+      { id: 'red', ok: b('rud') >= 1 || b('lea') >= 1 || d('ledger') === 'burn', why: '루드와 레아' },
+      { id: 'blue', ok: s.quests.q_light === 'done' || b('bitna') >= 2, why: '등대의 불' },
+      { id: 'yellow', ok: d('kkachi') === 'spare' || d('goldie') === 'contract', why: '까치 또는 골디' },
+      { id: 'purple', ok: b('vera') >= 1 || s.quests.q_miru === 'done', why: '베라와 학원' },
+      { id: 'rainbow', ok: d('festival') !== 'bomb', why: '천년제' },
+      { id: 'white', ok: d('patient') !== 'lumie' || b('lumie') >= 2, why: '루미에' },
+      { id: 'gray', ok: d('bolt') === 'talk' || s.quests.q_noel === 'done', why: '볼트와 노을' },
+      { id: 'black', ok: d('nocturne') === 'promise' || s.quests.q_lamps === 'done', why: '녹턴 또는 등불 거리' },
+      { id: 'space', ok: d('stella') === 'carry', why: '스텔라' },
+      { id: 'colorful', ok: true, why: '불꽃 천 발' },
+    ];
+  };
+  G.story.ending = (s) => {
+    const sup = G.story.support(s).filter((x) => x.ok).length;
+    const truths = Object.keys(s.truth || {}).filter((k) => G.story.truths[k]).length;
+    return { sup, truths, share: sup >= 8, persuade: truths >= TRUTH_NEED };
+  };
+
+  /* ───────── 낚시 ───────── */
+  const FISH = {
+    green: [['f_crucian', '연못 붕어', 60, 12, '그린 마을 연못의 터줏대감. 느림보 영감이 40년 동안 한 번도 못 낚은 바로 그 종류.'], ['f_loach', '초록 미꾸라지', 30, 30, '손에서 자꾸 빠져나간다. 할머니는 추어탕을 끓인다.'], ['f_koi', '황금 잉어', 8, 120, '비늘마다 햇빛이 고여 있다. 그린 사람들은 이걸 낚으면 한 해가 풍년이라고 믿는다.']],
+    blue: [['f_mackerel', '고등어', 55, 12, '블루 어시장의 주인공. 등 무늬가 파도처럼 흐른다.'], ['f_horse', '은빛 전갱이', 30, 30, '떼로 다니는 물고기. 한 마리가 방향을 틀면 전부 튼다.'], ['f_octo', '파랑 문어', 12, 60, '먹물 관장의 먼 친척이라는 소문이 있다. 본인들은 부인한다.'], ['fish_gold', '황금 고등어', 3, 0, '']],
+    yellow: [['f_catfish', '오아시스 메기', 55, 12, '사막 한가운데서 수염을 기른 물고기. 모래바람이 불면 바닥에 숨는다.'], ['f_eel', '모래 뱀장어', 30, 30, '물과 모래를 가리지 않고 헤엄친다.'], ['f_pearl', '사막 진주조개', 8, 120, '입을 열면 진주가 보인다. 상인들은 이걸로 금화 대신 셈을 치르기도 한다.']],
+    purple: [['f_minnow', '보랏빛 송사리', 55, 12, '해 질 녘 색을 그대로 입었다. 16년째 저녁인 숲에서 자랐다.'], ['f_mirror', '거울 잉어', 30, 30, '비늘에 낚은 사람의 얼굴이 비친다. 조금 슬픈 얼굴로.'], ['f_moon', '달그림자 붕어', 8, 120, '달빛이 닿는 곳에만 산다. 숲에 16년 동안 달이 뜨지 않아서 몹시 귀하다.']],
+    rainbow: [['f_cloudanch', '구름 멸치', 55, 12, '구름 바다를 떼 지어 헤엄친다. 말리면 솜처럼 가볍다.'], ['f_candyfish', '솜사탕 복어', 30, 30, '화가 나면 부푼다. 부풀면 달콤한 냄새가 난다.'], ['f_flying', '무지개 날치', 8, 120, '구름 위로 뛰어오를 때마다 짧은 무지개가 선다.']],
+    white: [['f_smelt', '얼음 빙어', 55, 12, '몸이 투명해서 뼈까지 보인다. 성기사들의 겨울 간식.'], ['f_salmon', '눈꽃 연어', 30, 30, '얼음 밑을 거슬러 오른다. 대성당 창문에 새겨진 물고기가 이것이다.'], ['f_cod', '수정 대구', 8, 120, '얼음 신전 물밑에서만 산다. 기도하는 사람 그림자를 따라다닌다는 말이 있다.']],
+    black: [['f_blind', '눈 없는 메기', 55, 12, '해가 뜨지 않는 도시의 우물에서 자랐다. 눈이 필요 없었다.'], ['f_nighteel', '밤 뱀장어', 30, 30, '등불 빛을 싫어한다. 등불을 켜 두면 우물 밑바닥으로 숨는다.'], ['f_starfish', '별 삼킨 붕어', 8, 120, '배 속에서 희미한 빛이 난다. 블랙 사람들은 이걸 보면 소원을 빈다.']],
+    colorful: [['f_firegizzard', '폭죽 전어', 55, 12, '구우면 기름이 튀어 작은 불꽃이 선다. 알록달록 사람들은 그게 좋아서 굽는다.'], ['f_tropic', '알록달록 열대어', 30, 30, '비늘마다 색이 다르다. 등급 따위 모르는 물고기.'], ['f_ray', '불꽃 가오리', 8, 120, '물속에서 날개를 펴면 수면이 잠깐 붉게 빛난다.']],
+  };
+  const REG_I = { green: 0, red: 1, blue: 2, yellow: 3, purple: 4, rainbow: 5, white: 6, gray: 7, black: 8, colorful: 9, space: 10, planet: 11 };
+  for (const reg in FISH) for (const [id, name, , f, desc] of FISH[reg]) {
+    if (D.ITEMS[id]) continue;
+    D.ITEMS[id] = { id, name, type: 'mat', price: D.price(REG_I[reg], f, 0.5), desc: desc + ' 상점에 팔 수 있다.' };
+  }
+  G.story.FISH = FISH;
+  G.story.canFish = (s) => E.has(s, 'rod');
+  /** 가방에 있는 낚은 물고기 하나 (황금 고등어는 빼고, 흔한 것부터) */
+  G.story.fishIn = (s) => {
+    const all = [];
+    for (const reg in FISH) for (const f of FISH[reg]) if (f[0] !== 'fish_gold' && E.has(s, f[0])) all.push(f);
+    all.sort((a, b) => b[2] - a[2]);
+    return all.length ? all[0][0] : null;
+  };
+
+  /* 물속의 편지: 983년, 아스트라로 떠나던 세린이 지나는 물마다 던진 편지. 물은 결국 어디에나 닿으니까. */
+  const LETTER_AT = { green: 'l_green', blue: 'l_blue', yellow: 'l_yellow', purple: 'l_purple', rainbow: 'l_rainbow', white: 'l_white', black: 'l_black', colorful: 'l_colorful' };
+  W.book('l_green', { title: '물속의 편지 · 첫 번째', where: '그린 마을 물가 (낚시)', author: '세린', text:
+    '아가에게.\n\n이 편지를 누가 건질지 모르겠어. 물고기일 수도 있고, 느림보 영감님일 수도 있어. 그래도 엄마는 네가 건질 거라고 믿어. 물은 결국 어디로든 흐르고, 너는 결국 어디로든 갈 테니까.\n\n' +
+    '지금 너는 방순 선생님 품에서 자고 있어. 선생님은 무서운 분이야. 창을 들면 산적도 길을 비켜. 그런데 너를 안으니까 손이 떨리시더라. 그 손을 오래 기억해 줘.\n\n' +
+    '네 이름은 엄마가 짓지 않기로 했어. 선생님께 부탁드렸어. 엄마가 지으면 자꾸 부르고 싶어질 테니까. 멀리서도, 수정 속에서도.\n\n내일 떠나. 열여섯의 너에게, 열아홉의 엄마가.' });
+  W.book('l_blue', { title: '물속의 편지 · 두 번째', where: '블루 바다 (낚시)', author: '세린', text:
+    '대도서관에 내 책을 맡겼어. 「무한의 그릇에 관하여」. 먹물 관장님은 금서로 묶겠대. 천년성이 태울까 봐.\n\n' +
+    '고백할 게 있어. 그 책에는 그릇이 흑점을 삼킨다고 썼어. 쓰면서도 틀렸다고 생각했어. 삼키는 건 쉬워. 혼자 하면 되니까. 어려운 건 나누는 거야. 나눌 사람이 있어야 하니까.\n\n' +
+    '시간이 조금만 더 있었다면 나누는 법을 찾았을 거야. 그러니까 이건 숙제야. 엄마가 못 푼 숙제.' });
+  W.book('l_yellow', { title: '물속의 편지 · 세 번째', where: '옐로 오아시스 (낚시)', author: '세린', text:
+    '골디가 아스트라에 따라오겠다고 떼를 썼어. 말렸어. 누군가는 남아서 세상을 먹여 살려야 하잖아. 골디는 그런 걸 제일 잘하는 사람이고.\n\n' +
+    '골디는 차값을 늘 더 내. 거스름돈은 다음에 받겠대. 다음이 없을지도 모르는 사람한테 그러는 게 골디식 작별이야. 그 사람은 가난이 얼마나 무서운지 너무 잘 알아서, 가끔 무서운 짓을 해. 그래도 미워하지 말아 줘. 셈이 정직한 사람은 결국 돌아와.' });
+  W.book('l_purple', { title: '물속의 편지 · 네 번째', where: '보랏빛 숲의 물 (낚시)', author: '세린', text:
+    '거울 연못이 내 기억을 보여 줬어. 너를 처음 안은 날. 그리고 네 아빠.\n\n' +
+    '네 아빠 얘기를 아직 안 했지. 그 사람은 계산을 잘해. 너무 잘해서 탈이야. 슬픔까지 숫자로 바꿔 버려. 그래야 버틸 수 있는 사람이라서, 나는 그 사람 옆에서 대신 울어 주곤 했어.\n\n' +
+    '엄마가 없으면 그 사람은 누구 옆에서 울까. 그게 제일 걱정이야. 너보다 더.\n…미안. 엄마가 이런 말을 하면 안 되는데.' });
+  W.book('l_rainbow', { title: '물속의 편지 · 다섯 번째', where: '구름 바다 (낚시)', author: '세린', text:
+    '무지개 마을은 천년제 준비로 시끄러워. 17년 뒤에 열린대. 천 년째 되는 해. 너랑 같이 오고 싶었어.\n\n' +
+    '무지개 샘에서 들은 이야기. 다섯 빛깔은 원래 하나였대. 흰빛. 누군가 그걸 일부러 쪼갰대. 모이면 안 되는 이유가 있었다고.\n\n' +
+    '그 이유를 알 것 같아서 무서워. 우리가 지금 하려는 일이 딱 그 반대거든. 대륙에서 가장 밝은 셋이 한곳에 모이는 일.' });
+  W.book('l_white', { title: '물속의 편지 · 여섯 번째', where: '화이트 얼음 구멍 (낚시)', author: '세린', text:
+    '루미에가 내 앞길을 축복해 줬어. 희생은 아름다운 거래. 루미에는 진심이야. 그래서 더 아팠어.\n\n' +
+    '아가. 희생은 아름답지 않아. 필요할 뿐이야. 필요한 날에도 아름답다고 부르면 안 돼. 그렇게 부르는 순간, 다음 사람한테도 시키게 되니까.\n\n' +
+    '네가 커서 누군가를 위해 스스로를 버리겠다고 하면, 엄마는 수정 속에서도 화낼 거야. 진짜로.' });
+  W.book('l_black', { title: '물속의 편지 · 일곱 번째', where: '블랙 마을 우물 (낚시)', author: '세린', text:
+    '녹턴은 말이 없어. 대신 밤새 불 옆을 지켜. 우리가 잘 때도, 싸울 때도. 그림자는 빛이 있어야 생긴다고 농담을 했더니, 처음으로 웃었어.\n\n' +
+    '이제 네 아빠 얘기를 끝까지 할게. 그 사람은 챔피언이야. 대륙에서 가장 강한 사람. 그런데 나를 붙잡을 힘은 없대. 내가 가겠다고 했거든.\n\n' +
+    '그 사람이 너를 찾아오지 않는다면, 그건 너를 사랑하지 않아서가 아니야. 자기가 무슨 계산을 하게 될지 무서워서야.\n\n미워해도 돼. 하지만 미워하는 채로 끝내지는 마.' });
+  W.book('l_colorful', { title: '물속의 편지 · 여덟 번째', where: '알록달록 곶 (낚시)', author: '세린', text:
+    '팡팡 박사님께 로켓을 부탁했어. 네가 탈 로켓. 박사님은 스무 번쯤 터뜨릴 거래. 스물한 번째에 날 거래.\n\n' +
+    '이게 마지막 편지야. 여기서부터는 물이 없어.\n\n' +
+    '엄마가 못 한 걸 네가 해 줬으면 좋겠어. 삼키지 말고, 나눠. 혼자 하지 말고, 같이. 그리고 꼭 돌아와. 엄마는 못 돌아왔지만, 너는 돌아와서 할머니한테 밥 먹었다고 말해.\n\n오늘도 렙업. 내일도 렙업.\n— 세린' });
+  G.story.LETTER_AT = LETTER_AT;
+
+  /** 물가에서 A: 입질을 기다렸다가 A */
+  G.story.fishing = async (c, x, y, poolId) => {
+    const s = c.s;
+    const reg = poolId || (G.field.map && G.field.map.fishPool) || (G.field.map && G.field.map.region) || 'green';
+    const pool = FISH[reg] || FISH.green;
+    if (!s.flags.tip_fish) {
+      s.flags.tip_fish = true;
+      await c.sys(['느림보 영감의 낚싯대를 드리웠다.', '찌가 흔들리며 머리 위에 [y]![/]가 뜨면 곧바로 [y]A[/]! 너무 빨라도, 늦어도 놓친다. [y]B[/]는 그만두기.']);
+    }
+    c.sfx('splash');
+    G.field.emote(G.field.player, '…', 2.5);
+    const r = await c.bite(1.2 + Math.random() * 3.2, 0.75);
+    if (r === 'cancel') { await c.say(null, '낚싯줄을 감았다.'); return; }
+    if (r === 'early') { await c.say(null, '너무 서둘렀다. 물고기가 찌만 건드리고 달아났다.'); return; }
+    if (r === 'miss') { await c.say(null, '찌가 쑥 들어갔다가… 다시 떠올랐다. 놓쳤다.'); return; }
+    c.sfx('splash');
+    s.fishLog = s.fishLog || {};
+    const key = 'n_' + reg;
+    s.fishLog[key] = (s.fishLog[key] || 0) + 1;
+    // 물속의 편지: 그 물에서 몇 번 낚으면 반드시 걸린다
+    const lid = LETTER_AT[reg];
+    if (lid && !s.books[lid] && (Math.random() < 0.18 || s.fishLog[key] >= 4)) {
+      await c.say(null, '묵직하다… 물고기가 아니다. 밀랍으로 입구를 막은 작은 유리병이다. 안에 접힌 종이가 들어 있다.');
+      await c.book(lid);
+      const n = Object.values(LETTER_AT).filter((b) => s.books[b]).length;
+      if (n === 1) await c.say('dotori:surprise', ['…이 글씨. 나, 이 글씨 알아.', '둥글고 작은 글씨. 비석 뒤에 「성장은 나누는 거예요」라고 쓴 사람이야.']);
+      else if (n === 8) await c.say('dotori:sad', ['여덟 통. 세린은 지나는 물마다 한 통씩 던졌던 거야.', '…16년 동안 물속에서 너를 기다렸네.']);
+      return;
+    }
+    // 순이의 미끼: 귀한 물고기가 두 배로 잘 문다
+    const wt = (f) => f[2] * (f[2] <= 8 && E.has(s, 'bait_old') ? 2 : 1);
+    const tot = pool.reduce((a, f) => a + wt(f), 0);
+    let v = Math.random() * tot, pick = pool[0];
+    for (const f of pool) { v -= wt(f); if (v <= 0) { pick = f; break; } }
+    const [id, name] = pick;
+    if (id === 'fish_gold' && E.has(s, 'fish_gold')) { c.give('f_mackerel'); await c.say(null, '고등어를 낚았다! …금빛이었으면 좋았을 텐데.'); return; }
+    c.give(id);
+    s.fishLog[id] = (s.fishLog[id] || 0) + 1;
+    const rare = pick[2] <= 8;
+    if (rare) { c.jingle('secret'); await c.say(null, '[y]' + name + '[/]! 흔히 볼 수 없는 녀석이다. 팔을 타고 물기가 흘러내린다.'); }
+    else if (id === 'fish_gold') await c.say('dotori:surprise', ['찍?! 황금 고등어! 어시장에서 5만 골드 하는 그거!', '…미드나잇이 좋아한다던 그 생선이다.']);
+    else await c.say(null, name + '을(를) 낚았다.');
+  };
+
+  /* ───────── 들짐승 ───────── */
+  G.story.critter = async (c, n) => {
+    const reg = (G.field.map && G.field.map.region) || 'green';
+    const L = {
+      cat: ['고양이가 눈을 가늘게 뜨고 이쪽을 본다. 한참 보다가, 흥미 없다는 듯 하품을 한다.', '고양이가 발등에 머리를 한 번 비비고 가 버렸다. 허락받은 기분이다.', '고양이 꼬리 끝이 까딱까딱한다. 무언가 계산 중인 것 같다.', reg === 'black' ? '까만 고양이다. 미드나잇의 부하일지도 모른다. 눈을 마주치자 먼저 고개를 돌렸다.' : '털에 재가 조금 묻어 있다. 이 동네에서 꽤 오래 산 모양이다.'],
+      bird: ['새가 고개를 갸웃한다. 가까이 가자 한 걸음씩 물러선다. 딱 한 걸음씩.', '작은 새가 땅에서 무언가를 쪼고 있다. 부스러기다. 누군가 매일 뿌려 주는 모양이다.', reg === 'gray' ? '잿빛 새다. 원래 무슨 색이었는지는 새도 모를 것이다.' : '새가 짹, 하고 한 번 울더니 날아올랐다가 다시 내려앉았다.'],
+      squirrel: ['다람쥐가 볼이 터지도록 도토리를 물고 있다. 도토리를 보자 도토리가 얼어붙었다.', '다람쥐가 이쪽을 본다. …도토리를 보는 건가?'],
+    }[n.critter] || ['작은 동물이 고개를 갸웃한다.'];
+    await c.say(null, U.pick(L));
+    if (n.critter === 'squirrel' && G.state.follower === 'dotori' && !c.flag('sq_meet')) { c.set('sq_meet'); await c.say('dotori', '…나보다 레벨 높아 보여. 찍.'); }
+  };
+
+  /* ───────── 벤치에 앉으면 ───────── */
+  G.story.benchThought = async (c) => {
+    const s = c.s, reg = (G.field.map && G.field.map.region) || 'green';
+    const T = {
+      green: ['바람이 풀을 한 방향으로 눕혔다가 다시 일으킨다. 이 마을에서 열여섯 해를 살았는데, 이렇게 가만히 본 건 처음이다.', '저 멀리 오두막 굴뚝에서 연기가 오른다. 할머니는 지금 된장을 휘젓고 계실 것이다.'],
+      red: ['대장간 망치 소리가 일정하다. 탕, 탕, 탕. 세 번에 한 번은 탑이 가져간다.', '재가 소매에 내려앉는다. 털어 내도 또 내려앉는다. 이 마을 사람들은 털지 않는다.'],
+      blue: ['파도가 들어왔다가 나간다. 들어올 때보다 나갈 때 소리가 크다.', '멀리 등대가 보인다. ' + (s.quests.q_light === 'done' ? '이제 밤마다 불이 켜진다.' : '불이 꺼져 있다.')],
+      yellow: ['금화 세는 소리가 사방에서 들린다. 가만히 앉아 있는 사람은 나밖에 없다.', '모래바람이 잦아들자 광장 끝의 아이들이 보인다. 다들 조금씩 말랐다.'],
+      purple: ['해가 지고 있다. 16년째. 지는 해를 이렇게 오래 볼 수 있다는 게 이상하게 슬프다.', '숲 어딘가에서 누가 시를 읊는다. 운이 안 맞는다.'],
+      rainbow: ['광장에 걸린 깃발 일곱 장이 서로 다른 방향으로 펄럭인다.', '천년제 연습 중인 악단이 같은 마디를 열두 번째 틀렸다. 아무도 화내지 않는다.'],
+      white: ['눈이 소리를 다 먹어 버렸다. 내 숨소리만 들린다.', '대성당 종이 울린다. 누군가 또 나아졌거나, 누군가 또 떠났다는 뜻이다.'],
+      gray: ['색이 없는 거리에 앉아 있으니 내 초록 옷이 너무 시끄럽게 느껴진다.', '어디선가 톱니가 헛도는 소리가 난다. 400년째 멈추지 못한 기계가 있는 모양이다.'],
+      black: ['별이 아주 많다. 해가 뜨지 않는 도시라서 별이 쉬지 않는다.', '등불 하나가 꺼졌다가 다시 켜졌다. 누군가 기름을 채우고 갔다.'],
+      colorful: ['하늘에서 불꽃이 터진다. 누가 쏘는지 아무도 모른다. 다들 그냥 좋아한다.', '어디선가 또 폭발음이 났다. 박수 소리가 따라왔다.'],
+      space: ['창밖으로 대륙이 보인다. 초승달 모양이다. 저기 어딘가에 할머니가 있다.'],
+      planet: ['황금빛 모래가 발밑에서 사각거린다. 여기서 몇 명의 챔피언이 싸우다 쓰러졌을까.'],
+    }[reg] || ['잠깐 앉아 숨을 골랐다.'];
+    await c.say(null, U.pick(T));
+    if (s.follower === 'dotori' && Math.random() < 0.35) await c.say('dotori', U.pick(['…좋다. 이렇게 앉아 있는 거.', '다리 아파? 나는 아파. 너보다 다리가 짧으니까 두 배로 걸었어.', '할머니도 이런 데 앉는 거 좋아했어. 앉자마자 졸았지만.']));
+  };
+
+  /* ───────── 동행과의 대화 ─────────
+     G.story.talks: { id, when(s), map?, run(c) } — 아직 안 나눈 이야기 가운데 지금 맞는 것 하나. 없으면 그 지역의 짧은 말. */
+  const REGION_SMALL = {
+    green: ['그린 마을 공기는 풀 냄새가 나. 다른 데 가면 이 냄새가 그리워질까?', '할머니가 된장 항아리 뚜껑 닫았는지 모르겠다. 찍.'],
+    red: ['여기 사람들은 화가 나면 망치를 더 세게 쳐. 그래서 칼이 좋대.', '재가 자꾸 코에 들어가. 에취.'],
+    blue: ['바다는 끝이 안 보여. 끝이 안 보이는 건 무서운데, 이상하게 좋아.', '도서관 책 냄새, 나 좋아해. 오래된 종이 냄새.'],
+    yellow: ['여기선 다들 뭔가를 세고 있어. 금화든, 경험이든, 남은 날이든.', '까치네 애들, 밥은 먹었을까.'],
+    purple: ['여기 해는 지기만 해. 뜨지를 않아. 누가 시간을 붙잡아 둔 것 같아.', '이 숲 냄새… 자꾸 뭔가 생각날 것 같아.'],
+    rainbow: ['여기 사람들은 다 머리색이 달라. 그래서 아무도 서로 안 쳐다봐. 좋다.', '구름 위를 걷는 거, 아직도 무서워.'],
+    white: ['추워. 너 목도리 있어? …나 털 있으니까 괜찮아. 거짓말이야, 추워.', '여기 사람들은 기도를 많이 해. 뭘 그렇게 비는 걸까.'],
+    gray: ['여긴 색이 없어서 네 흰빛이 더 잘 보여. 좀… 눈에 띄어.', '기계들이 다 우리를 보는 것 같아.'],
+    black: ['해가 안 뜨니까 몇 시인지 모르겠어. 배꼽시계는 점심이래.', '여기선 다들 목소리가 작아. 밤이라서 그런가.'],
+    colorful: ['여기 사람들은 등급을 안 물어봐. 처음 봤어, 그런 동네.', '또 터졌어! …나도 이제 안 놀라.'],
+    space: ['창밖이 까매. 까만데 반짝여.', '숨 쉬는 거 신경 쓰여. 원래 이렇게 신경 쓰면서 쉬는 거였나.'],
+    planet: ['발밑이 금이야. 골디 아저씨가 보면 기절하겠다.', '…세린이 여기 어딘가에 있어.'],
+  };
+  G.story.companion = async (c) => {
+    const s = c.s;
+    if (s.follower !== 'dotori') { await c.say(s.follower || null, '……'); return; }
+    const mapId = G.field.id;
+    const open = G.story.talks.filter((t) => !s.flags['talk_' + t.id] && (!t.map || t.map === mapId || (Array.isArray(t.map) && t.map.includes(mapId))) && (!t.when || t.when(s)));
+    open.sort((a, b) => (b.map ? 1 : 0) - (a.map ? 1 : 0) || (b.pri || 0) - (a.pri || 0));
+    const t = open[0];
+    if (t) { s.flags['talk_' + t.id] = 1; await t.run(c); return; }
+    const reg = (G.field.map && G.field.map.region) || 'green';
+    const L = REGION_SMALL[reg] || REGION_SMALL.green;
+    await c.say('dotori', U.pick(L));
+  };
+
+  /* ───────── 쉬는 밤의 대화 ───────── */
+  G.story.night = async (c) => {
+    const s = c.s;
+    const n = G.story.nights.find((x) => !s.flags['night_' + x.id] && (!x.when || x.when(s)));
+    if (!n) return;
+    s.flags['night_' + n.id] = 1;
+    const prev = G.audio.current && G.audio.current();
+    c.music(n.music || 'calm');
+    await c.narr(n.intro || '밤이 깊었다. 창밖으로 별이 보인다.');
+    await n.run(c);
+    if (prev) c.music(prev); else G.main.resumeMusic();
+  };
+
+  /* ───────── 대륙 곳곳의 들짐승 ───────── */
+  const CRIT = {
+    green: ['bird', 'bird', 'cat'], green_field: ['bird', 'bird', 'squirrel'], green_forest: ['squirrel', 'bird'],
+    red: ['cat', 'cat'], red_path: ['bird'], blue: ['cat', 'bird', 'bird'], coast: ['bird', 'bird'], beach: ['bird', 'bird'],
+    yellow: ['cat', 'cat', 'bird'], purple: ['cat', 'bird'], purple_forest: ['squirrel', 'bird'], rainbow: ['bird', 'bird', 'cat'],
+    white: ['bird'], gray: ['cat', 'bird'], black: ['cat', 'cat', 'cat'], colorful: ['cat', 'bird', 'bird'], cape: ['bird', 'bird'],
+  };
+  for (const id in CRIT) if (G.maps[id]) W.critters(id, CRIT[id].map((k) => (k === 'cat' && (id === 'black') ? { k, tint: '#2a2438' } : k === 'bird' && id === 'gray' ? { k, tint: '#9a9aa4' } : k)));
+})();
+
 /* js/main.js */
 /* 본체: 부팅 · 루프 · 맵 이동 · 렙업 버튼 · 레벨업 연출 · 기절 · 저장 · 순간이동 · 타이틀/지도 그림 */
 (function () {
@@ -9844,6 +11039,8 @@ input { font: inherit; }
       return;
     }
     if (ev.type === 'obj') { const o = ev.obj; S.run((c) => objAction(c, o)); return; }
+    if (ev.type === 'critter') { const n = ev.npc; S.run((c) => (G.story.critter ? G.story.critter(c, n) : c.say(null, '작은 동물이 고개를 갸웃한다.'))); return; }
+    if (ev.type === 'follower') { if (G.story.companion) S.run((c) => G.story.companion(c)); return; }
     if (ev.type === 'door') {
       const b = ev.b;
       if (b.cond && !b.cond(s)) { S.run((c) => c.say(null, b.locked || '문이 잠겨 있다.')); return; }
@@ -9855,6 +11052,7 @@ input { font: inherit; }
     if (ev.type === 'none') {
       const ch = ev.ch, m = F.map;
       if (m.examine) { const r = m.examine(ev.x, ev.y, ch); if (r) { S.run(typeof r === 'function' ? r : (c) => c.say(null, r)); return; } }
+      if ((ch === '~' || ch === 'v') && G.story.canFish && G.story.canFish(s)) { S.run((c) => G.story.fishing(c, ev.x, ev.y)); return; }
       if (ch === 'n') { const [dx, dy] = F.DIRS[F.player.dir]; const n2 = F.npcAt(ev.x + dx, ev.y + dy); if (n2) { F.onInteract({ type: 'npc', npc: n2 }); n2.dir = { up: 'down', down: 'up', left: 'right', right: 'left' }[F.player.dir]; return; } }
       const txt = { h: '책이 빼곡하다. 딱히 눈에 띄는 책은 없다.', '~': '물이 맑다. 얼굴이 비친다.', q: '푹신해 보이는 침대다.', b: '통 안에서 짭짤한 냄새가 난다.', d: '책상 위에 쓰다 만 편지가 있다. 남의 편지는 읽지 않는다.', p: '잘 가꾼 화분이다.', f: '꽃이 예쁘게 피었다.', g: '이름이 닳아 지워진 비석이다.', y: '누군가의 석상이다. 이름표가 없다.', l: '따뜻한 불빛이 흔들린다.', L: '용암이다! 가까이 가면 뜨겁다.', u: '화면에 알 수 없는 숫자가 흐른다.', j: '창밖으로 별이 보인다.', K: '황금빛 수정이 은은하게 빛난다.', '@': '얼음 수정이 차갑게 빛난다.', X: '고철 더미다. 쓸 만한 건 없어 보인다.', R: '오래된 기둥이다. 무늬가 반쯤 지워졌다.', T: '커다란 나무다.', M: '거대한 버섯이다. 포자가 날린다.' }[ch];
       if (txt) S.run((c) => c.say(null, txt));
@@ -9863,7 +11061,14 @@ input { font: inherit; }
   async function objAction(c, o) {
     const s = G.state;
     if (o.talk) { await o.talk(c, o); return; }
-    if (o.t === 'sign') { await c.say(null, o.text); return; }
+    if (o.t === 'sign' || o.t === 'prop') {
+      // 글은 이야기가 흐르며 바뀔 수 있다: text(s)
+      const txt = typeof o.text === 'function' ? o.text(s) : o.text;
+      if (txt) await c.say(null, txt);
+      const key = 'look_' + F.id + '_' + o.x + '_' + o.y;
+      if (o.first && !s.flags[key]) { s.flags[key] = 1; await o.first(c); }
+      return;
+    }
     if (o.t === 'book') { if (!s.books[o.id]) { unlockBook(o.id); G.audio.sfx('page'); } await UI.readBook(o.id); return; }
     if (o.t === 'chest') {
       if (s.chests[o.id]) { await c.say(null, '빈 상자다.'); return; }
@@ -10062,11 +11267,37 @@ input { font: inherit; }
       if (B.active) { B.update(dt); B.render(g, VW, VH); }
       else { F.held = UI.top() && UI.top().name === 'base' ? UI.heldDir : null; F.update(dt); F.render(g, VW, VH); }
       UI.hud();
+      drawBarks();
       M.infoT -= dt;
       if (M.infoT <= 0) { M.infoT = 0.25; padInfo(); }
       if (now - M.lastSave > 20000 && !S.running && !B.active) save();
     }
     requestAnimationFrame(frame);
+  }
+  /* 사람들의 혼잣말: 캔버스 위에 또렷한 글씨로 띄운다 */
+  const barkEls = new Map();
+  function drawBarks() {
+    const box = $('barks');
+    if (!box) return;
+    const show = !B.active && !S.running && M.running;
+    const k = cv.clientWidth / VW;
+    const live = new Set();
+    if (show) {
+      for (const n of F.npcs) {
+        if (!(n.barkLife > 0) || n.hidden || (n.cond && !n.cond(G.state))) continue;
+        live.add(n);
+        let el = barkEls.get(n);
+        if (!el) { el = document.createElement('div'); el.className = 'bark'; box.appendChild(el); barkEls.set(n, el); }
+        if (el.textContent !== n.barkText) el.textContent = n.barkText;
+        const x = cv.offsetLeft + (n.px - F.cam.x + 8) * k, y = cv.offsetTop + (n.py - F.cam.y - 4) * k;
+        el.style.transform = 'translate(' + Math.round(x) + 'px,' + Math.round(y) + 'px) translate(-50%,-100%)';
+        el.style.opacity = n.barkLife < 0.4 ? String(n.barkLife / 0.4) : '1';
+      }
+    }
+    for (const [n, el] of barkEls) if (!live.has(n)) { el.remove(); barkEls.delete(n); }
+    // A 버튼 아래 글씨: 지금 A로 할 수 있는 일
+    const cap = $('a-cap');
+    if (cap) { const t = show && F.prompt ? F.prompt.k : ''; if (cap.textContent !== t) cap.textContent = t; }
   }
   function padInfo() {
     const s = G.state, d = E.derive(s);

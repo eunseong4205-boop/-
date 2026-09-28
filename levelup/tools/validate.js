@@ -68,7 +68,7 @@ function check(G) {
     if (m.grid.some((r) => r.length !== m.grid[0].length)) warns.push(id + ': 줄 길이가 들쭉날쭉하다');
     // 막히는 오브젝트 · NPC
     const solid = new Set();
-    for (const o of m.objs || []) if (o.t === 'chest' || o.t === 'sign' || o.t === 'prop' || o.t === 'statue' || o.t === 'pickup' || o.t === 'lamp' || o.t === 'book') solid.add(o.x + ',' + o.y);
+    for (const o of m.objs || []) if (o.solid !== false && (o.t === 'chest' || o.t === 'sign' || o.t === 'prop' || o.t === 'statue' || o.t === 'pickup' || o.t === 'lamp' || o.t === 'book')) solid.add(o.x + ',' + o.y);
     for (const n of m.npcs || []) solid.add(n.x + ',' + n.y);
     for (const f of m.fixed || []) solid.add(f.x + ',' + f.y);
     const pass = (x, y) => walk(x, y) && !solid.has(x + ',' + y);
@@ -104,10 +104,13 @@ function check(G) {
       if (!G.chars[n.id] && !n.look) errs.push(id + ': NPC ' + n.id + ' 인물 정보 없음');
       if (entries.length && !adjReach(n.x, n.y) && !n.cond) warns.push(where(n.x, n.y) + ': NPC ' + n.id + '에게 닿을 수 없다');
     }
+    const objs2 = new Set();
     for (const o of m.objs || []) {
       if (o.x < 0 || o.y < 0 || o.x >= W || o.y >= H) { errs.push(where(o.x, o.y) + ': 오브젝트가 맵 밖'); continue; }
       if (o.t === 'spot' && (!walk(o.x, o.y) || (entries.length && !reach(o.x, o.y)))) errs.push(where(o.x, o.y) + ': 수련 샘에 설 수 없다 (' + I.grid[o.y][o.x] + ')');
-      if ((o.t === 'chest' || o.t === 'sign' || o.t === 'book' || o.t === 'gate' || o.t === 'orbshine' || o.t === 'pickup') && entries.length && !adjReach(o.x, o.y) && !(o.t === 'gate' && reach(o.x, o.y))) warns.push(where(o.x, o.y) + ': ' + o.t + (o.id ? ' ' + o.id : '') + '에 닿을 수 없다');
+      if (o.t === 'prop' && !walk(o.x, o.y)) warns.push(where(o.x, o.y) + ': 소품 ' + o.kind + '이 바닥이 아닌 칸에 있다 (' + I.grid[o.y][o.x] + ')');
+      if (objs2.has(o.x + ',' + o.y + ',' + (o.cond ? 'c' : ''))) warns.push(where(o.x, o.y) + ': 오브젝트가 겹친다'); objs2.add(o.x + ',' + o.y + ',' + (o.cond ? 'c' : ''));
+      if ((o.t === 'chest' || o.t === 'sign' || o.t === 'book' || o.t === 'gate' || o.t === 'orbshine' || o.t === 'pickup' || o.t === 'prop') && entries.length && !adjReach(o.x, o.y) && !(o.t === 'gate' && reach(o.x, o.y))) warns.push(where(o.x, o.y) + ': ' + o.t + (o.id ? ' ' + o.id : '') + '에 닿을 수 없다');
       if (o.t === 'book' && !G.books[o.id]) errs.push(id + ': 없는 책 ' + o.id);
       if (o.t === 'chest' && o.item && !D.ITEMS[o.item]) errs.push(id + ': 상자에 없는 아이템 ' + o.item);
     }

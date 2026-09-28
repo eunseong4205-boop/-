@@ -348,6 +348,7 @@
       const p = E.expProgress(s);
       const statDesc = { str: ['힘', '공격력 +2'], vit: ['체력', '최대 HP +10, 방어 +0.5'], agi: ['민첩', '치명타 확률·피해'], int: ['지능', '클릭 경험치 배율'], luk: ['행운', '클릭 골드 배율'] };
       let h = '<div class="row" style="border:0"><canvas class="portrait-sm" data-face="@"></canvas><div class="nm"><b>' + esc(s.name) + ' · ' + (s.flags.champion ? '챔피언' : E.rankName(s)) + '</b><small>Lv ' + U.fmtInt(s.lv) + ' · 다음 레벨까지 ' + U.fmt(p.need - p.cur) + ' EXP</small></div></div>';
+      if (s.follower && G.chars[s.follower] && G.story.companion) h += '<button class="btn pri" style="width:100%;margin:2px 0 8px" data-act="companion">' + esc(U.josa(G.chars[s.follower].name, '과/와')) + ' 이야기하기</button>';
       h += '<dl class="kv card"><dt>HP</dt><dd>' + U.fmt(Math.ceil(s.hp)) + ' / ' + U.fmt(d.hpMax) + '</dd><dt>공격력</dt><dd>' + U.fmt(d.atk) + '</dd><dt>방어</dt><dd>' + U.fmt(d.def) + '</dd>' +
         '<dt>치명타</dt><dd>' + Math.round(d.crit * 100) + '% · ×' + d.critDmg.toFixed(2) + '</dd><dt>클릭 경험치 배율</dt><dd>' + U.fmtMult(d.expM) + '</dd><dt>클릭 골드 배율</dt><dd>' + U.fmtMult(d.goldM) + '</dd>' +
         '<dt>도구</dt><dd>' + U.fmtMult(d.tool) + '</dd><dt>등급 배율</dt><dd>' + U.fmtMult(d.rc) + '</dd></dl>';
@@ -368,7 +369,7 @@
     if (tab === 'bag') {
       const groups = ['potion', 'food', 'weapon', 'armor', 'acc', 'tool', 'mat', 'key'];
       let h = '';
-      if (s.buffs.some((b) => b.until > s.t)) h += '<div class="card note">' + s.buffs.filter((b) => b.until > s.t).map((b) => '<b style="color:var(--gold)">' + (D.ITEMS[b.id] ? D.ITEMS[b.id].name : '대륙의 빛') + '</b> 효과 ' + U.fmtTime(b.until - s.t) + ' 남음').join('<br>') + '</div>';
+      if (s.buffs.some((b) => b.until > s.t)) h += '<div class="card note">' + s.buffs.filter((b) => b.until > s.t).map((b) => '<b style="color:var(--gold)">' + (D.ITEMS[b.id] ? D.ITEMS[b.id].name : ({ pray: '사당의 온기', support: '대륙의 빛' }[b.id] || '알 수 없는 기운')) + '</b> 효과 ' + U.fmtTime(b.until - s.t) + ' 남음').join('<br>') + '</div>';
       for (const g of groups) {
         const ids = Object.keys(s.inv).filter((id) => D.ITEMS[id] && D.ITEMS[id].type === g && s.inv[id] > 0);
         if (!ids.length) continue;
@@ -393,9 +394,12 @@
       for (const id of G.CHAR_ORDER) {
         const c = G.chars[id];
         if (!s.seen[id]) { h += '<div class="row"><span class="ic">?</span><span class="nm"><b style="color:var(--muted)">???</b><small>아직 만나지 못했다.</small></span></div>'; continue; }
-        const lines = c.bio.filter((b) => !b[1] || s.flags[b[1]]).map((b) => esc(U.nameSub(b[0], s.name)));
+        const lines = c.bio.filter((b) => !b[1] || (typeof b[1] === 'function' ? b[1](s) : s.flags[b[1]])).map((b) => esc(U.nameSub(b[0], s.name)));
         const more = c.bio.length - lines.length;
-        h += '<div class="row" style="align-items:flex-start"><canvas class="portrait-sm" data-face="' + id + '"></canvas><span class="nm"><b style="color:' + c.color + '">' + esc(c.name) + '</b><small>' + esc(c.title || '') + '</small><small style="color:var(--paper-dim);margin-top:4px">' + lines.join('<br>') + (more ? '<br><span style="color:var(--muted)">… 아직 모르는 이야기가 ' + more + '개 있다.</span>' : '') + '</small></span></div>';
+        const bv = (s.bond || {})[id];
+        const bl = bv != null ? G.script.bondLevel(bv) : null;
+        const bond = bl ? ' <span class="chip" style="font-size:10px;padding:0 5px;color:' + (bv < 0 ? '#ff8a8a' : bv >= 3 ? '#ffd84a' : 'var(--paper-dim)') + '">' + (bv < 0 ? '♡ ' : '♥ ') + bl.name + '</span>' : '';
+        h += '<div class="row" style="align-items:flex-start"><canvas class="portrait-sm" data-face="' + id + '"></canvas><span class="nm"><b style="color:' + c.color + '">' + esc(U.nameSub(c.name, s.name)) + bond + '</b><small>' + esc(c.title || '') + '</small><small style="color:var(--paper-dim);margin-top:4px">' + lines.join('<br>') + (more ? '<br><span style="color:var(--muted)">… 아직 모르는 이야기가 ' + more + '개 있다.</span>' : '') + '</small></span></div>';
       }
       return h;
     }
@@ -411,7 +415,14 @@
       return h;
     }
     if (tab === 'books') {
-      const ids = Object.keys(G.books || {});
+      // 선택에 따라 갈리는 책(group)은 한 권으로 센다: 얻은 것만, 아직 없으면 하나만 ???로
+      const seenG = {};
+      const ids = Object.keys(G.books || {}).filter((id) => {
+        const g = G.books[id].group; if (!g) return true;
+        const any = Object.keys(G.books).some((k) => G.books[k].group === g && s.books[k]);
+        if (any) return !!s.books[id];
+        if (seenG[g]) return false; seenG[g] = 1; return true;
+      });
       const got = ids.filter((id) => s.books[id]);
       let h = '<p class="note">모은 이야기 ' + got.length + ' / ' + ids.length + ' · 책장과 비석, 쪽지를 살펴보면 모인다.</p>';
       for (const id of ids) {
@@ -468,6 +479,7 @@
     }
     if (act === 'wipe') { if (!UI.wipeArm) { UI.wipeArm = true; setTimeout(() => { UI.wipeArm = false; }, 4000); } else { UI.wipeArm = false; G.main.wipe(); return; } }
     if (act === 'rankup') { G.main.doRankUp(+ds.i); }
+    if (act === 'companion') { api.close(); if (!G.script.running) G.script.run((c) => G.story.companion(c)); return; }
     api.refresh();
   }
 
@@ -576,7 +588,20 @@
     };
     h += '<div class="sec">이야기</div>' + (main.filter((id) => s.quests[id] !== 'done').map(line).join('') || '<p class="note">지금은 따라갈 이야기가 없다.</p>');
     const act = side.filter((id) => s.quests[id] !== 'done');
-    h += '<div class="sec" style="margin-top:10px">부탁 · ' + act.length + '개 진행 중</div>' + (act.map(line).join('') || '<p class="note">받아 둔 부탁이 없다. 머리 위에 [y]![/]가 뜬 사람에게 말을 걸어 보자.</p>');
+    h += '<div class="sec" style="margin-top:10px">부탁 · ' + act.length + '개 진행 중</div>' + (act.map(line).join('') || '<p class="note">' + markup('받아 둔 부탁이 없다. 머리 위에 [y]![/]가 뜬 사람에게 말을 걸어 보자.') + '</p>');
+    // 진실의 조각: 어느 순서로 모아도 된다. 많이 알수록 마지막에 할 수 있는 말이 늘어난다.
+    const T = G.story.truths || {};
+    const tids = Object.keys(T);
+    if (tids.length && Object.keys(s.truth || {}).length) {
+      const got = tids.filter((k) => s.truth[k]);
+      h += '<div class="sec" style="margin-top:10px">진실의 조각 ' + got.length + ' / ' + tids.length + '</div>' +
+        tids.map((k) => (s.truth[k] ? '<div class="row" style="align-items:flex-start"><span class="ic" style="color:var(--r5)">◆</span><span class="nm"><b>' + esc(T[k].title) + '</b><small>' + markup(T[k].text) + '</small></span></div>'
+          : '<div class="row"><span class="ic" style="color:var(--muted)">◇</span><span class="nm"><small style="color:var(--muted)">' + esc(T[k].hint || '아직 모르는 조각') + '</small></span></div>')).join('');
+    }
+    // 결정의 기록
+    if ((s.log || []).length) {
+      h += '<div class="sec" style="margin-top:10px">내가 내린 결정</div>' + s.log.map((d) => '<div class="row"><span class="ic" style="color:var(--gold)">▸</span><span class="nm"><b>' + esc(U.nameSub(d.t || d.k, s.name)) + '</b><small>' + esc(d.ch || '') + '</small></span></div>').join('');
+    }
     const dn = side.filter((id) => s.quests[id] === 'done').concat(main.filter((id) => s.quests[id] === 'done'));
     if (dn.length) h += '<div class="sec" style="margin-top:10px">끝낸 일 ' + dn.length + '</div>' + dn.map(line).join('');
     return h;

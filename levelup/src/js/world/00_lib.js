@@ -7,6 +7,10 @@
   G.world = G.world || { towns: [], nodes: [] };
   G.hooks = G.hooks || { level: [], rank: [], enter: [], click: [] };
   G.story = G.story || {};
+  // 장마다 덧붙이는 이야기 조각: 동행과의 대화 · 쉬는 밤의 대화 · 진실의 조각
+  G.story.talks = G.story.talks || [];
+  G.story.nights = G.story.nights || [];
+  G.story.truths = G.story.truths || {};
 
   const W = {};
   const DIR4 = [[1, 0], [-1, 0], [0, 1], [0, -1]];
@@ -195,6 +199,52 @@
   W.sign = (x, y, text) => ({ t: 'sign', x, y, text });
   W.bookObj = (id, x, y) => ({ t: 'book', id, x, y });
   W.gate = (x, y, req, msg, extra) => Object.assign({ t: 'gate', x, y, req, msg }, extra || {});
+  /** 살펴볼 곳 (보이지 않는다). text는 문자열 · 배열 · (s) => … 로 이야기에 따라 바뀔 수 있다. opt.first: 처음 볼 때 한 번 */
+  W.look = (x, y, text, opt) => Object.assign({ t: 'sign', invisible: true, solid: false, x, y, text }, opt || {});
+  /** 소품: 우물(물 마시기) · 벤치(앉아 쉬기) · 사당(기도) · 모닥불(불 쬐기) · 낚시 구멍 · 게시판 · 상자 · 석상 · 등불 */
+  const PROP = {
+    well: { text: '돌로 쌓은 우물이다. 두레박 줄이 반들반들하다.', verb: '물 마시기', act: async (c) => { c.s.hp = Math.min(G.engine.derive(c.s).hpMax, c.s.hp + G.engine.derive(c.s).hpMax * 0.4); c.sfx('heal'); await c.say(null, '차가운 물을 한 모금 마셨다. 목 뒤가 서늘해지며 기운이 돌아온다.'); } },
+    bench: { text: null, verb: '앉기', act: async (c) => { await c.fadeOut(300); c.s.hp = Math.min(G.engine.derive(c.s).hpMax, c.s.hp + G.engine.derive(c.s).hpMax * 0.3); await c.wait(0.6); await c.fadeIn(300); await (G.story.benchThought ? G.story.benchThought(c) : c.say(null, '잠깐 앉아 숨을 골랐다.')); } },
+    shrine: { text: '작은 돌 사당이다. 누군가 매일 초를 갈아 끼우는 모양이다.', verb: '기도하기', act: async (c) => {
+      const st = c.s; if ((st.buffs || []).some((b) => b.id === 'pray' && b.until > st.t)) { await c.say(null, '마음이 이미 따뜻하다. 초가 조용히 탄다.'); return; }
+      st.buffs.push({ id: 'pray', fx: { exp: 0.25 }, until: st.t + 180 }); c.sfx('white');
+      await c.say(null, ['두 손을 모았다. 무엇을 빌지는 정하지 못했다. 그래도 촛불이 한 번 크게 흔들렸다.', '[y]사당의 온기[/] — 3분 동안 경험치 +25%']);
+    } },
+    fire: { text: null, verb: '불 쬐기', act: async (c) => { c.s.hp = Math.min(G.engine.derive(c.s).hpMax, c.s.hp + G.engine.derive(c.s).hpMax * 0.5); c.sfx('heal'); await c.say(null, '손을 불에 대고 한참 있었다. 타닥, 타닥. 굳었던 손가락이 풀린다.'); } },
+    board: { text: '게시판이다. 붙은 종이가 바람에 들썩인다.', verb: '읽기' },
+    crate: { text: '나무 상자다. 못이 단단히 박혀 있다.' },
+    statue: { text: '누군가의 석상이다.' },
+    lantern: { text: '등불이 흔들린다.' },
+    // 낚시 구멍: 물이 없는 곳(얼음 구멍 · 우물)에서도 드리울 수 있다. opt.pool = 어느 물의 물고기인지
+    hole: { text: null, verb: '낚시', act: async (c, o) => {
+      if (!(G.story.canFish && G.story.canFish(c.s))) { await c.say(null, o.noRod || '물이 깊다. 낚싯대가 있다면 무언가 걸릴지도 모른다.'); return; }
+      await G.story.fishing(c, o.x, o.y, o.pool);
+    } },
+  };
+  W.prop = (kind, x, y, text, opt) => {
+    const P = PROP[kind] || {};
+    const o = Object.assign({ t: 'prop', kind, x, y, verb: P.verb || '살펴보기' }, opt || {});
+    const txt = text !== undefined ? text : P.text;
+    if (P.act && !o.talk) o.talk = async (c) => { const t = typeof txt === 'function' ? txt(c.s) : txt; if (t) await c.say(null, t); await P.act(c, o); if (o.after) await o.after(c); };
+    else o.text = txt;
+    return o;
+  };
+  /** 이미 등록된 맵에 나중에 덧붙이기: 혼잣말 · 오브젝트 · 들짐승 */
+  W.barks = (mapId, table) => {
+    const m = G.maps[mapId]; if (!m) throw new Error('barks: no map ' + mapId);
+    for (const n of m.npcs || []) { const b = table[n.id]; if (b && !n.bark) n.bark = b; }
+  };
+  W.addObjs = (mapId, objs) => { const m = G.maps[mapId]; if (!m) throw new Error('addObjs: no map ' + mapId); m.objs = (m.objs || []).concat(objs); };
+  W.addNpcs = (mapId, npcs) => { const m = G.maps[mapId]; if (!m) throw new Error('addNpcs: no map ' + mapId); m.npcs = (m.npcs || []).concat(npcs); };
+  W.critters = (mapId, list) => { const m = G.maps[mapId]; if (!m) throw new Error('critters: no map ' + mapId); m.critters = list; };
+  /** 기존 인물의 대사 앞에 끼어드는 장면: 조건이 맞으면 fn, 아니면 원래 대사 */
+  W.wrapNpc = (mapId, npcId, cond, fn) => {
+    const m = G.maps[mapId]; if (!m) throw new Error('wrapNpc: no map ' + mapId);
+    const n = (m.npcs || []).find((x) => x.id === npcId); if (!n) throw new Error('wrapNpc: no npc ' + npcId + ' in ' + mapId);
+    const orig = n.talk;
+    n.talk = async (c, nn) => { if (cond(c.s)) return fn(c, nn, orig); if (orig) return orig(c, nn); };
+    return n;
+  };
 
   /** 지역 레벨 구간에서 frac(0~1) 위치의 레벨 → 맵 기운 */
   W.ki = (region, frac) => { const r = D.REG[region]; return Math.round(r.lv[0] * Math.pow(r.lv[1] / r.lv[0], frac)); };

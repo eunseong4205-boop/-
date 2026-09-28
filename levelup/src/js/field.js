@@ -88,12 +88,14 @@
       for (const b of F.builds) if (b.night || b.style === 'tower') F.lights.push({ x: b.x + Math.floor(b.w / 2), y: b.y + b.h - 1, r: 40, c: b.style === 'tower' ? '#b89aff' : '#ffd86a', dy: 0 });
       for (const L of m.lights || []) F.lights.push(Object.assign({ r: 40, dy: 8 }, L));
       for (const o of m.objs || []) if (o.t === 'lamp' && o.lit && o.lit(s)) F.lights.push({ x: o.x, y: o.y, r: 50, c: '#ffffff', dy: 2 });
+      for (const o of m.objs || []) if (o.t === 'prop' && (o.kind === 'fire' || o.kind === 'lantern' || o.kind === 'shrine') && (!o.cond || o.cond(s))) F.lights.push({ x: o.x, y: o.y, r: o.kind === 'fire' ? 44 : 30, c: '#ffb84a', dy: o.kind === 'fire' ? 9 : 3 });
     }
     // NPC
     F.npcs = (m.npcs || []).map((n) => Object.assign({ dir: 'down', px: n.x * TS, py: n.y * TS, mt: 0, moving: false, hidden: false, frame: 0, wt: Math.random() * 3 }, n))
       .map((n) => { n.hx = n.x; n.hy = n.y; n.sprite = spriteFor(n.look || n.id, s); return n; });
     // 오브젝트
     F.objs = (m.objs || []).map((o) => Object.assign({}, o));
+    F.barkT = 2 + Math.random() * 2; F.lastBark = null;
     // 몬스터
     F.mons = [];
     if (m.mons) for (let i = 0; i < m.mons.n; i++) spawnMon();
@@ -110,7 +112,47 @@
     if (s.follower) F.follower = { id: s.follower, x, y, px: x * TS, py: y * TS, dir: p.dir, sprite: spriteFor(s.follower, s), moving: false };
     else F.follower = null;
     F.particles = [];
+    if (m.critters) spawnCritters(typeof m.critters === 'function' ? m.critters(s) : m.critters);
     snapCam();
+  }
+
+  /* ───────── 들짐승 · 새 (사람을 보면 비킨다) ───────── */
+  const CRITTER = {
+    cat: { look: 'cat', bark: ['야옹.', '(하품)', '…', '냐아.'] },
+    bird: { look: 'bird', bark: ['짹.', '짹짹.', '(푸드덕)'] },
+    squirrel: { look: 'squirrel', bark: ['(오물오물)', '…'] },
+  };
+  function spawnCritters(list) {
+    const p = F.player;
+    list.forEach((spec, i) => {
+      const kind = typeof spec === 'string' ? spec : spec.k;
+      const C = CRITTER[kind] || CRITTER.cat;
+      for (let k = 0; k < 80; k++) {
+        const x = 1 + Math.floor(Math.random() * (F.W - 2)), y = 1 + Math.floor(Math.random() * (F.H - 2));
+        if (!freeTile(x, y) || objAt(x, y) || (F.map.warps || []).some((w) => w.x === x && w.y === y)) continue;
+        if (Math.abs(x - p.x) + Math.abs(y - p.y) < 4) continue;
+        const n = { id: 'critter_' + i, critter: kind, x, y, hx: x, hy: y, px: x * TS, py: y * TS, dir: U.pick(['left', 'right']), mt: 0, moving: false, hidden: false, frame: 0,
+          wt: Math.random() * 3, wander: 4, speed: 1.5, bark: spec.bark || C.bark, look: { creature: C.look, tint: spec.tint } };
+        n.sprite = spriteFor(n.look, G.state);
+        F.npcs.push(n);
+        break;
+      }
+    });
+  }
+  /** 가까이 오면 한 칸 도망친다 */
+  function critterFlee(n) {
+    const p = F.player;
+    const d0 = Math.abs(n.x - p.x) + Math.abs(n.y - p.y);
+    if (d0 > 2) return false;
+    let best = null, bd = d0;
+    for (const [dx, dy] of Object.values(DIRS)) {
+      const tx = n.x + dx, ty = n.y + dy;
+      if (!freeTile(tx, ty) || objAt(tx, ty)) continue;
+      const d = Math.abs(tx - p.x) + Math.abs(ty - p.y);
+      if (d > bd) { bd = d; best = [tx, ty]; }
+    }
+    if (best) { stepNpc(n, best[0], best[1]); n.hx = best[0]; n.hy = best[1]; return true; }
+    return false;
   }
   function refreshNpcs() {
     const s = G.state;
@@ -169,9 +211,12 @@
   function tryMove(dir) {
     const p = F.player;
     if (p.moving || F.busy) return;
+    const prevDir = p.dir;
     p.dir = dir;
     const [dx, dy] = DIRS[dir];
     const nx = p.x + dx, ny = p.y + dy;
+    // 동행 쪽으로는 먼저 돌아서기만 한다 (한 번 더 누르면 지나간다) → 마주 보고 말을 걸 수 있다
+    if (F.follower && F.follower.x === nx && F.follower.y === ny && prevDir !== dir && !F.follower.moving) return;
     const mo = monAt(nx, ny);
     if (mo) { if (F.onEncounter) F.onEncounter(mo); return; }
     const b = buildingAt(nx, ny);
@@ -183,7 +228,7 @@
     if (nx < 0 || ny < 0 || nx >= F.W || ny >= F.H) { const w = edgeWarp(nx, ny); if (w && F.onStep) F.onStep({ warp: w }); return; }
     if (F.block[ny][nx]) return;
     const n = npcAt(nx, ny);
-    if (n) return;
+    if (n && !n.critter) return;
     const o = objAt(nx, ny);
     if (o && objSolid(o)) { if (o.t === 'gate' && F.onInteract && !F.gateCool) { F.gateCool = true; setTimeout(() => { F.gateCool = false; }, 600); F.onInteract({ type: 'obj', obj: o }); } return; }
     // 이동 시작
@@ -228,7 +273,9 @@
     if (F.busy || F.player.moving) return;
     const f = facing();
     const n = npcAt(f.x, f.y);
-    if (n) { n.dir = opposite(F.player.dir); return F.onInteract && F.onInteract({ type: 'npc', npc: n }); }
+    if (n) { n.dir = opposite(F.player.dir); return F.onInteract && F.onInteract({ type: n.critter ? 'critter' : 'npc', npc: n }); }
+    const fo = F.follower;
+    if (fo && !F.hideHero && fo.x === f.x && fo.y === f.y) return F.onInteract && F.onInteract({ type: 'follower' });
     const mo = monAt(f.x, f.y);
     if (mo) return F.onEncounter && F.onEncounter(mo);
     const o = objAt(f.x, f.y) || objAt(F.player.x, F.player.y);
@@ -267,9 +314,26 @@
       fo.px = U.lerp(fo.fx, fo.x, f) * TS; fo.py = U.lerp(fo.fy, fo.y, f) * TS;
       if (f >= 1) { fo.moving = false; fo.px = fo.x * TS; fo.py = fo.y * TS; }
     }
+    // 혼잣말: 가까운 사람 하나가 가끔 한마디 한다
+    F.barkT = (F.barkT || 0) - dt;
+    if (F.barkT <= 0) {
+      F.barkT = 3.2 + Math.random() * 4;
+      if (!F.busy) {
+        const st = G.state;
+        const cands = F.npcs.filter((n) => !n.hidden && n.bark && (!n.cond || n.cond(st)) && !(n.barkLife > 0) && n !== F.lastBark &&
+          Math.abs(n.x - p.x) + Math.abs(n.y - p.y) <= 7 && Math.abs(n.x - p.x) + Math.abs(n.y - p.y) >= 1);
+        if (cands.length) {
+          const n = U.pick(cands);
+          const L = typeof n.bark === 'function' ? n.bark(st) : n.bark;
+          if (L && L.length) { n.barkText = U.nameSub(U.pick(L), st.name); n.barkLife = 3.4 + n.barkText.length * 0.05; F.lastBark = n; }
+        }
+      }
+    }
     // NPC 산책
     for (const n of F.npcs) {
       if (n.hidden) continue;
+      if (n.barkLife > 0) n.barkLife -= dt;
+      if (n.critter && !n.moving && !F.busy && critterFlee(n)) continue;
       if (n.jump) { n.jump += dt * 3; if (n.jump >= 1) n.jump = 0; }
       if (n.moving) {
         n.mt += dt; const f = Math.min(1, n.mt / (STEP * (n.path && n.path.length || n.speed ? 1.3 / (n.speed || 1) : 1.8)));
@@ -314,6 +378,29 @@
     }
     updateParticles(dt);
     updateCam(dt);
+    F.prompt = promptAt();
+  }
+  /** 바라보는 칸에서 A로 할 수 있는 일 → 머리 위 표시와 A 버튼 글씨 */
+  function promptAt() {
+    const p = F.player;
+    if (p.moving || F.busy || !F.map) return null;
+    const f = facing(), s = G.state;
+    const n = npcAt(f.x, f.y);
+    if (n) return { x: f.x, y: f.y, k: n.critter ? '살펴보기' : '말 걸기' };
+    const fo = F.follower;
+    if (fo && !F.hideHero && fo.x === f.x && fo.y === f.y) return { x: f.x, y: f.y, k: '이야기' };
+    if (monAt(f.x, f.y)) return { x: f.x, y: f.y, k: '싸우기' };
+    const o = objAt(f.x, f.y);
+    if (o && o.t !== 'spot' && !(o.t === 'chest' && s.chests[o.id] && !o.talk) && !(o.t === 'pickup' && s.chests[o.id]) && !(o.t === 'orbshine' && s.orbs[o.orb])) {
+      return { x: f.x, y: f.y, k: o.t === 'book' ? '읽기' : o.t === 'chest' ? '열기' : o.t === 'pickup' ? '줍기' : o.t === 'gate' ? '살펴보기' : o.verb || '살펴보기', hidden: o.invisible };
+    }
+    const b = buildingAt(f.x, f.y);
+    if (b && b.door !== undefined && f.x === b.x + b.door && f.y === b.y + b.h - 1) return { x: f.x, y: f.y, k: b.talk ? '두드리기' : '들어가기' };
+    if (b && (b.style === 'tower' || b.talk)) return { x: f.x, y: f.y, k: '살펴보기' };
+    const ch = charAt(f.x, f.y);
+    if (F.map.examine && F.map.examine(f.x, f.y, ch)) return { x: f.x, y: f.y, k: '살펴보기', hidden: true };
+    if ((ch === '~' || ch === 'v') && G.story.canFish && G.story.canFish(s)) return { x: f.x, y: f.y, k: '낚시', hidden: true };
+    return null;
   }
   function stepNpc(n, tx, ty, force) {
     if (!force && !freeTile(tx, ty)) return false;
@@ -454,6 +541,7 @@
         g.fillStyle = on ? '#ffffff' : '#4a4458'; g.fillRect(ox + 5, oy, 6, 4);
         if (on && Math.floor(F.t * 4) % 2) { g.fillStyle = '#fff8d0'; g.fillRect(ox + 6, oy + 1, 1, 1); }
       } });
+      if (o.t === 'prop') ents.push({ y: o.y * TS, draw: () => drawProp(g, ox, oy, o) });
       if (o.t === 'pickup' && !s.chests[o.id]) ents.push({ y: o.y * TS - 1, draw: () => {
         const c = o.c || '#ff5a4a';
         g.fillStyle = '#2a6a2a'; g.fillRect(ox + 7, oy + 8, 2, 6); g.fillRect(ox + 5, oy + 10, 2, 1); g.fillRect(ox + 9, oy + 11, 2, 1);
@@ -478,6 +566,14 @@
     if (fo && !F.hideHero) ents.push({ y: fo.py, draw: () => { const ff = fo.moving ? Math.floor(F.t * 8) % 2 : Math.floor(F.t * 2) % 2; const dir = fo.dir === 'right' || fo.dir === 'up' ? 'right' : 'left'; drawSprite(g, fo.sprite[dir] || fo.sprite.left, fo.px - cx, fo.py - cy - (fo.jump ? Math.round(Math.sin(fo.jump * Math.PI) * 6) : 0) - (fo.fly || 0), ff); } });
     ents.sort((a, b) => a.y - b.y);
     for (const e of ents) e.draw();
+    // A로 할 수 있는 일이 있으면 그 칸 위에 작은 표시
+    const pr = F.prompt;
+    if (pr && !F.hideHero) {
+      const bx = pr.x * TS - cx + 5, by = pr.y * TS - cy - 9 + Math.round(Math.sin(F.t * 6) * 1);
+      g.fillStyle = '#16101f'; g.fillRect(bx, by, 7, 7);
+      g.fillStyle = pr.hidden ? '#fff0b0' : '#ffffff'; g.fillRect(bx + 1, by + 1, 5, 5);
+      g.fillStyle = '#c83a3a'; g.fillRect(bx + 2, by + 2, 3, 1); g.fillRect(bx + 2, by + 3, 1, 2); g.fillRect(bx + 4, by + 3, 1, 2); g.fillRect(bx + 3, by + 4, 1, 1);
+    }
     for (const em of F.emotes) { const e = em.ent; if (!e || e.hidden) continue; const jy = e.jump ? Math.round(Math.sin(e.jump * Math.PI) * 6) : 0; drawEmote(g, Math.round(e.px - cx), Math.round(e.py - cy) - jy + (em.life > 1.2 ? 2 : 0), em.sym); }
     // 파티클
     for (const q of F.particles) {
@@ -515,6 +611,59 @@
     }
     g.globalAlpha = 1; g.textAlign = 'left';
   }
+  /** 소품: 우물 · 벤치 · 게시판 · 사당 · 상자 · 모닥불 · 석상 */
+  function drawProp(g, x, y, o) {
+    const k = o.kind, t = F.t;
+    const R = (c, a, b, w, h) => { g.fillStyle = c; g.fillRect(x + a, y + b, w, h); };
+    if (k === 'well') {
+      R('#16101f', 1, 6, 14, 10); R('#8a8a92', 2, 7, 12, 8); R('#6a6a74', 2, 11, 12, 1); R('#5a5a64', 5, 7, 1, 8); R('#5a5a64', 10, 7, 1, 8);
+      R('#1a3050', 4, 8, 8, 2); R('#16101f', 2, 0, 1, 7); R('#16101f', 13, 0, 1, 7); R('#8a5a32', 1, -1, 14, 2); R('#6a4222', 1, 0, 14, 1);
+      R('#c8a060', 7, 2, 2, 3); R('#16101f', 8, 0, 1, 2);
+      return;
+    }
+    if (k === 'bench') {
+      R('#16101f', 1, 7, 14, 6); R('#a8703e', 2, 8, 12, 2); R('#8a5a32', 2, 10, 12, 1); R('#16101f', 2, 11, 2, 4); R('#16101f', 12, 11, 2, 4); R('#6a4222', 2, 5, 12, 2);
+      return;
+    }
+    if (k === 'board') {
+      R('#16101f', 2, 1, 12, 10); R('#8a5a32', 3, 2, 10, 8); R('#16101f', 3, 11, 2, 5); R('#16101f', 11, 11, 2, 5);
+      R('#f4f0e8', 4, 3, 3, 4); R('#f0e0a0', 8, 3, 4, 3); R('#f4f0e8', 8, 7, 3, 2); R('#c83a3a', 5, 3, 1, 1); R('#c83a3a', 9, 3, 1, 1);
+      return;
+    }
+    if (k === 'shrine') {
+      R('#16101f', 4, 4, 8, 12); R('#a8a8b0', 5, 9, 6, 6); R('#8a8a92', 3, 3, 10, 2); R('#16101f', 6, 5, 4, 4); R('#c8c8d0', 7, 0, 2, 3);
+      const f = Math.floor(t * 6) % 2; R(f ? '#ffd84a' : '#ffb84a', 7, 6, 2, 2); R('#fff8d0', 7 + f, 5, 1, 1);
+      return;
+    }
+    if (k === 'hole') {
+      // 얼음 구멍(밝은 테두리) 또는 돌 테두리 우물 구멍
+      const ice = o.ice !== false;
+      R('#16101f', 1, 4, 14, 10); R(ice ? '#e8f4ff' : '#6a6a74', 2, 5, 12, 8); R(ice ? '#b8d8f0' : '#4a4a54', 2, 11, 12, 2);
+      R('#0a1a30', 4, 6, 8, 5); R('#1a3a6a', 5, 7, 6, 3);
+      const f = Math.floor(t * 2) % 2; R('#8ab8e8', 6 + f * 2, 8, 2, 1);
+      return;
+    }
+    if (k === 'crate') {
+      R('#16101f', 2, 4, 12, 12); R('#b87a42', 3, 5, 10, 10); R('#8a5a32', 3, 9, 10, 1); R('#8a5a32', 7, 5, 1, 10); R('#e0a060', 3, 5, 10, 1);
+      return;
+    }
+    if (k === 'fire') {
+      R('#16101f', 3, 12, 10, 3); R('#6a4222', 4, 12, 8, 2); R('#8a5a32', 5, 11, 6, 1);
+      const f = Math.floor(t * 8) % 3;
+      R('#ff5a1a', 5, 6 + f % 2, 6, 6 - f % 2); R('#ffb84a', 6, 8, 4, 4); R('#fff0a0', 7, 10 - f, 2, 2);
+      if (Math.random() < 0.08) F.particles.push({ x: o.x * TS + 8, y: o.y * TS + 6, vx: (Math.random() - 0.5) * 6, vy: -16, c: '#ffb84a', life: 0.7 });
+      return;
+    }
+    if (k === 'statue') {
+      R('#16101f', 3, 12, 10, 4); R('#8a8a92', 4, 13, 8, 2); R('#16101f', 5, 0, 6, 13); R(o.c || '#b8b8c0', 6, 1, 4, 11); R('#e8e8f0', 7, 1, 2, 3); R('#8a8a92', 6, 7, 4, 1);
+      return;
+    }
+    if (k === 'lantern') {
+      R('#16101f', 7, 4, 2, 12); R('#16101f', 4, 0, 8, 6); R('#ffd86a', 5, 1, 6, 4); R('#fff8d0', 6 + (Math.floor(t * 4) % 2), 2, 1, 1);
+      return;
+    }
+    R('#16101f', 3, 3, 10, 10); R('#8a8a92', 4, 4, 8, 8);
+  }
   function drawGate(g, x, y, o) {
     if (o.style === 'light') { // 징수 기사단의 빛 장벽
       const a = 0.55 + 0.25 * Math.sin(F.t * 5 + x);
@@ -539,7 +688,7 @@
     else { g.fillRect(x + 7, y - 6 + bob, 3, 1); g.fillRect(x + 8, y - 7 + bob, 1, 3); }
   }
 
-  Object.assign(F, { load, tryMove, interact, update, render, setView, addFloat, burst, spotHere, facing, charAt, objAt, npcAt, monAt, removeMon, spawnMon, refreshNpcs, setFollower,
+  Object.assign(F, { load, tryMove, interact, update, render, setView, addFloat, burst, spotHere, facing, charAt, objAt, npcAt, monAt, removeMon, spawnMon, refreshNpcs, setFollower, isWater,
     walkNpc, stepNpc, snapCam, heroSprite, spriteFor, freeTile, dirTo, DIRS, buildingAt, forceMove, stepFollower, addNpc, removeNpc, emote, gateOpen, objOn });
   G.field = F;
 })();

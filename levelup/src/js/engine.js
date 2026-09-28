@@ -17,6 +17,10 @@
       ranks: {}, pw: {}, orbs: {},
       flags: {}, quests: {}, seen: {}, chests: {}, secrets: {}, beaten: {}, books: {}, spots: {}, colors: {},
       codex: {}, buffs: [], cd: {}, clickLog: [], fever: 0,
+      bond: {},     // 인연: 인물 id → 점수 (음수면 멀어진 사이)
+      log: [],      // 결정의 기록: [{k, v, t, ch}]
+      truth: {},    // 진실의 조각
+      fishLog: {},  // 낚은 것: id → 마리 수
       tot: { clicks: 0, taps: 0, kills: 0, bossKills: 0, gold: 0, exp: 0, playTime: 0, steps: 0, faints: 0, maxHit: 0 },
       respawn: { map: 'home', x: 5, y: 5 },
       follower: null,

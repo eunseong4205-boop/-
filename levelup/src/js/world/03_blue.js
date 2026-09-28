@@ -357,6 +357,22 @@
       c.quest('q_overdue', 0);
       return;
     }
+    // 연체된 책을 찾아 준 뒤에만: 관장님도 모르는 책장
+    if (s.quests.q_overdue === 'done' && !s.flags.haemi_secret) {
+      c.set('haemi_secret');
+      await c.say('haemi', ['저, 저기요. 비밀 하나 말해도 돼요? 관장님도 몰라요.', '잠긴 서고 오른쪽 책장 맨 아래 칸이요. 책등이 없는 책이 한 권 꽂혀 있어요. 제목도, 저자도 없어요.']);
+      await c.say('haemi', ['여섯 살 때 서고에 몰래 들어갔다가 봤어요. 읽다가… 무서워서 도로 꽂았어요.', '지금은 안 무서울 것 같아요. 그, 그래도 혼자 읽긴 싫어서요. 당신이 읽고 저한테 얘기해 주세요.']);
+      c.bond('haemi', 1);
+      return;
+    }
+    if (s.truth && s.truth.t_colors && s.flags.haemi_secret && !s.flags.haemi_told) {
+      c.set('haemi_told');
+      await c.say('haemi', ['읽었어요? …어, 어땠어요?', '……']);
+      await c.say('haemi', ['그랬구나. 다섯 빛깔은 원래 하나였고, 누가 일부러 쪼갠 거였구나.', '저는 여섯 살 때 그 부분에서 덮었어요. 「모이면 온다」는 줄에서요. 그때는 귀신 얘기인 줄 알았거든요.']);
+      await c.say('haemi:happy', '…고, 고마워요. 이제 그 책은 무섭지 않아요. 슬픈 책이에요.');
+      c.bond('haemi', 1);
+      return;
+    }
     await c.run(W.chatter('haemi', [
       '채, 책은 좋아요. 더듬어도 책은 기다려 주거든요.',
       ['세린 씨가 마지막으로 책을 반납하던 날, 저는 여섯 살이었어요.', '그 책의 대출 카드를 아직 가지고 있어요. 「세린. 반납일: 983년 새싹의 달 8일.」 그다음 날 떠나셨대요.'],
@@ -432,6 +448,8 @@
     G.main.unlockBook('b_logbook');
     c.quest('q_light', 'done');
     c.set('q_bitna_done');
+    c.bond('bitna', 2);
+    c.truth('t_log');
   }
 
   /* ───────── 파도 해변 ───────── */
@@ -476,11 +494,27 @@
   async function krakenTalk(c, mo) {
     await c.say(null, '동굴 가장 안쪽 물웅덩이에서 보랏빛 다리 여덟 개가 솟아올랐다. 가운데 커다란 눈 하나가 번뜩인다.');
     await c.say('dotori:surprise', ['새, 새끼라며! 저게 새끼면 엄마는 얼마나 커!', '찍! 저 배 속에서 뭔가 반짝여! 나침반이야!']);
-    const win = await c.battle('kraken', { noFlee: true });
-    if (!win) return;
-    G.field.removeMon(mo);
-    c.set('beat_kraken');
-    await c.say(null, '크라켄이 꾸르륵 하더니 놋쇠 나침반과 파란 구슬을 뱉어 냈다. 그리고 부끄러운 듯 물속으로 숨었다.');
+    await c.say(null, '자세히 보니 크라켄의 다리 끝이 잿빛으로 바래 있다. 웅덩이 바닥에 반짝이는 것들이 수북하다. 병뚜껑, 숟가락, 유리구슬… 빛나는 것만 모아 놓았다.');
+    await c.say('dotori:worry', ['…배고파 보여. 등대지기 아저씨 일지에 그랬잖아. 검은 조각이 떨어진 바다는 물고기가 색을 잃는다고.', '먹을 게 없어서 반짝이는 걸 삼킨 거 아닐까?']);
+    const fish = G.story.fishIn ? G.story.fishIn(c.s) : null;
+    const k = fish ? await c.ask(null, ['[y]낚은 물고기를 던져 준다[/] (' + G.data.ITEMS[fish].name + ')', '싸워서 되찾는다']) : 1;
+    if (k === 0) {
+      c.take(fish);
+      c.sfx('splash');
+      await c.narr(['물고기를 웅덩이로 던졌다. 크라켄의 눈이 커졌다. 다리 하나가 번개처럼 물고기를 낚아챘다.', '꿀꺽. …크라켄이 한참 가만히 있더니, 몸을 부르르 떨었다.']);
+      G.field.removeMon(mo);
+      c.set('beat_kraken');
+      c.decide('kraken', 'feed', '해저 동굴의 새끼 크라켄에게 물고기를 먹였다');
+      await c.say(null, '꾸르륵. 크라켄이 놋쇠 나침반과 파란 구슬을 조심스럽게 뱉어 냈다. 그리고 다리 하나로 숟가락 하나를 이쪽으로 밀어 주었다. 답례인 모양이다.');
+      await c.say('dotori:happy', '찍! 숟가락 줬어! …숟가락은 어디다 쓰지?');
+    } else {
+      const win = await c.battle('kraken', { noFlee: true });
+      if (!win) return;
+      G.field.removeMon(mo);
+      c.set('beat_kraken');
+      c.decide('kraken', 'fight', '해저 동굴의 새끼 크라켄과 싸워 나침반을 되찾았다');
+      await c.say(null, '크라켄이 꾸르륵 하더니 놋쇠 나침반과 파란 구슬을 뱉어 냈다. 그리고 부끄러운 듯 물속으로 숨었다.');
+    }
     c.give('compass');
     await c.orb('o_b2');
     if (c.s.quests.m3 === 4) c.quest('m3', 5);
@@ -494,6 +528,73 @@
     if (lv >= 250 && s.flags.mine_open === undefined && s.quests.q_mine != null && !s.flags.tip250) { s.flags.tip250 = true; G.ui.toast('레벨 250! 황금 광산에 도전할 수 있을 것 같다.', 'gold'); }
     if (lv >= 600 && E.has(s, 'ferry_pass') && !s.flags.tip600) { s.flags.tip600 = true; G.ui.toast('레벨 600! 블루 부두의 고등어호를 탈 수 있다.', 'gold'); }
   });
+
+  /* ───────── 블루의 결: 서고의 책 · 창가 자리 · 소품 · 혼잣말 · 곁의 이야기 ───────── */
+  W.addObjs('library_stacks', [W.look(10, 5, (s) => (s.flags.haemi_secret ? null : '빽빽한 책장. 맨 아래 칸은 먼지가 유난히 두껍다.'), { talk: async (c) => {
+    const s = c.s;
+    if (!s.flags.haemi_secret) { await c.say(null, '빽빽한 책장. 맨 아래 칸은 먼지가 유난히 두껍다. 무언가 더 있을 것 같지만, 어느 책인지 알 수 없다.'); return; }
+    if (s.truth && s.truth.t_colors) { await c.say(null, '책등 없는 책. 해미가 여섯 살 때 덮었던 곳에 이제 먼지 대신 손자국이 남아 있다.'); return; }
+    await c.say(null, ['맨 아래 칸, 책등이 없는 얇은 책. 표지에 아무것도 적혀 있지 않다.', '첫 장을 넘기자 아주 오래된 글씨가 나왔다. 대륙 말이지만, 철자가 천 년 전 것이다.']);
+    await c.narr(['「나는 흰빛으로 전쟁을 끝냈다. 그리고 알았다. 흰빛이 한곳에 모이면, 하늘의 무언가가 눈을 뜬다는 것을.」', '「그래서 나는 빛을 쪼갰다. 초록, 빨강, 파랑, 노랑, 보라. 다섯 땅에 나누어 흩었다. 그것을 여신의 뜻이라고 적게 했다.」', '「등급을 만든 것도, 인장을 구슬로 부순 것도 같은 까닭이다. 빛이, 힘이, 사람이 다시는 한곳에 모이지 않도록.」', '「후대여. 모이면 온다. 나누면 오지 않는다. 이것만은 잊지 마라. — A.」']);
+    c.truth('t_colors');
+    await c.say('dotori:worry', ['…창세 신화가 거짓말이었어? 여신이 나눈 게 아니라, 아우룸이 일부러?', '「모이면 온다」… 그럼 탑이 빛을 모으는 건…']);
+    await c.say('dotori', '…해미 언니한테 얘기해 주자. 혼자 읽기 싫다고 했잖아.');
+  } })]);
+  W.addObjs('library', [W.look(6, 6, (s) => (s.flags.m_blue_book ? ['세린이 늘 앉던 창가 쪽 책상. 모서리에 찻잔 자국이 동그랗게 남아 있다.', '한 방울도 흘리지 않았다더니, 딱 한 번은 흘린 모양이다. 자국 옆에 손톱으로 긁은 작은 글씨: 「K 바보」.'] : '창가 쪽 책상. 모서리에 오래된 찻잔 자국이 동그랗게 남아 있다.'))]);
+  W.addObjs('blue', [
+    W.prop('bench', 30, 22),
+    W.prop('board', 19, 22, (s) => ['어시장 게시판. 「오늘의 시세 — 고등어 3골드, 전갱이 5골드, 황금 고등어 5만 골드 (1년에 한 마리)」', s.flags.lighthouse_lit ? '그 아래 새 종이: 「등대 불 켜짐! 밤배 출항 재개. — 고선장」' : '그 아래 빛바랜 종이: 「밤바다 검은 조각 목격 시 신고 바람. 만지지 말 것.」']),
+    W.prop('shrine', 3, 22, '뱃사람들의 작은 사당. 바다에서 돌아오지 못한 사람들의 이름이 돌에 빼곡하다. 가장 최근 이름은 997년. 「등대지기 한결」.'),
+    W.prop('well', 11, 9, '도서관 앞 우물. 「책 읽다 목마르면 여기서」라고 적혀 있다. 해미 글씨다.'),
+  ]);
+  W.addObjs('coast', [W.prop('bench', 28, 10)]);
+  W.addObjs('beach', [W.prop('fire', 25, 12, '해변의 모닥불 자리. 어부들이 밤에 조개를 굽는 곳이다. 재 속에 조개껍데기가 수북하다.')]);
+  W.barks('blue', {
+    captain: ['우웩… 배 위도 아닌데.', '나침반만 있으면…'],
+    jjanmul: ['고래를 세 번… 네 번!', '파도가 말하길…'],
+    merchant: ['고등어요!', '황금 고등어 한 마리!'],
+    rud: ['…398, 399, 400.', '3골드.'],
+    sailor: ['바람이 좋다.', '검은 별은 없어야 해.'],
+    scholar: ['삼천 권째…', '쉿.'],
+    kid2: ['등대 봤어?', '빨간 머리 형 빨라!'],
+  });
+  W.barks('library', { haemi: ['채, 책은…', '…쉿.'], mukmul: ['여덟 권째…', '어이쿠, 먹물이.'], scholar: ['쉿.'] });
+  W.barks('lighthouse', { bitna: (s) => (s.flags.lighthouse_lit ? ['켜 놨어, 아빠.'] : ['…오늘도 안 켜져.']) });
+
+  /* 도토리와의 이야기 (3장) */
+  G.story.talks.push(
+    { id: 'b_sea', map: 'coast', run: async (c) => {
+      await c.say('dotori', ['바다는 끝이 안 보여.', '엄마도 이 바다를 봤을까? 아스트라로 가는 길에.']);
+      const k = await c.ask(null, ['봤을 거야.', '엄마 얘기 그만하자.']);
+      if (k === 0) await c.say('dotori', '…그럼 우리 지금 엄마랑 같은 걸 보고 있는 거네. 16년 차이로. 찍.');
+      else { await c.say('dotori', '……응. 알았어. 미안.'); c.set('dotori_hush'); }
+    } },
+    { id: 'b_book', when: (s) => !!s.flags.serin_read_scene, pri: 3, run: async (c) => {
+      await c.say('dotori', ['{n}. 엄마 편지 말이야.', '「미안해. 네가 걸음마 하는 걸 보고 싶었는데.」 …너는 어땠어? 읽고 나서.']);
+      const k = await c.ask(null, ['원망스러워. 나를 두고 갔잖아.', '보고 싶어. 한 번만이라도.', '…모르겠어. 아무 느낌이 없어.']);
+      c.set('mom_feel_' + ['angry', 'miss', 'numb'][k]);
+      if (k === 0) await c.say('dotori', ['…원망해도 돼. 편지에 그렇게 써 있었잖아. 「미안해」라고.', '미안하다는 사람은 원망받을 각오가 된 사람이래. 할머니가 그랬어.']);
+      else if (k === 1) await c.say('dotori:sad', ['…응.', '나도. 이상하지. 나는 기억도 안 나는데.']);
+      else await c.say('dotori', ['…그럴 수 있어. 너무 큰 건 처음엔 아무 느낌이 없대.', '나중에 와. 한꺼번에. 그때 옆에 있을게.']);
+      c.bond('dotori', 1);
+    } },
+    { id: 'b_light', when: (s) => !!s.flags.lighthouse_lit, run: async (c) => {
+      await c.say('dotori', ['빛나 누나는 3년 동안 매일 등대에 올라갔대. 켜지지도 않는 불 앞에.', '…기다리는 쪽이 더 힘든 것 같아. 떠난 사람은 적어도 움직이잖아.']);
+      await c.say('dotori', '나도 뭔가를 오래 기다린 것 같은 기분이 들어. 뭘 기다렸는지는 모르겠는데. 찍.');
+    } },
+    { id: 'b_rud', when: (s) => s.quests.q_fish === 'done', run: async (c) => {
+      await c.say('dotori', '루드 형 웃는 거 봤어? 딱 1초. 나 셌어. 형처럼.');
+    } },
+  );
+  /* 쉬는 밤 (3장): 할머니에게 쓰는 편지. 답장은 다음 마을에서 온다. */
+  G.story.nights.push(
+    { id: 'b_letter', when: (s) => !!s.books.b_serin, intro: '갈매기 여관의 밤. 창밖 파도 소리에 잠이 오지 않는다. 여관 주인이 편지지를 빌려주었다.', run: async (c) => {
+      await c.say('dotori', '할머니한테 편지 쓰는 거야? 나도 한 줄 써도 돼? 「도토리 잘 있음. 찍.」');
+      const k = await c.ask('편지에 무엇을 쓸까', ['엄마 책을 찾았어요. 다 읽었어요.', '잘 지내요. 밥도 잘 먹어요.', '왜 엄마 얘기를 안 해 줬어요?']);
+      c.set('letter_gran', ['book', 'fine', 'why'][k]);
+      await c.narr(['편지를 접어 봉투에 넣었다. 도토리가 발바닥에 잉크를 묻혀 봉투 구석에 도장을 찍었다.', '내일 아침 우편선에 실으면 그린 마을까지 닷새가 걸린다고 했다.']);
+    } },
+  );
 
   G.world.nodes.push({ region: 'blue', label: '블루', x: 88, y: 156, color: '#4dabf7', maps: ['blue', 'coast', 'beach', 'seacave', 'library', 'library_stacks', 'lighthouse', 'blue_rank', 'blue_shop', 'blue_inn'] });
 })();

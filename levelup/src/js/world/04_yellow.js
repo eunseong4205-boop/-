@@ -116,6 +116,20 @@
     await c.sys('시작의 버튼을 잃어버렸다! 렙업 버튼이 작동하지 않는다. 서쪽 [y]그늘 골목[/]으로 쫓아가자.');
   }
   async function kkachiTown(c) {
+    const s = c.s;
+    // 참새단을 지켜 주고 빵까지 나눈 사람에게만: 황금궁 부엌 뒷길
+    if (s.quests.m4 === 3 && !s.flags.palace_open && s.flags.d_kkachi === 'spare' && s.quests.q_sparrow === 'done') {
+      await c.say('kkachi', ['흰빛. 황금궁 들어가려고? 100만 골드는 없어 보이고, 스핑크스는… 무섭지.', '빚 갚을게. 이자는 빼고. 황금궁 부엌으로 이어지는 하수구가 있어. 참새단은 거기로 남은 빵을 가져와.']);
+      if (!(await c.yes('까치의 뒷길로 황금궁에 들어갈까?', 'kkachi', '따라간다', '정문으로 가겠다'))) { await c.say('kkachi', '…그래. 정직한 길이 좋으면 그렇게 해. 금화왕도 그런 거 좋아하더라.'); return; }
+      await c.fadeOut(500);
+      await c.narr(['까치를 따라 골목 끝 배수로 뚜껑을 들어 올렸다. 냄새가… 사막보다 독했다.', '어둠 속을 한참 기어가자 빵 굽는 냄새가 났다. 황금궁 부엌이다. 요리사가 까치를 보고 모르는 척 고개를 돌렸다.']);
+      c.set('palace_open'); c.set('palace_sneak');
+      c.quest('m4', 4);
+      c.decide('palace', 'sneak', '까치가 알려 준 부엌 뒷길로 황금궁에 숨어들었다');
+      await c.warp('palace', 9, 12, 'up', { instant: true });
+      await c.fadeIn(500);
+      return;
+    }
     await c.run(W.chatter('kkachi_town', [
       '어, 흰빛. 오늘은 안 훔쳐. 너한테서는 이제 안 훔쳐. 약속했잖아.',
       ['금화왕은 원래 우리 골목 출신이야. 벽에 「언젠가 금화왕 — G」 봤지? 그게 골디야.', '나도 언젠가 금화왕이 될 거야. 그래서 애들 경험을 전부 다시 사 올 거야.'],
@@ -144,9 +158,11 @@
     if (k === 0) {
       if (!c.pay(1000000)) { await c.say('guard', '돈이 모자라는군. 금화왕님은 외상을 안 하신다.'); return; }
       await c.say('guard', '…정말 냈군. 금화왕님이 좋아하시겠어. 들어가라.');
+      c.decide('palace', 'gold', '100만 골드를 내고 황금궁에 들어갔다');
     } else if (k === 1) {
       if (!E.has(s, 'sun_token')) { await c.say('guard', '증표가 없잖아. 스핑크스는 동쪽 사막 태양 피라미드 가장 안쪽에 있다.'); return; }
       await c.say('guard:surprise', '태양의 증표! 스핑크스를 이겼다고? …들어가라. 금화왕님이 좋아하시겠어.');
+      c.decide('palace', 'token', '태양의 증표를 보이고 황금궁에 들어갔다');
     } else return;
     c.set('palace_open');
     c.quest('m4', 4);
@@ -294,7 +310,9 @@
     const s = c.s;
     if (s.quests.m4 === 4) {
       c.music('castle');
-      await c.say('goldie', ['어서 와. 흰빛의 꼬마.', '버튼을 되찾았다지? 그 골목 꼬마가 공짜로 돌려줬다고? 쯧. 장사를 못 하는 녀석이군.']);
+      const how = s.flags.d_palace;
+      await c.say('goldie', how === 'sneak' ? ['…하수구 냄새가 나는군. 어서 와, 흰빛의 꼬마.', '부엌 뒷길이라. 그 골목 꼬마가 알려 줬겠지. 요리사는 내일 해고… 아니, 됐다. 그 녀석도 그 골목 출신이야.'] : how === 'gold' ? ['어서 와. 흰빛의 꼬마.', '100만 골드를 정말 냈다며? 하하! 입장료를 낸 손님은 3년 만이다. 마음에 드는군. 셈을 아는 녀석이야.'] : ['어서 와. 흰빛의 꼬마.', '스핑크스를 이겼다며? 그 고양이는 나도 못 이겼는데. 기분 나쁘군.']);
+      await c.say('goldie', s.flags.d_kkachi === 'report' ? ['버튼을 되찾았다지? 그리고 그 골목 꼬마를 경비대에 넘겼고.', '…이 도시답게 굴었군. 칭찬은 아니다.'] : ['버튼을 되찾았다지? 그 골목 꼬마가 공짜로 돌려줬다고? 쯧. 장사를 못 하는 녀석이군.']);
       await c.say('goldie', ['나는 금화왕 골디. 사천왕, 노랑의 자리. 대륙의 경험을 사고파는 사람이지.', '이 도시에서는 모든 것에 값이 있어. 너도, 나도, 그 흰빛도.']);
       const k = await c.ask(null, ['아이들 경험을 사는 건 옳지 않아', '엄마… 세린을 알아?', '카이론은 뭘 하려는 거야?']);
       if (k === 0) await c.say('goldie', ['옳지 않다? 그 애들이 굶는 게 옳은가? 나는 그 애들한테 저녁을 사 줬어. 경험을 받고.', '나도 그 골목에서 컸다. 여덟 살 때 첫 경험을 팔았지. 레벨 4어치. 빵 두 개.', '공짜는 없어, 꼬마. 세상은 원래 그래.']);
@@ -311,10 +329,13 @@
       await challengeGoldie(c);
       return;
     }
+    const dg = s.flags.d_goldie;
     await c.run(W.chatter('goldie_after', [
       ['카이론은 뭔가를 기다리고 있어. 16년짜리 뭔가를.', '천년제 날 밤. 그날이 그 16년의 끝이야. 나는 그 계산서를 받아 볼 생각이다.'],
-      '그 골목 꼬마, 까치라고 했나. 내가 여덟 살 때랑 눈빛이 똑같더군. 기분 나빠.',
-      '경험 거래소는 문 닫지 않는다. 대신… 아이들 경험 매입가를 세 배로 올렸다. 계산해 보니 그게 이득이더군. …그런 걸로 해 둬.',
+      s.flags.d_kkachi === 'report' ? '네가 넘긴 그 꼬마, 까치. 감옥 대신 내 밑에 뒀다. 장부를 맡겼더니 셈이 빠르더군. 여덟 살의 나를 보는 것 같아서… 기분 나빠.' : '그 골목 꼬마, 까치라고 했나. 내가 여덟 살 때랑 눈빛이 똑같더군. 기분 나빠.',
+      dg === 'contract' ? '계약서대로 하고 있다. 아이들 매입가 세 배, 스무 살에 되살 권리, 참새단 빵. 계산해 보니… 손해다. 처음으로 손해 보는 장사를 하는군. 나쁘지 않아.'
+        : dg === 'expose' ? ['거래소 문을 닫았다. 네가 장부를 뿌린 다음 날, 창구 앞에 돌이 날아왔지.', '그 애들은 이제 뭘 팔아서 먹을까. …사하라가 대상단 식량을 풀었다더군. 네 덕인지, 네 탓인지는 계산 안 해 봤다.']
+        : '경험 거래소는 문 닫지 않는다. 공짜는 없으니까.',
     ]));
   }
   async function challengeGoldie(c) {
@@ -327,6 +348,24 @@
     await c.say('goldie', ['약속은 약속이지. 공짜로 알려 주마. 평생 처음이자 마지막 공짜다. 잘 들어.']);
     await c.say('goldie', ['16년 전, 카이론과 세린과 녹턴이 아스트라로 갔다. 흑점을 막으러. 나랑 루미에, 볼트는 대륙에 남았고.', '돌아온 건 카이론과 녹턴뿐이었다. 카이론은 그날 밤 경험세를 선포했어.']);
     await c.say('goldie', ['나는 반대하지 않았다. 계산을 해 봤거든. 대륙의 빛을 모아 하늘을 지킨다. 숫자로는 맞아.', '그런데 요즘 계산이 안 맞아. 빛은 16년 동안 모였는데 흑점은 다시 커지고 있어.', '[y]카이론은 뭔가를 기다리고 있다.[/] 16년짜리 뭔가를. 천년제 날 밤이 그 끝이야.']);
+    // 금화왕의 장부: 아이들에게서 산 경험은 어디로 가는가
+    await c.say('goldie', ['공짜 하나 더. 이건 네가 물어보지 않은 거다.', '경험 거래소가 아이들한테서 산 경험, 그 칠 할이 어디로 가는 줄 아나?']);
+    await c.narr('골디가 옥좌 옆 금고에서 두꺼운 장부를 꺼내 펼쳤다. 「천년성 납품」이라는 글씨가 칸마다 찍혀 있다.');
+    await c.say('goldie', ['천년성이다. 옐로의 탑이 16년 동안 한 번도 할당량을 못 채운 적이 없는 이유지.', '가난한 애들의 경험을 사서, 카이론의 하늘에 바친다. 애들은 빵을 먹고, 하늘은 빛을 먹고, 나는 차액을 먹는다. 모두가 배부른 거래지.']);
+    await c.say('goldie', ['…자, 꼬마. 네가 이겼으니 네가 정해라.', '이 장부를 대바자르 광장에 뿌리면 이 도시는 뒤집힐 거다. 아니면 나랑 계약을 하든가. 조건은 네가 쓰고.']);
+    const g = await c.ask('금화왕의 장부', ['계약한다: 아이들 매입가 세 배, 스무 살에 되살 권리', '장부를 광장에 뿌린다']);
+    if (g === 0) {
+      await c.say('goldie', ['……', '하. 조건이 지독하군. 되살 권리라니. 그럼 나는 경험을 빌려주는 전당포가 되는 건가.']);
+      await c.say('goldie', ['좋다. 서명하지. 네 이름은 증인란에.', '…세린이었으면 똑같은 조건을 썼을 거다. 그 여자도 계산은 못 하면서 조건은 잘 썼거든.']);
+      c.decide('goldie', 'contract', '금화왕과 경험 거래소 계약을 맺었다: 아이들 매입가 세 배, 되살 권리');
+      c.bond('goldie', 2);
+    } else {
+      await c.say('goldie', ['……해 봐.', '그럼 내일부터 그 애들은 뭘 팔아서 먹지? 정의는 배를 채워 주지 않아, 꼬마.']);
+      await c.narr(['다음 날 아침, 대바자르 광장에 장부의 사본이 눈처럼 흩날렸다.', '사람들이 창구 앞에 모였다. 누군가 첫 돌을 던졌다. 그늘 골목의 아이들은 멀리서 그걸 보고만 있었다.']);
+      await c.say('goldie', ['…거래소는 오늘부로 문을 닫는다.', '너는 옳은 일을 했다. 그리고 그 값은 네가 아니라 그 애들이 치를 거다. 그걸 잊지 마라.']);
+      c.decide('goldie', 'expose', '금화왕의 장부를 대바자르 광장에 뿌렸다');
+      c.bond('goldie', -1);
+    }
     await c.say('goldie', ['…그리고 이건 덤이다. 세린한테 빌린 동전 값이라고 치지.', '보랏빛 숲의 [y]베라[/]를 만나라. 세린의 스승이다. 그 할망구는 16년 동안 입을 다물고 있지만… 너한테는 열 거다.']);
     c.gold(3000000);
     c.set('m_yellow_bond');
@@ -426,6 +465,106 @@
     await c.say('sphinx', ['「…강하군. 흰빛의 아이.」', '「이것을 가져가라. 태양의 증표다. 황금궁의 문지기는 이것을 알아본다.」']);
     c.give('sun_token');
   }
+
+  /* ───────── 옐로의 결: 참새단의 두목 · 소품 · 혼잣말 · 곁의 이야기 ───────── */
+  // 아지트에서 나오는 순간: 털린 노점 주인과 경비대가 기다리고 있다
+  async function sparrowAsk(c) {
+    c.set('sparrow_asked');
+    c.spawn({ id: 'guard_y', x: 7, y: 21, dir: 'up', look: G.chars.guard.look });
+    c.spawn({ id: 'merchant_y', x: 5, y: 21, dir: 'up', look: G.chars.merchant.look });
+    await c.emote('merchant_y', '!');
+    await c.say('merchant', ['거기! 방금 그 굴에서 나왔지? 참새단 소굴 맞지?', '그 녀석들한테 우리 노점 셋이 털렸어. 한 집은 문을 닫았고. 두목이 누군지만 알려 줘.']);
+    await c.say('guard', ['옐로 경비대다. 참새단 두목에게 현상금이 걸려 있다. 30만 골드.', '협조하면 네 버튼 도난 건도 서류로 처리해 주지.']);
+    await c.say('dotori:worry', '찍… {n}.');
+    const k = await c.ask('참새단의 두목을 알려 줄까', ['모르는 애였다고 한다', '까치가 두목이라고 알려 준다']);
+    if (k === 0) {
+      await c.say('@', '…모르는 애였어요. 버튼은 골목에 떨어져 있었어요.');
+      await c.say('merchant', ['…그래? 쳇. 그 굴에서 나오는 걸 봤는데.', '문 닫은 가게 주인은 애가 넷이야. 그것도 기억해 둬.']);
+      c.decide('kkachi', 'spare', '참새단 두목 까치를 경비대에 넘기지 않았다');
+      c.bond('kkachi', 1);
+    } else {
+      await c.say('guard', '까치. 그 녀석이군. 협조에 감사한다.');
+      c.gold(300000);
+      await c.narr(['그날 저녁, 경비대가 그늘 골목으로 들어갔다. 아이들 몇이 흩어져 달아났다.', '까치는 달아나지 않았다고 한다. 「애들한테 손대지 마. 나 혼자 했어.」']);
+      await c.say('merchant', '…고맙다. 이제 좀 장사를 하겠군. 문 닫은 집도 다시 열 수 있을 거야.');
+      c.decide('kkachi', 'report', '참새단 두목 까치를 경비대에 넘겼다');
+      c.bond('kkachi', -2);
+    }
+    c.despawn('guard_y'); c.despawn('merchant_y');
+  }
+  G.hooks.enter.push((id) => {
+    const s = G.state;
+    if (id === 'yellow' && s.flags.button_back && !s.flags.sparrow_asked && !G.script.running) G.script.run(sparrowAsk);
+  });
+  const reported = (s) => s.flags.d_kkachi === 'report';
+  for (const [mapId, prev] of [['yellow', (s) => s.flags.button_back], ['hideout', () => true]]) {
+    const n = G.maps[mapId].npcs.find((x) => x.id === 'kkachi');
+    n.cond = (s) => prev(s) && !reported(s);
+  }
+  W.addNpcs('palace', [{ id: 'kkachi', x: 12, y: 5, dir: 'left', cond: reported, talk: W.chatter('kkachi_palace', [
+    '……장부 정리 중이야. 말 걸지 마.',
+    ['금화왕이 그러더라. 「감옥이랑 장부 중에 골라.」 …장부를 골랐어.', '애들은 사하라 대상단이 데려갔대. 빵은 먹고 있대. …그거면 됐어.'],
+    '넌 틀린 거 안 했어. 노점 아저씨들도 애가 있으니까. …그러니까 미안한 얼굴 하지 마. 그게 더 싫어.',
+  ]) }]);
+  W.addNpcs('hideout', [{ id: 'kid', x: 5, y: 3, dir: 'down', cond: reported, talk: W.chatter('hide_empty', ['…형 없어. 잡혀갔어.', '누가 일렀대. …너 아니지?']) }]);
+
+  W.addObjs('yellow', [
+    W.prop('well', 17, 20, '오아시스 물을 끌어온 공동 우물. 우물가에 「한 사람 한 바가지」라고 적혀 있다. 누군가 「경험세 없음」이라고 덧붙였다.'),
+    W.prop('bench', 15, 24),
+    W.prop('board', 26, 10, (s) => ['경험 거래소 게시판. 「오늘의 매입가 — 평민 아이 0.3골드」', s.flags.d_goldie === 'contract' ? '그 위에 새 종이: 「아이 매입가 0.9골드. 20세 되살 권리 보장. — 금화왕」' : s.flags.d_goldie === 'expose' ? '종이가 전부 찢겨 있다. 누군가 숯으로 적었다: 「천년성 납품」.' : '구석에 작은 글씨: 「전설의 경험 — 매입 불가」.']),
+    W.prop('shrine', 36, 3, '태양 사당. 사막 사람들은 떠나기 전에 여기서 물 한 방울을 바친다. 돌 위에 물 자국이 셀 수 없이 겹쳐 있다.'),
+  ]);
+  W.addObjs('caravan', [W.prop('fire', 20, 4, '대상단의 모닥불. 사막의 밤은 낮보다 무섭다. 불은 밤새 꺼지지 않는다.')]);
+  W.barks('yellow', {
+    guard: ['금화왕님은 바쁘시다.'],
+    merchant: ['전갈 독침 삽니다!', '정직한 거래!'],
+    merchant2: ['짤랑짤랑!'],
+    kkachi: ['오늘은 안 훔쳐.', '언젠가 금화왕…'],
+    kid: ['…뭘 봐.'],
+    kid2: ['배고파.', '레벨 6…'],
+    oldman: ['집은 있는데…', '레벨이 3이야.'],
+  });
+  W.barks('caravan', { sahara: ['별을 봐.'], merchant: ['물약 넉넉히!'] });
+  W.barks('casino', { lucky: ['확률은 공정합니다.'] });
+
+  /* 도토리와의 이야기 (4장) */
+  G.story.talks.push(
+    { id: 'y_nobutton', when: (s) => !!s.flags.button_stolen, pri: 3, run: async (c) => {
+      await c.say('dotori', ['너 손이 자꾸 주머니를 더듬어. 버튼 없으니까 이상하지?', '…나도 이상해. 버튼이 없으니까 네가 그냥 열여섯 살 애 같아. 원래 그런데.']);
+    } },
+    { id: 'y_kids', when: (s) => !!s.flags.button_back, run: async (c) => {
+      await c.say('dotori', ['까치네 애들은 레벨을 팔아서 밥을 먹는대.', '나는 레벨이 안 올라서 16년 동안 속상했는데. 쟤들은 일부러 내리고 있어.']);
+      const k = await c.ask(null, ['그 애들 잘못이 아니야.', '팔지 않고 버티는 방법도 있을 거야.', '레벨보다 밥이 먼저지.']);
+      if (k === 0) await c.say('dotori', '…응. 그럼 누구 잘못이야? 경험을 사는 사람? 세금을 걷는 탑? 탑을 세운 사람? …다 따라가면 끝에 누가 있을까.');
+      else if (k === 1) await c.say('dotori', ['…배고파 본 적 있어? 나는 겨울에 도토리 다 떨어졌을 때 한 번.', '버티는 건 배부른 사람 말이래. 할머니가 그랬어. 할머니도 옛날에 배고팠대.']);
+      else { await c.say('dotori', '맞아. 레벨은 다시 올릴 수 있지만 굶은 날은 다시 못 먹어.'); c.bond('dotori', 1); }
+    } },
+    { id: 'y_goldie', when: (s) => !!s.flags.m_yellow_bond, run: async (c) => {
+      await c.say('dotori', ['골디 아저씨, 엄마한테 동전 빌리고 못 갚았대.', '16년 동안 갚을 사람이 없는 빚을 들고 있었던 거야. 그래서 그렇게 셈을 따지나 봐.']);
+      if (c.s.flags.d_goldie === 'expose') await c.say('dotori:worry', '…우리가 장부 뿌린 거, 잘한 걸까. 광장에서 돌 던지는 사람들 봤을 때 무서웠어. 애들 표정도.');
+      else if (c.s.flags.d_goldie === 'contract') await c.say('dotori', '계약서에 네 이름이 증인으로 들어갔어. 엄마가 빌려준 동전이 16년 만에 이자가 붙은 것 같아. 찍.');
+    } },
+    { id: 'y_mirage', map: 'desert', run: async (c) => {
+      await c.say('dotori:surprise', ['찍! 저기 누가 서 있어! 긴 머리, 흰 옷…', '…없어졌다. 신기루래. 사막에선 보고 싶은 게 보인대.']);
+      await c.say('dotori', '…나 뭘 보고 싶었던 걸까.');
+    } },
+  );
+  const PS = '\n\n추신. 도토리 발 도장 봤다. 잉크 묻은 발로 이불 밟지 마라 캐라.';
+  W.book('b_reply_book', { title: '할머니의 답장', group: 'reply', where: '오아시스 여관', author: '방순', text:
+    '다 읽었다니. 그 아 글씨는 여전히 둥글더나.\n\n할매는 그 책 끝에 편지가 끼워진 걸 알았다. 16년 동안 알았다. 니가 그 편지를 니 발로 걸어가서 찾기를 바랐다. 할매 손으로 주믄 반쪽밖에 안 되니까.\n\n원망해도 된다. 할매는 원망 들을 자격이 있다.' + PS });
+  W.book('b_reply_why', { title: '할머니의 답장', group: 'reply', where: '오아시스 여관', author: '방순', text:
+    '왜 말 안 해 줬냐고.\n\n무서웠다. 니 엄마 이야기를 하믄, 그 끝에 누가 있는지까지 말해야 되니까. 그 사람 이야기까지.\n\n할매가 비겁했다. 그건 맞다. 그래도 니가 물어봐 줘서 고맙다. 16년 동안 아무도 안 물어봤다. 할매한테 그 아 이야기를.' + PS });
+  W.book('b_reply_fine', { title: '할머니의 답장', group: 'reply', where: '오아시스 여관', author: '방순', text:
+    '밥 잘 먹는다니 됐다. 그거면 된다.\n\n…거짓말하지 마라. 니 글씨는 거짓말할 때 삐뚤어진다. 니 엄마도 그랬다.\n\n힘든 거 있으믄 힘들다 캐라. 할매는 멀리 있어도 그 말 정도는 들을 수 있다.' + PS });
+  /* 쉬는 밤 (4장): 할머니의 답장 */
+  G.story.nights.push(
+    { id: 'y_reply', when: (s) => !!s.flags.letter_gran, intro: '오아시스 여관. 여관 주인이 편지 한 통을 건넸다. 「그린 마을에서 온 우편이에요. 새싹 도장이 찍혀 있네요.」', run: async (c) => {
+      const L = c.s.flags.letter_gran;
+      await c.book('b_reply_' + L);
+      await c.say('dotori', L === 'fine' ? '…들켰다. 찍.' : '…할머니 글씨, 떨렸어. 편지 쓸 때 손이 떨렸나 봐.');
+      c.bond('gran', 1, true);
+    } },
+  );
 
   G.world.nodes.push({ region: 'yellow', label: '옐로', x: 116, y: 136, color: '#ffd43b', maps: ['yellow', 'desert', 'pyramid', 'palace', 'casino', 'hideout', 'yellow_rank', 'yellow_inn', 'caravan'] });
 })();

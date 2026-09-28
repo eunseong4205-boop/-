@@ -102,7 +102,61 @@
         await c.rest();
         return true;
       },
-      async rest() { await UI.fade(1, 400); G.audio.jingle('rest'); c.heal(); G.main.setRespawn(); await wait(1.4); await UI.fade(0, 400); UI.toast('푹 쉬었다. 이곳이 새 쉼터가 되었다.', 'good'); },
+      async rest() {
+        await UI.fade(1, 400); G.audio.jingle('rest'); c.heal(); G.main.setRespawn(); await wait(1.4);
+        // 쉬는 밤에 나누는 이야기 (조건이 맞는 것 하나)
+        if (G.story.night) await G.story.night(c);
+        await UI.fade(0, 400); UI.toast('푹 쉬었다. 이곳이 새 쉼터가 되었다.', 'good');
+      },
+      /** 되돌릴 수 없는 선택을 기록한다. 이야기의 뒷부분이 이 값을 읽는다. */
+      decide(key, value, text) {
+        const st = s();
+        st.flags['d_' + key] = value;
+        (st.log = st.log || []).push({ k: key, v: value, t: text, ch: chapterName(st) });
+        G.audio.sfx('select');
+        if (text) UI.toast('[y]결정[/] ' + text, 'white');
+        return value;
+      },
+      dec: (key) => s().flags['d_' + key],
+      /** 인연: +는 가까워지고 -는 멀어진다 */
+      bond(id, d, quiet) {
+        const st = s(); st.bond = st.bond || {};
+        const before = bondLevel(st.bond[id] || 0);
+        st.bond[id] = (st.bond[id] || 0) + d;
+        const after = bondLevel(st.bond[id]);
+        if (quiet || !G.chars[id]) return c;
+        const nm = U.nameSub(G.chars[id].name, st.name);
+        if (after.n !== before.n) UI.toast((d > 0 ? '♥ ' : '♡ ') + nm + ' — ' + after.name, d > 0 ? 'good' : 'bad');
+        else UI.toast((d > 0 ? '♥ ' : '♡ ') + nm + (d > 0 ? '의 마음이 조금 가까워졌다' : '의 마음이 조금 멀어졌다'), d > 0 ? 'good' : '');
+        return c;
+      },
+      bondOf: (id) => (s().bond || {})[id] || 0,
+      /** 진실의 조각: 대륙 곳곳에 흩어진, 경험세와 흑점의 진짜 이야기 */
+      truth(id) {
+        const st = s(); st.truth = st.truth || {};
+        if (st.truth[id]) return false;
+        st.truth[id] = 1;
+        const T = G.story.truths || {};
+        const n = Object.keys(st.truth).filter((k) => T[k]).length, all = Object.keys(T).length;
+        G.audio.jingle('secret');
+        UI.toast('[p]진실의 조각[/] ' + n + ' / ' + all + ' — ' + (T[id] ? T[id].title : id), 'white');
+        return true;
+      },
+      truthN: () => Object.keys(s().truth || {}).filter((k) => (G.story.truths || {})[k]).length,
+      /** 낚시 입질: wait초 뒤 찌가 움직이고, win초 안에 A를 누르면 'ok' · 너무 빠르면 'early' · 늦으면 'miss' · B는 'cancel' */
+      bite(waitSec, win) {
+        return new Promise((res) => {
+          let state = 'wait', done = false;
+          const finish = (r) => { if (done) return; done = true; UI.pop(L); res(r); };
+          const press = () => { if (state === 'wait') finish('early'); else if (state === 'bite') finish('ok'); };
+          const L = UI.push({ name: 'fish', dir() {}, b() { finish('cancel'); }, a: press, lv: press, tap: press });
+          setTimeout(() => {
+            if (done) return;
+            state = 'bite'; F.emote(F.player, '!', win + 0.3); G.audio.sfx('surprise');
+            setTimeout(() => finish('miss'), win * 1000);
+          }, waitSec * 1000);
+        });
+      },
       async warp(map, x, y, dir, opt) { await G.main.warp(map, x, y, dir, opt); },
       fadeOut: (ms, white) => UI.fade(1, ms, white),
       fadeIn: (ms) => UI.fade(0, ms),
@@ -154,6 +208,15 @@
     };
     return c;
   }
+  /** 인연 단계 */
+  const BOND = [[-99, '적대'], [-2, '서먹함'], [0, '보통'], [1, '호감'], [3, '믿음'], [5, '깊은 인연']];
+  function bondLevel(v) { let r = { n: 0, name: BOND[0][1] }; BOND.forEach(([th, name], i) => { if (v >= th) r = { n: i, name }; }); return r; }
+  function chapterName(st) {
+    let name = '';
+    for (let i = 0; i <= 13; i++) { const id = 'm' + i; if (st.quests[id] != null && G.quests[id]) name = G.quests[id].name.split(' · ')[0]; }
+    return name;
+  }
+  S.bondLevel = bondLevel;
   function meet(who) {
     const id = String(who).split(':')[0];
     if (id && id !== '@' && G.chars[id] && !G.state.seen[id]) G.state.seen[id] = 1;

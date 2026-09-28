@@ -74,6 +74,11 @@ input { font: inherit; }
 #place span { color: var(--gold); white-space: nowrap; }
 #fever { position: absolute; right: 6px; top: 6px; padding: 3px 7px; font-family: var(--disp); font-size: 12px; color: #fff; background: linear-gradient(90deg, #ff4a7a, #ffb84a); border-radius: 3px; animation: fever .5s steps(2) infinite; pointer-events: none; }
 @keyframes fever { 50% { filter: brightness(1.4); } }
+#barks { position: absolute; inset: 0; pointer-events: none; z-index: 8; overflow: hidden; }
+.bark { position: absolute; left: 0; top: 0; max-width: 150px; padding: 3px 7px 4px; background: rgba(248, 244, 232, .96); color: #1e1628; border: 2px solid #16101f;
+  border-radius: 6px; font-size: 11px; line-height: 1.35; white-space: normal; word-break: keep-all; text-align: center; box-shadow: 0 2px 0 rgba(0, 0, 0, .35); transition: opacity .2s; }
+.bark::after { content: ''; position: absolute; left: 50%; bottom: -6px; margin-left: -4px; border: 4px solid transparent; border-top-color: #16101f; border-bottom: 0; }
+#a-cap { position: absolute; right: 0; top: 64px; width: 60px; text-align: center; font-size: 11px; color: var(--paper-dim, #d8d0c0); pointer-events: none; white-space: nowrap; text-shadow: 0 1px 0 rgba(0, 0, 0, .6); }
 #toasts { position: absolute; left: 50%; top: 34px; transform: translateX(-50%); display: grid; gap: 4px; justify-items: center; pointer-events: none; width: 92%; z-index: 13; }
 .toast { padding: 5px 10px 6px; background: rgba(18, 14, 30, .92); border: 1px solid var(--line); border-radius: 3px; font-size: 12px; animation: toast 2.6s forwards; text-align: center; max-width: 100%; box-shadow: 0 2px 0 #000; }
 .toast.gold { border-color: var(--gold-d); color: var(--gold); }
