@@ -172,6 +172,10 @@
     draw(g, cx, cy) {
       if (this.inv > 0 && this.state !== 'roll' && Math.floor(this.inv * 20) % 2 === 0 && this.state !== 'dead') return;
       const SP = G.sprites;
+      // 물속: 헤엄치면 어깨까지, 얕은 물은 발목까지 잠긴다
+      const gt = G.world.map ? G.world.map.groundAt(this.x, this.y - 2) : 0;
+      this.wadeCut = this.jz > 2 ? 0 : this.swimming ? 13 : gt === TL.T.WATER ? 4 : gt === TL.T.SWAMP ? 5 : 0;
+      if (this.wadeCut) { const x = Math.round(this.x - cx), y = Math.round(this.y - cy - this.wadeCut + 2); g.strokeStyle = 'rgba(230,245,255,0.8)'; g.beginPath(); g.ellipse(x, y, 7 + Math.sin(this.t * 6), 2, 0, 0, Math.PI * 2); g.stroke(); if (this.swimming && Math.random() < 0.1) G.fx.splash(this.x, this.y - 2); }
       if (SP && SP.drawChar) { SP.drawChar(g, this, cx, cy); return; }
       g.fillStyle = '#3aa84a'; g.fillRect(Math.round(this.x - cx - 5), Math.round(this.y - cy - 20 - this.jz), 10, 20);
     }

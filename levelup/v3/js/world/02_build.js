@@ -29,7 +29,7 @@
   /** w, h: 바닥 칸 수. 그림은 폭 w*16, 높이 h*16 + 지붕 높이 */
   function building(style, w, h, o) {
     o = o || {};
-    const key = [style, w, h, o.sign || '', o.door === false ? 0 : 1, o.kind || '', o.win || ''].join('|');
+    const key = [style, w, h, o.sign || '', o.door === false ? 0 : 1, o.kind || '', o.win || '', o.colors ? JSON.stringify(o.colors) : ''].join('|');
     if (cache[key]) return cache[key];
     const S = Object.assign({}, STYLE[style] || STYLE.green, o.colors || {});
     const W = w * TS, wallH = S.tall ? 34 : 28, roofH = h * TS - wallH + (S.tall ? 26 : 14);

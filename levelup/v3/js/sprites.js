@@ -484,7 +484,7 @@
     const img = sh.get(anim, e.dir, frame);
     const x = Math.round(e.x - cx - img.width / 2), y = Math.round(e.y - cy - img.height + 1 - (e.jz || 0));
     if (e.behindWeapon) e.behindWeapon(g, x, y);
-    if (e.wadeCut) g.drawImage(img, 0, 0, img.width, img.height - e.wadeCut, x, y, img.width, img.height - e.wadeCut);
+    if (e.wadeCut) g.drawImage(img, 0, 0, img.width, img.height - e.wadeCut, x, y + e.wadeCut, img.width, img.height - e.wadeCut);
     else g.drawImage(img, x, y);
     if (e.flash > 0) { g.globalAlpha = Math.min(1, e.flash * 6); g.drawImage(X.silhouette(img, e.flashCol || '#ffffff'), x, y); g.globalAlpha = 1; }
     if (e.onDraw) e.onDraw(g, x, y, img);

@@ -218,6 +218,45 @@
     if (pushT <= 0) { pushT = 3; const msg = ST.closedMsg[n] || '아직은 갈 때가 아니다.'; G.script.run(async (c) => { if (S().party && S().party.includes('toria')) await c.say('toria', msg, { face: 'shock' }); else await c.say(null, msg, { style: 'sys' }); }); }
   }
 
+  /* ───────── 절벽 속 동굴 입구 (던전 · 숨은 동굴) ─────────
+     (x, y): 입구 두 칸의 왼쪽. 입구 북쪽에 작은 언덕을 쌓고, 남쪽으로 길을 낸다 */
+  ST.cave = function (m, o) {
+    const x = o.x, y = o.y, base = m.hgt[m.i(x, y + 1)];
+    const rx = o.rx || 7, ry = o.ry || 4;
+    for (let yy = y - ry * 2; yy <= y; yy++) for (let xx = x - rx; xx <= x + rx + 1; xx++) {
+      if (!m.inb(xx, yy)) continue;
+      const d = Math.hypot((xx - x - 0.5) / rx, (yy - (y - ry)) / (ry + 0.5));
+      if (d < 1 && m.hgt[m.i(xx, yy)] <= base) { m.hgt[m.i(xx, yy)] = base + (o.h || 1); const t = m.ter[m.i(xx, yy)]; if (t === T.WATER || t === T.DEEP || t === T.CLIFF || t === T.STAIRS || t === T.BRIDGE) m.ter[m.i(xx, yy)] = o.ground || T.GRASS; m.obj[m.i(xx, yy)] = o.cover && d < 0.8 && G.u.noise2(xx, yy, 7) > 0.4 ? o.cover : 0; }
+    }
+    G.gen.caveMouth(m, x, y, 2);
+    G.build.placeBuilding(m, { special: 'cave', tx: x, ty: y, w: 2, h: 1, to: o.to, id: o.id, col: o.col || '#6e5640', cond: o.cond, msg: o.msg });
+    for (let yy = y + 1; yy < y + (o.path || 3); yy++) for (const xx of [x, x + 1]) { const i = m.i(xx, yy); if (m.ter[i] === T.CLIFF || m.ter[i] === T.STAIRS) continue; m.ter[i] = m.ter[i] === T.WATER || m.ter[i] === T.DEEP ? T.BRIDGE : (o.road || T.DIRT); m.obj[i] = 0; m.hgt[i] = base; }
+    return { x, y };
+  };
+  /** 장(章)마다 다른 말: { c1: [...], c3: [...] } → 지금 장 이하에서 가장 늦은 것 */
+  const ORDER = ['c1', 'c2', 'c3', 'c4', 'c5', 'c6', 'c7', 'c8', 'c9', 'c10', 'c11', 'c12'];
+  ST.chIdx = (id) => ORDER.indexOf(id || S().ch || 'c1');
+  ST.after = (id) => ST.chIdx() >= ST.chIdx(id);
+  ST.lines = function (tbl) {
+    const cur = ST.chIdx();
+    let best = null;
+    for (const k of Object.keys(tbl)) { const i = ORDER.indexOf(k); if (i >= 0 && i <= cur && (best == null || i > ORDER.indexOf(best))) best = k; }
+    const v = best ? tbl[best] : tbl.default;
+    return Array.isArray(v) ? G.u.pick(v) : v;
+  };
+  /** 주민 한 명: 장마다 다른 말 · 갈래마다 다른 말 */
+  ST.folk = function (mapId, o) {
+    ST.person(mapId, Object.assign({}, o, { talk: o.talk || (async (c, n) => {
+      if (o.id) c.flag('met:' + o.id);
+      const rt = ST.route();
+      let t = o.route && o.route[rt] && ST.after(o.routeFrom || 'c1') ? o.route[rt] : ST.lines(o.lines);
+      for (let k = 0; k < 3 && typeof t === 'function'; k++) { const r = await t(c, n); if (r === undefined) return; t = r; }
+      if (Array.isArray(t)) t = G.u.pick(t);
+      if (t == null) return;
+      for (const l of String(t).split('||')) await c.say(n, l.trim(), { face: o.face });
+    }) }));
+  };
+
   /* ───────── 매 프레임 ───────── */
   ST.tick = function (dt) {
     if (ST.onTick) for (const f of ST.onTick) f(dt);

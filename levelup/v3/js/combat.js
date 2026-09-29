@@ -106,6 +106,7 @@
     }
     let dq = Math.max(1, Math.round(q * d.def));
     if (s.skills.sv_second && s.hp >= 2 && dq >= s.hp) dq = s.hp - 1;
+    if (s.duel && dq >= s.hp) dq = Math.max(0, s.hp - 1);
     s.hp -= dq;
     p.inv = opt.inv || 0.9; p.flash = 0.2; p.flashCol = '#ff4a5e';
     if (!opt.noKnock && src) { const [nx, ny] = U.norm(p.x - src.x, p.y - src.y); p.kx = nx * 220; p.ky = ny * 220; }
@@ -581,7 +582,7 @@
   function startHook(p, m) {
     if (p.hook) return;
     const a = ANG[p.dir];
-    p.hook = { x: p.x, y: p.y - 8, a, d: 0, out: true, max: 120, hit: null };
+    p.hook = { x: p.x, y: p.y - 8, a, d: 0, out: true, max: 160, hit: null };
     p.setState('hook');
     sfx('hook');
   }
@@ -597,7 +598,11 @@
         const post = W().ents.find((e) => e.hookable && !e.dead && U.dist(x, y, e.x, e.y - 8) < 9);
         const tx = Math.floor(x / TS), ty = Math.floor(y / TS);
         const o = m.O(tx, ty);
-        if (post || (o && OB.DEF[o] && OB.DEF[o].big)) { h.out = false; h.pull = true; h.tx = post ? post.x : tx * TS + 8; h.ty = post ? post.y + 2 : ty * TS + 16; sfx('clank'); return; }
+        if (post || (o && OB.DEF[o] && OB.DEF[o].big)) {
+          // 걸린 곳 바로 앞(주인공 쪽)에 내려선다
+          const hx0 = post ? post.x : tx * TS + 8, hy0 = post ? post.y : ty * TS + 14;
+          h.out = false; h.pull = true; h.tx = hx0 - Math.cos(h.a) * 12; h.ty = hy0 - Math.sin(h.a) * 10 + (Math.sin(h.a) < -0.5 ? 12 : 2); sfx('clank'); return;
+        }
         const f = foes().find((e) => U.dist(x, y, e.x, e.y - 8) < (e.r || 8) + 3);
         if (f) { h.out = false; h.foe = f; if (!f.boss && (f.weight || 1) < 2) { f.stunT = 1; } damage(f, 1, { src: 'hook', stun: 1.2, kx: 0, ky: 0 }); return; }
         const pk = W().ents.find((e) => e.kind === 'pickup' && U.dist(x, y, e.x, e.y) < 8);

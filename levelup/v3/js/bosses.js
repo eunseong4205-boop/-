@@ -57,6 +57,7 @@
     guards(info) { return this.D.guards ? this.D.guards(this, info) : false; }
     preKill(info) {
       if (this.dying) return true;
+      if (this.duel) { this.hp = 1; this.stunT = 1; return true; }
       if (this.D.preKill && this.D.preKill(this, info)) return true;
       // 쓰러질 때 연출: 잠깐 버티며 폭발
       this.dying = true; this.hp = 0; this.noContact = true;
