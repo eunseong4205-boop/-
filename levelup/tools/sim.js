@@ -82,16 +82,23 @@ function run(P, verbose) {
   const bestFood = () => { let f = null; for (const i of shopsOpen) for (const id of D.SHOPS[D.REGIONS[i].id].items) if (D.ITEMS[id].type === 'food' && D.ITEMS[id].fx.exp && (!f || D.ITEMS[id].fx.exp > D.ITEMS[f].fx.exp)) f = id; return f; };
 
   const fights = [];
-  /** 보스 앞에 선 순간의 전투 어림: 탭 수 · 이기는 데 걸리는 시간 · 버티는 시간 */
+  /** 보스 앞에 선 순간의 전투 어림: 탭 수 · 이기는 데 걸리는 시간 · 버티는 시간
+      적의 의도(battle.js)를 평균 내어 본다: 강타 ×2.6, 흡수 ×0.8(+회복), 장막 0(탭 피해 흡수), 저주 ×0.5 */
+  const INT = { strike: [1, 1], heavy: [1.6, 2.6], drain: [1.2, 0.8], shield: [0.9, 0], hex: [1.3, 0.5] };
+  const PAT = { e: { strike: 5, heavy: 3, drain: 1, shield: 2 }, b: { strike: 4, heavy: 3, drain: 2, shield: 2 }, x: { strike: 4, heavy: 3, drain: 2, shield: 2, hex: 2 } };
   const judge = (id) => {
     const md = D.MON[id], d = E.derive(s);
-    const hpM = id === 'kairon' ? 1 : 1;   // 이미 data.js에서 보정됨
     const perTap = d.atk * (1 + d.crit * (d.critDmg - 1)) * d.taps;
-    const taps = Math.ceil(md.hp * hpM / perTap);
-    const every = D.B.enemyEvery * (md.role === 'x' ? 0.85 : 1);
-    const hitDmg = Math.max(md.atk * 0.12, md.atk - d.def);
+    const pat = PAT[md.role] || PAT.b, W = Object.values(pat).reduce((a, b) => a + b, 0);
+    let cyc = 0, mul = 0;
+    for (const k in pat) { cyc += pat[k] / W * INT[k][0]; mul += pat[k] / W * INT[k][1]; }
+    const every = D.B.enemyEvery * (md.role === 'x' ? 0.85 : 1) * cyc;
+    // 장막(12%)과 흡수(5%)만큼 더 두드려야 한다
+    const extra = 1 + (pat.shield || 0) / W * 0.12 * 2.8 + (pat.drain || 0) / W * 0.05;
+    const taps = Math.ceil(md.hp * extra / perTap);
+    const hitDmg = Math.max(md.atk * 0.12, md.atk - d.def) * mul;
     const hits = Math.ceil(d.hpMax / Math.max(1, hitDmg));
-    const survive = 1.6 + (hits - 1) * every;             // 쓰러지기까지 걸리는 초
+    const survive = 1.6 + (hits - 1) * every;             // 막지도 마시지도 않을 때 쓰러지기까지 걸리는 초
     const tps = 6;
     fights.push({ id, name: md.name, lv: s.lv, mlv: md.lv, taps, win: taps / tps, survive, hits, gear: (s.eq.weapon || '-') + '/' + (s.eq.armor || '-') + ' ' + E.rankName(s) });
   };
@@ -142,7 +149,7 @@ function run(P, verbose) {
     for (const id of pending) judge(id);
     const read = (hangul(ch.file) * 0.8) / P.read;       // 대사 · 책의 80%를 읽는다
     const walk = ch.walk * 60 * P.walk;                    // 이동 · 탐험 · 상점
-    const bossT = (ch.bosses || []).length * 40;            // 보스전
+    const bossT = (ch.bosses || []).length * 70;            // 보스전: 막기·경직·물약을 섞어 싸우는 시간
     story += read + walk + bossT;
     rows.push({ ch: ch.name, lv: s.lv, clicks: clicks - c0, grind: (sec - t0) / 60, battles: battles - b0, story: (read + walk + bossT) / 60, total: (sec + story) / 3600, gold: s.gold, lag: lag / 60, earned: s.tot.gold - g0, sp: Object.fromEntries(Object.keys(spent).map((k) => [k, spent[k] - sp0[k]])), ranks: E.rankName(s), tool: E.toolIndex(s) });
   }

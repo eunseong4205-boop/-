@@ -109,7 +109,7 @@ const SCENES = [
       if (Date.now() - t0 > (maxMs || 60000)) return 'timeout';
       const st = await p.evaluate(() => ({ run: G.script.running, top: G.ui.top() && G.ui.top().name, bat: G.battle.active, modal: !document.getElementById('modal').hidden, title: (document.querySelector('.m-title') || {}).textContent || '' }));
       if (!st.run && !st.bat && st.top === 'base') return 'done';
-      if (st.top === 'battle' || st.bat) { await p.evaluate(() => { if (G.battle.mon && G.battle.phase === 'fight') G.battle.mon.hp = Math.min(G.battle.mon.hp, 0.5); }); await p.keyboard.press('Space'); await p.waitForTimeout(40); continue; }
+      if (st.top === 'battle' || st.bat) { await p.evaluate(() => { if (G.battle.mon && G.battle.phase === 'fight') { G.battle.mon.hp = Math.min(G.battle.mon.hp, 0.5); G.battle.mon.shield = 0; G.battle.guardAt = -9; } }); await p.keyboard.press('Space'); await p.waitForTimeout(40); continue; }
       if (st.top === 'ask') {
         // 선택지는 뜬 직후 잠깐 확정을 받지 않는다 → 기다렸다가 고른다
         await p.waitForTimeout(260);

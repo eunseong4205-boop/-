@@ -64,7 +64,7 @@ const SCENES = [
       if (Date.now() - t0 > (maxMs || 60000)) return 'timeout';
       const st = await p.evaluate(() => ({ run: G.script.running, top: G.ui.top() && G.ui.top().name, bat: G.battle.active, modal: !document.getElementById('modal').hidden }));
       if (!st.run && !st.bat && st.top === 'base') return 'done';
-      if (st.top === 'battle' || st.bat) { await p.evaluate(() => { if (G.battle.mon && G.battle.phase === 'fight') G.battle.mon.hp = Math.min(G.battle.mon.hp, 0.5); }); await p.keyboard.press('Space'); await p.waitForTimeout(40); continue; }
+      if (st.top === 'battle' || st.bat) { await p.evaluate(() => { if (G.battle.mon && G.battle.phase === 'fight') { G.battle.mon.hp = Math.min(G.battle.mon.hp, 0.5); G.battle.mon.shield = 0; G.battle.guardAt = -9; } }); await p.keyboard.press('Space'); await p.waitForTimeout(40); continue; }
       if (st.top === 'ask') {
         await p.waitForTimeout(260);
         const k = await p.evaluate(() => (window.__answers.length ? window.__answers.shift() : 0));

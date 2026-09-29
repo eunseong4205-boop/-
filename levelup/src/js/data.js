@@ -14,6 +14,7 @@
     tapsToKill: 7,
     hitsToDie: 11,
     enemyEvery: 2.0,
+    potMax: 3,           // 한 전투에 마실 수 있는 물약
     regen: 0.06,
     feverClicks: 24,     // 3초 안에 24번 누르면 피버
     feverTime: 8,
@@ -232,8 +233,8 @@
     const r = REGIONS[reg];
     const L = Math.round(r.lv[0] * Math.pow(r.lv[1] / r.lv[0], frac));
     const P = expected(L, reg);
-    // [탭 수, 공격 배율, 보상 배율] — 보스는 레벨만 맞추면 물약 없이도 이길 만하게, 강적(사천왕·챔피언)은 물약이나 기술이 한두 번 필요하게
-    const k = { n: [B.tapsToKill, 1, 1], e: [34, 1.35, 5], b: [90, 1.25, 40], x: [170, 1.5, 120] }[role];
+    // [탭 수, 공격 배율, 보상 배율] — 보스는 막기·경직을 써야 물약 없이 이길 만하게, 강적(사천왕·챔피언)은 물약과 기술을 아껴 써야 하게
+    const k = { n: [B.tapsToKill, 1.1, 1], e: [40, 1.45, 5], b: [120, 1.4, 40], x: [210, 1.6, 120] }[role];
     const hp = Math.round(P.atk * k[0]);
     const atk = Math.round((P.hp / B.hitsToDie) * k[1] + P.def);
     const base = targetClick(L) * B.killExp * k[2] / (expectedMult(L, false));
@@ -352,7 +353,7 @@
   // 특별 보정: 이야기 보스
   MON.golem0.hp = Math.round(MON.golem0.hp * 0.35); MON.golem0.atk = Math.round(MON.golem0.atk * 0.5);
   MON.rud1.hp = Math.round(MON.rud1.hp * 0.5);
-  MON.kairon.hp *= 2; MON.blacksun.hp *= 3; MON.blacksun.atk = Math.round(MON.blacksun.atk * 0.8);   // 흑점은 대륙의 빛(지원)과 함께 싸운다
+  MON.kairon.hp = Math.round(MON.kairon.hp * 1.7); MON.blacksun.hp = Math.round(MON.blacksun.hp * 2.6); MON.blacksun.atk = Math.round(MON.blacksun.atk * 0.8);   // 흑점은 대륙의 빛(지원)과 함께 싸운다
 
   /* ───────── 구슬 ───────── */
   const ORB_COLORS = {

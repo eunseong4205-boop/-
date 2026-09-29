@@ -1,4 +1,10 @@
-/* 전투: 렙업 버튼(또는 A)을 두드려 공격한다. 적은 2초마다 반격한다. */
+/* 전투: 렙업 버튼(또는 A)을 두드려 공격하고, B로 막는다.
+   적은 머리 위에 다음 행동(의도)을 드러낸다 — 공격 · 강타 · 흡수 · 장막 · 저주.
+   · 강타: 길게 모은 뒤 크게 친다. 모으는 동안 충분히 때리면 자세가 무너진다(경직).
+   · 막기: 맞기 직전(0.22초 안)에 막으면 완벽 방어 → 피해 없음 + 반격 태세. 막는 동안엔 공격하지 못한다.
+   · 장막: 탭 피해를 크게 줄이고, 기술은 두 배로 먹힌다. 깨뜨리면 잠시 비틀거린다.
+   · 흡수는 적을 회복시키고, 저주는 잠시 물약을 봉인한다. 물약은 한 전투에 세 번까지.
+   · 보스는 HP 30% 아래에서 격노한다: 더 빠르고 더 아프다. */
 (function () {
   'use strict';
   const G = globalThis.G;
@@ -13,6 +19,38 @@
     space: ['#05040e', '#1a1640', '#5a6478', '#434b5c'], planet: ['#1a1030', '#6a4a2a', '#e8c860', '#c89a38'], interior: ['#3a2a1a', '#6a4a2a', '#c8905a', '#a8703e'],
   };
 
+  /* 적의 의도: 모으는 시간(배수) · 피해 배수 */
+  const INTENT = {
+    strike: { name: '공격', c: '#e8a040', charge: 1, dmg: 1 },
+    heavy: { name: '강타', c: '#ff3a4a', charge: 1.6, dmg: 2.6 },
+    drain: { name: '흡수', c: '#c07aff', charge: 1.2, dmg: 0.8 },
+    shield: { name: '장막', c: '#6ac8ff', charge: 0.9, dmg: 0 },
+    hex: { name: '저주', c: '#8ae08a', charge: 1.3, dmg: 0.5 },
+  };
+  const ROLE_PAT = {
+    n: { strike: 6, heavy: 2, drain: 1 },
+    e: { strike: 5, heavy: 3, drain: 1, shield: 2 },
+    b: { strike: 4, heavy: 3, drain: 2, shield: 2 },
+    x: { strike: 4, heavy: 3, drain: 2, shield: 2, hex: 2 },
+  };
+  /* 이름난 적은 저마다 싸우는 버릇이 있다 */
+  const PATTERN = {
+    treant: { strike: 3, drain: 3, heavy: 2, hex: 1 },
+    golem0: { strike: 4, heavy: 2, shield: 3 },
+    rud1: { strike: 5, heavy: 3, shield: 1 },
+    kraken: { strike: 3, drain: 3, heavy: 3 },
+    goldie: { strike: 3, drain: 4, heavy: 2, shield: 1 },
+    moonbeast: { strike: 3, heavy: 3, drain: 2, hex: 1 },
+    edel: { strike: 3, heavy: 4, shield: 2 },
+    lumie: { strike: 3, shield: 3, drain: 2, hex: 2 },
+    voltmech: { strike: 3, heavy: 3, shield: 4 },
+    nocturne: { strike: 2, drain: 3, hex: 3, heavy: 3 },
+    herald: { strike: 2, drain: 4, hex: 2, heavy: 2 },
+    kairon: { strike: 3, heavy: 5, shield: 2, drain: 1 },
+    blacksun: { strike: 2, drain: 4, hex: 3, heavy: 3, shield: 1 },
+  };
+  const GUARD_WIN = 0.7, PERFECT = 0.22, GUARD_CD = 1.1;
+
   const B = {
     active: false, mon: null, phase: 'none', t: 0, enemyT: 0, floats: [], slashes: [], parts: [], opt: {}, resolve: null, result: null, hurtT: 0, lunge: 0,
   };
@@ -22,14 +60,21 @@
     if (!md) return Promise.resolve(true);
     const s = G.state;
     opt = opt || {};
+    if (!s.flags.tip_intent) {
+      s.flags.tip_intent = true;
+      return G.ui.say('sys', ['[y]전투의 기본[/]\n적의 머리 위에 [y]다음 행동[/]이 뜬다. 아래 막대가 차면 그 행동이 온다.\n렙업 버튼·A = 공격 · [y]B = 막기[/] (막는 동안엔 공격할 수 없다)',
+        '[r]강타[/]는 길게 모았다가 크게 친다. 모으는 동안 몰아쳐 때리면 [y]자세가 무너진다[/].\n맞기 [y]직전[/]에 막으면 [y]완벽 방어[/] — 피해가 없고 반격 태세가 된다.',
+        '[b]장막[/]은 탭이 잘 먹히지 않는다. 기술로 깨뜨리자. [p]흡수[/]는 적을 회복시키고, [g]저주[/]는 잠시 물약을 봉인한다.\n물약은 한 전투에 [y]3번[/]까지. 보스는 궁지에 몰리면 [r]격노[/]한다.']).then(() => start(monId, opt));
+    }
     s.codex[monId] = s.codex[monId] || { k: 0 };
     const boss = md.role === 'b' || md.role === 'x' || opt.boss;
     const scale = opt.scale || (boss ? 4 : md.role === 'e' ? 3.5 : 3);
     const sprite = G.ui.monSprite(md);
-    const white = document.createElement('canvas'); white.width = sprite.width; white.height = sprite.height;
-    { const wg = white.getContext('2d'); wg.drawImage(sprite, 0, 0); wg.globalCompositeOperation = 'source-in'; wg.fillStyle = '#ffffff'; wg.fillRect(0, 0, white.width, white.height); }
-    B.mon = { md, id: monId, hp: md.hp * (opt.hpMul || 1), max: md.hp * (opt.hpMul || 1), atk: md.atk * (opt.atkMul || 1), boss, scale, flash: 0, knock: 0, dead: 0, sprite, white };
-    B.opt = opt; B.phase = 'intro'; B.t = 0; B.enemyT = (opt.firstDelay || 1.6); B.floats = []; B.slashes = []; B.parts = []; B.result = null; B.hurtT = 0; B.lunge = 0; B.taps = 0;
+    const white = mask(sprite, '#ffffff'), red = mask(sprite, '#ff2a3a');
+    B.mon = { md, id: monId, hp: md.hp * (opt.hpMul || 1), max: md.hp * (opt.hpMul || 1), atk: md.atk * (opt.atkMul || 1), boss, scale, flash: 0, knock: 0, dead: 0, sprite, white, red, shield: 0 };
+    B.opt = opt; B.phase = 'intro'; B.t = 0; B.floats = []; B.slashes = []; B.parts = []; B.result = null; B.hurtT = 0; B.lunge = 0; B.taps = 0;
+    B.intent = 'strike'; B.last = null; B.charge = B.enemyT = (opt.firstDelay || 1.6); B.stag = 0; B.stunT = 0; B.enraged = false;
+    B.guardAt = -9; B.guardCd = 0; B.perfectT = 0; B.counter = 0; B.potUsed = 0; B.hexT = 0;
     B.theme = opt.theme || (G.field.map && (G.field.map.battleBg || G.field.map.theme)) || 'green';
     B.supportT = opt.support ? (opt.supportFirst || 5) : 0; B.supportI = 0;
     B.active = true;
@@ -43,24 +88,33 @@
     drawCmds();
     return new Promise((res) => {
       B.resolve = res;
-      B.layer = G.ui.push({ name: 'battle', lv: tap, a: tap, tap: (e) => { if (B.phase === 'end') finish(); else if (e && e.target && e.target.id === 'cv') tap(); }, b: flee, dir() {} });
+      B.layer = G.ui.push({ name: 'battle', lv: tap, a: tap, tap: (e) => { if (B.phase === 'end') finish(); else if (e && e.target && e.target.id === 'cv') tap(); }, b: guard, dir() {} });
     });
   }
 
   function drawCmds() {
     const s = G.state;
     const box = $('bh-cmd');
-    let h = '<button class="bcmd run" data-b="run">' + (B.opt.noFlee || B.mon.boss ? '도망 불가' : '도망 (B)') + '</button>';
-    const pot = bestPotion();
-    h += '<button class="bcmd" data-b="pot"' + (pot ? '' : ' disabled') + '>♥ ' + (pot ? D.ITEMS[pot].name + ' ' + s.inv[pot] : '물약 없음') + '</button>';
+    let h = '<button class="bcmd run" data-b="run">' + (B.opt.noFlee || B.mon.boss ? '도망 불가' : '도망') + '</button>';
+    h += '<button class="bcmd guard" data-b="guard"><span>◆ 막기 (B)</span><i class="cd"></i></button>';
+    const pot = bestPotion(), left = D.B.potMax - B.potUsed;
+    h += '<button class="bcmd pot" data-b="pot"' + (pot && left > 0 ? '' : ' disabled') + '>♥ ' + (pot ? D.ITEMS[pot].name + ' ' + s.inv[pot] : '물약 없음') + ' <small>' + left + '/' + D.B.potMax + '</small></button>';
     for (const sk of D.SKILLS) if (E.skillUnlocked(s, sk)) h += '<button class="bcmd" data-b="' + sk.id + '"><span>' + sk.icon + ' ' + sk.name + '</span><i class="cd"></i></button>';
     box.innerHTML = h;
-    box.onclick = (e) => { const b = e.target.closest('[data-b]'); if (!b || B.phase !== 'fight') return; const k = b.dataset.b; if (k === 'run') flee(); else if (k === 'pot') potion(); else skill(k); };
+    box.onclick = (e) => { const b = e.target.closest('[data-b]'); if (!b || B.phase !== 'fight') return; const k = b.dataset.b; if (k === 'run') flee(); else if (k === 'guard') guard(); else if (k === 'pot') potion(); else skill(k); };
+  }
+  function mask(sprite, color) {
+    const c = document.createElement('canvas'); c.width = sprite.width; c.height = sprite.height;
+    const g = c.getContext('2d'); g.drawImage(sprite, 0, 0); g.globalCompositeOperation = 'source-in'; g.fillStyle = color; g.fillRect(0, 0, c.width, c.height);
+    return c;
   }
   function bestPotion() { const s = G.state; let best = null; for (let i = 11; i >= 0; i--) if (s.inv['p' + i] > 0) { best = 'p' + i; break; } return best; }
   function potion() {
+    if (B.phase !== 'fight') return;
+    if (B.hexT > 0) { G.audio.sfx('buzz'); G.ui.toast('저주 때문에 병마개가 열리지 않는다!', 'bad'); return; }
+    if (B.potUsed >= D.B.potMax) { G.audio.sfx('buzz'); G.ui.toast('이번 전투에서는 더 마실 수 없다', 'bad'); return; }
     const id = bestPotion(); if (!id) { G.audio.sfx('buzz'); return; }
-    E.usePotion(G.state, id); G.audio.sfx('heal');
+    E.usePotion(G.state, id); G.audio.sfx('heal'); B.potUsed++;
     addFloat('HP 회복', '#6ee7a8', 0.5, 0.78);
     drawCmds();
   }
@@ -70,17 +124,28 @@
     G.audio.sfx('skill');
     G.ui.flash(id === 'k_legend' ? '#ffe066' : id === 'k_flame' ? '#ff8a3a' : '#ffffff', 300);
     const d = E.derive(s);
-    if (id === 'k_flame') hit(d.atk * 15, true, '괴짜의 불꽃!');
-    if (id === 'k_legend') hit(d.atk * 60, true, '전설의 일격!');
+    if (id === 'k_flame') hit(d.atk * 15, true, '괴짜의 불꽃!', 0, true);
+    if (id === 'k_legend') hit(d.atk * 60, true, '전설의 일격!', 0, true);
     if (id === 'k_heal') { s.hp = Math.min(d.hpMax, s.hp + d.hpMax * 0.6); addFloat('기합! HP 회복', '#6ee7a8', 0.5, 0.78); }
     if (id === 'k_rush') addFloat('연타 폭발!', '#ffd84a', 0.5, 0.78);
     if (id === 'k_guard') addFloat('새싹 방패!', '#8ae08a', 0.5, 0.78);
     if (id === 'k_focus') addFloat('덕질 집중!', '#8ad8ff', 0.5, 0.78);
   }
 
+  /** 막기: 0.7초 동안 자세를 잡는다. 그동안엔 공격하지 못한다. */
+  function guard() {
+    if (B.phase === 'end') { finish(); return; }
+    if (B.phase !== 'fight') return;
+    if (B.guardCd > 0) { G.audio.sfx('bump'); return; }
+    B.guardAt = B.t; B.guardCd = GUARD_CD;
+    G.audio.sfx('select');
+  }
+  const guarding = () => B.t - B.guardAt <= GUARD_WIN;
+
   function tap() {
     if (B.phase === 'end') { finish(); return; }
     if (B.phase !== 'fight') return;
+    if (guarding()) B.guardAt = -9;   // 공격하면 자세가 풀린다
     const s = G.state, d = E.derive(s);
     B.taps++;
     // 탭 경험치: 그 자리 클릭의 30%
@@ -91,16 +156,36 @@
     const ex = v.exp * D.B.battleTapExp, gd = v.gold * D.B.battleTapExp;
     s.tot.taps++;
     G.main.gainExp(ex, false, d); E.addGold(s, gd);
+    const counter = B.counter > 0;
+    if (counter) B.counter--;
     for (let i = 0; i < d.taps; i++) {
-      const crit = Math.random() < d.crit;
-      const dmg = d.atk * (0.9 + Math.random() * 0.2) * (crit ? d.critDmg : 1);
-      hit(dmg, crit, null, i);
+      const crit = counter || Math.random() < d.crit;
+      const dmg = d.atk * (0.9 + Math.random() * 0.2) * (crit ? d.critDmg : 1) * (counter ? 1.5 : 1);
+      hit(dmg, crit, counter && i === 0 ? '반격!' : null, i);
     }
   }
-  function hit(dmg, crit, label, i) {
+  function hit(dmg, crit, label, i, isSkill) {
     const m = B.mon, s = G.state;
     if (!m || m.dead) return;
     dmg = U.fin(dmg);
+    if (B.stunT > 0) dmg *= 1.5;
+    if (m.shield > 0) {
+      const k = isSkill ? 2 : 0.35, eff = dmg * k;
+      if (eff < m.shield) {
+        m.shield -= eff; m.flash = 0.06;
+        G.audio.sfx('bump');
+        addFloat((label ? label + ' ' : '') + U.fmt(eff), '#8ad8ff', 0.5 + (Math.random() - 0.5) * 0.3, 0.34, 8);
+        return;
+      }
+      dmg = (eff - m.shield) / k; m.shield = 0;
+      G.audio.sfx('explode'); G.ui.shake(160, 3);
+      addFloat('장막 붕괴!', '#8ad8ff', 0.5, 0.24, 11);
+      stun(1.2);
+    }
+    if (B.intent === 'heavy' && B.stunT <= 0 && B.phase === 'fight') {
+      B.stag += dmg;
+      if (B.stag >= m.max * (m.boss ? 0.1 : 0.3)) { addFloat('자세 붕괴!', '#ffe066', 0.5, 0.22, 12); G.audio.sfx('surprise'); G.ui.shake(220, 4); stun(2.2); }
+    }
     m.hp -= dmg; m.flash = 0.12; m.knock = crit ? 6 : 3;
     if (dmg > s.tot.maxHit) s.tot.maxHit = dmg;
     G.audio.sfx(crit ? 'crit' : 'hit');
@@ -108,7 +193,30 @@
     addFloat((label ? label + ' ' : '') + U.fmt(dmg), crit ? '#ffe066' : '#ffffff', jx, jy, crit ? 11 : 8);
     B.slashes.push({ x: jx, y: jy + 0.04, life: 0.22, a: Math.random() * Math.PI, crit });
     if (crit) G.ui.shake(120, 2);
-    if (m.hp <= 0) { m.hp = 0; win(); }
+    if (m.hp <= 0) { m.hp = 0; win(); return; }
+    if (m.boss && !B.enraged && m.hp < m.max * 0.3 && B.phase === 'fight') {
+      B.enraged = true;
+      G.audio.sfx('rumble'); G.ui.shake(400, 5); G.ui.flash('#ff2a3a', 250);
+      addFloat('격노!', '#ff5a6a', 0.5, 0.16, 14);
+      G.ui.toast(m.md.name + '이(가) 격노했다! 공격이 빨라지고 거세진다', 'bad');
+    }
+  }
+  /** 경직: 적의 행동이 끊기고, 받는 피해가 1.5배 */
+  function stun(sec) {
+    B.stunT = Math.max(B.stunT, sec); B.stag = 0;
+    B.intent = null;
+  }
+  function every() { return (B.opt.every || D.B.enemyEvery) * (B.mon.md.role === 'x' ? 0.85 : 1) * (B.enraged ? 0.75 : 1); }
+  function nextIntent() {
+    const m = B.mon;
+    const pat = B.opt.pattern || PATTERN[m.id] || ROLE_PAT[m.md.role] || ROLE_PAT.n;
+    let pool = Object.keys(pat).filter((k) => !(k === 'shield' && m.shield > 0) && !(k === 'hex' && B.hexT > 0) && !(k !== 'strike' && k === B.last));
+    if (!pool.length) pool = ['strike'];
+    const w = (k) => pat[k] * (B.enraged && k === 'heavy' ? 1.6 : 1);
+    let r = Math.random() * pool.reduce((a, k) => a + w(k), 0), pick = pool[0];
+    for (const k of pool) { r -= w(k); if (r <= 0) { pick = k; break; } }
+    B.intent = B.last = pick; B.stag = 0;
+    B.charge = B.enemyT = every() * INTENT[pick].charge;
   }
   function addFloat(text, color, fx, fy, size) { B.floats.push({ text, color, fx, fy, size: size || 8, life: 0.9 }); if (B.floats.length > 18) B.floats.shift(); }
 
@@ -123,13 +231,36 @@
     G.audio.sfx('white');
   }
   function enemyAttack() {
-    const s = G.state, m = B.mon;
-    const dmg = E.enemyDamage(s, m.atk);
+    const s = G.state, m = B.mon, k = B.intent || 'strike', it = INTENT[k];
+    if (k === 'shield') {
+      m.shield = m.max * (m.boss ? 0.12 : 0.25);
+      G.audio.sfx('magic'); G.ui.flash('#6ac8ff', 200);
+      addFloat('장막을 둘렀다', '#8ad8ff', 0.5, 0.2, 10);
+      return;
+    }
+    const held = B.t - B.guardAt, perfect = held <= PERFECT, guarded = held <= GUARD_WIN;
+    let dmg = E.enemyDamage(s, m.atk) * it.dmg * (B.enraged ? 1.25 : 1);
+    B.lunge = 0.25;
+    if (perfect) {
+      dmg = 0; B.counter = 3; B.perfectT = 0.4; B.guardAt = -9;
+      G.audio.sfx('orb'); G.ui.flash('#ffffff', 160);
+      addFloat('완벽 방어! 반격 태세', '#ffe066', 0.5, 0.8, 10);
+      if (k === 'heavy') { addFloat('받아쳤다!', '#ffe066', 0.5, 0.22, 12); stun(1.8); }
+      return;
+    }
+    if (guarded) dmg *= k === 'heavy' ? 0.5 : 0.3;
+    dmg = Math.max(1, Math.round(dmg));
     s.hp -= dmg;
-    B.lunge = 0.25; B.hurtT = 0.3;
-    G.audio.sfx('hurt');
-    G.ui.shake(200, 4);
-    addFloat('-' + U.fmt(dmg), '#ff6a7a', 0.5, 0.84, 10);
+    B.hurtT = guarded ? 0.12 : 0.3;
+    G.audio.sfx(guarded ? 'bump' : 'hurt');
+    G.ui.shake(guarded ? 100 : k === 'heavy' ? 320 : 200, guarded ? 2 : k === 'heavy' ? 7 : 4);
+    addFloat((guarded ? '막음 -' : '-') + U.fmt(dmg), guarded ? '#c8d0e0' : '#ff6a7a', 0.5, 0.84, k === 'heavy' && !guarded ? 13 : 10);
+    if (k === 'drain') {
+      const heal = m.max * (m.boss ? 0.05 : 0.1) * (guarded ? 0.5 : 1);
+      m.hp = Math.min(m.max, m.hp + heal);
+      addFloat('+' + U.fmt(heal), '#d8a8ff', 0.5, 0.3, 9);
+    }
+    if (k === 'hex') { B.hexT = guarded ? 3.5 : 7; addFloat('저주: 물약 봉인', '#8ae08a', 0.5, 0.74, 9); G.audio.sfx('buzz'); }
     if (s.hp <= 0) { s.hp = 0; lose(); }
   }
 
@@ -200,8 +331,14 @@
       if (B.supportT <= 0) { B.supportT = B.opt.supportEvery || 7; support(B.opt.support[B.supportI++]); }
     }
     if (B.phase === 'fight') {
-      B.enemyT -= dt;
-      if (B.enemyT <= 0) { B.enemyT = (B.opt.every || D.B.enemyEvery) * (m.md.role === 'x' ? 0.85 : 1); enemyAttack(); }
+      if (B.guardCd > 0) B.guardCd -= dt;
+      if (B.perfectT > 0) B.perfectT -= dt;
+      if (B.hexT > 0) B.hexT -= dt;
+      if (B.stunT > 0) { B.stunT -= dt; if (B.stunT <= 0) nextIntent(); }
+      else {
+        B.enemyT -= dt;
+        if (B.enemyT <= 0) { enemyAttack(); if (B.phase === 'fight') nextIntent(); }
+      }
     }
     if (m.flash > 0) m.flash -= dt;
     if (m.knock > 0) m.knock = Math.max(0, m.knock - dt * 40);
@@ -214,7 +351,19 @@
     // HUD
     const f = Math.max(0, m.hp / m.max);
     $('bh-mhp-f').style.width = (f * 100).toFixed(1) + '%';
-    $('bh-mhp-t').textContent = U.fmt(Math.ceil(m.hp)) + ' / ' + U.fmt(m.max);
+    $('bh-mhp-t').textContent = U.fmt(Math.ceil(m.hp)) + ' / ' + U.fmt(m.max) + (m.shield > 0 ? '  ◇' + U.fmt(Math.ceil(m.shield)) : '');
+    $('bh-mshd').style.width = Math.min(100, m.shield / m.max * 100 * 3).toFixed(1) + '%';
+    const st = [];
+    if (B.enraged) st.push('<b class="rg">격노</b>');
+    if (B.stunT > 0) st.push('<b class="sn">경직 ' + B.stunT.toFixed(1) + '</b>');
+    if (B.counter > 0) st.push('<b class="ct">반격 ×' + B.counter + '</b>');
+    if (B.hexT > 0) st.push('<b class="hx">물약 봉인 ' + Math.ceil(B.hexT) + '</b>');
+    const sh = st.join('');
+    if (sh !== B.stHtml) { $('bh-st').innerHTML = sh; B.stHtml = sh; }
+    const gb = document.querySelector('#bh-cmd [data-b="guard"]');
+    if (gb) { gb.classList.toggle('on', guarding()); const bar = gb.querySelector('.cd'); if (bar) bar.style.width = (B.guardCd > 0 ? (1 - B.guardCd / GUARD_CD) * 100 : 100) + '%'; }
+    const pb = document.querySelector('#bh-cmd [data-b="pot"]');
+    if (pb) pb.disabled = B.phase !== 'fight' || B.hexT > 0 || B.potUsed >= D.B.potMax || !bestPotion();
     const s = G.state;
     document.querySelectorAll('#bh-cmd [data-b^="k_"]').forEach((b) => {
       const sk = D.SKILLS.find((k) => k.id === b.dataset.b); const c = s.cd[sk.id];
@@ -254,16 +403,47 @@
       if (m.dead) g.globalAlpha = Math.max(0, 1 - m.dead / 0.6);
       const x = Math.round(cx - w / 2 + (m.knock ? (Math.random() - 0.5) * m.knock : 0)), y = Math.round(cy - h / 2 + bob + lunge - m.knock * 0.3);
       g.drawImage(img, x, y, w, h);
+      if (B.enraged && !m.dead) { g.globalAlpha = 0.18 + Math.abs(Math.sin(B.t * 5)) * 0.22; g.drawImage(m.red, x, y, w, h); }
       if (m.flash > 0) { g.globalAlpha = 0.75; g.drawImage(m.white, x, y, w, h); }
       g.restore();
+      // 장막
+      if (m.shield > 0 && !m.dead) {
+        g.save(); g.strokeStyle = 'rgba(138,216,255,' + (0.55 + Math.sin(B.t * 6) * 0.2).toFixed(2) + ')'; g.lineWidth = 2;
+        g.fillStyle = 'rgba(106,200,255,0.10)';
+        g.beginPath(); g.ellipse(cx, cy, w * 0.62, h * 0.62, 0, 0, Math.PI * 2); g.fill(); g.stroke();
+        g.restore();
+      }
+      // 경직: 머리 위를 도는 별
+      if (B.stunT > 0 && !m.dead) {
+        g.fillStyle = '#ffe066';
+        for (let k = 0; k < 3; k++) { const a = B.t * 5 + k * 2.1; g.fillRect(Math.round(cx + Math.cos(a) * w * 0.3), Math.round(y - 4 + Math.sin(a) * 3), 2, 2); }
+      }
     }
-    // 적 공격 게이지
-    if (B.phase === 'fight') {
-      const every = (B.opt.every || D.B.enemyEvery) * (m.md.role === 'x' ? 0.85 : 1);
-      const f = 1 - Math.max(0, B.enemyT) / every;
-      const bw = 60, bx = Math.round(cx - bw / 2), by = Math.round(cy + sw * 0.62);
+    // 적의 의도와 게이지
+    if (B.phase === 'fight' && !m.dead) {
+      const bw = 64, bx = Math.round(cx - bw / 2), by = Math.round(cy + sw * 0.62);
       g.fillStyle = '#16101f'; g.fillRect(bx - 1, by - 1, bw + 2, 5);
-      g.fillStyle = f > 0.8 ? '#ff5a6a' : '#e8a040'; g.fillRect(bx, by, Math.round(bw * f), 3);
+      if (B.stunT > 0) {
+        g.fillStyle = '#ffe066'; g.fillRect(bx, by, Math.round(bw * Math.min(1, B.stunT / 2.2)), 3);
+        pill(g, cx, by + 6, '경직', '#ffe066');
+      } else if (B.intent) {
+        const it = INTENT[B.intent], f = 1 - Math.max(0, B.enemyT) / B.charge;
+        const warn = f > 1 - PERFECT / B.charge * 1.4;
+        g.fillStyle = warn && Math.floor(B.t * 16) % 2 ? '#ffffff' : it.c; g.fillRect(bx, by, Math.round(bw * f), 3);
+        pill(g, cx, by + 6, it.name + (B.intent === 'heavy' ? '!' : ''), it.c);
+        if (B.intent === 'heavy') {
+          const need = m.max * (m.boss ? 0.1 : 0.3), sf = Math.min(1, B.stag / need);
+          g.fillStyle = '#16101f'; g.fillRect(bx - 1, by + 21, bw + 2, 4);
+          g.fillStyle = '#ffffff'; g.fillRect(bx, by + 22, Math.round(bw * sf), 2);
+        }
+      }
+    }
+    // 막는 자세
+    if (B.phase === 'fight' && (guarding() || B.perfectT > 0)) {
+      const pf = B.perfectT > 0;
+      g.save(); g.strokeStyle = pf ? '#ffe066' : 'rgba(200,220,255,0.85)'; g.lineWidth = pf ? 4 : 3;
+      g.beginPath(); g.arc(W / 2, H + 18, W * 0.42, Math.PI * 1.15, Math.PI * 1.85); g.stroke();
+      g.restore();
     }
     // 베기 효과
     for (const sl of B.slashes) {
@@ -295,6 +475,14 @@
     }
   }
 
-  Object.assign(B, { start, update, render, tap, flee, potion, skill });
+  function pill(g, x, y, text, c) {
+    g.font = "8px 'Galmuri11', monospace";
+    const tw = Math.ceil(g.measureText(text).width) + 10, px = Math.round(x - tw / 2), py = Math.round(y);
+    g.fillStyle = 'rgba(12,9,22,0.88)'; g.fillRect(px, py, tw, 13);
+    g.fillStyle = c; g.fillRect(px, py, 2, 13); g.fillRect(px + tw - 2, py, 2, 13);
+    g.textAlign = 'center'; g.fillText(text, Math.round(x), py + 10); g.textAlign = 'left';
+  }
+
+  Object.assign(B, { start, update, render, tap, flee, guard, potion, skill, INTENT });
   G.battle = B;
 })();

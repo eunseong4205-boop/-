@@ -195,6 +195,16 @@ input { font: inherit; }
 .bcmd .cd { position: absolute; left: 0; bottom: 0; height: 2px; background: var(--gold); }
 .bcmd[disabled] { opacity: .45; }
 .bcmd.run { margin-right: auto; color: var(--muted); }
+.bcmd.guard.on { border-color: #c8dcff; color: #fff; box-shadow: 0 0 8px rgba(200, 220, 255, .6); }
+.bcmd small { color: var(--muted); font-size: 10px; }
+.bar .shd { position: absolute; inset: 0 auto 0 0; width: 0; background: repeating-linear-gradient(135deg, rgba(138, 216, 255, .85) 0 3px, rgba(106, 200, 255, .55) 3px 6px); }
+#bh-st { grid-column: 1 / -1; display: flex; gap: 4px; flex-wrap: wrap; min-height: 0; }
+#bh-st:empty { display: none; }
+#bh-st b { font-weight: normal; font-size: 10px; padding: 1px 6px; border-radius: 8px; border: 1px solid; }
+#bh-st .rg { color: #ff8a9a; border-color: #a8283a; animation: fever .5s steps(2) infinite; }
+#bh-st .sn { color: #ffe066; border-color: #c89a28; }
+#bh-st .ct { color: #fff; border-color: #fff; }
+#bh-st .hx { color: #8ae08a; border-color: #2a9a6a; }
 
 /* ── 조작부 ── */
 #pad { flex: none; position: relative; display: grid; grid-template-columns: auto 1fr auto; grid-template-rows: auto auto auto; column-gap: 6px; row-gap: 4px; align-items: center; padding: 2px 4px 0; touch-action: none; }
