@@ -32,12 +32,18 @@
     weather(g, m, W, cx, cy, v);
     let dark = m.dark || 0;
     if (m.outdoor && G.story && G.story.nightFactor) dark = Math.max(dark, G.story.nightFactor() * 0.55);
-    if (dark <= 0.01) { if (m.tint) { g.fillStyle = m.tint; g.fillRect(0, 0, v.w, v.h); } return; }
+    // 지역 하늘빛 (퍼플의 노을 등): 어둠 위에 곱해지는 색
+    const sky = m.outdoor && G.story && G.story.skyTint ? G.story.skyTint() : null;
+    const tintAll = () => {
+      if (sky) { g.globalCompositeOperation = 'soft-light'; g.fillStyle = sky; g.fillRect(0, 0, v.w, v.h); g.globalCompositeOperation = 'source-over'; }
+      if (m.tint) { g.fillStyle = m.tint; g.fillRect(0, 0, v.w, v.h); }
+    };
+    if (dark <= 0.01) { tintAll(); return; }
     if (!L.layer || L.layer.width !== v.w || L.layer.height !== v.h) L.layer = X.canvas(v.w, v.h);
     const lg = L.layer.getContext('2d');
     lg.globalCompositeOperation = 'source-over';
     lg.clearRect(0, 0, v.w, v.h);
-    lg.fillStyle = m.darkCol || 'rgba(4,3,12,1)';
+    lg.fillStyle = (m.outdoor && G.story && G.story.darkCol && G.story.darkCol()) || m.darkCol || 'rgba(4,3,12,1)';
     lg.globalAlpha = dark; lg.fillRect(0, 0, v.w, v.h); lg.globalAlpha = 1;
     lg.globalCompositeOperation = 'destination-out';
     for (const l of lightsIn(m, W, cx, cy, v.w, v.h)) {
@@ -58,7 +64,7 @@
       g.fillStyle = gr; g.fillRect(x - l.r, y - l.r, l.r * 2, l.r * 2);
     }
     g.globalCompositeOperation = 'source-over';
-    if (m.tint) { g.fillStyle = m.tint; g.fillRect(0, 0, v.w, v.h); }
+    tintAll();
   }
 
   /* ───────── 날씨 ───────── */

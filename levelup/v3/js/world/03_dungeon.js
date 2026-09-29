@@ -173,6 +173,16 @@
     }
   }
 
+  /** 환영 벽: 벽처럼 보이지만 진실의 거울 · 흰빛을 비추면 사라진다 */
+  class Veil extends E.Ent {
+    constructor(o) { super(Object.assign({ kind: 'veil', solid: false, hidden: false }, o)); }
+    get done() { return !!S().flags[this.flagKey]; }
+    apply() { const m = G.world.map; for (const [x, y] of this.cells) m.setT(x, y, this.floor); }
+    reveal() { if (this.done) return; S().flags[this.flagKey] = true; this.apply(); sfx('mirror'); for (const [x, y] of this.cells) G.fx.glow(x * TS + 8, y * TS + 8, '#d8b0ff', 6); }
+    update(dt) { this.t += dt; if (this.done && !this.applied) { this.applied = true; this.apply(); } }
+    draw(g, cx, cy) { if (this.done) return; if (Math.sin(this.t * 2) > 0.8) { for (const [x, y] of this.cells) { g.globalAlpha = 0.15; g.fillStyle = '#d8b0ff'; g.fillRect(x * TS - cx, y * TS - cy, 16, 16); } g.globalAlpha = 1; } }
+  }
+
   /** 던전 등록 */
   function def(id, D) {
     DUN[id] = D;
@@ -221,8 +231,9 @@
     switch (kind) {
       case 'chest': {
         const flagKey = did + ':chest:' + k + ':' + px + ',' + py;
-        const hid = o.hidden ? (o.hidden === true ? did + ':' + k + ':clear' : o.hidden) : null;
-        return tag(new PR.Chest(Object.assign({ x, y, item: o.item, n: o.n, big: o.big, flagKey, hiddenUntil: hid, col: o.col }, {})));
+        const rk = o.mirror ? did + ':seen:' + k + ':' + px + ',' + py : null;
+        const hid = o.mirror ? rk : o.hidden ? (o.hidden === true ? did + ':' + k + ':clear' : o.hidden) : null;
+        return tag(new PR.Chest(Object.assign({ x, y, item: o.item, n: o.n, big: o.big, flagKey, hiddenUntil: hid, col: o.col, revealKey: rk }, {})));
       }
       case 'torch': { const t = tag(new PR.Torch({ x, y, flagKey: did + ':torch:' + k + ':' + px + ',' + py, burn: o.burn, alwaysLit: o.lit })); if (o.lit) t.lit = true; return t; }
       case 'plate': return tag(new PR.Plate({ x, y: y + 4, sets: o.sets || (did + ':plate:' + k + ':' + px + ',' + py), hold: o.hold !== false }));
@@ -238,6 +249,7 @@
       case 'npc': return tag(new PR.NPC(Object.assign({ x, y }, o)));
       case 'decor': { const d = new G.build.Decor({ decor: o.decor, v: o.v, x, y: y + 3, text: o.text, solid: o.solid !== false }); return tag(d); }
       case 'ped': return tag(new PR.Pedestal(Object.assign({ x, y }, o)));
+      case 'veil': { const cells = (o.cells || [[px, py]]).map(([cx2, cy2]) => [x0 + cx2, y0 + cy2]); const v = new Veil({ x, y, cells, floor: G.dungeon.DUN[did].floor || T.FLOOR, flagKey: did + ':veil:' + k + ':' + px + ',' + py }); if (!v.done) for (const [cx2, cy2] of cells) m.setT(cx2, cy2, T.WALL); return tag(v); }
       case 'boss': { const b = G.bosses.spawn(o.type, x, y, Object.assign({ did, room: k }, o)); return b; }
       case 'fn': return o.fn(x, y, Wd, m);
       default: return null;

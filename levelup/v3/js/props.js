@@ -60,6 +60,7 @@
   class Chest extends Prop {
     constructor(o) { super(Object.assign({ bw: 14, bh: 8, shadowW: 8, big: false }, o)); this.opened = flag(this.key); if (this.hiddenUntil && !flag(this.hiddenUntil)) this.hidden = true; }
     update(dt) { this.t += dt; if (this.hidden && this.hiddenUntil && flag(this.hiddenUntil)) { this.hidden = false; this.appear = 0.8; sfx('puzzle'); G.fx.glow(this.x, this.y - 6, '#fff2a8', 18); } if (this.appear > 0) this.appear -= dt; }
+    reveal() { if (this.hidden && this.revealKey) { S().flags[this.revealKey] = true; this.hiddenUntil = this.revealKey; } }
     canUse(p) { return !this.opened && !this.hidden && p.dir === 'up'; }
     get label() { return '연다'; }
     use(p) {

@@ -25,6 +25,7 @@
       const D = B[type];
       super('slime', Object.assign({}, o));
       Object.assign(this, { type, D, name: D.name, title: D.title || D.name, boss: true, ai: 'boss', r: D.r, h: D.h, weight: D.weight, fly: !!D.fly, weak: D.weak, resist: D.resist, undead: D.undead, dark: D.dark, look: D.look ? Object.assign({}, D.look) : null });
+      this.dunId = o.did || o.dunId || null; this.did = false;   // did는 공격 판정용으로 쓰인다
       this.maxHp = this.hp = Math.round(D.hp * (o.hpMul || 1));
       this.atk = D.atk; this.exp = D.exp; this.gold = D.gold; this.speed = D.speed;
       this.st = 'wait'; this.stT = 0; this.phase2 = false; this.pat = 0; this.parts = [];
@@ -69,7 +70,7 @@
         t += dt;
         if (Math.random() < dt * 14) { const x = self.x + (Math.random() - 0.5) * self.r * 2.4, y = self.y - Math.random() * self.h; G.fx.sparks(x, y, 10, '#ffe8a8', 120); G.fx.ring(x, y, '#ffffff', 16, 0.3, 2); sfx('explode'); W().shake(3, 0.1); }
         self.flash = 0.1;
-        if (t > 1.8) { this.dead = true; self.dead = true; self.dying = false; G.fx.shards(self.x, self.y - 10, 60, self.col); G.cine.flash('#fff', 0.5); sfx('bossdie'); C().drops(self); if (self.onDieFn) self.onDieFn(self); if (G.audio) G.audio.jingle('bosswin'); if (self.did) G.state.flags[self.did + ':boss'] = true; }
+        if (t > 1.8) { this.dead = true; self.dead = true; self.dying = false; G.fx.shards(self.x, self.y - 10, 60, self.col); G.cine.flash('#fff', 0.5); sfx('bossdie'); C().drops(self); if (self.onDieFn) self.onDieFn(self); if (G.audio) G.audio.jingle('bosswin'); if (self.dunId) G.state.flags[self.dunId + ':boss'] = true; }
       } }));
       W().slowmo(0.3, 1.2);
       return true;

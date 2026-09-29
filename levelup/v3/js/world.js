@@ -9,7 +9,7 @@
     map: null, ents: [], player: null, t: 0, paused: false,
     cam: { x: 0, y: 0, shake: 0, shakeT: 0, sx: 0, sy: 0, lock: null, lead: [0, 0], zoom: 1 },
     view: { w: 400, h: 216 },
-    hitstop: 0, slow: 1, slowT: 0,
+    stopT: 0, slow: 1, slowT: 0,
   };
 
   function load(map, x, y, dir) {
@@ -64,12 +64,12 @@
   }
   function shake(amp, sec) { W.cam.shake = Math.max(W.cam.shakeT > 0 ? W.cam.shake : 0, amp); W.cam.shakeT = Math.max(W.cam.shakeT, sec || 0.2); }
   /** 타격감: 아주 잠깐 멈춘다 */
-  function hitstop(sec) { W.hitstop = Math.max(W.hitstop, sec); }
+  function hitstop(sec) { W.stopT = Math.max(W.stopT, sec); }
   function slowmo(f, sec) { W.slow = f; W.slowT = sec; }
 
   /* ───────── 갱신 ───────── */
   function update(dt) {
-    if (W.hitstop > 0) { W.hitstop -= dt; updateCam(dt); G.fx && G.fx.update(dt * 0.2); return; }
+    if (W.stopT > 0) { W.stopT -= dt; updateCam(dt); G.fx && G.fx.update(dt * 0.2); return; }
     if (W.slowT > 0) { W.slowT -= dt; dt *= W.slow; if (W.slowT <= 0) W.slow = 1; }
     W.t += dt;
     if (!W.paused) {
