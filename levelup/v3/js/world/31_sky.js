@@ -119,6 +119,8 @@
     if (j === 0) { await c.say(n, '…기억 결정. 388년 치 하늘. 가져가라. 그리고 이것도. 내 부품이다. 이제 나는 조금 덜 혼자다.', { face: 'happy' }); await c.getItem('stella_core'); await c.getItem('ac_star'); c.bond('stella', 2); }
     else if (j === 1) { await c.say(n, '「돌아올게.」 기록한다. 388년 동안 들은 적 없는 문장. 이 부품을 가져가라. 돌아올 때 돌려줘.', { face: 'happy' }); await c.getItem('ac_star'); c.bond('stella', 2); c.flag('stella_promise'); }
     else { await c.say(n, '…원하는 대로. 그럼 기다리겠다. 기다리는 건 내가 원하는 것이다. 방금 알았다.', { face: 'smile' }); await c.getItem('ac_star'); }
+    await c.say(n, '그리고 이것. 정거장 무기고의 마지막 활. 612년에 벨라가 두고 간 것이다. 모아 쏘면 세 갈래로 갈라진다.', { face: 'normal' });
+    await c.getItem('bw_star');
     c.flag('c11_done');
     await c.cinema(false);
     c.lock(false);
@@ -352,6 +354,8 @@
     const kaN = c.spawn({ cid: 'kairon', x: px(10), y: py(10), dir: 'up' });
     await c.say(kaN, '세린!', { face: 'shock' });
     await c.say('serin', '카이론. 여전히 계산하고 있었어? …바보. 애들 앞에서.', { face: 'smile' });
+    await c.say('serin', '…' + (girl() ? '딸' : '아들') + '. 이걸 받아. 16년 동안 안고 있던 빛으로 벼렸어. 할머니가 준 시작의 검 — 그 검의 끝.', { face: 'normal' });
+    await c.getItem('sw_light'); S().equip.sword = 'sw_light';
     c.music('final');
     await c.narr('흑점이 수정 위로 솟았다. 천장이 사라지고 보랏빛 하늘이 열렸다. 하늘의 구멍이 내려오고 있었다. 가장 밝은 것을 향해 — 너를 향해.');
     await c.say(kaN, '…내가 옆에 서겠다. 이번엔 계산 없이.', { face: 'normal' });

@@ -211,6 +211,8 @@
     await c.cinema(true);
     await c.say(n, '여섯 개! 여섯 개가 다 있어! 40년! 봄바! 봄바아아!', { face: 'happy' });
     await c.say('bomba', '박사님 울지 마! 코에서 기름 나와!', { face: 'happy' });
+    await c.say(n, '아 참! 이거 입어! 40년 동안 만든 건 로켓만이 아니야. [y]별빛 옷[/]! 하늘은 뜨겁고 차갑거든. 둘 다 막는다!', { face: 'happy' });
+    await c.getItem('ar_star');
     await c.fade(true, { sec: 1 });
     ST.toNight && ST.toNight();
     const P = G.world;

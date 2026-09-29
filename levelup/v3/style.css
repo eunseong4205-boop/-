@@ -240,3 +240,10 @@ html.touch #touch { display: block; position: absolute; inset: 0; pointer-events
 .keys { display: grid; grid-template-columns: auto 1fr; gap: 3px 10px; font-size: 11px; color: var(--paper-dim); text-align: left; }
 .keys kbd { font-family: var(--ui); color: var(--gold); }
 @media (prefers-reduced-motion: reduce) { .tb.s.ready, #dlg-next, .bub { animation: none; } }
+
+/* 보스 이름: 체력바 바로 위, 작고 또렷하게 */
+#bosstag { position: absolute; left: 50%; bottom: calc(4.4% + 4px); transform: translateX(-50%); z-index: 12; pointer-events: none; text-align: center; white-space: nowrap; display: flex; flex-direction: column; align-items: center; gap: 1px; text-shadow: 0 1px 0 #000, 0 0 6px rgba(0,0,0,.8); }
+#bosstag small { font-size: 10px; letter-spacing: .2em; color: #b8a8d0; }
+#bosstag b { font-family: var(--disp), 'Galmuri11', sans-serif; font-weight: normal; font-size: 15px; letter-spacing: .08em; color: #f6d77e; }
+#bosstag.rage b { color: #ff9ab8; }
+#bosstag[hidden] { display: none; }

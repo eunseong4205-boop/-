@@ -438,6 +438,8 @@
     const k = await c.choice('토리아가 창문 걸쇠에 발을 올린다.', [{ t: '「안 가. 끝까지 갈 거야.」' }, { t: '「…나도 도망가고 싶어.」' }]);
     if (k === 0) await c.say('toria', '…그럴 줄 알았어. 그냥 한번 말해 본 거야. 말해 봐야 네가 안 간다는 걸 확인하니까. 확인하면 나도 안 무서우니까.', { face: 'smile' });
     else { await c.say('toria', '……처음 들었다. 네가 그런 말 하는 거.', { face: 'shock' }); await c.say('toria', '괜찮아. 도망가고 싶은 거랑 도망가는 거는 달라. 할머니가 그랬어. 할머니도 983년에 도망가고 싶었대. 그래서 초록 창을 부러뜨린 척했대.', { face: 'smile' }); c.bond('toria', 2); c.flag('told_toria_scared'); }
+    await c.say('toria', '…이거. 내 깃털. 날지는 못해도 가볍잖아. 달고 다녀. 무서울 때 만지면 나 생각나게.', { face: 'blush' });
+    await c.getItem('ac_feather');
     await c.narr('토리아는 목도리 속에서 금방 잠들었다. 잠꼬대로 「찍」 한 번.');
     c.lock(false);
   }

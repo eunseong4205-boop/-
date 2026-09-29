@@ -40,7 +40,19 @@
     crystal(on) { return img('crys' + on, 12, 18, (b) => { const c = on ? '#6ad8ff' : '#ff6a9a'; const r = R(c); b.rect(3, 12, 6, 6, '#5a5068'); b.hline(2, 9, 12, '#8a8098'); for (let y = 0; y < 12; y++) { const w = y < 6 ? y : 11 - y; b.hline(6 - Math.floor(w / 1.3), 5 + Math.ceil(w / 1.3), y, r[2]); } b.vline(5, 2, 9, r[4]); b.vline(6, 3, 8, r[3]); }); },
     cblock(on, col) { return img('cb' + on + col, 16, on ? 20 : 16, (b) => { const r = R(col); if (on) { b.rect(0, 4, 16, 16, r[1]); b.rect(0, 0, 16, 5, r[3]); b.rect(2, 6, 12, 12, r[2]); b.rect(5, 9, 6, 6, r[3]); } else { b.rect(1, 1, 14, 14, r[0]); b.rect(3, 3, 10, 10, r[1]); b.hline(3, 12, 3, r[2]); } }); },
     post() { return img('post', 10, 18, (b) => { b.rect(3, 4, 4, 14, '#7a5232'); b.rect(3, 4, 1, 14, '#a8784a'); b.ellipse(5, 4, 4, 3, '#c8c8d8'); b.ellipse(5, 3.5, 2.5, 1.8, '#ffffff'); b.px(5, 4, '#6a6a7a'); }); },
-    waystone(on) { return img('way' + on, 16, 28, (b) => { b.rect(3, 22, 10, 6, '#5a5068'); b.hline(2, 13, 22, '#8a8098'); for (let y = 2; y < 22; y++) { const w = 3 + Math.round(Math.sin((y / 22) * Math.PI) * 3); b.hline(8 - w, 7 + w, y, y < 4 ? '#b8b0c8' : '#8a8098'); b.px(8 - w, y, '#b8b0c8'); } b.vline(7, 6, 18, on ? '#8ad8ff' : '#4a4058'); b.vline(8, 6, 18, on ? '#d8f4ff' : '#5a5068'); b.hline(5, 10, 10, on ? '#8ad8ff' : '#4a4058'); b.px(7, 2, on ? '#ffffff' : '#8a8098'); }); },
+    waystone(on) { // 빛의 이정표: 룬을 새긴 받침돌 위에 떠 있는 수정
+      return img('way2' + on, 20, 34, (b) => {
+        const C = on ? ['#1a4a78', '#3a8ad8', '#8ad8ff', '#e8fbff'] : ['#3a3448', '#5a5068', '#7a7090', '#a8a0b8'];
+        // 받침돌
+        b.ellipse(10, 29, 8.5, 4, '#2a2436'); b.rect(2, 26, 17, 4, '#4a4258'); b.ellipse(10, 26, 8.5, 3.2, '#6a6078'); b.ellipse(10, 25.5, 6.5, 2.2, '#847a94');
+        for (const x of [4, 8, 12, 16]) b.px(x, 28, on ? '#8ad8ff' : '#5a5068');
+        // 떠 있는 수정 (다이아몬드, 면을 나눠 칠한다)
+        for (let y = 2; y <= 20; y++) { const hw = Math.round(y <= 9 ? (y - 2) * 5 / 7 : (20 - y) * 5 / 11); for (let x = 10 - hw; x <= 10 + hw; x++) b.px(x, y, x < 10 ? (y < 9 ? C[2] : C[1]) : (y < 9 ? C[3] : C[2])); b.px(10 - hw, y, C[0]); b.px(10 + hw, y, C[0]); }
+        b.vline(10, 3, 19, on ? '#ffffff' : C[3]); b.px(8, 6, '#ffffff'); b.px(7, 8, on ? '#ffffff' : C[3]);
+        // 수정 밑 그림자 (떠 있음)
+        b.hline(8, 12, 23, on ? '#5ab8ff' : '#3a3448');
+      });
+    },
     crack() { return img('crack', 16, 16, (b) => { b.line(3, 2, 7, 7, '#1a1020'); b.line(7, 7, 5, 12, '#1a1020'); b.line(7, 7, 12, 9, '#1a1020'); b.line(12, 9, 14, 14, '#1a1020'); b.px(8, 8, '#2a2030'); }); },
     heart(big) { return img('hc' + big, big ? 14 : 10, big ? 13 : 9, (b) => { const rows = big ? ['  rrr   rrr  ', ' rwwrr rrrrr ', 'rwwrrrrrrrrrr', 'rwrrrrrrrrrrr', 'rrrrrrrrrrrrr', ' rrrrrrrrrrr ', '  rrrrrrrrr  ', '   rrrrrrr   ', '    rrrrr    ', '     rrr     ', '      r      '] : [' rr  rr ', 'rwrrrrrr', 'rrrrrrrr', 'rrrrrrrr', ' rrrrrr ', '  rrrr  ', '   rr   ']; b.stamp(0, 0, rows, { r: '#ff3a5a', w: '#ffd0d8' }); if (!big) { b.px(7, 1, '#1a1020'); b.px(7, 2, '#1a1020'); b.px(6, 3, '#1a1020'); } }); },
     bed(col) { col = col || '#5a8ad8'; return img('bed' + col, 16, 26, (b) => { const r = X.ramp(col, 5); b.rect(0, 0, 16, 26, '#6a4424'); b.rect(1, 1, 14, 24, '#e8e0cc'); b.rect(2, 2, 12, 6, '#ffffff'); b.hline(2, 13, 7, '#d8d0c0'); b.rect(1, 10, 14, 15, r[2]); b.hline(1, 14, 10, r[3]); b.rect(1, 18, 14, 1, r[1]); b.rect(1, 22, 14, 3, r[1]); }); },

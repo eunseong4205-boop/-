@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 /* v3 빌드: v3/js/*.js를 순서대로 잇고 v3/js/world/*.js를 붙인다.
-   node levelup/v3/tools/build.js [--out 경로]  (기본: levelup/dist/v3.html · v3-artifact.html) */
+   node levelup/v3/tools/build.js [--out 경로]
+   기본: 저장소 맨 위 levelup.html(완성본) · levelup/dist/levelup-artifact.html(아티팩트 조각) · levelup/dist/v3.html(시험용 사본) */
 'use strict';
 const fs = require('fs');
 const path = require('path');
@@ -37,4 +38,8 @@ const outFrag = outI >= 0 ? path.resolve(args[outI + 2] || outFull.replace(/\.ht
 fs.mkdirSync(path.dirname(outFull), { recursive: true });
 fs.writeFileSync(outFull, full);
 fs.writeFileSync(outFrag, frag);
+if (outI < 0) {
+  fs.writeFileSync(path.join(ROOT, '..', 'levelup.html'), full);
+  fs.writeFileSync(path.join(ROOT, 'dist', 'levelup-artifact.html'), frag);
+}
 console.log(path.relative(process.cwd(), outFull), (full.length / 1024).toFixed(0) + 'KB');

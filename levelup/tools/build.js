@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 /* 한 파일짜리 게임을 만든다.
-   - levelup.html (저장소 맨 위): 그대로 열어서 하는 완성본
-   - levelup/dist/levelup-artifact.html: 아티팩트용 조각 (<title>·<style>로 시작, 문서 뼈대 없음) */
+   (옛 판 · 클리커) 새 판은 levelup/v3/tools/build.js 가 levelup.html을 만든다.
+   - levelup/dist/levelup-v2.html: 옛 판 완성본
+   - levelup/dist/levelup-v2-artifact.html: 옛 판 아티팩트 조각 */
 'use strict';
 const fs = require('fs');
 const path = require('path');
@@ -36,8 +37,8 @@ function build() {
     '<title>' + TITLE + '</title>\n<style>\n:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);box-sizing:border-box}\n' + css + '\n</style>\n</head>\n<body>\n' + body + '\n<script>\n' + js + '\n</script>\n</body>\n</html>\n';
   const dist = path.join(ROOT, 'dist');
   fs.mkdirSync(dist, { recursive: true });
-  fs.writeFileSync(path.join(dist, 'levelup-artifact.html'), frag);
-  fs.writeFileSync(path.join(ROOT, '..', 'levelup.html'), full);
-  console.log('levelup.html', (full.length / 1024).toFixed(0) + 'KB · artifact', (frag.length / 1024).toFixed(0) + 'KB');
+  fs.writeFileSync(path.join(dist, 'levelup-v2-artifact.html'), frag);
+  fs.writeFileSync(path.join(dist, 'levelup-v2.html'), full);
+  console.log('levelup-v2.html', (full.length / 1024).toFixed(0) + 'KB · artifact', (frag.length / 1024).toFixed(0) + 'KB');
 }
 build();

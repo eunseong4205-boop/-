@@ -198,6 +198,8 @@
   }
   function toTitle() {
     G.script.queue.length = 0;
+    const bt = document.getElementById('bosstag'); if (bt) bt.hidden = true;
+    if (G.hud) G.hud.boss = null;
     G.ui.closeDialog();
     W.map = null; W.ents = []; W.player = null;
     GM.scene = 'title';
