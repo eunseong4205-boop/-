@@ -418,6 +418,8 @@
       // 선택에 따라 갈리는 책(group)은 한 권으로 센다: 얻은 것만, 아직 없으면 하나만 ???로
       const seenG = {};
       const ids = Object.keys(G.books || {}).filter((id) => {
+        // 비밀 책(인연이 닿아야 오는 편지 등)은 받기 전에는 목록에 없다
+        if (G.books[id].secret && !s.books[id]) return false;
         const g = G.books[id].group; if (!g) return true;
         const any = Object.keys(G.books).some((k) => G.books[k].group === g && s.books[k]);
         if (any) return !!s.books[id];
@@ -485,7 +487,8 @@
 
   function readBook(id) {
     const b = G.books[id];
-    const pages = b.text.split('\n\n');
+    // 편지처럼 받은 사람의 여정에 따라 내용이 달라지는 글: text(s)
+    const pages = (typeof b.text === 'function' ? b.text(G.state) : b.text).split('\n\n');
     let i = 0;
     return modal(b.title, {
       foot: () => '<span>' + (i + 1) + ' / ' + pages.length + '</span><button class="btn" data-act="prev"' + (i ? '' : ' disabled') + '>◀</button><button class="btn" data-act="next"' + (i < pages.length - 1 ? '' : ' disabled') + '>▶</button>',
