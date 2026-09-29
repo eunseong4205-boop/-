@@ -173,6 +173,11 @@
           if (lip && ly < 3) c = mixc(rgb('#c8d4ec'), rgb('#6a7ab0'), ly / 3);
           return c;
         }
+        if (m && m.palName === 'space') { // 우주: 별이 흘러가는 깊은 남색
+          if (lip && ly < 3) return mixc(rgb('#6a7890'), rgb('#1a2438'), ly / 3);
+          const st = n2(x, y, 177); if (st > 0.985) return [255, 255, 255]; if (st > 0.97) return [150, 170, 220];
+          return mixc([4, 6, 18], [14, 20, 44], U.fbm(x / 30, y / 30, 181, 2));
+        }
         if (lip && ly < 4) return mul(rgb(P.c ? P.c[1] : '#2a2438'), 0.55 - ly * 0.1);
         return [6, 4, 10];
       }

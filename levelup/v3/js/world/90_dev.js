@@ -15,8 +15,8 @@
     c7: { flags: ['ch:c7', 'c7_lumie', 'c7_iska', 'c7_plan', 'c7_noah', 'c7_edel', 'noah_to_white', 'noah_herb', 'c7_done', 'open:gray', 'd7:boss', 'd7:heart'], items: ['sw_silver', 'ar_cold'], spells: ['heal'], hearts: 1, lv: 30 },
     c8: { flags: ['ch:c8', 'c8_bolt', 'c8_color', 'c8_proof', 'c8_mk7', 'c8_recording', 'c8_done', 'open:black', 'd8:boss', 'd8:heart'], items: ['lantern', 'reverser', 'silver_rec'], truth: ['t_grey', 't_bolt'], hearts: 1, lv: 35 },
     c9: { flags: ['ch:c9', 'c9_mid', 'c9_in', 'c9_done', 'lyra_sister', 'open:colorful', 'd9:boss', 'd9:heart'], items: ['bw_long', 'key_night', 'ledger'], join: ['lyra'], hearts: 1, lv: 40 },
-    c10: { flags: ['ch:c10', 'c10_done'], items: [], hearts: 1, lv: 44 },
-    c11: { flags: ['ch:c11', 'c11_done'], items: [], truth: ['t_star'], hearts: 1, lv: 48 },
+    c10: { flags: ['ch:c10', 'c10_pyros', 'c10_parts', 'part:nozzle', 'part:fuel', 'part:compass', 'part:plating', 'part:sail', 'part:shield', 'c10_launch', 'c10_done', 'voices'], items: [], hearts: 1, lv: 44 },
+    c11: { flags: ['ch:c11', 'c11_stella', 'c11_wake', 'c11_done', 'd11:boss', 'd11:heart'], items: ['ac_star'], truth: ['t_star'], hearts: 1, lv: 48 },
   };
   const ORDER = ['c1', 'c2', 'c3', 'c4', 'c5', 'c6', 'c7', 'c8', 'c9', 'c10', 'c11', 'c12'];
   ST.devJump = function (ch, route) {
@@ -47,6 +47,8 @@
     G.build.get('world');
     const t = T[at];
     G.world.player = null;
+    if (ch === 'c11') { s.ch = 'c10'; G.game.goto('station', 17 * TS + 8, 17 * TS + 12, 'up', { fresh: true }); G.ui.hideTitle(); return; }
+    if (ch === 'c12') { s.ch = 'c11'; G.game.goto('astra', 28 * TS + 8, 40 * TS + 12, 'up', { fresh: true }); G.ui.hideTitle(); return; }
     G.game.goto('world', (t.x + (t.w >> 1)) * TS + 8, (t.y + t.h + 1) * TS + 12, 'up', { fresh: true });
     G.ui.hideTitle();
   };
