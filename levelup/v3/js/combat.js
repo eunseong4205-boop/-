@@ -80,6 +80,8 @@
   function hurtPlayer(p, q, src, opt) {
     opt = opt || {};
     if (p.dead || p.state === 'dead') return false;
+    // 연출(레터박스) 중에는 다치지 않는다
+    if (G.cine && G.cine.active && G.cine.active() && !opt.force) return false;
     if (p.inv > 0 && !opt.force) {
       // 구르기 무적 중 막 맞을 뻔했다 → 완벽 회피
       if (p.state === 'roll' && p.perfectWin > 0 && !p.perfectDone) {
