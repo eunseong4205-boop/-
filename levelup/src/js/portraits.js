@@ -204,7 +204,7 @@
 
   /* ───────── 사람이 아닌 인물 ───────── */
   const SPECIAL = {
-    squirrel(emo) { // 도토리
+    squirrel(emo) { // 토리아
       const P = mk(blank());
       P.ell(26, 12, 6, 11, 'T', (x, y) => x > 18); // 꼬리
       P.ell(26, 12, 3.5, 8, 't', (x, y) => x > 22);
@@ -233,7 +233,7 @@
       if (emo === 'angry') { P.rect(9, 13, 13, 13, 'Y'); P.rect(19, 13, 23, 13, 'Y'); }
       return render(P.g, { K: '#26222e', H: '#141018', h: '#8a2a3a', Y: '#ffe066', E: '#141018', P: '#ff9ae8', w: '#e8e0f0', W: '#f4f4f8', R: '#8a2a3a' });
     },
-    octopus(emo) { // 먹물 관장
+    octopus(emo) { // 옥타비오 관장
       const P = mk(blank());
       for (let i = 0; i < 5; i++) P.ell(5 + i * 5.5, 28, 2.6, 5, 'O');
       P.ell(16, 13, 12, 12, 'O');
@@ -246,7 +246,7 @@
       P.rect(12, 27, 19, 31, 'C'); P.rect(15, 27, 16, 29, 'W');
       return render(P.g, { O: '#a05ad8', o: '#c88af0', G: '#d8b048', w: '#f4f0ff', E: '#1a1020', M: '#5a2a6a', C: '#3a4a8a', W: '#ffffff' });
     },
-    robot(emo) { // 노을 N-07
+    robot(emo) { // 세피아 N-07
       const P = mk(blank());
       P.rect(6, 26, 25, 31, 'C'); P.rect(12, 26, 19, 27, 'm');
       P.rect(13, 22, 18, 25, 'm');
@@ -291,7 +291,7 @@
       P.rect(12, 21, 19, 22, 'V'); P.rect(14, 1, 17, 6, 'M'); P.rect(15, 0, 16, 1, 'L');
       return render(P.g, { M: '#8a7ab0', m: '#6a5a90', V: '#2a2240', L: '#e8d8ff' });
     },
-    whale(emo) { // 구름고래 뭉게
+    whale(emo) { // 구름고래 누베
       const P = mk(blank());
       P.ell(16, 19, 15, 11, 'B'); P.ell(16, 24, 12, 6, 'W');
       P.ell(9, 17, 2.2, 2.2, 'w'); P.rect(9, 17, 9, 18, 'E');

@@ -4,26 +4,26 @@
   const G = globalThis.G;
   const W = G.W, E = G.engine, D = G.data;
 
-  D.SHOPS.colorful_food = { name: '뻥이의 간식 수레', keeper: 'ppeong', items: ['f9', 'p9', 'f8'] };
+  D.SHOPS.colorful_food = { name: '봄바의 간식 수레', keeper: 'ppeong', items: ['f9', 'p9', 'f8'] };
   const PARTS = ['gear_heart', 'gold_bond', 'prayer_crystal', 'night_key', 'rocket_fuel'];
 
   W.quest('m10', { main: true, name: '10장 · 불꽃놀이와 로켓', where: '알록달록 마을', stages: [
     '[y]레벨 250000[/]과 [y]짱 15차[/]가 되면 블랙 마을 남쪽 해안길로 알록달록 마을에 가자.',
-    '로켓을 만드는 [y]팡팡 박사[/]를 찾자. 마을 동쪽 격납고다.',
+    '로켓을 만드는 [y]피로스 박사[/]를 찾자. 마을 동쪽 격납고다.',
     '로켓 「무한호」의 부품 다섯 개를 모으자. 톱니 심장(그레이 · 볼트), 금화왕의 채권(옐로 · 골디), 기도의 수정(화이트 · 루미에), 밤의 열쇠, 별빛 연료(불꽃놀이 탑 꼭대기).',
-    '부품을 모두 모았다! 격납고의 팡팡 박사에게 가자.',
+    '부품을 모두 모았다! 격납고의 피로스 박사에게 가자.',
     '[y]레벨 400000[/]과 [p]전설 1차[/]가 되면 무한호에 오르자. 전설의 문은 보라 구슬 넷의 숫자를 더해 연다.',
   ], done: '무한호는 불꽃 천 발의 배웅을 받으며 하늘로 올라갔다.' });
-  W.quest('q_powder', { name: '뻥이의 대폭발', where: '알록달록 마을', stages: ['몬스터에게서 [y]폭죽 화약[/] 10개를 모아 뻥이에게 가져가자.'], done: '뻥이는 「마을이 반쯤 날아갔다」고 했다. 실제로는 뻥이 앞머리가 조금 탔다.' });
+  W.quest('q_powder', { name: '봄바의 대폭발', where: '알록달록 마을', stages: ['몬스터에게서 [y]폭죽 화약[/] 10개를 모아 봄바에게 가져가자.'], done: '봄바는 「마을이 반쯤 날아갔다」고 했다. 실제로는 봄바 앞머리가 조금 탔다.' });
   W.quest('q_rehearsal', { name: '천년제 불꽃 리허설', where: '알록달록 곶', stages: ['불꽃놀이 리허설! 10초 동안 폭죽 [y]130발[/]을 쏘아 올리자. (렙업 버튼 연타)'], done: '밤하늘이 잠깐 대낮처럼 밝았다. 블랙 마을 사람들이 그걸 보고 해가 뜬 줄 알았다고 한다.' });
 
   W.book('b_free', { title: '알록달록 선언', where: '알록달록 마을', text:
     '하나. 우리는 등급을 모른다. 알아도 모른 척한다.\n둘. 우리 마을에는 징수탑이 없다. 대신 해마다 불꽃놀이 천 발을 천년성에 바친다.\n셋. 불꽃은 하늘로 올라가 터진다. 빛은 흩어진다. 탑처럼 모이지 않는다. 그게 우리가 불꽃을 좋아하는 이유다.\n\n' +
-    '넷. 폭발은 실패가 아니다. 아직 성공하지 않은 것뿐이다. — 팡팡' });
-  W.book('b_rocket_log', { title: '무한호 개발 일지', where: '로켓 격납고', author: '팡팡', text:
+    '넷. 폭발은 실패가 아니다. 아직 성공하지 않은 것뿐이다. — 피로스' });
+  W.book('b_rocket_log', { title: '무한호 개발 일지', where: '로켓 격납고', author: '피로스', text:
     '983년 — 1호기. 폭발.\n984년 — 2호기~11호기. 전부 폭발.\n990년 — 57호기. 3미터 떴다! 그리고 폭발.\n995년 — 128호기. 구름까지 갔다! 그리고 폭발. 구름에 구멍이 났다. 무지개 마을에서 항의.\n\n' +
     '998년 — 무한호. 이번엔 다르다. 엔진 심장, 방어막, 자금, 열쇠, 연료. 다섯 가지만 있으면 된다. 다섯 가지 전부 내 힘으로는 못 구한다.\n\n그래서 16년이 걸렸다. 혼자서는 하늘에 못 간다는 걸 아는 데.' });
-  W.book('b_pang_letter', { title: '세린과의 약속', where: '로켓 격납고', author: '팡팡', text:
+  W.book('b_pang_letter', { title: '세린과의 약속', where: '로켓 격납고', author: '피로스', text:
     '세린, 기억해? 982년 여름, 네가 이 격납고에 왔었지. 「박사님, 하늘에 가는 로켓을 만들어 주세요. 언젠가 제 아이가 탈 거예요.」\n\n' +
     '나는 웃으면서 약속했지. 「세상에서 제일 안 폭발하는 로켓을 만들어 줄게!」\n\n' +
     '16년 동안 128번 폭발했어. 미안해. 그래도 이번엔 진짜야. 네 아이가 왔어. 네 눈을 하고.' });
@@ -59,8 +59,8 @@
     ],
     npcs: [
       { id: 'ppeong', x: 20, y: 18, dir: 'down', mark: (s) => (s.flags.color_intro && s.quests.q_powder == null) || (s.quests.q_powder === 0 && E.has(s, 'm15', 10)) ? '!' : null, talk: ppeongTalk },
-      { id: 'inventor', x: 12, y: 15, dir: 'down', wander: 2, talk: W.chatter('c_inv', ['등급? 몰라. 나는 레벨도 몰라. 재밌는 것만 알아.', '팡팡 박사님 로켓은 128번 터졌어. 129번째는 안 터질 거래. 매번 그렇게 말해.', '천년제 날엔 우리 불꽃 천 발이 무지개 마을 하늘에서 터져! 16년 만에 모이지 않고 흩어지는 빛이야!']) },
-      { id: 'kid2', x: 24, y: 12, dir: 'left', wander: 2, talk: W.chatter('c_kid', ['우리 마을엔 탑이 없어! 그래서 나는 레벨 35야! 다른 마을 애들은 9래!', '폭발은 실패가 아니야! 아직 성공 안 한 거야! …뻥이 형이 그랬어.']) },
+      { id: 'inventor', x: 12, y: 15, dir: 'down', wander: 2, talk: W.chatter('c_inv', ['등급? 몰라. 나는 레벨도 몰라. 재밌는 것만 알아.', '피로스 박사님 로켓은 128번 터졌어. 129번째는 안 터질 거래. 매번 그렇게 말해.', '천년제 날엔 우리 불꽃 천 발이 무지개 마을 하늘에서 터져! 16년 만에 모이지 않고 흩어지는 빛이야!']) },
+      { id: 'kid2', x: 24, y: 12, dir: 'left', wander: 2, talk: W.chatter('c_kid', ['우리 마을엔 탑이 없어! 그래서 나는 레벨 35야! 다른 마을 애들은 9래!', '폭발은 실패가 아니야! 아직 성공 안 한 거야! …봄바 형이 그랬어.']) },
       { id: 'clerk_c', x: 8, y: 15, dir: 'down', talk: async (c) => { await c.say('clerk_c', ['나? 오늘 등급소 심사관이야. 어제는 빵집 주인이었고 내일은 모르겠어.', '등급 올리러 왔으면 등급소 가. 난 지금 퇴근 중이야.']); } },
     ],
     enter: async (c) => {
@@ -88,7 +88,7 @@
       return;
     }
     if (s.flags.color_intro && s.quests.q_powder == null) {
-      await c.say('ppeong', ['안녕! 팡팡 박사님 조수 뻥이야! 나는 대륙에서 제일 큰 폭죽을 만들 거야! 하늘이 두 쪽 나는!', '…그러려면 [y]폭죽 화약[/]이 10개 필요해. 곶에 있는 폭죽 요정들이 떨어뜨려!']);
+      await c.say('ppeong', ['안녕! 피로스 박사님 조수 봄바야! 나는 대륙에서 제일 큰 폭죽을 만들 거야! 하늘이 두 쪽 나는!', '…그러려면 [y]폭죽 화약[/]이 10개 필요해. 곶에 있는 폭죽 요정들이 떨어뜨려!']);
       c.quest('q_powder', 0);
     }
     await c.shop('colorful_food');
@@ -134,7 +134,7 @@
       c.sfx('explode');
       c.shake(400, 4);
       await c.say(null, '쾅! 격납고 구석에서 작은 폭발이 일어났다. 연기 속에서 머리가 부스스한 사람이 걸어 나왔다.');
-      await c.say('pangpang:happy', ['콜록! 괜찮아, 괜찮아! 계획된 폭발이야! 129번째… 아니, 이건 커피 기계였어.', '어서 와! 팡팡 박사야! 폭발 발명가지! 발명품의 97%가 폭발하고, 나머지 3%는 나중에 폭발해!']);
+      await c.say('pangpang:happy', ['콜록! 괜찮아, 괜찮아! 계획된 폭발이야! 129번째… 아니, 이건 커피 기계였어.', '어서 와! 피로스 박사야! 폭발 발명가지! 발명품의 97%가 폭발하고, 나머지 3%는 나중에 폭발해!']);
       await c.say('pangpang', ['…어? 그 눈.', '……세린?']);
       await c.say('@', '세린의 아이예요.');
       await c.say('pangpang:sad', ['……그렇구나. 16년.', '세린이 여기 왔었어. 982년 여름. 「박사님, 하늘에 가는 로켓을 만들어 주세요. 언젠가 제 아이가 탈 거예요.」']);
@@ -147,7 +147,7 @@
     if (s.quests.m10 === 3 || (s.quests.m10 === 2 && PARTS.every((p) => E.has(s, p)))) {
       c.music('mother');
       await c.say('pangpang:happy', ['다섯 개 전부! 톱니 심장, 금화왕 채권, 기도의 수정, 밤의 열쇠, 별빛 연료!', '대륙이 다 같이 만든 로켓이야. 16년 만에… 드디어.']);
-      await c.say('pangpang', ['조립은 나랑 뻥이가 할게. 그리고 발사에는 조건이 하나 있어.', '대기권 너머 [y]하늘 정거장[/]은 [p]전설[/]이 아니면 버티지 못해. 우주의 기운이 너무 세거든. 레벨도 40만은 넘어야 하고.']);
+      await c.say('pangpang', ['조립은 나랑 봄바가 할게. 그리고 발사에는 조건이 하나 있어.', '대기권 너머 [y]하늘 정거장[/]은 [p]전설[/]이 아니면 버티지 못해. 우주의 기운이 너무 세거든. 레벨도 40만은 넘어야 하고.']);
       c.quest('m10', 4);
       return launchCheck(c);
     }
@@ -175,7 +175,7 @@
     await c.npc('gran').walk('UUU');
     await c.emote('@', '!');
     await c.say('dotori:surprise', '할머니?!');
-    await c.say('gran', ['…오랜만이네. 많이 컸다. 레벨이… 뭐꼬, 이게. 숫자가 안 읽히네.', '팡팡이가 편지 보냈더라. 「세린 아이가 하늘에 간다」 카길래, 지팡이 짚고 왔다.']);
+    await c.say('gran', ['…오랜만이네. 많이 컸다. 레벨이… 뭐꼬, 이게. 숫자가 안 읽히네.', '피로스가 편지 보냈더라. 「세린 아이가 하늘에 간다」 카길래, 지팡이 짚고 왔다.']);
     await c.say('@', '할머니… 다 알았어. 초록 창. 엄마. 카이론.');
     await c.say('gran:sad', ['……그래. 그렇겠지.', '니 엄마는 말이다. 늘 웃었다. 흰빛을 부끄러워하던 아가 커서, 그 빛을 온 동네에 나눠 주고 다녔다.']);
     await c.say('gran:sad', ['983년에 니를 안고 천년성을 나설 때, 나는 다짐했다. 니는 그냥 평범하게 키우겠다고. 그린 마을 촌구석에서 밭이나 매면서.', '…버튼을 장롱에 16년 넣어 둔 것도 그래서다. 누르지 않으면, 흰빛도 없을 끼라고.']);
@@ -238,7 +238,7 @@
     n.mark = (s) => (cond(s) && (!markCond || markCond(s)) ? '!' : om ? om(s) : null);
   }
   wrapTalk('workshop', 'bolt', (s) => s.quests.m10 === 2 && !E.has(s, 'gear_heart'), async (c) => {
-    await c.say('bolt', ['…팡팡의 로켓인가. 쓸데없는 말은 연료 낭비다.', c.s.flags.d_bolt === 'talk' ? '톱니 심장. 역류 장치 만들고 남은 부품으로 만들었다. …요즘은 밤에 잔다. 그 목소리가 자라고 했으니까.' : '톱니 심장. MK-7의 심장을 뜯어서 다시 깎았다. 네가 쓰러뜨린 기계의 심장이다. 이제 날게 해 주지.']);
+    await c.say('bolt', ['…피로스의 로켓인가. 쓸데없는 말은 연료 낭비다.', c.s.flags.d_bolt === 'talk' ? '톱니 심장. 역류 장치 만들고 남은 부품으로 만들었다. …요즘은 밤에 잔다. 그 목소리가 자라고 했으니까.' : '톱니 심장. MK-7의 심장을 뜯어서 다시 깎았다. 네가 쓰러뜨린 기계의 심장이다. 이제 날게 해 주지.']);
     await c.say('bolt', '이 심장은 멈추지 않는다. 내 아내 심장은 멈췄지만.');
     c.give('gear_heart');
     await c.say('bolt', '…하늘 정거장의 인공지능한테 전해라. 612년의 경고, 늦게라도 읽었다고.');
@@ -248,7 +248,7 @@
     const dg = c.s.flags.d_goldie;
     if (dg === 'expose') await c.say('goldie', ['장부를 뿌린 녀석한테 채권을 달라고? 뻔뻔하군.', '…그 애들 중 몇은 굶었고, 몇은 사하라 대상단에서 셈을 배운다. 계산해 보니 반반이다. 반반이면… 줄 만하지.']);
     else if (dg === 'contract') await c.say('goldie', '계약서 증인이 로켓을 탄다라. 증인이 하늘에서 떨어지면 계약이 무효가 되니까, 투자하는 거다. 순전히 장사야.');
-    if (c.s.flags.d_kkachi === 'report') await c.say('kkachi', '(골디 옆에서 장부를 들고 있던 까치가 채권을 건넨다) …금화왕이 직접 주기 싫대. 멋없대. 그래서 내가 줘. …가, 흰빛.');
+    if (c.s.flags.d_kkachi === 'report') await c.say('kkachi', '(골디 옆에서 장부를 들고 있던 피카가 채권을 건넨다) …금화왕이 직접 주기 싫대. 멋없대. 그래서 내가 줘. …가, 흰빛.');
     await c.say('goldie', ['그러니까 이건 공짜가 아니야. [y]백지 채권[/]이다. 액수는 네가 적어. 갚는 건… 세린이 돌아오면 그 여자가 갚게 해.', '979년에 빌린 동전, 이자까지 쳐서 이걸로 퉁 치자고. …장사 참 못 하네, 나.']);
     c.give('gold_bond');
     c.set('m_yellow_bond');
@@ -303,7 +303,7 @@
     warps: [{ x: 14, y: 27, to: 'cape', tx: 30, ty: 5, dir: 'down' }],
     objs: [W.bookObj('b_thousand', 10, 2), W.spot(6, 12, 3), W.spot(22, 12, 3), W.spot(3, 24, 10, true), W.chest('ft1', 12, 2, 'p9', 5),
       { t: 'orbshine', orb: 'o_p3', x: 17, y: 2, need: (s) => !!s.flags.beat_megafirework, hint: '탑 꼭대기 받침대에 보라 구슬이 놓여 있다. 거대한 폭죽이 그 앞을 막고 있다.' },
-      { t: 'pickup', id: 'fuel', x: 18, y: 2, item: 'rocket_fuel', c: '#6ae8ff', cond: (s) => (!!s.flags.beat_megafirework && s.quests.m10 != null) || s.chests.fuel, text: '반짝이는 연료통이다. 「별빛 연료 — 20년 치. 팡팡」' }],
+      { t: 'pickup', id: 'fuel', x: 18, y: 2, item: 'rocket_fuel', c: '#6ae8ff', cond: (s) => (!!s.flags.beat_megafirework && s.quests.m10 != null) || s.chests.fuel, text: '반짝이는 연료통이다. 「별빛 연료 — 20년 치. 피로스」' }],
     mons: { list: ['firefairy', 'balloonbear', 'toysoldier', 'firebird'], n: 11, area: [1, 6, 26, 20] },
     fixed: [{ mon: 'megafirework', x: 14, y: 3, flag: 'beat_megafirework', boss: true, look: { creature: 'orb', tint: '#ff3a6a' }, talk: megaTalk }],
   });
@@ -324,30 +324,30 @@
   W.addObjs('colorful', [
     W.prop('bench', 10, 24, '바닷가 벤치. 등받이에 폭죽 그을음이 별 모양으로 찍혀 있다.'),
     W.prop('fire', 24, 23, '폭죽 불씨로 피운 모닥불. 불꽃이 가끔 초록, 가끔 보라로 튄다. 아무도 이유를 모른다.'),
-    W.prop('board', 13, 12, (s) => ['마을 게시판. 「무한호 발사 D-?? — 폭발 확률: 박사님 말로는 3%, 뻥이 말로는 97%」', s.flags.launched ? '그 아래 큼직하게: 「129번째는 안 터졌다!!!」' : '「로켓 부품 제보 받음: 톱니 심장 · 금화왕 채권 · 기도의 수정 · 밤의 열쇠 · 별빛 연료」']),
+    W.prop('board', 13, 12, (s) => ['마을 게시판. 「무한호 발사 D-?? — 폭발 확률: 박사님 말로는 3%, 봄바 말로는 97%」', s.flags.launched ? '그 아래 큼직하게: 「129번째는 안 터졌다!!!」' : '「로켓 부품 제보 받음: 톱니 심장 · 금화왕 채권 · 기도의 수정 · 밤의 열쇠 · 별빛 연료」']),
     W.prop('statue', 22, 16, '폭발 기념비. 128개의 작은 금속 조각이 탑처럼 쌓여 있다. 무한호 1호기부터 128호기까지의 파편. 「모두 성공 직전이었다」', { c: '#ff9a5a' }),
   ]);
   W.barks('colorful', { ppeong: ['쾅!', '하늘이 두 쪽!'], inventor: ['재밌는 것만 알아!'], kid2: ['나 레벨 35!', '폭발은 실패가 아니야!'], clerk_c: ['퇴근 중~'] });
   W.barks('hangar', { pangpang: (s) => (s.flags.launched ? ['안 터졌다!'] : ['129번째는 안 터져!', '콜록!']) });
 
-  /* 도토리와의 이야기 (10장) */
+  /* 토리아와의 이야기 (10장) */
   G.story.talks.push(
     { id: 'cf_notower', map: 'colorful', run: async (c) => {
       await c.say('dotori', ['여기 애들은 레벨 35래. 다른 마을 애들은 9인데.', '탑 하나 없는 게 이렇게 달라. …우리가 16년 동안 뭘 잃었는지 여기 와서 알았어.']);
     } },
     { id: 'cf_parts', when: (s) => PARTS.filter((p) => E.has(s, p)).length >= 3, run: async (c) => {
       await c.say('dotori', ['볼트 아저씨 심장, 골디 아저씨 채권, 루미에 언니 수정, 녹턴 아저씨 열쇠.', '엄마 친구들이 하나씩 내놨어. 16년 동안 서로 말도 안 하던 사람들이.']);
-      await c.say('dotori:happy', '팡팡 박사님이 그랬잖아. 혼자서는 하늘에 못 간다고. 이 로켓이 그 증거야. 찍.');
+      await c.say('dotori:happy', '피로스 박사님이 그랬잖아. 혼자서는 하늘에 못 간다고. 이 로켓이 그 증거야. 찍.');
     } },
   );
   /* 쉬는 밤 (10장): 떠나기 전날 */
   G.story.nights.push(
-    { id: 'cf_after', when: (s) => s.quests.m10 === 4 || (s.quests.m10 === 2 && PARTS.every((p) => E.has(s, p))), intro: '폭죽 여관. 밤새 폭죽이 터진다. 도토리가 창틀에 앉아 불꽃을 세고 있다. 백열둘, 백열셋…', run: async (c) => {
+    { id: 'cf_after', when: (s) => s.quests.m10 === 4 || (s.quests.m10 === 2 && PARTS.every((p) => E.has(s, p))), intro: '폭죽 여관. 밤새 폭죽이 터진다. 토리아가 창틀에 앉아 불꽃을 세고 있다. 백열둘, 백열셋…', run: async (c) => {
       await c.say('dotori', ['…{n}. 다 끝나면 뭐 할 거야?', '하늘 갔다 오고, 흑점이든 뭐든 다 끝나면.']);
       const k = await c.ask(null, ['그린 마을로 돌아가서 약초 캘래.', '대륙을 한 바퀴 더 돌 거야. 이번엔 천천히.', '…끝난 다음은 생각 안 해 봤어.']);
       c.set('after_plan', ['home', 'road', 'none'][k]);
       if (k === 0) await c.say('dotori:happy', ['…좋다. 할머니가 세 잎만 따라고 잔소리하겠지.', '나는 네 옆에서 도토리 굴릴게. 백 개. …아흔 개.']);
-      else if (k === 1) await c.say('dotori:happy', ['천천히! 레드 떡볶이 다시 먹고, 블루 도서관에서 해미 언니 수수께끼 풀고, 옐로에서 까치 만나고…', '…이번엔 세금 안 떼이고 렙업하는 애들 얼굴 보러 가자.']);
+      else if (k === 1) await c.say('dotori:happy', ['천천히! 레드 떡볶이 다시 먹고, 블루 도서관에서 헤미아 언니 수수께끼 풀고, 옐로에서 피카 만나고…', '…이번엔 세금 안 떼이고 렙업하는 애들 얼굴 보러 가자.']);
       else await c.say('dotori', ['……', '…그럼 내가 생각해 둘게. 너는 돌아오는 것만 생각해. 약속.']);
       c.bond('dotori', 1);
     } },

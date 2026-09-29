@@ -8,19 +8,19 @@
 
   /* ───────── 그린 마을 ───────── */
   ch('dotori', {
-    name: '도토리', title: '날지 못하는 하늘다람쥐', color: '#f0b070', voice: 1.6,
+    name: '토리아', title: '날지 못하는 하늘다람쥐', color: '#f0b070', voice: 1.6,
     look: 'squirrel', face: { special: 'squirrel' },
     bio: [
       ['{n}의 단짝. 할머니 약초밭 울타리 밑에서 주워 온 하늘다람쥐.'],
       ['레벨 9에서 16년째 멈춰 있다. 말끝마다 「찍」을 붙인다.'],
       ['꿈은 하늘을 나는 것. 날개막은 멀쩡한데 이상하게 한 번도 날아 본 적이 없다.'],
-      ['도토리가 멈춘 것은 16년 전, 세린이 「이 아이 좀 봐 줄래? 내가 돌아올 때까지」라며 쓰다듬은 날부터다. 약속이 성장을 붙잡았다.', 'dotori_knows'],
-      ['오방순 할머니는 도토리가 「세린이 마지막으로 쓰다듬은 짐승」이라고 한다.', 'm_purple_vision'],
-      ['흰빛을 나눠 받은 날, 도토리는 처음으로 날았다. 3초 동안.', 'm_rainbow_share'],
+      ['토리아가 멈춘 것은 16년 전, 세린이 「이 아이 좀 봐 줄래? 내가 돌아올 때까지」라며 쓰다듬은 날부터다. 약속이 성장을 붙잡았다.', 'dotori_knows'],
+      ['에벨린 할머니는 토리아가 「세린이 마지막으로 쓰다듬은 짐승」이라고 한다.', 'm_purple_vision'],
+      ['흰빛을 나눠 받은 날, 토리아는 처음으로 날았다. 3초 동안.', 'm_rainbow_share'],
     ],
   });
   ch('gran', {
-    name: '오방순 할머니', title: '그린 마을 약초꾼', color: '#8ae08a', voice: 0.72,
+    name: '에벨린 할머니', title: '그린 마을 약초꾼', color: '#8ae08a', voice: 0.72,
     look: { hair: 'bun', hc: '#c8c8c0', top: '#4a8a4a', bottom: '#5a4a3a', shoe: '#3a2a22' },
     face: { hair: 'bun', hc: '#d0d0c8', top: '#4a8a4a', eyes: 'narrow', acc: ['wrinkle'], mouth: 'flat', collar: '#e8e0c8' },
     bio: [
@@ -32,17 +32,17 @@
     ],
   });
   ch('kongsun', {
-    name: '콩순 아줌마', title: '초록 바구니 잡화점 주인', color: '#ffc870', voice: 1.2,
+    name: '마리엔 아줌마', title: '초록 바구니 잡화점 주인', color: '#ffc870', voice: 1.2,
     look: { hair: 'bob', hc: '#3a2a1a', top: '#e8a84a', bottom: '#7a5a3a' },
     face: { hair: 'bob', hc: '#3a2a1a', top: '#e8a84a', mouth: 'open', blush: true, ec: '#6a4a2a' },
     bio: [
-      ['그린 마을 소식은 콩순 아줌마 가게에 먼저 도착한다. 그다음에 당사자한테.'],
+      ['그린 마을 소식은 마리엔 아줌마 가게에 먼저 도착한다. 그다음에 당사자한테.'],
       ['옥수수빵 굽는 솜씨는 대륙 제일이라고 본인이 주장한다. 마을 사람들도 딱히 반박하지 않는다.'],
       ['남편은 레드 마을로 돈 벌러 갔다가 징수 기사가 되어 돌아왔다. 그래서 집에 잘 안 들어온다.', (s) => s.quests.q_lunch === 'done'],
     ],
   });
   ch('ijang', {
-    name: '변덕수 이장', title: '그린 마을 이장', color: '#c8e8a0', voice: 0.85,
+    name: '베르덱스 이장', title: '그린 마을 이장', color: '#c8e8a0', voice: 0.85,
     look: { hair: 'bald', hc: '#8a7a6a', top: '#8a6a3a', bottom: '#4a3a2a' },
     face: { hair: 'bald', hc: '#8a7a6a', top: '#8a6a3a', acc: ['mustache', 'wrinkle'], eyes: 'dot' },
     bio: [
@@ -52,36 +52,36 @@
     ],
   });
   ch('bomi', {
-    name: '봄이', title: '전설이 되고 싶은 아이', color: '#ffb0d0', voice: 1.45,
+    name: '베르나', title: '전설이 되고 싶은 아이', color: '#ffb0d0', voice: 1.45,
     look: { hair: 'pony', hc: '#8a4a2a', top: '#ff8ab0', bottom: '#6a5aa8', acc: '#ffd84a' },
     face: { hair: 'twin', hc: '#8a4a2a', top: '#ff8ab0', eyes: 'big', ec: '#6a4a2a', blush: true },
     bio: [
       ['아홉 살. 커서 전설이 되는 게 꿈이다. 매일 아침 나무 막대기로 허수아비를 백 번 때린다.'],
       ['레벨 9에서 1년째 멈춰 있다. 경험세 때문에 마을 아이들 대부분이 그렇다.'],
-      ['탑이 무너진 날, 봄이는 레벨 10이 되었다. 마을이 떠나가라 울었다.', 'm_green_golem'],
+      ['탑이 무너진 날, 베르나는 레벨 10이 되었다. 마을이 떠나가라 울었다.', 'm_green_golem'],
     ],
   });
   ch('chul', {
-    name: '철이', title: '봄이의 라이벌', color: '#8ad0ff', voice: 1.35,
+    name: '카렐', title: '베르나의 라이벌', color: '#8ad0ff', voice: 1.35,
     look: { hair: 'cap', hc: '#2a2a2a', top: '#4a78c8', bottom: '#3a3a4a', acc: '#e84a4a' },
     face: { hair: 'cap', hc: '#2a2a2a', top: '#4a78c8', ac: '#e84a4a', mouth: 'smirk', acc: ['freckle'] },
     bio: [
-      ['열 살. 봄이보다 한 살 많다는 걸 평생 자랑하며 살 예정이다.'],
+      ['열 살. 베르나보다 한 살 많다는 걸 평생 자랑하며 살 예정이다.'],
       ['아버지가 징수 기사라서 마을 아이들 사이에서 조금 외롭다.'],
     ],
   });
   ch('dolsoe', {
-    name: '징수 기사 돌쇠', title: '그린 마을 담당 징수 기사', color: '#b8a8e8', voice: 0.8,
+    name: '징수 기사 고르디', title: '그린 마을 담당 징수 기사', color: '#b8a8e8', voice: 0.8,
     look: { hair: 'helmet', hc: '#3a3450', top: '#6a5a90', bottom: '#3a3450', acc: '#9aa4ae' },
     face: { hair: 'helmet', hc: '#3a3450', top: '#6a5a90', ac: '#9aa4ae', eyes: 'sleepy', mouth: 'flat' },
     bio: [
       ['그린 마을에 파견된 징수 기사. 하루의 절반은 탑 옆 의자에서 존다.'],
-      ['콩순 아줌마의 남편. 집에서는 「돌쇠 씨」, 밖에서는 「기사님」. 둘 다 싫어한다.'],
+      ['마리엔 아줌마의 남편. 집에서는 「고르디 씨」, 밖에서는 「기사님」. 둘 다 싫어한다.'],
       ['징수탑이 무너진 날 가장 먼저 도망쳤고, 가장 먼저 돌아와 마을 사람들을 대피시켰다.', 'm_green_golem'],
     ],
   });
   ch('park', {
-    name: '감자 농부 박씨', title: '두더지와 전쟁 중', color: '#e8d098', voice: 0.9,
+    name: '감자 농부 브람', title: '두더지와 전쟁 중', color: '#e8d098', voice: 0.9,
     look: { hair: 'cap', hc: '#4a3a2a', top: '#8a9a4a', bottom: '#5a4a3a', acc: '#e8d098' },
     face: { hair: 'cap', hc: '#4a3a2a', top: '#8a9a4a', ac: '#e8d098', acc: ['wrinkle'], mouth: 'frown' },
     bio: [['감자밭을 지키는 농부. 두더지와 27년째 전쟁 중이다. 전적은 3승 1,204패.']],
@@ -110,13 +110,13 @@
 
   /* ───────── 레드 마을 ───────── */
   ch('hwaro', {
-    name: '화로 아저씨', title: '불꽃 대장간 주인', color: '#ff9a6a', voice: 0.75,
+    name: '볼칸 아저씨', title: '불꽃 대장간 주인', color: '#ff9a6a', voice: 0.75,
     look: { hair: 'bald', hc: '#c8402c', top: '#8a3a2a', bottom: '#3a2a22', skin: '#e8b890' },
     face: { hair: 'bald', hc: '#c8402c', top: '#8a3a2a', skin: '#e8b890', acc: ['headband', 'beard'], ac: '#ffd84a', eyes: 'sharp' },
     bio: [
       ['레드 마을 제일의 대장장이. 망치를 한 번 내리칠 때마다 「렙업!」을 외친다.'],
       ['징수탑이 선 뒤 망치질로 쌓은 경험의 삼 할을 떼인다. 그래서 망치를 네 할 더 세게 친다.'],
-      ['젊은 시절 초록 창 오방순의 창을 벼린 사람이다.', 'm_red_rud'],
+      ['젊은 시절 초록 창 에벨린의 창을 벼린 사람이다.', 'm_red_rud'],
     ],
   });
   ch('rud', {
@@ -143,12 +143,12 @@
     bio: [['루카의 쌍둥이. 형보다 먼저 태어났다고 우기지만 증거는 없다. 그림을 그리는데, 색이 없는 그림이다.']],
   });
   ch('galaxy', {
-    name: '은하수 박사', title: '붉은 산 관측소장', color: '#a8c8ff', voice: 0.8,
+    name: '아스텔 박사', title: '붉은 산 관측소장', color: '#a8c8ff', voice: 0.8,
     look: { hair: 'afro', hc: '#f0f0f0', top: '#2a3a6a', bottom: '#2a2a3a' },
     face: { hair: 'messy', hc: '#f0f0f0', top: '#2a3a6a', acc: ['glasses', 'longbeard', 'wrinkle'], gc: '#c8a040', eyes: 'dot' },
     bio: [
       ['붉은 산 꼭대기 관측소에서 50년째 하늘만 보는 천문학자. 낮에 잔다.'],
-      ['오방순 할머니의 오랜 친구. 둘은 만나면 3분 안에 싸운다.'],
+      ['에벨린 할머니의 오랜 친구. 둘은 만나면 3분 안에 싸운다.'],
       ['16년 전, 황금별 옆에서 검은 점이 사라지는 것을 관측한 유일한 사람.', 'm_red_galaxy'],
     ],
   });
@@ -186,17 +186,17 @@
 
   /* ───────── 블루 마을 ───────── */
   ch('haemi', {
-    name: '해미', title: '블루 대도서관 사서', color: '#8ad8e8', voice: 1.2,
+    name: '헤미아', title: '블루 대도서관 사서', color: '#8ad8e8', voice: 1.2,
     look: { hair: 'long', hc: '#2a3a5a', top: '#3a8a9a', bottom: '#2a3a4a' },
     face: { hair: 'bob', hc: '#2a3a5a', top: '#3a8a9a', acc: ['glasses'], gc: '#6a4a2a', eyes: 'big', ec: '#3a6aa8', mouth: 'wave' },
     bio: [
       ['대도서관의 막내 사서. 말을 더듬지만 책 이야기를 할 때만은 한 번도 더듬지 않는다.'],
-      ['수수께끼를 좋아한다. 대도서관의 모든 잠긴 서고는 해미가 낸 수수께끼로 잠겨 있다.'],
-      ['세린이 대도서관에 마지막으로 책을 반납한 날, 해미는 여섯 살이었다. 그 책의 대출 카드를 아직 가지고 있다.', 'm_blue_book'],
+      ['수수께끼를 좋아한다. 대도서관의 모든 잠긴 서고는 헤미아가 낸 수수께끼로 잠겨 있다.'],
+      ['세린이 대도서관에 마지막으로 책을 반납한 날, 헤미아는 여섯 살이었다. 그 책의 대출 카드를 아직 가지고 있다.', 'm_blue_book'],
     ],
   });
   ch('mukmul', {
-    name: '먹물 관장', title: '블루 대도서관장', color: '#d0a8ff', voice: 0.7,
+    name: '옥타비오 관장', title: '블루 대도서관장', color: '#d0a8ff', voice: 0.7,
     look: 'octopus', face: { special: 'octopus' },
     bio: [
       ['대도서관장. 안경 쓴 문어 학자. 여덟 다리로 여덟 권을 동시에 읽는다.'],
@@ -205,7 +205,7 @@
     ],
   });
   ch('bitna', {
-    name: '빛나', title: '등대지기의 딸', color: '#ffe070', voice: 1.25,
+    name: '루체', title: '등대지기의 딸', color: '#ffe070', voice: 1.25,
     look: { hair: 'short', hc: '#3a2a1a', top: '#ffd84a', bottom: '#3a5a8a', acc: '#ffd84a' },
     face: { hair: 'side', hc: '#3a2a1a', top: '#ffd84a', eyes: 'big', ec: '#3a5a8a', mouth: 'open', acc: ['freckle'] },
     bio: [
@@ -221,7 +221,7 @@
     bio: [['자기가 고래를 세 번 삼켰다고 주장한다. 고래가 아니라 자기가 삼켰다고.']],
   });
   ch('captain', {
-    name: '고선장', title: '연락선 「고등어호」 선장', color: '#9ab8e8', voice: 0.8,
+    name: '가브 선장', title: '연락선 「고등어호」 선장', color: '#9ab8e8', voice: 0.8,
     look: { hair: 'cap', hc: '#2a2a2a', top: '#f4f4f4', bottom: '#2a3a6a', acc: '#2a3a6a' },
     face: { hair: 'cap', hc: '#2a2a2a', top: '#f4f4f4', ac: '#2a3a6a', acc: ['beard'], eyes: 'sharp', collar: '#ffd84a' },
     bio: [['블루와 옐로를 잇는 연락선의 선장. 뱃멀미를 한다. 30년째.']],
@@ -235,7 +235,7 @@
 
   /* ───────── 옐로 마을 ───────── */
   ch('kkachi', {
-    name: '까치', title: '그늘 참새단 두목', color: '#e8e8a0', voice: 1.35,
+    name: '피카', title: '그늘 참새단 두목', color: '#e8e8a0', voice: 1.35,
     look: { hair: 'spiky', hc: '#1a1a22', top: '#c87a3a', bottom: '#5a4a3a', acc: '#e84a4a' },
     face: { hair: 'messy', hc: '#1a1a22', top: '#c87a3a', eyes: 'sharp', ec: '#6a5a2a', acc: ['freckle', 'bandage'], mouth: 'smirk' },
     bio: [
@@ -286,13 +286,13 @@
     ],
   });
   ch('miru', {
-    name: '미루', title: '라벤더 학원 낙제생', color: '#e0c0ff', voice: 1.3,
+    name: '미레아', title: '라벤더 학원 낙제생', color: '#e0c0ff', voice: 1.3,
     look: { hair: 'hood', hc: '#6a4a8a', top: '#8a6ab0', bottom: '#3a2a5a', acc: '#8a6ab0' },
     face: { hair: 'hood', hc: '#6a4a8a', top: '#8a6ab0', ac: '#8a6ab0', eyes: 'big', ec: '#8a4ad8', mouth: 'wave', blush: true },
     bio: [['라벤더 학원 7년 차 1학년. 주문을 외우면 늘 한 글자씩 틀린다. 그래서 불 대신 풀이, 풀 대신 불이 나온다.']],
   });
   ch('bichu', {
-    name: '비추 할멈', title: '진실의 거울 연못지기', color: '#e8e0ff', voice: 0.66,
+    name: '시빌 할멈', title: '진실의 거울 연못지기', color: '#e8e0ff', voice: 0.66,
     look: { hair: 'veil', hc: '#e8e8f0', top: '#6a5a8a', bottom: '#3a2a5a', acc: '#8a7ab0' },
     face: { hair: 'veil', hc: '#e8e8f0', top: '#6a5a8a', ac: '#8a7ab0', eyes: 'closed', acc: ['wrinkle'], mouth: 'flat' },
     bio: [['앞을 보지 못한다. 대신 거울 연못에 비친 것만은 누구보다 잘 본다. 「눈이 보는 건 겉이고, 물이 보는 건 속이다.」']],
@@ -316,13 +316,13 @@
     ],
   });
   ch('chaesaek', {
-    name: '채색 위원장', title: '천년제 준비 위원장', color: '#c8f0a8', voice: 0.85,
+    name: '크로마 위원장', title: '천년제 준비 위원장', color: '#c8f0a8', voice: 0.85,
     look: { hair: 'bun', hc: '#ff8ab0', top: '#8ae08a', bottom: '#8a8ae8' },
     face: { hair: 'bun', hc: '#ff8ab0', top: '#8ae08a', eyes: 'dot', mouth: 'open', acc: ['wrinkle', 'earring'] },
     bio: [['천년제 준비 위원장. 999년 동안 이 날을 기다려 왔다고 한다. 실제 나이는 87세.']],
   });
   ch('mungge', {
-    name: '뭉게', title: '구름고래', color: '#bfe4ff', voice: 0.55,
+    name: '누베', title: '구름고래', color: '#bfe4ff', voice: 0.55,
     look: 'whale', face: { special: 'whale' },
     bio: [['구름 바다를 헤엄치는 고래. 등 위에 작은 섬이 있다. 말이 아주 느리다. 한 문장에 반나절.']],
   });
@@ -354,7 +354,7 @@
     ],
   });
   ch('snowflake', {
-    name: '눈송이', title: '설원의 아이', color: '#e8f4ff', voice: 1.5,
+    name: '니베', title: '설원의 아이', color: '#e8f4ff', voice: 1.5,
     look: { hair: 'hood', hc: '#8a6a4a', top: '#ff8a8a', bottom: '#6a8ab0', acc: '#ffffff' },
     face: { hair: 'hood', hc: '#8a6a4a', top: '#ff8a8a', ac: '#ffffff', eyes: 'big', blush: true, mouth: 'open' },
     bio: [['화이트 마을의 아이. 눈싸움에서 한 번도 진 적이 없다. 상대가 봐주기 때문이라는 걸 모른다.']],
@@ -378,13 +378,13 @@
     ],
   });
   ch('noel', {
-    name: '노을', title: '로봇 소녀 N-07', color: '#ffc890', voice: 1.3,
+    name: '세피아', title: '로봇 소녀 N-07', color: '#ffc890', voice: 1.3,
     look: { hair: 'robot', hc: '#c8d0dc', top: '#e88a5a', bottom: '#8a96aa', acc: '#c8d0dc', eye: '#ffb86a' },
     face: { special: 'robot' },
     bio: [
       ['볼트가 만든 일곱 번째 로봇. 이름은 볼트의 아내가 좋아하던 하늘에서 따왔다.'],
       ['눈에 색을 구별하는 부품이 없다. 그래서 색을 모으고 있다. 병에 담아서.'],
-      ['{n}이 모아 온 색을 처음 「보았」을 때, 노을은 3분 동안 멈춰 있었다. 과부하가 아니었다.', 'q_noel_done'],
+      ['{n}이 모아 온 색을 처음 「보았」을 때, 세피아는 3분 동안 멈춰 있었다. 과부하가 아니었다.', 'q_noel_done'],
     ],
   });
   ch('rusty', {
@@ -421,7 +421,7 @@
     ],
   });
   ch('horong', {
-    name: '호롱 영감', title: '등불지기', color: '#ffe08a', voice: 0.72,
+    name: '칸델 영감', title: '등불지기', color: '#ffe08a', voice: 0.72,
     look: { hair: 'cap', hc: '#6a6a6a', top: '#3a3450', bottom: '#2a2438', acc: '#ffd86a' },
     face: { hair: 'cap', hc: '#6a6a6a', top: '#3a3450', ac: '#5a4a2a', acc: ['beard', 'wrinkle'], eyes: 'sleepy' },
     bio: [['블랙 마을 등불 거리의 등불을 켜는 노인. 해가 뜨지 않는 마을이라 퇴근을 못 한다.']],
@@ -435,7 +435,7 @@
 
   /* ───────── 알록달록 마을 ───────── */
   ch('pangpang', {
-    name: '팡팡 박사', title: '폭발 발명가', color: '#ffa0d0', voice: 1.05,
+    name: '피로스 박사', title: '폭발 발명가', color: '#ffa0d0', voice: 1.05,
     look: { hair: 'afro', hc: '#3a2a2a', top: '#f4f4f4', bottom: '#5a5a8a', acc: '#ffd84a' },
     face: { hair: 'afro', hc: '#3a2a2a', top: '#f4f4f4', acc: ['goggles'], ac: '#e84a4a', gc: '#ffd84a', eyes: 'big', mouth: 'open', collar: '#e8e8f0' },
     bio: [
@@ -445,10 +445,10 @@
     ],
   });
   ch('ppeong', {
-    name: '뻥이', title: '팡팡 박사의 조수', color: '#ffe0a0', voice: 1.4,
+    name: '봄바', title: '피로스 박사의 조수', color: '#ffe0a0', voice: 1.4,
     look: { hair: 'spiky', hc: '#ff8a3a', top: '#5ae8a8', bottom: '#3a3a8a', acc: '#ffffff' },
     face: { hair: 'spiky', hc: '#ff8a3a', top: '#5ae8a8', eyes: 'big', mouth: 'open', acc: ['freckle', 'bandage'] },
-    bio: [['팡팡 박사의 조수. 과장이 심하다. 폭발이 「조금」 났다고 하면 마을 절반이 날아간 것이다.']],
+    bio: [['피로스 박사의 조수. 과장이 심하다. 폭발이 「조금」 났다고 하면 마을 절반이 날아간 것이다.']],
   });
   ch('clerk_c', {
     name: '심사관 아무나', title: '알록달록 마을 등급소', color: '#ffe0c8', voice: 1.1,
@@ -474,7 +474,7 @@
     bio: [
       ['레벨 99만 9999. 역대 최연소 챔피언. 16년째 경험세를 거두는 사람.'],
       ['「나는 이미 모든 것을 계산했다.」 그가 계산하지 못한 것은 한 가지뿐이다.', 'm_black_kairon'],
-      ['오방순의 제자, 녹턴의 친구, 세린의 동료. 983년 이후 한 번도 잠들지 않았다.', 'm_black_nocturne'],
+      ['에벨린의 제자, 녹턴의 친구, 세린의 동료. 983년 이후 한 번도 잠들지 않았다.', 'm_black_nocturne'],
       ['그의 계획: 봉인이 풀리기 전에 흑점을 없앤다. 실패하면 세린의 아이를 새 봉인으로 삼는다.', 'm_black_kairon'],
     ],
   });

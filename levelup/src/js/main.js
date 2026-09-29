@@ -222,7 +222,7 @@
     if (!G.state || (!force && S.running) || B.active) return;
     const s = G.state;
     const noButton = (msg) => { if (performance.now() - M.toastT > 1200) { M.toastT = performance.now(); UI.toast(msg, 'bad'); G.audio.sfx('buzz'); } };
-    if (s.flags.button_stolen) return noButton('시작의 버튼이 없다! 까치를 쫓아가자.');
+    if (s.flags.button_stolen) return noButton('시작의 버튼이 없다! 피카를 쫓아가자.');
     if (!E.has(s, 'button')) return noButton('아직 누를 버튼이 없다. 부엌의 할머니가 부르신다.');
     const d = E.derive(s);
     if (E.registerClick(s)) { G.audio.sfx('fever'); UI.toast('[y]피버![/] 8초 동안 경험치·골드 두 배!', 'gold'); }
