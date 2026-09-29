@@ -87,7 +87,7 @@
         if (pop > 1.05) { g.save(); g.translate(x, y); g.scale(pop, pop); X.digits(g, f.text, -Math.round(w / 2), -2, f.col); g.restore(); }
         else X.digits(g, f.text, x - Math.round(w / 2), y - 2, f.col);
       } else {
-        g.font = (f.big ? 10 : 8) + "px 'Galmuri11', monospace"; g.textAlign = 'center';
+        g.font = f.big ? "12px 'Galmuri11 Bold', 'Galmuri11', monospace" : "12px 'Galmuri11', monospace"; g.textAlign = 'center';
         g.fillStyle = '#0b0914'; g.fillText(f.text, x + 1, y + 1); g.fillText(f.text, x - 1, y + 1); g.fillText(f.text, x, y + 2);
         g.fillStyle = f.col; g.fillText(f.text, x, y); g.textAlign = 'left';
       }

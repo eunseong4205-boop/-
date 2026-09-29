@@ -67,11 +67,14 @@
   item('food_bread', { type: 'use', name: '눈꽃 빵', heal: 8, buff: { warm: 1, t: 180 }, price: 150, desc: '하트 2칸, 3분 동안 추위를 견딘다.' });
 
   /* ── 재료 (대장간 강화 · 부탁) ── */
-  const MATS = [['m_slime', '말랑 젤리'], ['m_fang', '짐승 송곳니'], ['m_ore', '철광석'], ['m_scale', '불꽃 비늘'], ['m_pearl', '진주'], ['m_sand', '황금 모래'], ['m_moon', '달 조각'], ['m_cloud', '구름 솜'], ['m_ice', '얼음 결정'], ['m_gear', '녹슨 톱니'], ['m_shadow', '그림자 실'], ['m_powder', '화약'], ['m_star', '별 부스러기'], ['m_crystal', '황금 수정']];
+  const MATS = [['m_slime', '말랑 젤리'], ['m_fang', '짐승 송곳니'], ['m_ore', '철광석'], ['m_scale', '불꽃 비늘'], ['m_pearl', '진주'], ['m_sand', '황금 모래'], ['m_moon', '달 조각'], ['m_cloud', '구름 솜'], ['m_ice', '얼음 결정'], ['m_gear', '녹슨 톱니'], ['m_shadow', '그림자 실'], ['m_powder', '화약'], ['m_star', '별 부스러기'], ['m_crystal', '황금 수정'], ['m_hide', '짐승 가죽'], ['m_cloth', '낡은 천'], ['m_dust', '마법 가루'], ['m_stone', '단단한 돌'], ['m_seed', '덩굴 씨앗'], ['m_shell', '딱딱한 껍질'], ['m_ink', '문어 먹물'], ['m_tag', '녹슨 이름표']];
   for (const [id, name] of MATS) item(id, { type: 'mat', name, price: 8, desc: '몬스터가 떨어뜨린 재료. 대장간과 부탁에 쓴다.' });
   item('heartpiece', { type: 'key', name: '하트 조각', desc: '네 개를 모으면 하트가 한 칸 는다.' });
   item('key_small', { type: 'key', name: '작은 열쇠', desc: '이 던전의 잠긴 문 하나를 연다.' });
   item('key_big', { type: 'key', name: '큰 열쇠', desc: '이 던전 주인의 문을 연다.' });
+  item('heart_c', { type: 'key', name: '하트 그릇', big: true, desc: '최대 하트가 한 칸 늘고 체력이 가득 찬다.' });
+  item('map_d', { type: 'key', name: '던전 지도', desc: '이 던전의 방이 전부 지도에 보인다.' });
+  item('compass', { type: 'key', name: '나침반', desc: '상자와 이 던전 주인의 자리가 지도에 보인다.' });
 
   /* ── 마법: mp · 설명 ── */
   const SPELLS = {

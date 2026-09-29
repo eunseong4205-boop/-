@@ -47,15 +47,24 @@
   }
   function tick(dt) {
     I.update(dt);
+    if (G.script && G.script.update) G.script.update(dt);
     if (GM.scene === 'play') {
       if (G.ui && G.ui.update) G.ui.update(dt);
-      if (!G.ui.paused || !G.ui.paused()) W.update(dt);
+      const paused = G.ui.paused && G.ui.paused();
+      if (!paused) {
+        W.update(dt);
+        if (G.combat) G.combat.update(dt);
+        if (G.state) G.state.t += dt;
+      }
+      if (G.interact) G.interact.update();
+      if (G.cine && G.cine.update) G.cine.update(dt);
       if (G.hud && G.hud.update) G.hud.update(dt);
     } else if (GM.scene === 'title' && G.ui && G.ui.titleUpdate) G.ui.titleUpdate(dt);
   }
   function draw() {
     const cv = $('cv'), g = cv.getContext('2d');
     g.imageSmoothingEnabled = false;
+    W.ctx = g;
     if (GM.scene === 'play' && W.map) {
       W.render(g);
       if (G.cine && G.cine.draw) G.cine.draw(g, W.view.w, W.view.h);
@@ -91,16 +100,35 @@
     return m;
   }
 
+  /** 주인공을 전투 · 그리기와 잇는다 */
+  function makePlayer(x, y) {
+    const s = G.state;
+    const p = new G.Player({ x, y });
+    p.look = G.story && G.story.heroLook ? G.story.heroLook(s) : { gender: s.gender === 'girl' ? 'girl' : 'boy', hair: s.gender === 'girl' ? 'long' : 'spiky', hc: '#6a4a3a', top: 'tunic', tc: '#3aa84a', eye: '#4a9a6a' };
+    p.actions = G.combat.actions;
+    p.behindWeapon = () => { if (p.dir === 'up') G.combat.drawWeapon(W.ctx, p, W.rcx, W.rcy); };
+    p.onDraw = () => { if (p.dir !== 'up') G.combat.drawWeapon(W.ctx, p, W.rcx, W.rcy); };
+    return p;
+  }
+
   function startDev() {
     const m = devMap();
-    const p = new G.Player({ x: 5 * 16 + 8, y: 30 * 16 + 12 });
+    const s = G.state = G.st.fresh('아린', 'boy');
+    G.st.give(s, 'sw_wood'); G.st.give(s, 'sh_wood'); G.st.give(s, 'bow'); s.ammo.arrows = 30; G.st.give(s, 'bomb'); G.st.learnSpell(s, 'fire'); G.st.learnSpell(s, 'ice'); G.st.learnSpell(s, 'bolt');
+    const p = makePlayer(5 * 16 + 8, 30 * 16 + 12);
     W.player = p; W.ents = [p];
     W.load(m, p.x, p.y, 'right');
+    const F = G.foes;
+    if (F) { F.spawn('slime', 16 * 16, 30 * 16); F.spawn('slime', 18 * 16, 33 * 16); F.spawn('boar', 22 * 16, 38 * 16); F.spawn('bandit', 26 * 16, 34 * 16); F.spawn('knight', 14 * 16, 36 * 16); F.spawn('bat', 20 * 16, 28 * 16); F.spawn('plant', 10 * 16, 38 * 16); }
+    const P = G.props;
+    if (P) { W.add(new P.Chest({ x: 7 * 16 + 8, y: 27 * 16 + 12, item: 'potion_r', pid: 'c1' })); W.add(new P.Pot({ x: 3 * 16 + 8, y: 27 * 16 + 12 })); W.add(new P.Pot({ x: 4 * 16 + 8, y: 27 * 16 + 12 })); W.add(new P.Sign({ x: 6 * 16 + 8, y: 33 * 16 + 12, text: '시험 들판. 동쪽: 적들 · 북쪽: 언덕' })); }
     GM.scene = 'play';
   }
 
   function boot(hot) {
     I.bindTouch();
+    if (G.combat) G.combat.makeIcons();
+    if (G.ui && G.ui.bindTap) G.ui.bindTap();
     addEventListener('resize', resize);
     addEventListener('orientationchange', () => setTimeout(resize, 200));
     resize();
@@ -109,7 +137,7 @@
     requestAnimationFrame(frame);
   }
 
-  Object.assign(GM, { boot, resize, devMap, startDev });
+  Object.assign(GM, { boot, resize, devMap, startDev, makePlayer });
   // 다른 모듈이 먼저 G.game에 붙인 것(start 등)을 살리고, 이후로는 같은 객체를 쓴다
   G.game = Object.assign(GM, G.game || {});
 })();

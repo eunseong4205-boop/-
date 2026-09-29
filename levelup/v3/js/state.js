@@ -20,7 +20,7 @@
       flags: {}, quests: {}, log: [], books: {}, truth: {}, abyss: {}, bond: {}, endings: {}, seen: {},
       route: { dawn: 0, order: 0, night: 0 },
       map: null, x: 0, y: 0, respawn: null, waystones: {}, visited: {}, buffs: [],
-      settings: { music: true, sfx: true, textSpeed: 2, shake: true },
+      settings: { music: true, sfx: true, vol: 0.7, textSpeed: 2, shake: true, minimap: true },
     };
   }
 
@@ -71,6 +71,7 @@
     if (it.type === 'ammo') { s.ammo[it.ammo] = Math.min(s.ammo[it.ammo + 'Max'], s.ammo[it.ammo] + it.n * n); return; }
     if (it.type === 'tool') { s.tools[id] = true; if (!s.tool && id !== 'bow') s.tool = id; if (id === 'bow' && !s.equip.bow) s.equip.bow = 'bw_short'; if (id === 'bomb') s.ammo.bombs = Math.max(s.ammo.bombs, 5); return; }
     if (it.type === 'tome') { s.spells[it.spell] = true; if (!s.spell) s.spell = it.spell; return; }
+    if (id === 'heart_c') { s.hearts++; s.hp = derive(s).hpMax; return; }
     if (id === 'heartpiece') { s.pieces++; if (s.pieces >= 4) { s.pieces -= 4; s.hearts++; s.hp = derive(s).hpMax; } return; }
     s.inv[id] = (s.inv[id] || 0) + n;
     // 처음 얻은 장비는 바로 찬다 (더 좋은 것이면)

@@ -83,6 +83,7 @@
   function render(g) {
     const v = W.view, c = W.cam, m = W.map;
     const cx = Math.round(c.x + c.sx), cy = Math.round(c.y + c.sy);
+    W.rcx = cx; W.rcy = cy;
     g.fillStyle = '#000'; g.fillRect(0, 0, v.w, v.h);
     m.drawGround(g, cx, cy, v.w, v.h, 2);
     // 물결 · 용암 빛
@@ -108,6 +109,7 @@
         g.globalAlpha = 1;
       }
     }
+    if (G.combat && G.combat.drawBolts) G.combat.drawBolts(g, cx, cy);
     if (G.fx) G.fx.drawOver(g, cx, cy);
     if (G.light) G.light.draw(g, cx, cy);
   }

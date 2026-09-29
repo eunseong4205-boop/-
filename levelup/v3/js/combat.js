@@ -52,6 +52,7 @@
     return true;
   }
   function kill(e, info) {
+    if (e.preKill && e.preKill(info || {})) return;
     e.hp = 0; e.dead = true;
     sfx(e.boss ? 'bossdie' : 'defeat');
     G.fx.shards(e.x, e.y - 8, e.boss ? 40 : 12, e.col || '#ffffff');
@@ -341,11 +342,9 @@
       // 먼저 말 걸기 · 조사 · 들기
       if (G.interact && G.interact.tryAt(p)) { I.eat('attack'); return true; }
       if (p.carry) { throwCarry(p); I.eat('attack'); return true; }
-      if (!s.equip.sword) {
-        const L = liftTarget(p, m);
-        if (L) { startLift(p, m, L); I.eat('attack'); return true; }
-        return false;
-      }
+      const L = liftTarget(p, m);
+      if (L && (!s.equip.sword || OB.DEF[L.o].drop === 'rock')) { startLift(p, m, L); I.eat('attack'); return true; }
+      if (!s.equip.sword) return false;
       startSwing(p, 0);
       return true;
     },
@@ -470,6 +469,7 @@
 
   /* ── 활 ── */
   const bow = {
+    update(p, dt, m, ctl) { updBow(p, dt, m, ctl); },
     input(p) {
       const s = S();
       if (!I.pressed('bow') || !s.tools.bow) return false;
@@ -639,7 +639,8 @@
   function throwCarry(p) {
     const c = p.carry; p.carry = null;
     const a = ANG[p.dir];
-    shoot({ kind: 'thrown', img: c.img, x: p.x + Math.cos(a) * 6, y: p.y - 4 + Math.sin(a) * 4, vx: Math.cos(a) * 180, vy: Math.sin(a) * 180, dmg: c.o === OB.O.ROCK ? 6 : 3, src: 'throw', r: 6, life: 0.4, power: 1.2, zoff: 14, onDie() { G.fx.shards(this.x, this.y, 8, c.o === OB.O.ROCK ? '#8a7a6a' : '#5aa84a'); sfx(c.o === OB.O.ROCK ? 'rock' : 'cut'); } });
+    shoot({ kind: 'thrown', img: c.img, x: p.x + Math.cos(a) * 6, y: p.y - 4 + Math.sin(a) * 4, vx: Math.cos(a) * 180, vy: Math.sin(a) * 180, dmg: c.o === OB.O.ROCK ? 6 : 3, src: 'throw', r: 6, life: 0.4, power: 1.2, zoff: 14, z: p.z,
+      onDie() { G.fx.shards(this.x, this.y, 8, c.pot ? '#c87a4a' : c.o === OB.O.ROCK ? '#8a7a6a' : '#5aa84a'); sfx(c.pot || c.o === OB.O.ROCK ? 'rock' : 'cut'); if (c.pot) { c.pot.x = this.x; c.pot.y = this.y; c.pot.dropLoot(); } } });
     sfx('throw');
   }
   function dropCarry(p) { p.carry = null; }

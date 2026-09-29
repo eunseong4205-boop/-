@@ -224,7 +224,7 @@
       if (s.glasses) { for (const gx of [6, 13]) { b.px(gx, ey - 1, '#d8e4f0'); b.px(gx + 4, ey - 1, '#d8e4f0'); b.px(gx, ey + 3, '#d8e4f0'); b.px(gx + 4, ey + 3, '#d8e4f0'); } b.px(11, ey, '#d8e4f0'); b.px(12, ey, '#d8e4f0'); }
       if (s.scar) { b.px(15, t + 10, '#c85a5a'); b.px(16, t + 11, '#c85a5a'); b.px(14, t + 9, '#c85a5a'); }
       if (s.beard) for (let x = 7; x <= 16; x++) { b.px(x, t + 12, s.beard); b.px(x, t + 13, s.beard); if (x > 8 && x < 15) b.px(x, t + 14, s.beard); }
-      if (s.mask) for (let x = 6; x <= 17; x++) for (let y = t + 11; y <= t + 13; y++) b.px(x, y, y === t + 11 ? U.mix(s.mask, '#ffffff', 0.15) : s.mask);
+      if (s.mask) { const mc = typeof s.mask === 'string' ? s.mask : (s.hatC || '#3a3040'); for (let x = 6; x <= 17; x++) for (let y = t + 11; y <= t + 13; y++) b.px(x, y, y === t + 11 ? U.mix(mc, '#ffffff', 0.15) : mc); }
       if (s.tear || pose.tear) { b.px(7, ey + 4, '#8ad8ff'); b.px(7, ey + 5, '#8ad8ff'); }
     } else {
       eye(6, -1);
@@ -232,7 +232,7 @@
       if (pose.mouth === 'open') { b.px(5, t + 12, '#7a2030'); b.px(6, t + 12, '#d8505e'); } else b.px(5, t + 12, U.shade(s.skinC, 0.55));
       if (girl) b.px(9, t + 11, '#ff8a9a', 0.5);
       if (s.glasses) { b.px(5, ey - 1, '#d8e4f0'); b.px(9, ey - 1, '#d8e4f0'); b.px(5, ey + 3, '#d8e4f0'); b.px(10, ey + 1, '#d8e4f0'); }
-      if (s.mask) for (let x = 4; x <= 12; x++) for (let y = t + 11; y <= t + 13; y++) b.px(x, y, s.mask);
+      if (s.mask) { const mc = typeof s.mask === 'string' ? s.mask : (s.hatC || '#3a3040'); for (let x = 4; x <= 12; x++) for (let y = t + 11; y <= t + 13; y++) b.px(x, y, mc); }
       if (s.beard) for (let x = 5; x <= 11; x++) { b.px(x, t + 12, s.beard); b.px(x, t + 13, s.beard); }
     }
   }
