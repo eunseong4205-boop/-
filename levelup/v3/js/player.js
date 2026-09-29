@@ -144,6 +144,10 @@
       const t = m.groundAt(this.x, this.y - 2);
       this.swimming = t === TL.T.DEEP && this.swim;
       const hz = m.hazardAt(this.x, this.y - 2);
+      // 바람에 실려 떠 있는 동안은 구덩이 위도 괜찮다
+      if (this.floatT > 0) { this.floatT -= dt; this.jz = Math.max(this.jz || 0, 3 + Math.sin(G.world.t * 8)); if (hz) return; }
+      else if (this.floatWas) this.jz = 0;
+      this.floatWas = this.floatT > 0;
       if (hz && this.state !== 'roll') { this.startFall(hz); return; }
       if (!hz && !this.onStairs && t !== TL.T.WATER && t !== TL.T.DEEP && t !== TL.T.ICE) {
         this.safeT = (this.safeT || 0) + dt;

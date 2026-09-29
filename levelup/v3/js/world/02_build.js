@@ -242,7 +242,7 @@
     if (o.solid !== false && !(art.solid === false)) for (let y = o.ty; y < o.ty + h; y++) for (let x = o.tx; x < o.tx + w; x++) if (m.inb(x, y)) { m.solidExtra[m.i(x, y)] = 1; m.obj[m.i(x, y)] = 0; }
     // 문: 발자리 맨 아래 줄, 그림 가운데 칸은 막지 않는다 (들어가는 곳)
     const dx = Math.floor((o.tx * TS + art.W / 2) / TS), dy = o.ty + h - 1;
-    const hasDoor = o.special ? ['cave', 'temple', 'tower', 'lighthouse', 'pyramid'].includes(o.special) || (o.special === 'gate' && o.open !== false) : o.door !== false;
+    const hasDoor = o.special ? ['cave', 'temple', 'tower', 'lighthouse', 'pyramid'].includes(o.special) || !!(art.door && o.to) || (o.special === 'gate' && o.open !== false) : o.door !== false;
     if (hasDoor && m.inb(dx, dy)) {
       m.solidExtra[m.i(dx, dy)] = 0;
       const wide = o.special === 'cave' || o.special === 'temple' || o.special === 'pyramid' || o.special === 'gate';
@@ -362,5 +362,5 @@
   }
   function forget(id) { delete built[id]; }
 
-  G.build = { STYLE, building, SPECIAL, Building, placeBuilding, decor, Decor, room, def, get, populate, forget, MAPS, built };
+  G.build = { STYLE, building, SPECIAL, Building, placeBuilding, decor, Decor, room, def, get, populate, forget, MAPS, built, poly, ramp: R, OUT };
 })();

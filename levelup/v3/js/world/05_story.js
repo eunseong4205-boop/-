@@ -33,6 +33,7 @@
     const s = S(); s.ch = id; const ch = ST.chapter(id);
     if (!ch) return;
     s.flags['ch:' + id] = true;
+    ST.refreshPeople();
     c.journal('[y]' + ch.no + ' 「' + ch.title + '」[/] 시작');
     await c.chapter(ch.no, ch.title, ch.sub);
   };
@@ -42,6 +43,18 @@
   /** spec: { id(cid), x, y (칸), dir, when(s) → bool, talk(c, npc), barks, wander, look, name, mark(s) } */
   ST.person = function (mapId, spec) { (ST.people[mapId] = ST.people[mapId] || []).push(spec); };
   ST.onPopulate = function (m, Wd) {
+    spawnPeople(m, Wd);
+    // 동료
+    for (const f of ST.followers()) Wd.add(new Follower(f));
+    if (ST.decorate[m.id]) for (const fn of ST.decorate[m.id]) fn(m, Wd, S());
+  };
+  /** 이야기가 바뀌어 사람들이 오가야 할 때: 지금 지도의 사람들을 다시 세운다 */
+  ST.refreshPeople = function () {
+    const Wd = W(), m = Wd.map; if (!m) return;
+    for (const e of Wd.ents) if (e.fromPeople) e.dead = true;
+    spawnPeople(m, Wd);
+  };
+  function spawnPeople(m, Wd) {
     const s = S();
     for (const sp of ST.people[m.id] || []) {
       if (sp.when && !sp.when(s)) continue;
@@ -55,13 +68,11 @@
       if (look && look.kind && !sp.drawFn) npc.drawFn = beastDraw(npc, look.kind);
       if (sp.met !== false && sp.id) npc.onTalkMet = true;
       E.settle(m, npc);
+      npc.fromPeople = true;
       Wd.add(npc);
       if (sp.init) sp.init(npc, s);
     }
-    // 동료
-    for (const f of ST.followers()) Wd.add(new Follower(f));
-    if (ST.decorate[m.id]) for (const fn of ST.decorate[m.id]) fn(m, Wd, s);
-  };
+  }
   ST.decorate = {};   // 지도 id → [fn(m, W, s)]: 들어설 때마다 (조건부 소품 · 적 · 사건)
   ST.onMap = function (mapId, fn) { (ST.decorate[mapId] = ST.decorate[mapId] || []).push(fn); };
 
@@ -70,8 +81,26 @@
   function beastImg(kind, f, dir) {
     const key = kind + f + dir;
     if (BC[key]) return BC[key];
-    const X = G.gfx; const b = X.brush(20, 20);
-    if (kind === 'squirrel') {
+    const X = G.gfx; const SZ = { whale: [48, 30], spirit: [28, 34], armor: [24, 30] }[kind] || [20, 20]; const b = X.brush(SZ[0], SZ[1]);
+    if (kind === 'whale') { // 구름고래: 둥실 떠 있는 구름 덩어리, 등에 무지개 깃발
+      const bob = f % 2, C = ['#8aa8d8', '#bcd4f4', '#e4f0ff', '#ffffff'];
+      b.ellipse(22, 18 - bob, 18, 9, C[1]); b.ellipse(20, 16 - bob, 16, 7, C[2]); b.ellipse(16, 13 - bob, 8, 4, C[3]);
+      b.ellipse(10, 21 - bob, 6, 4, C[2]); b.ellipse(30, 22 - bob, 7, 4, C[2]); b.ellipse(22, 24 - bob, 12, 3, C[0]);
+      const tx = dir === 'left' ? 4 : 40; b.ellipse(dir === 'left' ? 42 : 4, 14 - bob, 5, 3, C[2]); b.ellipse(dir === 'left' ? 45 : 1, 11 - bob, 3, 3, C[1]); void tx;
+      const ex = dir === 'left' ? 11 : 33; if (dir !== 'up') { b.rect(ex, 16 - bob, 2, 2, '#2a3458'); b.px(ex, 16 - bob, '#ffffff'); b.px(ex + (dir === 'left' ? 3 : -3), 19 - bob, '#ff9ab8'); }
+      b.vline(24, 1 - bob, 9 - bob, '#8a6a4a'); const fl = ['#ff5a5a', '#ffb84a', '#ffe85a', '#6ae07a', '#5ab8ff', '#b87aff']; for (let k = 0; k < 6; k++) b.hline(25, 31 + (bob ? 0 : 1), 1 + k - bob, fl[k]);
+      if (f % 2) { b.px(28, 0, '#ffffff'); b.px(30, -1 + 1, '#e4f0ff'); }
+    } else if (kind === 'spirit') { // 나무 정령
+      const sw = f % 2 ? 1 : 0;
+      b.ellipse(14, 12, 11, 10, '#4a8a3a'); b.ellipse(12, 10, 8, 7, '#6ab84a'); b.ellipse(10, 7, 4, 3, '#9ae07a');
+      b.rect(10, 20, 8, 12, '#6a4a2a'); b.rect(10, 20, 3, 12, '#8a6a3a'); b.line(10, 24, 3 - sw, 18, '#6a4a2a'); b.line(18, 24, 25 + sw, 18, '#6a4a2a');
+      if (dir !== 'up') { b.rect(11, 22, 2, 2, '#e8ffa8'); b.rect(15, 22, 2, 2, '#e8ffa8'); b.hline(12, 16, 27, '#3a2a1a'); }
+      b.px(6, 4 + sw, '#ffd8f0'); b.px(21, 6 - sw, '#ffd8f0');
+    } else if (kind === 'armor') { // 속이 빈 은빛 갑옷
+      const S2 = ['#4a5468', '#8a98b0', '#c8d4e4', '#f4f8ff'];
+      b.rect(6, 12, 12, 11, S2[1]); b.rect(7, 12, 4, 10, S2[2]); b.ellipse(12, 7, 6, 6, S2[1]); b.ellipse(11, 6, 4, 4, S2[2]); b.rect(7, 6, 10, 2, '#0a0c14'); if (dir !== 'up') { b.px(9, 6, '#bfe8ff'); b.px(14, 6, '#bfe8ff'); }
+      b.rect(3, 12, 3, 9, S2[0]); b.rect(18, 12, 3, 9, S2[0]); b.rect(7, 23, 4, 6, S2[0]); b.rect(13, 23, 4, 6, S2[0]); b.px(12, 1, S2[3]); b.vline(12, 0, 2, '#bfe8ff');
+    } else if (kind === 'squirrel') {
       const F = '#c89a6a', D = '#8a6a4a', L = '#fff0dc';
       const hop = f % 2 ? 1 : 0;
       b.ellipse(8, 11 - hop, 5, 6, D); b.ellipse(6, 9 - hop, 4, 5, F); // 꼬리
@@ -102,7 +131,7 @@
       const f = Math.floor((npc.walkT || npc.t) * 6) % 2;
       let img = beastImg(kind, npc.state === 'walk' ? f : 0, npc.dir);
       if (npc.dir === 'left') img = G.gfx.flipX(img);
-      g.drawImage(img, Math.round(npc.x - cx - 10), Math.round(npc.y - cy - 19 - (npc.jz || 0)));
+      g.drawImage(img, Math.round(npc.x - cx - img.width / 2), Math.round(npc.y - cy - img.height + 1 - (npc.jz || 0) - (kind === 'whale' ? 6 + Math.sin(npc.t * 2) * 2 : 0)));
       if (npc.emote) G.props.drawEmote(g, npc, cx, cy);
     };
   }

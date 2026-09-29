@@ -164,7 +164,18 @@
         if (Math.abs(U.fbm(x / 11, y / 11, 123, 2) - 0.5) < 0.015) c = [120, 170, 210];
         return c;
       }
-      case T.PIT: return [6, 4, 10];
+      case T.PIT: {
+        const lip = m && m.T(tx, ty - 1) !== T.PIT;
+        if (m && m.palName === 'rainbow') { // 구름 사이로 보이는 하늘 (한참 아래)
+          let c = mixc(rgb('#9ac4f4'), rgb('#3a64b8'), Math.min(1, (ly + (lip ? 0 : 16)) / 40));
+          const f = U.fbm(x / 14, y / 5, 91, 2);
+          if (f > 0.64) c = mixc(c, [255, 255, 255], 0.55); else if (f > 0.58) c = mixc(c, [255, 255, 255], 0.25);
+          if (lip && ly < 3) c = mixc(rgb('#c8d4ec'), rgb('#6a7ab0'), ly / 3);
+          return c;
+        }
+        if (lip && ly < 4) return mul(rgb(P.c ? P.c[1] : '#2a2438'), 0.55 - ly * 0.1);
+        return [6, 4, 10];
+      }
       case T.BRIDGE: {
         const hor = m && m.T(tx, ty - 1) !== T.BRIDGE && m.T(tx, ty + 1) !== T.BRIDGE;
         const a = hor ? lx : ly, b2 = hor ? ly : lx;

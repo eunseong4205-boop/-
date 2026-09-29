@@ -339,6 +339,14 @@
     // 앞머리 그늘: 가닥 바로 아래 이마에 한 줄
     for (let x = 16; x < 49; x++) for (let y = base; y < 44; y++) { const j = y * SZ + x; if (owner[j] >= 0 && owner[j + SZ] < 0 && y + 1 < 44 && sameCol(b, x, y + 1, SK[2])) { b.px(x, y + 1, SK[1]); break; } }
     if (st === 'braid') { for (let k = 0; k < 7; k++) { b.ellipse(14 - k * 0.3, 42 + k * 3, 3.2, 2.1, k % 2 ? H[1] : H[2]); b.px(13 - k * 0.3, 41 + k * 3, H[3]); } b.rect(11, 62, 5, 2, s.ribbon || '#d84a6a'); }
+    // 흰 가닥: 앞머리 한 줄기만 하얗게 (원래 음영 단계를 그대로 옮긴다)
+    if (s.streak) {
+      const W4 = tones(s.streak);
+      for (let y = topY + 3; y < base + 14; y++) {
+        const x0 = Math.round(cx - 9 + (y - topY) * 0.22);
+        for (let x = x0; x < x0 + 3; x++) { for (let k = 0; k < 5; k++) if (sameCol(b, x, y, H[k])) { b.px(x, y, W4[Math.min(4, k + 1)]); break; } }
+      }
+    }
     if (s.ahoge) { b.line(cx + 1, topY + 1, cx + 4, topY - 5, H[2]); b.line(cx + 4, topY - 5, cx + 8, topY - 2, H[2]); b.px(cx + 3, topY - 3, H[3]); }
     if (s.ribbon && st !== 'braid' && !s.hat) { const rc = tones(s.ribbon); b.ellipse(45, 14 + oy, 4, 3, rc[2]); b.ellipse(52, 13 + oy, 4, 3, rc[2]); b.rect(47, 12 + oy, 3, 4, rc[1]); b.px(44, 13 + oy, rc[3]); b.px(51, 12 + oy, rc[3]); }
   }

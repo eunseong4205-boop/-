@@ -388,6 +388,7 @@
         g.fillStyle = mark === '!' ? '#ffcc4a' : mark === '?' ? '#8ad8ff' : '#ffffff';
         if (mark === '!') { g.fillRect(x - 1, y, 3, 5); g.fillRect(x - 1, y + 6, 3, 1); }
         else if (mark === '?') { g.fillRect(x - 1, y, 3, 1); g.fillRect(x + 1, y + 1, 1, 2); g.fillRect(x, y + 3, 1, 2); g.fillRect(x, y + 6, 1, 1); }
+        else if (mark === '♪') { g.fillStyle = '#140c1c'; g.fillRect(x - 3, y - 1, 7, 9); g.fillStyle = '#ff9ad8'; g.fillRect(x + 1, y, 1, 5); g.fillRect(x + 2, y, 1, 1); g.fillRect(x + 3, y + 1, 1, 1); g.fillRect(x - 1, y + 4, 3, 2); g.fillStyle = '#ffd8f0'; g.fillRect(x - 1, y + 4, 1, 1); }
         else { g.fillRect(x, y + 1, 1, 5); g.fillRect(x - 1, y + 2, 3, 3); }
       }
       if (this.emote) drawEmote(g, this, cx, cy);

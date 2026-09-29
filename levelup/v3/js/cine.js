@@ -104,7 +104,8 @@
   /** 회상(세피아) · 꿈(푸른빛) · 흑점(흑백) 필터 */
   function filter(kind) {
     const cv = $('cv');
-    cv.style.filter = kind === 'memory' ? 'sepia(.75) contrast(.95) brightness(.95)' : kind === 'dream' ? 'hue-rotate(200deg) saturate(.6) brightness(1.05)' : kind === 'void' ? 'grayscale(1) contrast(1.2)' : kind === 'red' ? 'sepia(1) hue-rotate(-40deg) saturate(3) brightness(.8)' : '';
+    cv.style.filter = kind === 'memory' ? 'sepia(.75) contrast(.95) brightness(.95)' : kind === 'dream' ? 'hue-rotate(200deg) saturate(.6) brightness(1.05)' : kind === 'void' ? 'grayscale(1) contrast(1.2)' : kind === 'red' ? 'sepia(1) hue-rotate(-40deg) saturate(3) brightness(.8)' : kind === 'drain' ? 'saturate(.15) brightness(.9) contrast(1.05)' : kind === 'half' ? 'saturate(.5)' : kind === 'bright' ? 'saturate(1.35) brightness(1.08)' : '';
+    cv.style.transition = 'filter 1.4s ease';
   }
 
   /** 캔버스 위 연출 (지금은 레터박스 중 화면 가장자리 어둡게) */

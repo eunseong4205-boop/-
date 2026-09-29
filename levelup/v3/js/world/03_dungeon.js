@@ -43,6 +43,8 @@
         }
       }
     }
+    // 방 안 사물 (돌 · 덤불 · 수정 …): [이름, x, y]
+    for (const k of keys) { const { x0, y0, R } = m.rooms[k]; for (const [on, ox, oy] of R.objs || []) m.obj[m.i(x0 + ox, y0 + oy)] = G.objs.O[on.toUpperCase()]; }
     // 방 사이 문: 벽에 2칸 구멍
     m.doorways = [];
     for (const d of D.doors || []) {

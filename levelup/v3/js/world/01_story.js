@@ -11,7 +11,7 @@
     const look = girl
       ? { gender: 'girl', hair: 'pony', hc: '#6a4630', eye: '#3aa86a', eyeBig: true, top: 'tunic', tc: '#3a9a4a', trim: '#f0e6c8', bottom: 'skirt', bc: '#4a5a3a', boots: '#5a3a22', acc: ['scarf'], scarfC: '#f0e6c8', ribbon: '#f0e6c8' }
       : { gender: 'boy', hair: 'messy', hc: '#6a4630', eye: '#3aa86a', top: 'tunic', tc: '#3a9a4a', trim: '#f0e6c8', bottom: 'pants', bc: '#4a5a3a', boots: '#5a3a22', acc: ['scarf'], scarfC: '#f0e6c8', ahoge: true };
-    if (f.white_hair) look.hc = girl ? '#8a6a58' : '#8a6a58';
+    if (f.white_hair) look.streak = '#f4f0f8';
     if (f.hero_share) { look.tc = '#4ab85a'; }
     if (s.equip && s.equip.armor === 'ar_knight') { look.top = 'armor'; look.tc = '#e8eef8'; look.trim = '#8ab8e8'; }
     if (s.equip && s.equip.armor === 'ar_heat') { look.tc = '#c85a3a'; look.trim = '#ffd84a'; }

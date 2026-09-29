@@ -299,6 +299,8 @@
       else for (let k = 0; k < sideLen + girlBonus; k++) { const y = t + 7 + k; b.px(12, y, H[2]); b.px(13, y, H[1]); }
     }
     if (s.ahoge) { b.px(12, t - 1, H[2]); b.px(13, t - 2, H[2]); b.px(14, t - 3, H[3]); }
+    // 흰빛이 깨어난 뒤: 앞머리 한 가닥이 하얗다
+    if (s.streak) { const sx = dir === 'left' ? 6 : 8; for (let y = t + 1; y <= t + 7; y++) { b.px(sx + (y > t + 4 ? 1 : 0), y, y === t + 7 ? '#c8c4d8' : s.streak); } b.px(sx + 1, t + 2, '#ffffff'); }
   }
   function backHairTop(b, s, t, C) {
     const H = C.H;
