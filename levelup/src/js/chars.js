@@ -87,7 +87,7 @@
     bio: [['감자밭을 지키는 농부. 두더지와 27년째 전쟁 중이다. 전적은 3승 1,204패.']],
   });
   ch('hunjang', {
-    name: '새싹 서당 훈장님', title: '마을의 역사 선생님', color: '#e0e0b0', voice: 0.7,
+    name: '서당 훈장 오르웬', title: '마을의 역사 선생님', color: '#e0e0b0', voice: 0.7,
     look: { hair: 'bald', hc: '#e8e8e0', top: '#e8e0c8', bottom: '#5a5a6a' },
     face: { hair: 'topknot', hc: '#e8e8e0', top: '#e8e0c8', acc: ['longbeard', 'wrinkle'], eyes: 'narrow' },
     bio: [
@@ -96,13 +96,13 @@
     ],
   });
   ch('slowpoke', {
-    name: '느림보 영감', title: '연못 낚시꾼', color: '#a8d8e8', voice: 0.65,
+    name: '엘름 영감', title: '연못 낚시꾼', color: '#a8d8e8', voice: 0.65,
     look: { hair: 'cap', hc: '#9a9a9a', top: '#5a7a9a', bottom: '#4a4a5a', acc: '#c8b890' },
     face: { hair: 'cap', hc: '#9a9a9a', top: '#5a7a9a', ac: '#c8b890', eyes: 'sleepy', acc: ['beard', 'wrinkle'] },
     bio: [['40년째 같은 자리에서 낚시를 한다. 한 번도 물고기를 잡은 적이 없다. 잡을 생각도 없다.']],
   });
   ch('clerk_g', {
-    name: '심사관 또박', title: '그린 마을 등급소', color: '#d8d8ff', voice: 1.05,
+    name: '심사관 테르센', title: '그린 마을 등급소', color: '#d8d8ff', voice: 1.05,
     look: { hair: 'short', hc: '#2a2a3a', top: '#3a4a7a', bottom: '#2a2a3a' },
     face: { hair: 'slick', hc: '#2a2a3a', top: '#3a4a7a', acc: ['glasses'], mouth: 'flat', collar: '#ffffff' },
     bio: [['또박또박 말하고 또박또박 도장을 찍는다. 등급 심사관 시험에 일곱 번 떨어지고 여덟 번째에 붙었다.']],
@@ -153,13 +153,13 @@
     ],
   });
   ch('ddeok', {
-    name: '떡볶이 할매', title: '화산 떡볶이 원조', color: '#ff8a8a', voice: 0.78,
+    name: '마그다 할매', title: '화산 떡볶이 원조', color: '#ff8a8a', voice: 0.78,
     look: { hair: 'bun', hc: '#e8e0e0', top: '#c83a3a', bottom: '#4a3a3a' },
     face: { hair: 'bun', hc: '#e8e0e0', top: '#c83a3a', acc: ['wrinkle'], eyes: 'narrow', mouth: 'smirk' },
     bio: [['화산 떡볶이 원조집 할머니. 「맵다」고 하면 한 국자 더 준다. 「안 맵다」고 하면 두 국자 더 준다.']],
   });
   ch('gokgwang', {
-    name: '광부 대장 곡괭이', title: '황금 광산 전 광부 대장', color: '#ffd870', voice: 0.72,
+    name: '광부 대장 도르간', title: '황금 광산 전 광부 대장', color: '#ffd870', voice: 0.72,
     look: { hair: 'helmet', hc: '#3a2a1a', top: '#6a5a3a', bottom: '#3a3a3a', acc: '#ffd84a' },
     face: { hair: 'helmet', hc: '#3a2a1a', top: '#6a5a3a', ac: '#e8c040', acc: ['beard'], eyes: 'dot' },
     bio: [
@@ -168,7 +168,7 @@
     ],
   });
   ch('clerk_r', {
-    name: '심사관 불똥', title: '레드 마을 등급소', color: '#ffb8a8', voice: 1.1,
+    name: '심사관 이그니', title: '레드 마을 등급소', color: '#ffb8a8', voice: 1.1,
     look: { hair: 'short', hc: '#8a2a1a', top: '#8a3a3a', bottom: '#2a2a2a' },
     face: { hair: 'side', hc: '#8a2a1a', top: '#8a3a3a', mouth: 'open', eyes: 'dot', collar: '#ffffff' },
     bio: [['성격이 급하다. 서류를 다 읽기 전에 도장부터 찍는다. 다행히 늘 맞는 서류다.']],
@@ -215,7 +215,7 @@
     ],
   });
   ch('jjanmul', {
-    name: '짠물 영감', title: '블루 항구의 늙은 어부', color: '#a8c8e8', voice: 0.7,
+    name: '노르드 영감', title: '블루 항구의 늙은 어부', color: '#a8c8e8', voice: 0.7,
     look: { hair: 'cap', hc: '#e8e8e8', top: '#3a5a7a', bottom: '#2a3a4a', acc: '#e8e0c8' },
     face: { hair: 'cap', hc: '#e8e8e8', top: '#3a5a7a', ac: '#e8e0c8', acc: ['beard', 'wrinkle'], eyes: 'narrow', mouth: 'smirk' },
     bio: [['자기가 고래를 세 번 삼켰다고 주장한다. 고래가 아니라 자기가 삼켰다고.']],
@@ -227,7 +227,7 @@
     bio: [['블루와 옐로를 잇는 연락선의 선장. 뱃멀미를 한다. 30년째.']],
   });
   ch('clerk_b', {
-    name: '심사관 물결', title: '블루 마을 등급소', color: '#a8d8ff', voice: 1.0,
+    name: '심사관 마린', title: '블루 마을 등급소', color: '#a8d8ff', voice: 1.0,
     look: { hair: 'long', hc: '#4a6a9a', top: '#2a5a8a', bottom: '#2a2a3a' },
     face: { hair: 'long', hc: '#4a6a9a', top: '#2a5a8a', eyes: 'narrow', mouth: 'smile', collar: '#ffffff' },
     bio: [['말끝을 늘 길게 늘인다아. 심사도 기일게 한다아.']],
@@ -268,7 +268,7 @@
     bio: [['사막을 서른 번 건넌 대상단장. 별을 보고 길을 찾는다. 사람도 별로 비유한다.']],
   });
   ch('clerk_y', {
-    name: '심사관 금전', title: '옐로 마을 등급소', color: '#ffe8a8', voice: 1.05,
+    name: '심사관 오렐', title: '옐로 마을 등급소', color: '#ffe8a8', voice: 1.05,
     look: { hair: 'short', hc: '#6a4a1a', top: '#c8a040', bottom: '#3a2a1a' },
     face: { hair: 'slick', hc: '#6a4a1a', top: '#c8a040', mouth: 'smile', eyes: 'narrow', collar: '#ffffff', acc: ['monocle'] },
     bio: [['심사비 영수증을 세 장씩 끊어 준다. 한 장은 골디에게, 한 장은 본인에게, 한 장은 액자에.']],
@@ -298,7 +298,7 @@
     bio: [['앞을 보지 못한다. 대신 거울 연못에 비친 것만은 누구보다 잘 본다. 「눈이 보는 건 겉이고, 물이 보는 건 속이다.」']],
   });
   ch('clerk_p', {
-    name: '심사관 보랏빛', title: '퍼플 마을 등급소', color: '#e0c8ff', voice: 1.0,
+    name: '심사관 비올레', title: '퍼플 마을 등급소', color: '#e0c8ff', voice: 1.0,
     look: { hair: 'long', hc: '#4a2a6a', top: '#6a4a9a', bottom: '#2a2a3a' },
     face: { hair: 'long', hc: '#4a2a6a', top: '#6a4a9a', eyes: 'sleepy', mouth: 'flat', collar: '#ffffff' },
     bio: [['심사 결과를 시로 읊는다. 불합격도 시로 읊는다. 그래서 더 아프다.']],
@@ -327,7 +327,7 @@
     bio: [['구름 바다를 헤엄치는 고래. 등 위에 작은 섬이 있다. 말이 아주 느리다. 한 문장에 반나절.']],
   });
   ch('clerk_rb', {
-    name: '심사관 일곱빛', title: '무지개 마을 등급소', color: '#ffe0ff', voice: 1.15,
+    name: '심사관 이리델', title: '무지개 마을 등급소', color: '#ffe0ff', voice: 1.15,
     look: { hair: 'pony', hc: '#ff7a7a', top: '#7ab8ff', bottom: '#ffd84a' },
     face: { hair: 'pony', hc: '#ff7a7a', top: '#7ab8ff', eyes: 'big', mouth: 'open', collar: '#ffffff', blush: true },
     bio: [['도장을 일곱 가지 색으로 찍는다. 기분에 따라.']],
@@ -360,7 +360,7 @@
     bio: [['화이트 마을의 아이. 눈싸움에서 한 번도 진 적이 없다. 상대가 봐주기 때문이라는 걸 모른다.']],
   });
   ch('clerk_w', {
-    name: '심사관 고요', title: '화이트 마을 등급소', color: '#f0f8ff', voice: 0.9,
+    name: '심사관 실렌', title: '화이트 마을 등급소', color: '#f0f8ff', voice: 0.9,
     look: { hair: 'short', hc: '#d8d8e0', top: '#c8d6ea', bottom: '#8a9aae' },
     face: { hair: 'short', hc: '#d8d8e0', top: '#c8d6ea', eyes: 'closed', mouth: 'flat', collar: '#ffffff' },
     bio: [['속삭이듯 말한다. 심사 중에 기침을 하면 처음부터 다시 한다.']],
@@ -388,13 +388,13 @@
     ],
   });
   ch('rusty', {
-    name: '녹슬이', title: '고철 시장 상인', color: '#d8a878', voice: 0.95,
+    name: '러스크', title: '고철 시장 상인', color: '#d8a878', voice: 0.95,
     look: { hair: 'cap', hc: '#4a3a2a', top: '#8a5a3a', bottom: '#3a3a3a', acc: '#6a6a70' },
     face: { hair: 'cap', hc: '#4a3a2a', top: '#8a5a3a', ac: '#6a6a70', acc: ['freckle'], eyes: 'dot', mouth: 'open' },
     bio: [['고철을 판다. 고철을 산다. 고철로 만든 의자에 앉아 고철로 만든 컵으로 차를 마신다.']],
   });
   ch('clerk_gr', {
-    name: '심사관 톱니', title: '그레이 마을 등급소', color: '#d8dce0', voice: 0.9,
+    name: '심사관 코그', title: '그레이 마을 등급소', color: '#d8dce0', voice: 0.9,
     look: { hair: 'short', hc: '#5a5a5a', top: '#6a6a70', bottom: '#3a3a3a' },
     face: { hair: 'slick', hc: '#5a5a5a', top: '#6a6a70', acc: ['goggles'], ac: '#4a4a50', eyes: 'dot', mouth: 'flat' },
     bio: [['반은 기계다. 어느 반인지는 본인도 헷갈린다.']],
@@ -427,7 +427,7 @@
     bio: [['블랙 마을 등불 거리의 등불을 켜는 노인. 해가 뜨지 않는 마을이라 퇴근을 못 한다.']],
   });
   ch('clerk_bk', {
-    name: '심사관 그늘', title: '블랙 마을 등급소', color: '#c8c0e0', voice: 0.85,
+    name: '심사관 움브라', title: '블랙 마을 등급소', color: '#c8c0e0', voice: 0.85,
     look: { hair: 'hood', hc: '#2a2438', top: '#3a3450', bottom: '#1a1626', acc: '#2a2438' },
     face: { hair: 'hood', hc: '#2a2438', top: '#3a3450', ac: '#2a2438', eyes: 'narrow', mouth: 'flat' },
     bio: [['속삭이면서 심사한다. 결과도 속삭인다. 합격인지 알아듣는 데 5분 걸린다.']],
@@ -451,7 +451,7 @@
     bio: [['피로스 박사의 조수. 과장이 심하다. 폭발이 「조금」 났다고 하면 마을 절반이 날아간 것이다.']],
   });
   ch('clerk_c', {
-    name: '심사관 아무나', title: '알록달록 마을 등급소', color: '#ffe0c8', voice: 1.1,
+    name: '심사관 리베르', title: '알록달록 마을 등급소', color: '#ffe0c8', voice: 1.1,
     look: { hair: 'messy', hc: '#5ae8a8', top: '#ff8a5a', bottom: '#5a5ae8' },
     face: { hair: 'messy', hc: '#5ae8a8', top: '#ff8a5a', eyes: 'dot', mouth: 'open', collar: '#ffffff' },
     bio: [['알록달록 마을은 등급 따위 신경 안 쓴다. 그래서 심사관도 아무나 한다. 오늘은 이 사람이다.']],

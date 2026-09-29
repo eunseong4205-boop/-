@@ -9,7 +9,7 @@
 
   function newState(name, gender) {
     return {
-      v: VERSION, name: name || '하늘', gender: gender || 'boy',
+      v: VERSION, name: name || '아린', gender: gender || 'boy',
       map: 'home', x: 5, y: 5, dir: 'down',
       lv: 1, exp: 0, sp: 0, st: { str: 0, vit: 0, agi: 0, int: 0, luk: 0 }, auto: true, ratio: Object.assign({}, B.ratio),
       hp: 110, gold: 0,

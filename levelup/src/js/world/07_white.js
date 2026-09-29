@@ -319,23 +319,23 @@
     c.music('sad');
     c.spawn({ id: 'hayan', x: 9, y: 11, dir: 'up', look: { hair: 'pony', hc: '#f4f4f8', top: '#e8e0d0', bottom: '#c8c0b0', skin: '#f4f0ec' } });
     await c.narr(['대성당 문이 벌컥 열렸다. 수녀 둘이 들것을 들고 뛰어 들어왔다.', '들것 위의 아이는 대여섯 살쯤. 머리칼은 눈처럼 하얗고, 손가락 끝이 유리처럼 비친다. 숨소리가 거의 들리지 않는다.']);
-    await c.say('nun', ['성녀님! 설원길에서 쓰러진 아이예요. 이름은 하얀이래요. 엄마가 업고 사흘을 걸었대요.', '…엄마는 대성당 계단에서 쓰러졌어요.']);
+    await c.say('nun', ['성녀님! 설원길에서 쓰러진 아이예요. 이름은 에이린이래요. 엄마가 업고 사흘을 걸었대요.', '…엄마는 대성당 계단에서 쓰러졌어요.']);
     await c.say('lumie:sad', ['……마지막 단계네요. 몸이 투명해지기 시작했어요.', '이 단계는 손을 잡고 나누는 걸로는 안 돼요. 누군가의 빛이 통째로 들어가야 해요. 그 사람의 빛이 바래요.']);
     await c.say('lumie', ['제가 할게요. 16년 동안 해 온 일이에요. 머리칼이 조금 더 하얘질 뿐이에요.', '…조금 더.']);
     await c.say('edel', '성녀님. 지난달에도 그러셨소. 지난주에도. 이번엔 머리칼이 아니라 숨이 하얘질 거요.');
     const opts = [['own', '내 빛을 나누겠어요.'], ['lumie', '…성녀님께 맡긴다.']];
     if (E.has(c.s, 'snow_herb')) opts.unshift(['herb', '[y]얼음 신전의 눈꽃 약초를 달인다[/]']);
-    const k = await c.ask('하얀의 마지막 숨', opts.map((o) => o[1]));
+    const k = await c.ask('에이린의 마지막 숨', opts.map((o) => o[1]));
     const id = opts[k][0];
     if (id === 'herb') {
       c.take('snow_herb');
       await c.narr(['수녀가 약초를 달였다. 김이 오르자 대성당 안에 겨울 아침 냄새가 퍼졌다.', '한 모금. 아이의 손가락 끝에서 투명함이 물러났다. 두 모금. 하얀 머리칼 끝이 연한 갈색으로 물들었다.']);
       await c.say('lumie:surprise', ['……약초로? 빛을 쓰지 않고?', '얼음 신전에 16년 동안 다녔는데… 저는 한 번도 그 틈을 들여다보지 않았어요. 기도만 했어요.']);
       await c.say('lumie:sad', '세린. 당신은 희생 말고 다른 걸 심어 두고 갔군요. 누가 찾아 주길 바라면서.');
-      c.decide('patient', 'herb', '세린이 남긴 눈꽃 약초로 하얀을 살렸다');
+      c.decide('patient', 'herb', '세린이 남긴 눈꽃 약초로 에이린을 살렸다');
       c.bond('lumie', 2);
     } else if (id === 'own') {
-      await c.sys('하얀의 손을 두 손으로 감싸고 [y]렙업 버튼을 40번[/] 누르자. 내 빛이 통째로 흘러간다.');
+      await c.sys('에이린의 손을 두 손으로 감싸고 [y]렙업 버튼을 40번[/] 누르자. 내 빛이 통째로 흘러간다.');
       await c.waitClick(40, (n) => { if (n % 8 === 0) { c.flash('#ffffff', 220); c.light(12); } });
       c.flash('#ffffff', 1400);
       await c.narr(['손바닥에서 빛이 빠져나갔다. 강물처럼. 팔이 차가워지고, 시야 가장자리가 하얗게 바랬다.', '아이가 숨을 크게 들이쉬었다. 그리고 울었다. 살아 있는 아이의 우는 소리였다.']);
@@ -344,16 +344,16 @@
       c.set('hero_streak');
       await c.sys('[r]빛바램의 여운[/] — 10분 동안 경험치 -30%. 앞머리 한 가닥은 돌아오지 않았다.');
       await c.say('lumie:sad', ['……당신도 결국 스스로를 내주는군요. 세린처럼.', '…아니에요. 세린이랑은 달라요. 당신은 나눠 준 뒤에도 서 있잖아요. 가진 걸 전부가 아니라, 필요한 만큼만.']);
-      c.decide('patient', 'own', '내 빛을 통째로 나누어 하얀을 살렸다');
+      c.decide('patient', 'own', '내 빛을 통째로 나누어 에이린을 살렸다');
       c.bond('lumie', 1);
     } else {
       await c.narr(['루미에가 아이의 가슴에 손을 얹었다. 금빛이었을 머리칼이 뿌리부터 끝까지, 눈 한 번 깜빡이는 사이에 하얘졌다.', '아이는 살았다. 루미에는 그 자리에 무릎을 꿇은 채 한참 일어나지 못했다. 에델이 투구 속에서 무언가를 삼켰다.']);
       await c.say('lumie', ['…괜찮아요. 이게 제 일이에요. 한 사람이 모두를 위해 빛나는 것.', '당신이 맡겨 줘서… 기뻐요. 정말로.']);
       await c.say('edel', '……');
-      c.decide('patient', 'lumie', '하얀의 목숨을 성녀 루미에에게 맡겼다');
+      c.decide('patient', 'lumie', '에이린의 목숨을 성녀 루미에에게 맡겼다');
       c.bond('edel', -1);
     }
-    await c.say('nun', '…하얀이 웃어요. 엄마를 찾아요. 계단에서 쓰러진 엄마도 깨어났대요.');
+    await c.say('nun', '…에이린이 웃어요. 엄마를 찾아요. 계단에서 쓰러진 엄마도 깨어났대요.');
     c.despawn('hayan');
     c.music('white');
   }
@@ -361,7 +361,7 @@
     const s = G.state;
     if (id === 'cathedral' && s.quests.m7 === 3 && !s.flags.patient_arrived && !G.script.running) G.script.run(patientChild);
   });
-  G.chars.hayan = Object.assign({}, G.chars.kid || {}, { id: 'hayan', name: '하얀', title: '설원에서 온 아이' });
+  G.chars.hayan = Object.assign({}, G.chars.kid || {}, { id: 'hayan', name: '에이린', title: '설원에서 온 아이' });
 
   // 새벽단을 고발했다면: 붙잡힌 레아가 성기사단 숙소에
   W.addNpcs('knight_hall', [{ id: 'lea', x: 2, y: 4, dir: 'right', cond: (s) => s.flags.d_festival === 'warn' && !s.flags.m_white_edel, talk: async (c) => {
@@ -388,7 +388,7 @@
     W.prop('hole', 30, 25, '눈밭 한가운데 얼음 구멍. 아이들이 뚫어 놓은 모양이다. 물이 검푸르다.', { pool: 'white' }),
   ]);
   W.addObjs('snowfield', [W.prop('fire', 17, 5, '설원 순례자들의 모닥불 자리. 돌 위에 누군가 두고 간 털장갑 한 짝.'), W.prop('hole', 31, 16, '얼음 구멍. 설원을 건너는 순례자들이 여기서 빙어를 낚아 끼니를 때운다.', { pool: 'white' })]);
-  W.addObjs('cathedral', [W.look(9, 13, (s) => (s.flags.d_patient ? '하얀이 누웠던 들것 자국이 바닥에 남아 있다. 수녀가 그 자리를 닦지 않고 두었다.' : '대성당 바닥. 수백 명이 무릎 꿇은 자리가 반들반들하게 닳았다.'), { solid: false })]);
+  W.addObjs('cathedral', [W.look(9, 13, (s) => (s.flags.d_patient ? '에이린이 누웠던 들것 자국이 바닥에 남아 있다. 수녀가 그 자리를 닦지 않고 두었다.' : '대성당 바닥. 수백 명이 무릎 꿇은 자리가 반들반들하게 닳았다.'), { solid: false })]);
   W.barks('white', { snowflake: ['덤벼!', '한 번도 안 졌어!'], kid: ['눈싸움!'], nun: ['쉿…', '기도해요.'], guard: ['질서를 지키오.', '펭귄은 곤란하오.'] });
   W.barks('cathedral', { lumie: (s) => (s.flags.m_white_lumie ? ['…따뜻하네요.'] : ['여신이여…', '괜찮아요.']), edel: ['……'], nun: ['쉿.'], pat1: ['…춥다.'], pat3: ['…빛이…'] });
 
@@ -409,7 +409,7 @@
       const d = c.s.flags.d_patient;
       if (d === 'own') await c.say('dotori', ['앞머리. 하얀 거. 아파?', '…안 아프다고 하지 마. 너 아플 때 코 찡긋하는 거 알아.']);
       else if (d === 'lumie') await c.say('dotori:sad', ['성녀님 머리 봤어? 한순간에 하얘졌어.', '성녀님은 기쁘다고 했어. 근데 에델 아저씨… 아니, 언니는 투구 속에서 울었을 거야.']);
-      else await c.say('dotori:happy', ['엄마가 16년 전에 심어 둔 꽃이 하얀이를 살렸어.', '엄마는 희생만 한 게 아니었어. 이런 것도 했어. 아무도 모르게.']);
+      else await c.say('dotori:happy', ['엄마가 16년 전에 심어 둔 꽃이 에이린이를 살렸어.', '엄마는 희생만 한 게 아니었어. 이런 것도 했어. 아무도 모르게.']);
     } },
   );
   /* 쉬는 밤 (7장) */

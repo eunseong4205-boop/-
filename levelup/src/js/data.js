@@ -179,6 +179,7 @@
     ['x8', '그림자 브로치', { crit: 0.15, critDmg: 1 }, -1, '녹턴의 브로치. 치명타 +15%, 치명 피해 +100%'],
     ['x9', '별의 심장', { exp: 1, gold: 1, crit: 0.1 }, -1, '스텔라가 준 부품. 경험치·골드 +100%, 치명타 +10%'],
     ['x10', '토리아의 깃털', { exp: 0.2, gold: 0.2, crit: 0.05 }, -1, '토리아가 처음 날던 날 빠진 털. 모든 것 조금씩 +'],
+    ['x11', '은빛 왕관', { exp: 0.8, crit: 0.05 }, -1, '빈 왕이 쓰던 왕관. 경험치 +80%, 치명타 +5%. 쓰고 있으면 이상하게 배가 고프다.'],
   ];
   ACCS.forEach(([id, n, fx, reg, d]) => item(id, { name: n, type: 'acc', fx, price: reg >= 0 ? price(reg, 650, 0.25) : 0, desc: d }));
   const POTIONS = [['빨간 약초', 0.3], ['불꽃 물약', 0.35], ['파도 물약', 0.4], ['선인장 즙', 0.45], ['달빛 이슬', 0.5], ['무지개 사탕', 0.55],
@@ -318,6 +319,7 @@
     ['scraprat', '고철 쥐', 'beast', '#7a6a5a', '#4a4038', '#c8c8c8', 7, 0.55, 'n', '나사를 갉아 먹는 쥐. 이빨이 드라이버다.', ['m13', 0.3]],
     ['oilslime', '기름 슬라임', 'blob', '#2a2a30', '#141418', '#8a6aff', 7, 0.7, 'n', '폐공장의 기름이 뭉쳤다. 무지갯빛 막이 반짝인다.', ['m13', 0.3]],
     ['watcheye', '감시의 눈', 'eye', '#c8c8d0', '#6a6a72', '#ff3a3a', 7, 0.85, 'n', '잿빛 제국이 남긴 감시 장치. 아직도 누군가에게 보고하고 있다.', ['m13', 0.3]],
+    ['hollowking', '빈 왕', 'humanoid', '#d8dce8', '#8a90a0', '#c8a8ff', 7, 1, 'x', '612년의 은빛 왕. 대광맥을 마시고 흰빛이 되려 했다. 왕관 속이 비어 있다. 「……배……고프……다……」', null],
     ['voltmech', '볼트 MK-7', 'machine', '#8a96aa', '#4a5468', '#ffd84a', 7, 1, 'x', '사천왕 회색의 자리 볼트가 탄 거대 기계. 「쓸데없는 말은 연료 낭비다.」', null],
     // 블랙
     ['shadowwolf', '그림자 늑대', 'beast', '#2a2440', '#141026', '#ff3a5a', 8, 0.1, 'n', '달이 없는 밤에만 그림자가 생긴다. 이 숲은 늘 달이 없다.', ['m14', 0.3]],
@@ -353,6 +355,7 @@
   // 특별 보정: 이야기 보스
   MON.golem0.hp = Math.round(MON.golem0.hp * 0.35); MON.golem0.atk = Math.round(MON.golem0.atk * 0.5);
   MON.rud1.hp = Math.round(MON.rud1.hp * 0.5);
+  MON.hollowking.hp = Math.round(MON.hollowking.hp * 1.6); MON.hollowking.atk = Math.round(MON.hollowking.atk * 1.15);   // 숨은 강적: 대광맥 밑바닥
   MON.kairon.hp = Math.round(MON.kairon.hp * 1.7); MON.blacksun.hp = Math.round(MON.blacksun.hp * 2.6); MON.blacksun.atk = Math.round(MON.blacksun.atk * 0.8);   // 흑점은 대륙의 빛(지원)과 함께 싸운다
 
   /* ───────── 구슬 ───────── */

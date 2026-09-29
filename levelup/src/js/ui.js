@@ -145,7 +145,7 @@
     });
     return out + (open ? '</span>' : '');
   }
-  function nameSub(text) { return U.nameSub(text, (G.state && G.state.name) || '하늘'); }
+  function nameSub(text) { return U.nameSub(text, (G.state && G.state.name) || '아린'); }
   function segments(text) {
     const segs = []; let cls = '';
     const s = nameSub(text);
@@ -708,7 +708,7 @@
             (hasSave ? '<button class="t-btn pri" data-t="cont">이어하기</button>' : '') + '<button class="t-btn' + (hasSave ? '' : ' pri') + '" data-t="new">처음부터</button></div>' +
             '<div class="t-foot">십자키로 걷고, 렙업! 버튼으로 수련하고, A로 말을 건다</div>';
         } else {
-          el.innerHTML = '<canvas class="bg" id="tcv"></canvas><div class="t-logo" style="font-size:22px">너의 이름은?</div><div class="t-field"><label for="nm">이름 (한글 6자까지)</label><input id="nm" maxlength="6" value="하늘" autocomplete="off"></div>' +
+          el.innerHTML = '<canvas class="bg" id="tcv"></canvas><div class="t-logo" style="font-size:22px">너의 이름은?</div><div class="t-field"><label for="nm">이름 (한글 6자까지)</label><input id="nm" maxlength="6" value="아린" autocomplete="off"></div>' +
             '<div class="t-field"><span>모습</span><div class="t-gender"><button data-g="boy"' + (gender === 'boy' ? ' class="on"' : '') + '><canvas data-hero="boy" width="18" height="18"></canvas>소년</button><button data-g="girl"' + (gender === 'girl' ? ' class="on"' : '') + '><canvas data-hero="girl" width="18" height="18"></canvas>소녀</button></div></div>' +
             '<div class="t-menu"><button class="t-btn pri" data-t="start">모험 시작</button><button class="t-btn" data-t="back">돌아가기</button></div>' +
             (hasSave ? '<p class="t-sub" style="color:#ff8a8a">처음부터 시작하면 지금 저장된 모험은 지워진다.</p>' : '');
@@ -729,7 +729,7 @@
         if (t.dataset.t === 'back') { stage = 'menu'; draw(); }
         if (t.dataset.t === 'start') {
           let name = (document.getElementById('nm').value || '').trim().replace(/[<>{}\[\]]/g, '').slice(0, 6);
-          if (!name) name = '하늘';
+          if (!name) name = '아린';
           el.hidden = true; res({ mode: 'new', name, gender });
         }
       };

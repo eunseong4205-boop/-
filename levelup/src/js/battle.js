@@ -48,6 +48,7 @@
     herald: { strike: 2, drain: 4, hex: 2, heavy: 2 },
     kairon: { strike: 3, heavy: 5, shield: 2, drain: 1 },
     blacksun: { strike: 2, drain: 4, hex: 3, heavy: 3, shield: 1 },
+    hollowking: { strike: 2, drain: 5, hex: 2, heavy: 2, shield: 2 },
   };
   const GUARD_WIN = 0.7, PERFECT = 0.22, GUARD_CD = 1.1;
   const potMax = () => B.opt.potMax || D.B.potMax;

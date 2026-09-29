@@ -737,6 +737,7 @@ input { font: inherit; }
     ['x8', '그림자 브로치', { crit: 0.15, critDmg: 1 }, -1, '녹턴의 브로치. 치명타 +15%, 치명 피해 +100%'],
     ['x9', '별의 심장', { exp: 1, gold: 1, crit: 0.1 }, -1, '스텔라가 준 부품. 경험치·골드 +100%, 치명타 +10%'],
     ['x10', '토리아의 깃털', { exp: 0.2, gold: 0.2, crit: 0.05 }, -1, '토리아가 처음 날던 날 빠진 털. 모든 것 조금씩 +'],
+    ['x11', '은빛 왕관', { exp: 0.8, crit: 0.05 }, -1, '빈 왕이 쓰던 왕관. 경험치 +80%, 치명타 +5%. 쓰고 있으면 이상하게 배가 고프다.'],
   ];
   ACCS.forEach(([id, n, fx, reg, d]) => item(id, { name: n, type: 'acc', fx, price: reg >= 0 ? price(reg, 650, 0.25) : 0, desc: d }));
   const POTIONS = [['빨간 약초', 0.3], ['불꽃 물약', 0.35], ['파도 물약', 0.4], ['선인장 즙', 0.45], ['달빛 이슬', 0.5], ['무지개 사탕', 0.55],
@@ -876,6 +877,7 @@ input { font: inherit; }
     ['scraprat', '고철 쥐', 'beast', '#7a6a5a', '#4a4038', '#c8c8c8', 7, 0.55, 'n', '나사를 갉아 먹는 쥐. 이빨이 드라이버다.', ['m13', 0.3]],
     ['oilslime', '기름 슬라임', 'blob', '#2a2a30', '#141418', '#8a6aff', 7, 0.7, 'n', '폐공장의 기름이 뭉쳤다. 무지갯빛 막이 반짝인다.', ['m13', 0.3]],
     ['watcheye', '감시의 눈', 'eye', '#c8c8d0', '#6a6a72', '#ff3a3a', 7, 0.85, 'n', '잿빛 제국이 남긴 감시 장치. 아직도 누군가에게 보고하고 있다.', ['m13', 0.3]],
+    ['hollowking', '빈 왕', 'humanoid', '#d8dce8', '#8a90a0', '#c8a8ff', 7, 1, 'x', '612년의 은빛 왕. 대광맥을 마시고 흰빛이 되려 했다. 왕관 속이 비어 있다. 「……배……고프……다……」', null],
     ['voltmech', '볼트 MK-7', 'machine', '#8a96aa', '#4a5468', '#ffd84a', 7, 1, 'x', '사천왕 회색의 자리 볼트가 탄 거대 기계. 「쓸데없는 말은 연료 낭비다.」', null],
     // 블랙
     ['shadowwolf', '그림자 늑대', 'beast', '#2a2440', '#141026', '#ff3a5a', 8, 0.1, 'n', '달이 없는 밤에만 그림자가 생긴다. 이 숲은 늘 달이 없다.', ['m14', 0.3]],
@@ -911,6 +913,7 @@ input { font: inherit; }
   // 특별 보정: 이야기 보스
   MON.golem0.hp = Math.round(MON.golem0.hp * 0.35); MON.golem0.atk = Math.round(MON.golem0.atk * 0.5);
   MON.rud1.hp = Math.round(MON.rud1.hp * 0.5);
+  MON.hollowking.hp = Math.round(MON.hollowking.hp * 1.6); MON.hollowking.atk = Math.round(MON.hollowking.atk * 1.15);   // 숨은 강적: 대광맥 밑바닥
   MON.kairon.hp = Math.round(MON.kairon.hp * 1.7); MON.blacksun.hp = Math.round(MON.blacksun.hp * 2.6); MON.blacksun.atk = Math.round(MON.blacksun.atk * 0.8);   // 흑점은 대륙의 빛(지원)과 함께 싸운다
 
   /* ───────── 구슬 ───────── */
@@ -973,7 +976,7 @@ input { font: inherit; }
 
   function newState(name, gender) {
     return {
-      v: VERSION, name: name || '하늘', gender: gender || 'boy',
+      v: VERSION, name: name || '아린', gender: gender || 'boy',
       map: 'home', x: 5, y: 5, dir: 'down',
       lv: 1, exp: 0, sp: 0, st: { str: 0, vit: 0, agi: 0, int: 0, luk: 0 }, auto: true, ratio: Object.assign({}, B.ratio),
       hp: 110, gold: 0,
@@ -2282,7 +2285,7 @@ input { font: inherit; }
     bio: [['감자밭을 지키는 농부. 두더지와 27년째 전쟁 중이다. 전적은 3승 1,204패.']],
   });
   ch('hunjang', {
-    name: '새싹 서당 훈장님', title: '마을의 역사 선생님', color: '#e0e0b0', voice: 0.7,
+    name: '서당 훈장 오르웬', title: '마을의 역사 선생님', color: '#e0e0b0', voice: 0.7,
     look: { hair: 'bald', hc: '#e8e8e0', top: '#e8e0c8', bottom: '#5a5a6a' },
     face: { hair: 'topknot', hc: '#e8e8e0', top: '#e8e0c8', acc: ['longbeard', 'wrinkle'], eyes: 'narrow' },
     bio: [
@@ -2291,13 +2294,13 @@ input { font: inherit; }
     ],
   });
   ch('slowpoke', {
-    name: '느림보 영감', title: '연못 낚시꾼', color: '#a8d8e8', voice: 0.65,
+    name: '엘름 영감', title: '연못 낚시꾼', color: '#a8d8e8', voice: 0.65,
     look: { hair: 'cap', hc: '#9a9a9a', top: '#5a7a9a', bottom: '#4a4a5a', acc: '#c8b890' },
     face: { hair: 'cap', hc: '#9a9a9a', top: '#5a7a9a', ac: '#c8b890', eyes: 'sleepy', acc: ['beard', 'wrinkle'] },
     bio: [['40년째 같은 자리에서 낚시를 한다. 한 번도 물고기를 잡은 적이 없다. 잡을 생각도 없다.']],
   });
   ch('clerk_g', {
-    name: '심사관 또박', title: '그린 마을 등급소', color: '#d8d8ff', voice: 1.05,
+    name: '심사관 테르센', title: '그린 마을 등급소', color: '#d8d8ff', voice: 1.05,
     look: { hair: 'short', hc: '#2a2a3a', top: '#3a4a7a', bottom: '#2a2a3a' },
     face: { hair: 'slick', hc: '#2a2a3a', top: '#3a4a7a', acc: ['glasses'], mouth: 'flat', collar: '#ffffff' },
     bio: [['또박또박 말하고 또박또박 도장을 찍는다. 등급 심사관 시험에 일곱 번 떨어지고 여덟 번째에 붙었다.']],
@@ -2348,13 +2351,13 @@ input { font: inherit; }
     ],
   });
   ch('ddeok', {
-    name: '떡볶이 할매', title: '화산 떡볶이 원조', color: '#ff8a8a', voice: 0.78,
+    name: '마그다 할매', title: '화산 떡볶이 원조', color: '#ff8a8a', voice: 0.78,
     look: { hair: 'bun', hc: '#e8e0e0', top: '#c83a3a', bottom: '#4a3a3a' },
     face: { hair: 'bun', hc: '#e8e0e0', top: '#c83a3a', acc: ['wrinkle'], eyes: 'narrow', mouth: 'smirk' },
     bio: [['화산 떡볶이 원조집 할머니. 「맵다」고 하면 한 국자 더 준다. 「안 맵다」고 하면 두 국자 더 준다.']],
   });
   ch('gokgwang', {
-    name: '광부 대장 곡괭이', title: '황금 광산 전 광부 대장', color: '#ffd870', voice: 0.72,
+    name: '광부 대장 도르간', title: '황금 광산 전 광부 대장', color: '#ffd870', voice: 0.72,
     look: { hair: 'helmet', hc: '#3a2a1a', top: '#6a5a3a', bottom: '#3a3a3a', acc: '#ffd84a' },
     face: { hair: 'helmet', hc: '#3a2a1a', top: '#6a5a3a', ac: '#e8c040', acc: ['beard'], eyes: 'dot' },
     bio: [
@@ -2363,7 +2366,7 @@ input { font: inherit; }
     ],
   });
   ch('clerk_r', {
-    name: '심사관 불똥', title: '레드 마을 등급소', color: '#ffb8a8', voice: 1.1,
+    name: '심사관 이그니', title: '레드 마을 등급소', color: '#ffb8a8', voice: 1.1,
     look: { hair: 'short', hc: '#8a2a1a', top: '#8a3a3a', bottom: '#2a2a2a' },
     face: { hair: 'side', hc: '#8a2a1a', top: '#8a3a3a', mouth: 'open', eyes: 'dot', collar: '#ffffff' },
     bio: [['성격이 급하다. 서류를 다 읽기 전에 도장부터 찍는다. 다행히 늘 맞는 서류다.']],
@@ -2410,7 +2413,7 @@ input { font: inherit; }
     ],
   });
   ch('jjanmul', {
-    name: '짠물 영감', title: '블루 항구의 늙은 어부', color: '#a8c8e8', voice: 0.7,
+    name: '노르드 영감', title: '블루 항구의 늙은 어부', color: '#a8c8e8', voice: 0.7,
     look: { hair: 'cap', hc: '#e8e8e8', top: '#3a5a7a', bottom: '#2a3a4a', acc: '#e8e0c8' },
     face: { hair: 'cap', hc: '#e8e8e8', top: '#3a5a7a', ac: '#e8e0c8', acc: ['beard', 'wrinkle'], eyes: 'narrow', mouth: 'smirk' },
     bio: [['자기가 고래를 세 번 삼켰다고 주장한다. 고래가 아니라 자기가 삼켰다고.']],
@@ -2422,7 +2425,7 @@ input { font: inherit; }
     bio: [['블루와 옐로를 잇는 연락선의 선장. 뱃멀미를 한다. 30년째.']],
   });
   ch('clerk_b', {
-    name: '심사관 물결', title: '블루 마을 등급소', color: '#a8d8ff', voice: 1.0,
+    name: '심사관 마린', title: '블루 마을 등급소', color: '#a8d8ff', voice: 1.0,
     look: { hair: 'long', hc: '#4a6a9a', top: '#2a5a8a', bottom: '#2a2a3a' },
     face: { hair: 'long', hc: '#4a6a9a', top: '#2a5a8a', eyes: 'narrow', mouth: 'smile', collar: '#ffffff' },
     bio: [['말끝을 늘 길게 늘인다아. 심사도 기일게 한다아.']],
@@ -2463,7 +2466,7 @@ input { font: inherit; }
     bio: [['사막을 서른 번 건넌 대상단장. 별을 보고 길을 찾는다. 사람도 별로 비유한다.']],
   });
   ch('clerk_y', {
-    name: '심사관 금전', title: '옐로 마을 등급소', color: '#ffe8a8', voice: 1.05,
+    name: '심사관 오렐', title: '옐로 마을 등급소', color: '#ffe8a8', voice: 1.05,
     look: { hair: 'short', hc: '#6a4a1a', top: '#c8a040', bottom: '#3a2a1a' },
     face: { hair: 'slick', hc: '#6a4a1a', top: '#c8a040', mouth: 'smile', eyes: 'narrow', collar: '#ffffff', acc: ['monocle'] },
     bio: [['심사비 영수증을 세 장씩 끊어 준다. 한 장은 골디에게, 한 장은 본인에게, 한 장은 액자에.']],
@@ -2493,7 +2496,7 @@ input { font: inherit; }
     bio: [['앞을 보지 못한다. 대신 거울 연못에 비친 것만은 누구보다 잘 본다. 「눈이 보는 건 겉이고, 물이 보는 건 속이다.」']],
   });
   ch('clerk_p', {
-    name: '심사관 보랏빛', title: '퍼플 마을 등급소', color: '#e0c8ff', voice: 1.0,
+    name: '심사관 비올레', title: '퍼플 마을 등급소', color: '#e0c8ff', voice: 1.0,
     look: { hair: 'long', hc: '#4a2a6a', top: '#6a4a9a', bottom: '#2a2a3a' },
     face: { hair: 'long', hc: '#4a2a6a', top: '#6a4a9a', eyes: 'sleepy', mouth: 'flat', collar: '#ffffff' },
     bio: [['심사 결과를 시로 읊는다. 불합격도 시로 읊는다. 그래서 더 아프다.']],
@@ -2522,7 +2525,7 @@ input { font: inherit; }
     bio: [['구름 바다를 헤엄치는 고래. 등 위에 작은 섬이 있다. 말이 아주 느리다. 한 문장에 반나절.']],
   });
   ch('clerk_rb', {
-    name: '심사관 일곱빛', title: '무지개 마을 등급소', color: '#ffe0ff', voice: 1.15,
+    name: '심사관 이리델', title: '무지개 마을 등급소', color: '#ffe0ff', voice: 1.15,
     look: { hair: 'pony', hc: '#ff7a7a', top: '#7ab8ff', bottom: '#ffd84a' },
     face: { hair: 'pony', hc: '#ff7a7a', top: '#7ab8ff', eyes: 'big', mouth: 'open', collar: '#ffffff', blush: true },
     bio: [['도장을 일곱 가지 색으로 찍는다. 기분에 따라.']],
@@ -2555,7 +2558,7 @@ input { font: inherit; }
     bio: [['화이트 마을의 아이. 눈싸움에서 한 번도 진 적이 없다. 상대가 봐주기 때문이라는 걸 모른다.']],
   });
   ch('clerk_w', {
-    name: '심사관 고요', title: '화이트 마을 등급소', color: '#f0f8ff', voice: 0.9,
+    name: '심사관 실렌', title: '화이트 마을 등급소', color: '#f0f8ff', voice: 0.9,
     look: { hair: 'short', hc: '#d8d8e0', top: '#c8d6ea', bottom: '#8a9aae' },
     face: { hair: 'short', hc: '#d8d8e0', top: '#c8d6ea', eyes: 'closed', mouth: 'flat', collar: '#ffffff' },
     bio: [['속삭이듯 말한다. 심사 중에 기침을 하면 처음부터 다시 한다.']],
@@ -2583,13 +2586,13 @@ input { font: inherit; }
     ],
   });
   ch('rusty', {
-    name: '녹슬이', title: '고철 시장 상인', color: '#d8a878', voice: 0.95,
+    name: '러스크', title: '고철 시장 상인', color: '#d8a878', voice: 0.95,
     look: { hair: 'cap', hc: '#4a3a2a', top: '#8a5a3a', bottom: '#3a3a3a', acc: '#6a6a70' },
     face: { hair: 'cap', hc: '#4a3a2a', top: '#8a5a3a', ac: '#6a6a70', acc: ['freckle'], eyes: 'dot', mouth: 'open' },
     bio: [['고철을 판다. 고철을 산다. 고철로 만든 의자에 앉아 고철로 만든 컵으로 차를 마신다.']],
   });
   ch('clerk_gr', {
-    name: '심사관 톱니', title: '그레이 마을 등급소', color: '#d8dce0', voice: 0.9,
+    name: '심사관 코그', title: '그레이 마을 등급소', color: '#d8dce0', voice: 0.9,
     look: { hair: 'short', hc: '#5a5a5a', top: '#6a6a70', bottom: '#3a3a3a' },
     face: { hair: 'slick', hc: '#5a5a5a', top: '#6a6a70', acc: ['goggles'], ac: '#4a4a50', eyes: 'dot', mouth: 'flat' },
     bio: [['반은 기계다. 어느 반인지는 본인도 헷갈린다.']],
@@ -2622,7 +2625,7 @@ input { font: inherit; }
     bio: [['블랙 마을 등불 거리의 등불을 켜는 노인. 해가 뜨지 않는 마을이라 퇴근을 못 한다.']],
   });
   ch('clerk_bk', {
-    name: '심사관 그늘', title: '블랙 마을 등급소', color: '#c8c0e0', voice: 0.85,
+    name: '심사관 움브라', title: '블랙 마을 등급소', color: '#c8c0e0', voice: 0.85,
     look: { hair: 'hood', hc: '#2a2438', top: '#3a3450', bottom: '#1a1626', acc: '#2a2438' },
     face: { hair: 'hood', hc: '#2a2438', top: '#3a3450', ac: '#2a2438', eyes: 'narrow', mouth: 'flat' },
     bio: [['속삭이면서 심사한다. 결과도 속삭인다. 합격인지 알아듣는 데 5분 걸린다.']],
@@ -2646,7 +2649,7 @@ input { font: inherit; }
     bio: [['피로스 박사의 조수. 과장이 심하다. 폭발이 「조금」 났다고 하면 마을 절반이 날아간 것이다.']],
   });
   ch('clerk_c', {
-    name: '심사관 아무나', title: '알록달록 마을 등급소', color: '#ffe0c8', voice: 1.1,
+    name: '심사관 리베르', title: '알록달록 마을 등급소', color: '#ffe0c8', voice: 1.1,
     look: { hair: 'messy', hc: '#5ae8a8', top: '#ff8a5a', bottom: '#5a5ae8' },
     face: { hair: 'messy', hc: '#5ae8a8', top: '#ff8a5a', eyes: 'dot', mouth: 'open', collar: '#ffffff' },
     bio: [['알록달록 마을은 등급 따위 신경 안 쓴다. 그래서 심사관도 아무나 한다. 오늘은 이 사람이다.']],
@@ -3594,7 +3597,7 @@ input { font: inherit; }
     });
     return out + (open ? '</span>' : '');
   }
-  function nameSub(text) { return U.nameSub(text, (G.state && G.state.name) || '하늘'); }
+  function nameSub(text) { return U.nameSub(text, (G.state && G.state.name) || '아린'); }
   function segments(text) {
     const segs = []; let cls = '';
     const s = nameSub(text);
@@ -4157,7 +4160,7 @@ input { font: inherit; }
             (hasSave ? '<button class="t-btn pri" data-t="cont">이어하기</button>' : '') + '<button class="t-btn' + (hasSave ? '' : ' pri') + '" data-t="new">처음부터</button></div>' +
             '<div class="t-foot">십자키로 걷고, 렙업! 버튼으로 수련하고, A로 말을 건다</div>';
         } else {
-          el.innerHTML = '<canvas class="bg" id="tcv"></canvas><div class="t-logo" style="font-size:22px">너의 이름은?</div><div class="t-field"><label for="nm">이름 (한글 6자까지)</label><input id="nm" maxlength="6" value="하늘" autocomplete="off"></div>' +
+          el.innerHTML = '<canvas class="bg" id="tcv"></canvas><div class="t-logo" style="font-size:22px">너의 이름은?</div><div class="t-field"><label for="nm">이름 (한글 6자까지)</label><input id="nm" maxlength="6" value="아린" autocomplete="off"></div>' +
             '<div class="t-field"><span>모습</span><div class="t-gender"><button data-g="boy"' + (gender === 'boy' ? ' class="on"' : '') + '><canvas data-hero="boy" width="18" height="18"></canvas>소년</button><button data-g="girl"' + (gender === 'girl' ? ' class="on"' : '') + '><canvas data-hero="girl" width="18" height="18"></canvas>소녀</button></div></div>' +
             '<div class="t-menu"><button class="t-btn pri" data-t="start">모험 시작</button><button class="t-btn" data-t="back">돌아가기</button></div>' +
             (hasSave ? '<p class="t-sub" style="color:#ff8a8a">처음부터 시작하면 지금 저장된 모험은 지워진다.</p>' : '');
@@ -4178,7 +4181,7 @@ input { font: inherit; }
         if (t.dataset.t === 'back') { stage = 'menu'; draw(); }
         if (t.dataset.t === 'start') {
           let name = (document.getElementById('nm').value || '').trim().replace(/[<>{}\[\]]/g, '').slice(0, 6);
-          if (!name) name = '하늘';
+          if (!name) name = '아린';
           el.hidden = true; res({ mode: 'new', name, gender });
         }
       };
@@ -4495,6 +4498,7 @@ input { font: inherit; }
     herald: { strike: 2, drain: 4, hex: 2, heavy: 2 },
     kairon: { strike: 3, heavy: 5, shield: 2, drain: 1 },
     blacksun: { strike: 2, drain: 4, hex: 3, heavy: 3, shield: 1 },
+    hollowking: { strike: 2, drain: 5, hex: 2, heavy: 2, shield: 2 },
   };
   const GUARD_WIN = 0.7, PERFECT = 0.22, GUARD_CD = 1.1;
   const potMax = () => B.opt.potMax || D.B.potMax;
@@ -5682,10 +5686,10 @@ input { font: inherit; }
 
   /* ───────── 물건 ───────── */
   W.keyItem('lunch', '마리엔의 도시락', '고르디 씨에게 전해 달라는 도시락. 옥수수빵 세 개와 쪽지 한 장.');
-  W.keyItem('rod', '느림보 영감의 낚싯대', '40년 동안 물고기 한 마리 못 낚은 낚싯대. 미끼 대신 옥수수빵 조각이 달려 있다.');
+  W.keyItem('rod', '엘름 영감의 낚싯대', '40년 동안 물고기 한 마리 못 낚은 낚싯대. 미끼 대신 옥수수빵 조각이 달려 있다.');
   W.keyItem('clover', '네잎클로버', '베르나가 준 네잎클로버. 「전설이 되면 돌려줘.」');
-  W.keyItem('bait_old', '세나의 미끼', '느림보 영감의 아내가 40년 전에 만든 미끼. 한 번도 물에 닿은 적이 없다. 귀한 물고기가 더 잘 걸린다.');
-  W.quest('q_koi', { name: '40년의 약속', where: '그린 마을 연못', stages: ['느림보 영감이 [y]황금 잉어[/]를 한 번 보고 싶어 한다. 그린 지방 물가에서 낚아 오자.'], done: '영감은 40년 만에 약속을 끝냈다.' });
+  W.keyItem('bait_old', '세나의 미끼', '엘름 영감의 아내가 40년 전에 만든 미끼. 한 번도 물에 닿은 적이 없다. 귀한 물고기가 더 잘 걸린다.');
+  W.quest('q_koi', { name: '40년의 약속', where: '그린 마을 연못', stages: ['엘름 영감이 [y]황금 잉어[/]를 한 번 보고 싶어 한다. 그린 지방 물가에서 낚아 오자.'], done: '영감은 40년 만에 약속을 끝냈다.' });
 
   /* ───────── 이야기 ───────── */
   W.quest('m0', { main: true, name: '프롤로그 · 열여섯 번째 생일', where: '할머니의 오두막', stages: [
@@ -5703,7 +5707,7 @@ input { font: inherit; }
   ], done: '징수탑이 무너졌다. 할머니는 편지 한 통을 건넸다.' });
   W.quest('q_mole', { name: '브람의 감자밭', where: '새싹 들판', stages: ['새싹 들판에서 [y]감자밭 두더지[/]를 5마리 쓰러뜨리자.', '브람에게 알리자.'], done: '두더지와의 전쟁에서 드디어 4승째.' });
   W.quest('q_lunch', { name: '마리엔의 도시락', where: '그린 마을 광장', stages: ['징수탑 옆에서 조는 [y]고르디 씨[/]에게 도시락을 전하자.', '마리엔 아줌마에게 돌아가자.'], done: '고르디 씨는 도시락을 다 먹었다. 쪽지는 주머니에 넣었다.' });
-  W.quest('q_rod', { name: '연못의 반짝이', where: '그린 마을 연못', stages: ['느림보 영감이 [y]옥수수빵[/]을 먹고 싶어 한다. 마리엔 아줌마의 가게에서 살 수 있다.', '낚싯대를 빌렸다. 연못에서 반짝이는 곳을 조사하자.'], done: '연못 바닥에서 16년 동안 반짝이던 것을 건져 올렸다.' });
+  W.quest('q_rod', { name: '연못의 반짝이', where: '그린 마을 연못', stages: ['엘름 영감이 [y]옥수수빵[/]을 먹고 싶어 한다. 마리엔 아줌마의 가게에서 살 수 있다.', '낚싯대를 빌렸다. 연못에서 반짝이는 곳을 조사하자.'], done: '연못 바닥에서 16년 동안 반짝이던 것을 건져 올렸다.' });
   W.quest('q_race', { name: '카렐의 도전장', where: '그린 마을', stages: ['10초 동안 렙업 버튼 누르기 대결! 카렐의 기록 [y]45번[/]을 넘기자.'], done: '카렐은 「오늘은 손가락이 좀 부었어」라고 했다.' });
   W.quest('q_bomi', { name: '베르나의 소원', where: '속삭이는 숲', stages: ['속삭이는 숲 서쪽 빈터의 [y]대왕 슬라임[/]을 쓰러뜨리자.', '베르나에게 알리자.'], done: '베르나는 네잎클로버를 건넸다. 전설이 되면 돌려받기로 했다.' });
   W.quest('q_study', { name: '훈장님의 숙제', where: '새싹 서당', stages: ['그린 마을 곳곳의 책과 비석을 [y]다섯 개[/] 읽고 훈장님께 돌아가자.'], done: '「읽은 것과 믿는 것은 다르니라.」 훈장님은 그렇게만 말했다.' });
@@ -6006,7 +6010,7 @@ input { font: inherit; }
     const s = c.s;
     if (s.orbs.o_r1) return;
     if (!G.engine.has(s, 'rod')) { await c.say(null, '연못 물속에서 무언가 반짝인다. 손이 닿지 않는다. 낚싯대가 있다면…'); return; }
-    await c.say(null, '느림보 영감의 낚싯대를 드리웠다.');
+    await c.say(null, '엘름 영감의 낚싯대를 드리웠다.');
     c.sfx('splash');
     await c.wait(0.8);
     await c.say(null, '……');
@@ -6572,7 +6576,7 @@ input { font: inherit; }
     '[y]레벨 150[/]이 되면 레드 마을 남쪽 해안길을 지나 블루 마을로 가자. 박사는 대도서관에 네가 읽어야 할 책이 있다고 했다.',
   ], done: '블루 마을에 닿았다.' });
   W.quest('q_scales', { name: '볼칸 아저씨의 새 장갑', where: '레드 마을 대장간', stages: ['몬스터에게서 [y]도마뱀 비늘[/] 5개를 모아 볼칸 아저씨에게 가져가자.'], done: '가죽 장갑을 받았다. 손에 착 감긴다.' });
-  W.quest('q_ember', { name: '할매의 불씨', where: '떡볶이집', stages: ['몬스터에게서 [y]불씨 조각[/] 5개를 모아 떡볶이 할매에게 가져가자.'], done: '화산 떡볶이 지옥맛. 먹고 나서 한동안 말을 못 했다.' });
+  W.quest('q_ember', { name: '할매의 불씨', where: '떡볶이집', stages: ['몬스터에게서 [y]불씨 조각[/] 5개를 모아 마그다 할매에게 가져가자.'], done: '화산 떡볶이 지옥맛. 먹고 나서 한동안 말을 못 했다.' });
   W.quest('q_herb', { name: '쌍둥이의 약초', where: '붉은 산', stages: ['붉은 산 용암 호수 근처에서 [y]불꽃 약초[/]를 캐 오자.', '루드의 집으로 돌아가 쌍둥이에게 약초를 주자.'], done: '루미가 그림 한 장을 주었다.' });
   W.quest('q_bandit', { name: '산으로 간 대장장이들', where: '붉은 산', stages: ['붉은 산의 [y]산적 망치꾼[/]을 6명 혼내 주자.', '볼칸 아저씨에게 알리자.'], done: '산에서 내려온 대장장이 몇이 다시 망치를 잡았다.' });
   W.quest('q_mine', { name: '잠든 금맥', where: '황금 광산', stages: ['광부 대장이 말한 [y]광산 비밀번호[/]를 알아내자. 「별을 아는 놈만 들어와라.」', '황금 광산 가장 깊은 곳의 [y]황금 두더지왕[/]을 쓰러뜨리자.', '광부 대장에게 알리자.'], done: '광산에 다시 곡괭이 소리가 울렸다.' });
@@ -6592,14 +6596,14 @@ input { font: inherit; }
   W.book('b_starcat', { title: '이리스 성표 — 밝은 별 목록', where: '붉은 산 관측소', author: '아스텔', text:
     '1번 북극별 · 2번 뱃사람의 별 · 3번 대장장이 별자리의 모루…\n\n' +
     '386번 쌍둥이 초롱 — 루카와 루미라는 이름의 아이들이 붙인 별명이 더 유명하다.\n[y]387번 황금별 아스트라[/] — 밤하늘에서 가장 밝은 별. 역대 챔피언들이 싸우던 곳이라 전해진다.\n388번 은빛 부스러기 — 612년 이후 새로 생긴 별. 별이 아니라 무언가의 잔해일지도 모른다.\n\n' +
-    '(여백에 누군가의 연필 글씨) 광산 문 비밀번호 = 천문 번호 + 은빛 왕국이 무너진 해. 잊지 마라, 곡괭이.' });
+    '(여백에 누군가의 연필 글씨) 광산 문 비밀번호 = 천문 번호 + 은빛 왕국이 무너진 해. 잊지 마라, 도르간.' });
   W.book('b_galaxy_log', { title: '관측 일지 983년', where: '붉은 산 관측소', author: '아스텔', text:
     '새싹의 달 3일. 황금별 오른쪽의 검은 점, 여전히 커지는 중. 612년 기록과 같은 모양.\n\n' +
     '새싹의 달 9일. 세린 일행이 아스트라로 떠났다고 에벨린에게 들었다. 망원경을 밤새 들여다봤다.\n\n' +
     '새싹의 달 11일. 검은 점이 사라졌다. 사라졌다. 사라졌다.\n빛 한 줄기가 아스트라에서 번쩍했고, 그다음엔 아무것도 없었다.\n\n' +
     '새싹의 달 14일. 카이론 혼자 돌아왔다고 한다. 에벨린이 울었다. 나는 에벨린이 우는 걸 처음 봤다.\n\n' +
     '999년 새싹의 달. 검은 점이 다시 보인다. 16년. 봉인은 16년짜리였나.' });
-  W.book('b_mine_log', { title: '광산 일지 — 마지막 장', where: '황금 광산', author: '곡괭이', text:
+  W.book('b_mine_log', { title: '광산 일지 — 마지막 장', where: '황금 광산', author: '도르간', text:
     '983년. 징수탑이 섰다. 광부들이 캔 경험의 세 할이 탑으로 간다. 금보다 경험이 비싼 세상이 됐다.\n\n' +
     '984년. 광부 절반이 떠났다. 남은 사람들은 금 대신 경험을 캐려고 더 깊이 판다.\n\n' +
     '985년. 가장 깊은 굴에서 두더지들이 올라왔다. 황금 왕관을 쓴 놈이 제일 크다. 우리가 버린 광차 바퀴로 만든 왕관이다.\n\n' +
@@ -6933,7 +6937,7 @@ input { font: inherit; }
     if (q === 1) { await c.say('gokgwang', '문을 열었다고? 크하! 별을 아는 녀석이었구나. 두더지왕은 광산 가장 깊은 곳에 있다. 레벨 250은 넘기고 가라.'); return; }
     if (q === 0) { await c.say('gokgwang', ['비밀번호? 내가 정하긴 했는데… 잊어버렸다. 하하.', '아스텔 영감한테 적어 뒀어. 그 영감 관측소 어딘가에 있을 거다. 영감은 다 잊어도 별은 안 잊거든.']); return; }
     if (s.flags.red_intro) {
-      await c.say('gokgwang', ['나는 곡괭이. 황금 광산 광부 대장이었지. 지금은 떡볶이집 구석 대장이고.', '광산은 16년 전에 문을 잠갔다. 탑이 선 뒤로 금보다 경험이 비싸졌거든. 그러다 두더지들이 올라왔지.']);
+      await c.say('gokgwang', ['나는 도르간. 황금 광산 광부 대장이었지. 지금은 떡볶이집 구석 대장이고.', '광산은 16년 전에 문을 잠갔다. 탑이 선 뒤로 금보다 경험이 비싸졌거든. 그러다 두더지들이 올라왔지.']);
       await c.say('gokgwang', ['가장 깊은 곳에 [y]황금 두더지왕[/]이 산다. 그놈이 빨간 구슬을 삼켰다는 소문이 있어.', '문 비밀번호는… 「별을 아는 놈만 들어와라.」 궁금하면 관측소에 가 봐라.']);
       c.quest('q_mine', 0);
     }
@@ -7070,7 +7074,7 @@ input { font: inherit; }
       c.music('space');
       await telescope(c);
       c.quest('m2', 2);
-      if (s.quests.q_mine === 0) await c.say('galaxy', ['광산 비밀번호? 곡괭이 그 녀석이 나한테 적어 줬다고? …기억 안 나.', '내 성표 어딘가에 끄적였겠지. 책장을 뒤져 봐라.']);
+      if (s.quests.q_mine === 0) await c.say('galaxy', ['광산 비밀번호? 도르간 그 녀석이 나한테 적어 줬다고? …기억 안 나.', '내 성표 어딘가에 끄적였겠지. 책장을 뒤져 봐라.']);
       return;
     }
     await c.run(W.chatter('galaxy', [
@@ -7178,7 +7182,7 @@ input { font: inherit; }
       c.bond('dolsoe', 1);
     }
     if (!s.flags.mine_open && !s.flags.dolsoe_code) {
-      await c.say('dolsoe', ['광산 문 비밀번호 때문에 왔지? 곡괭이 영감은 잊어버렸다고 하고.', '문지기는 비밀번호를 안다. 규칙상 말해 주면 안 되지만… 나는 이미 규칙을 한 번 어긴 몸이다.']);
+      await c.say('dolsoe', ['광산 문 비밀번호 때문에 왔지? 도르간 영감은 잊어버렸다고 하고.', '문지기는 비밀번호를 안다. 규칙상 말해 주면 안 되지만… 나는 이미 규칙을 한 번 어긴 몸이다.']);
       if (await c.yes('고르디에게 비밀번호를 물어볼까?', null, '물어본다', '스스로 찾겠다')) {
         c.set('dolsoe_code');
         await c.say('dolsoe', ['[y]999[/]. 별 번호 387에 은빛 왕국이 무너진 해 612를 더한 거다.', '안에 두더지왕이 산다. 그건 문지기가 대신 못 해 준다. 레벨 250은 넘기고 가라.']);
@@ -7300,7 +7304,7 @@ input { font: inherit; }
   ], done: '고등어호는 모래바람의 도시를 향해 떠났다.' });
   W.quest('q_light', { name: '꺼진 등대', where: '블루 등대', stages: ['등대 꼭대기의 등불에 흰빛을 나눠 주자. 등불 앞에서 [y]렙업 버튼을 30번[/] 누르자.'], done: '3년 만에 블루 등대에 불이 켜졌다.' });
   W.quest('q_overdue', { name: '3년 연체', where: '대도서관', stages: ['루체에게서 연체된 책 「등대지기의 노래」를 받아 오자.', '헤미아에게 책을 돌려주자.'], done: '헤미아는 연체료를 받지 않았다. 대신 책 이야기를 한 시간 했다.' });
-  W.quest('q_feather', { name: '짠물 영감의 허풍', where: '블루 부두', stages: ['몬스터에게서 [y]갈매기 깃털[/] 5개를 모아 짠물 영감에게 가져가자.'], done: '영감은 고래를 네 번 삼킨 이야기를 해 주었다. 세 번에서 한 번 늘었다.' });
+  W.quest('q_feather', { name: '노르드 영감의 허풍', where: '블루 부두', stages: ['몬스터에게서 [y]갈매기 깃털[/] 5개를 모아 노르드 영감에게 가져가자.'], done: '영감은 고래를 네 번 삼킨 이야기를 해 주었다. 세 번에서 한 번 늘었다.' });
   W.quest('q_fish', { name: '고등어 포장 대작전', where: '블루 어시장', stages: ['어시장의 루드를 도와 10초 동안 고등어를 [y]60마리[/] 포장하자. (렙업 버튼 연타)'], done: '루드는 숫자를 세다가 처음으로 웃었다.' });
 
   /* ───────── 책 ───────── */
@@ -9716,23 +9720,23 @@ input { font: inherit; }
     c.music('sad');
     c.spawn({ id: 'hayan', x: 9, y: 11, dir: 'up', look: { hair: 'pony', hc: '#f4f4f8', top: '#e8e0d0', bottom: '#c8c0b0', skin: '#f4f0ec' } });
     await c.narr(['대성당 문이 벌컥 열렸다. 수녀 둘이 들것을 들고 뛰어 들어왔다.', '들것 위의 아이는 대여섯 살쯤. 머리칼은 눈처럼 하얗고, 손가락 끝이 유리처럼 비친다. 숨소리가 거의 들리지 않는다.']);
-    await c.say('nun', ['성녀님! 설원길에서 쓰러진 아이예요. 이름은 하얀이래요. 엄마가 업고 사흘을 걸었대요.', '…엄마는 대성당 계단에서 쓰러졌어요.']);
+    await c.say('nun', ['성녀님! 설원길에서 쓰러진 아이예요. 이름은 에이린이래요. 엄마가 업고 사흘을 걸었대요.', '…엄마는 대성당 계단에서 쓰러졌어요.']);
     await c.say('lumie:sad', ['……마지막 단계네요. 몸이 투명해지기 시작했어요.', '이 단계는 손을 잡고 나누는 걸로는 안 돼요. 누군가의 빛이 통째로 들어가야 해요. 그 사람의 빛이 바래요.']);
     await c.say('lumie', ['제가 할게요. 16년 동안 해 온 일이에요. 머리칼이 조금 더 하얘질 뿐이에요.', '…조금 더.']);
     await c.say('edel', '성녀님. 지난달에도 그러셨소. 지난주에도. 이번엔 머리칼이 아니라 숨이 하얘질 거요.');
     const opts = [['own', '내 빛을 나누겠어요.'], ['lumie', '…성녀님께 맡긴다.']];
     if (E.has(c.s, 'snow_herb')) opts.unshift(['herb', '[y]얼음 신전의 눈꽃 약초를 달인다[/]']);
-    const k = await c.ask('하얀의 마지막 숨', opts.map((o) => o[1]));
+    const k = await c.ask('에이린의 마지막 숨', opts.map((o) => o[1]));
     const id = opts[k][0];
     if (id === 'herb') {
       c.take('snow_herb');
       await c.narr(['수녀가 약초를 달였다. 김이 오르자 대성당 안에 겨울 아침 냄새가 퍼졌다.', '한 모금. 아이의 손가락 끝에서 투명함이 물러났다. 두 모금. 하얀 머리칼 끝이 연한 갈색으로 물들었다.']);
       await c.say('lumie:surprise', ['……약초로? 빛을 쓰지 않고?', '얼음 신전에 16년 동안 다녔는데… 저는 한 번도 그 틈을 들여다보지 않았어요. 기도만 했어요.']);
       await c.say('lumie:sad', '세린. 당신은 희생 말고 다른 걸 심어 두고 갔군요. 누가 찾아 주길 바라면서.');
-      c.decide('patient', 'herb', '세린이 남긴 눈꽃 약초로 하얀을 살렸다');
+      c.decide('patient', 'herb', '세린이 남긴 눈꽃 약초로 에이린을 살렸다');
       c.bond('lumie', 2);
     } else if (id === 'own') {
-      await c.sys('하얀의 손을 두 손으로 감싸고 [y]렙업 버튼을 40번[/] 누르자. 내 빛이 통째로 흘러간다.');
+      await c.sys('에이린의 손을 두 손으로 감싸고 [y]렙업 버튼을 40번[/] 누르자. 내 빛이 통째로 흘러간다.');
       await c.waitClick(40, (n) => { if (n % 8 === 0) { c.flash('#ffffff', 220); c.light(12); } });
       c.flash('#ffffff', 1400);
       await c.narr(['손바닥에서 빛이 빠져나갔다. 강물처럼. 팔이 차가워지고, 시야 가장자리가 하얗게 바랬다.', '아이가 숨을 크게 들이쉬었다. 그리고 울었다. 살아 있는 아이의 우는 소리였다.']);
@@ -9741,16 +9745,16 @@ input { font: inherit; }
       c.set('hero_streak');
       await c.sys('[r]빛바램의 여운[/] — 10분 동안 경험치 -30%. 앞머리 한 가닥은 돌아오지 않았다.');
       await c.say('lumie:sad', ['……당신도 결국 스스로를 내주는군요. 세린처럼.', '…아니에요. 세린이랑은 달라요. 당신은 나눠 준 뒤에도 서 있잖아요. 가진 걸 전부가 아니라, 필요한 만큼만.']);
-      c.decide('patient', 'own', '내 빛을 통째로 나누어 하얀을 살렸다');
+      c.decide('patient', 'own', '내 빛을 통째로 나누어 에이린을 살렸다');
       c.bond('lumie', 1);
     } else {
       await c.narr(['루미에가 아이의 가슴에 손을 얹었다. 금빛이었을 머리칼이 뿌리부터 끝까지, 눈 한 번 깜빡이는 사이에 하얘졌다.', '아이는 살았다. 루미에는 그 자리에 무릎을 꿇은 채 한참 일어나지 못했다. 에델이 투구 속에서 무언가를 삼켰다.']);
       await c.say('lumie', ['…괜찮아요. 이게 제 일이에요. 한 사람이 모두를 위해 빛나는 것.', '당신이 맡겨 줘서… 기뻐요. 정말로.']);
       await c.say('edel', '……');
-      c.decide('patient', 'lumie', '하얀의 목숨을 성녀 루미에에게 맡겼다');
+      c.decide('patient', 'lumie', '에이린의 목숨을 성녀 루미에에게 맡겼다');
       c.bond('edel', -1);
     }
-    await c.say('nun', '…하얀이 웃어요. 엄마를 찾아요. 계단에서 쓰러진 엄마도 깨어났대요.');
+    await c.say('nun', '…에이린이 웃어요. 엄마를 찾아요. 계단에서 쓰러진 엄마도 깨어났대요.');
     c.despawn('hayan');
     c.music('white');
   }
@@ -9758,7 +9762,7 @@ input { font: inherit; }
     const s = G.state;
     if (id === 'cathedral' && s.quests.m7 === 3 && !s.flags.patient_arrived && !G.script.running) G.script.run(patientChild);
   });
-  G.chars.hayan = Object.assign({}, G.chars.kid || {}, { id: 'hayan', name: '하얀', title: '설원에서 온 아이' });
+  G.chars.hayan = Object.assign({}, G.chars.kid || {}, { id: 'hayan', name: '에이린', title: '설원에서 온 아이' });
 
   // 새벽단을 고발했다면: 붙잡힌 레아가 성기사단 숙소에
   W.addNpcs('knight_hall', [{ id: 'lea', x: 2, y: 4, dir: 'right', cond: (s) => s.flags.d_festival === 'warn' && !s.flags.m_white_edel, talk: async (c) => {
@@ -9785,7 +9789,7 @@ input { font: inherit; }
     W.prop('hole', 30, 25, '눈밭 한가운데 얼음 구멍. 아이들이 뚫어 놓은 모양이다. 물이 검푸르다.', { pool: 'white' }),
   ]);
   W.addObjs('snowfield', [W.prop('fire', 17, 5, '설원 순례자들의 모닥불 자리. 돌 위에 누군가 두고 간 털장갑 한 짝.'), W.prop('hole', 31, 16, '얼음 구멍. 설원을 건너는 순례자들이 여기서 빙어를 낚아 끼니를 때운다.', { pool: 'white' })]);
-  W.addObjs('cathedral', [W.look(9, 13, (s) => (s.flags.d_patient ? '하얀이 누웠던 들것 자국이 바닥에 남아 있다. 수녀가 그 자리를 닦지 않고 두었다.' : '대성당 바닥. 수백 명이 무릎 꿇은 자리가 반들반들하게 닳았다.'), { solid: false })]);
+  W.addObjs('cathedral', [W.look(9, 13, (s) => (s.flags.d_patient ? '에이린이 누웠던 들것 자국이 바닥에 남아 있다. 수녀가 그 자리를 닦지 않고 두었다.' : '대성당 바닥. 수백 명이 무릎 꿇은 자리가 반들반들하게 닳았다.'), { solid: false })]);
   W.barks('white', { snowflake: ['덤벼!', '한 번도 안 졌어!'], kid: ['눈싸움!'], nun: ['쉿…', '기도해요.'], guard: ['질서를 지키오.', '펭귄은 곤란하오.'] });
   W.barks('cathedral', { lumie: (s) => (s.flags.m_white_lumie ? ['…따뜻하네요.'] : ['여신이여…', '괜찮아요.']), edel: ['……'], nun: ['쉿.'], pat1: ['…춥다.'], pat3: ['…빛이…'] });
 
@@ -9806,7 +9810,7 @@ input { font: inherit; }
       const d = c.s.flags.d_patient;
       if (d === 'own') await c.say('dotori', ['앞머리. 하얀 거. 아파?', '…안 아프다고 하지 마. 너 아플 때 코 찡긋하는 거 알아.']);
       else if (d === 'lumie') await c.say('dotori:sad', ['성녀님 머리 봤어? 한순간에 하얘졌어.', '성녀님은 기쁘다고 했어. 근데 에델 아저씨… 아니, 언니는 투구 속에서 울었을 거야.']);
-      else await c.say('dotori:happy', ['엄마가 16년 전에 심어 둔 꽃이 하얀이를 살렸어.', '엄마는 희생만 한 게 아니었어. 이런 것도 했어. 아무도 모르게.']);
+      else await c.say('dotori:happy', ['엄마가 16년 전에 심어 둔 꽃이 에이린이를 살렸어.', '엄마는 희생만 한 게 아니었어. 이런 것도 했어. 아무도 모르게.']);
     } },
   );
   /* 쉬는 밤 (7장) */
@@ -9847,7 +9851,7 @@ input { font: inherit; }
     '세피아의 [y]색 표본 병[/]에 일곱 지방의 색을 담아 오자. (5/7)', '세피아의 [y]색 표본 병[/]에 일곱 지방의 색을 담아 오자. (6/7)',
     '일곱 색을 모두 담았다! 그레이 마을의 세피아에게 돌아가자.',
   ], done: '세피아는 3분 동안 멈춰 있었다. 과부하가 아니었다.' });
-  W.quest('q_oil', { name: '기름칠', where: '그레이 마을', stages: ['몬스터에게서 [y]녹슨 톱니[/] 8개를 모아 녹슬이에게 가져가자.'], done: '녹슬이는 고철 의자를 하나 더 만들었다. 이번엔 안 삐걱거린다.' });
+  W.quest('q_oil', { name: '기름칠', where: '그레이 마을', stages: ['몬스터에게서 [y]녹슨 톱니[/] 8개를 모아 러스크에게 가져가자.'], done: '러스크는 고철 의자를 하나 더 만들었다. 이번엔 안 삐걱거린다.' });
 
   W.book('b_silver', { title: '은빛 왕국 연대 기록 — 612년', where: '은빛 왕국 기록 보관소', author: '은빛 왕국 기록원', text:
     '611년 겨울. 대광맥 굴착 완료. 땅속 모든 빛이 모이는 곳. 여기서 빛을 한꺼번에 끌어올리면 왕국은 천 년을 쓸 수 있다.\n\n' +
@@ -9984,7 +9988,7 @@ input { font: inherit; }
       return;
     }
     if (s.flags.gray_intro && s.quests.q_oil == null) {
-      await c.say('rusty', ['고철 팝니다, 고철 삽니다. 녹슬이야.', '부탁 하나 하자. 드론이나 로봇이 떨어뜨리는 [y]녹슨 톱니[/] 8개만 구해 줘. 의자가 하나 모자라거든.']);
+      await c.say('rusty', ['고철 팝니다, 고철 삽니다. 러스크야.', '부탁 하나 하자. 드론이나 로봇이 떨어뜨리는 [y]녹슨 톱니[/] 8개만 구해 줘. 의자가 하나 모자라거든.']);
       c.quest('q_oil', 0);
     }
     await c.shop('gray');
@@ -10183,7 +10187,7 @@ input { font: inherit; }
     await c.say('dotori:worry', ['…9년 전에 다 알았어. 볼트 아저씨.', '알았는데 못 부쳤어. 아내가 떠난 해에.']);
   } })]);
   W.addObjs('gray', [
-    W.prop('bench', 15, 21, '녹슬이가 만든 고철 의자. 「앉아도 됨. 삐걱거려도 안 부러짐. — 녹슬이」'),
+    W.prop('bench', 15, 21, '러스크가 만든 고철 의자. 「앉아도 됨. 삐걱거려도 안 부러짐. — 러스크」'),
     W.prop('fire', 22, 12, '기름통 모닥불. 그레이 사람들이 모여 손을 쬔다. 불꽃만은 여기서도 주황색이다. 다들 그걸 한참 본다.'),
     W.prop('board', 14, 12, (s) => ['고철 시장 게시판. 「오늘의 시세 — 녹슨 톱니 3개에 빵 하나」', s.flags.d_bolt ? '그 아래 볼트의 글씨로 짧은 공고: 「천년포 개발 중단. 부품 무료 배포. 연료 낭비 금지.」' : '「천년포 조립 인력 모집 — 볼트 공방」', s.quests.q_noel === 'done' ? '구석에 세피아의 반듯한 글씨: 「오늘의 하늘 — 회색. 예쁨.」' : ''].filter(Boolean)),
   ]);
@@ -10937,8 +10941,8 @@ input { font: inherit; }
   });
   wrapTalk('cathedral', 'lumie', (s) => s.quests.m10 === 2 && !E.has(s, 'prayer_crystal') && !!s.flags.m_white_lumie, async (c) => {
     const dp = c.s.flags.d_patient;
-    if (dp === 'lumie') await c.say('lumie', ['(루미에는 의자에 기대 앉아 있다. 머리칼이 눈처럼 하얗다) …일어나지 못해서 미안해요. 하얀이는 매일 와요. 사탕을 가져와요. 제가 주던 걸 이제 저한테.', '…당신이 맡겨 줘서 기뻤다고 했죠. 거짓말은 아니었어요. 그런데 하얀이 얼굴을 볼 때마다, 당신이 거절해 줬으면 어땠을까 생각해요.']);
-    else if (dp === 'herb') await c.say('lumie', '하얀이가 매일 얼음 신전에 가요. 그 틈에 약초를 다시 심겠대요. 세린처럼. 다음 사람을 위해.');
+    if (dp === 'lumie') await c.say('lumie', ['(루미에는 의자에 기대 앉아 있다. 머리칼이 눈처럼 하얗다) …일어나지 못해서 미안해요. 하얀이는 매일 와요. 사탕을 가져와요. 제가 주던 걸 이제 저한테.', '…당신이 맡겨 줘서 기뻤다고 했죠. 거짓말은 아니었어요. 그런데 에이린이 얼굴을 볼 때마다, 당신이 거절해 줬으면 어땠을까 생각해요.']);
+    else if (dp === 'herb') await c.say('lumie', '에이린이가 매일 얼음 신전에 가요. 그 틈에 약초를 다시 심겠대요. 세린처럼. 다음 사람을 위해.');
     else if (dp === 'own') await c.say('lumie', '앞머리, 아직 하얗네요. …그건 제가 16년 동안 달고 다닌 거랑 같은 색이에요. 이제 우리 둘이 나눠 가졌네요.');
     await c.say('lumie', ['로켓의 방어막이 필요하군요. 기도의 수정… 16년 동안 세린을 위해 기도한 빛을 모은 수정이에요.', '가두는 데 쓰던 기도를, 이제 지키는 데 쓸게요. 약속했잖아요.']);
     c.give('prayer_crystal');
@@ -11454,6 +11458,10 @@ input { font: inherit; }
     }
     if (!have.length) await c.say('kairon', '…빈손이군.');
     if (s.flags.creed === 'vera') await c.say('vera', ['(탑 통신망 너머, 멀리서) …챔피언. 퍼플의 베라예요. 이 대화, 지금 대륙 전부가 듣고 있어요.', '세린의 노트 마지막 장은 이미 읽었어요. 탑마다. 이제 아무도 혼자 모르지 않아요. 당신도요.']);
+    if (A(s, 'a_vein')) {
+      await c.say('@', '대광맥 바닥에 은빛 아이가 300명 있었어. 그 나라 왕도 모으면 지킬 수 있다고 믿었어. 자기가 그릇이 되면 된다고.');
+      await c.say('kairon', '……은빛 왕도 계산을 했겠지. 나보다 성실하게.');
+    }
     if (A(s, 'a_ledger')) {
       await c.say('@', '장부 마지막 장. 「맞지 않으면 나는 3,118명을 죽인 사람이 된다.」');
       await c.say('@', '…맞지 않아. 그러니까 이제 그만 세.');
@@ -11518,7 +11526,7 @@ input { font: inherit; }
       await c.say('kairon', ['그런데 너는 스승님 말씀을 들고 왔다. 「밥 먹으러 온나.」', '…약속과 다른 말이군. 스승님도 16년 동안 계산이 틀리신 거다. 너 때문에.']);
       if (A(s, 'a_ledger')) {
         await c.say('@', '3,118명.');
-        await c.say('kairon', ['……', '외우고 있다. 이름까지. 매년 마지막 줄에 서명했다. 「허용 범위 내」.', '한결이라는 아이는 스승님 약초 바구니를 따라다니던 아이였다. 그 줄을 쓸 때 펜이 종이를 뚫었다. …그리고 다음 줄을 썼다.']);
+        await c.say('kairon', ['……', '외우고 있다. 이름까지. 매년 마지막 줄에 서명했다. 「허용 범위 내」.', '엘린이라는 아이는 스승님 약초 바구니를 따라다니던 아이였다. 그 줄을 쓸 때 펜이 종이를 뚫었다. …그리고 다음 줄을 썼다.']);
       }
     }
     // 첫 번째 갈림길: 수정 앞에서
@@ -11662,7 +11670,7 @@ input { font: inherit; }
       ['yellow', f.d_goldie === 'expose' ? '옐로 마을. 문 닫은 거래소 앞 광장에 빛이 쏟아졌다. 사하라의 대상단 천막에서 셈을 배우던 아이들이 고개를 들었다.' : f.d_goldie === 'contract' ? '옐로 마을. 거래소 금고에서 빛이 쏟아져 나와 계약서의 이름들에게 돌아갔다. 스무 살이 되기 전에. 골디는 손해를 계산하다 말고 웃었다.' : '옐로 마을. 경험 거래소 창구에서 빛이 쏟아져 나와 아이들에게 돌아갔다.'],
       ['purple', '퍼플 마을. 16년 만에 해가 졌다. 그리고 밤이 왔다. 베라 교수가 첫 번째 별을 보며 따뜻한 차를 마셨다.'],
       ['rainbow', f.d_festival === 'bomb' ? '무지개 마을. 첫 불꽃과 함께 중계탑이 무너졌다. 바람이 불었다. 롤로의 무대 한쪽이 기울었다. 롤로는 팔에 붕대를 감은 채 공연을 끝까지 했다.' : f.d_festival === 'third' ? '무지개 마을. 금 간 채 서 있던 중계탑 자리에서 무지개 샘이 일곱 빛깔을 합쳐 하얗게 빛났다. 천년제가 시작되었다.' : '무지개 마을. 성기사단이 지키던 중계탑이 역류 장치에 스스로 무너졌다. 아무도 다치지 않았다. 천년제가 시작되었다.'],
-      ['white', f.d_patient === 'lumie' ? '화이트 마을. 대성당의 환자들이 일어나 앉았다. 하얗게 센 루미에가 하얀의 손을 잡고 울었다. 기도하지 않고, 그냥 울었다.' : '화이트 마을. 대성당의 환자들이 일어나 앉았다. 루미에가 16년 만에 울었다. 기도하지 않고, 그냥 울었다.'],
+      ['white', f.d_patient === 'lumie' ? '화이트 마을. 대성당의 환자들이 일어나 앉았다. 하얗게 센 루미에가 에이린의 손을 잡고 울었다. 기도하지 않고, 그냥 울었다.' : '화이트 마을. 대성당의 환자들이 일어나 앉았다. 루미에가 16년 만에 울었다. 기도하지 않고, 그냥 울었다.'],
       ['gray', f.d_bolt === 'talk' ? '그레이 마을. 612에서 멈춰 있던 계기판 바늘이 움직였다. 잿빛 땅에 풀색이 번졌다. 볼트가 세피아의 녹음을 한 번 더 틀었다. 이번엔 끝까지 들었다.' : '그레이 마을. 612에서 멈춰 있던 계기판 바늘이 움직였다. 잿빛 땅에 풀색이 번졌다. 세피아가 그걸 보고 「예쁘다」고 했다.'],
       ['black', f.d_midnight_secret === 'tell' ? '블랙 마을. 16년 만에… 해가 떴다. 미드나잇의 가게는 비어 있었다. 카운터에 고등어 한 마리와 쪽지. 「외상 끝. 조금씩 먹게.」' : '블랙 마을. 16년 만에… 해가 떴다. 칸델 영감은 등불을 끄고 퇴근했다. 밤 사람들은 처음 보는 해를 눈부셔하며 서로 모른 척했다. 세 번째 규칙이 16년 만에 쓰였다.'],
       ['colorful', '알록달록 마을. 사람들은 원래 하던 대로 불꽃을 쏘아 올렸다. 흩어지는 빛이 대륙의 빛과 섞였다.'],
@@ -11824,6 +11832,7 @@ input { font: inherit; }
       await c.say('dotori:happy', ['…어? 어어? {n}! 나 봐! 나 떠 있어! 3초 지났는데 계속 떠 있어!']);
       await c.say(null, '토리아가 날았다. 3초가 아니라, 제단을 세 바퀴 도는 동안 내내. 토리아는 날면서 울었다.');
       await c.narr('{n}은(는) 버튼을 한 번 더 눌러 보았다. 작은 빛이 터졌다. …초록빛이었다. 그린 마을 사람들의 색.');
+      if (s.flags.night_ab_hunger1) await c.narr(s.flags.hunger_told ? '그리고 알았다. 배가 고프지 않았다. 몇 달 만에 처음으로. 토리아가 먼저 알아채고 「이제 배 안 고파?」 하고 물었다. 「응.」' : '그리고 알았다. 배가 고프지 않았다. 몇 달 만에 처음으로. 아무에게도 말하지 않았던 배고픔이, 말하지 않은 채로 끝났다.');
       await c.say('kairon', ['…흰빛이, 끝났군.', '바닥 없는 그릇이 없으면, 배고픔도 돌아갈 곳이 없다. 천 년 동안 아무도 계산하지 못한 식이다.']);
       c.set('hero_green');
       c.decide('toria', 'give', '흰빛을 전부 세린에게 주었다. 토리아도 세린도 남았다');
@@ -11871,7 +11880,7 @@ input { font: inherit; }
     await c.say('@', '…16년이면 돼. 그동안 방법을 찾아 줘.');
     await c.say('kairon', '……세린도 그렇게 말했다. 똑같은 말을.');
     c.music('dread');
-    await c.narr(['수정에 손을 댔다. 차갑지 않았다. 안쪽에서 누군가 손을 마주 댔다. 잿빛 손. 흰 장갑을 낀.', '검은 것이 손바닥으로 흘러들었다. 배고픔이 흘러들었다. 천 년 치.']);
+    await c.narr(['수정에 손을 댔다. 차갑지 않았다. 안쪽에서 누군가 손을 마주 댔다. 잿빛 손. 흰 장갑을 낀.', '검은 것이 손바닥으로 흘러들었다. 배고픔이 흘러들었다. 천 년 치.', s.flags.night_ab_hunger1 ? '…그런데 이상했다. 몇 달 동안 배고팠던 곳이, 처음으로 가득 찼다. 그게 제일 무서웠다.' : '가슴 한가운데가 가득 찼다. 처음 느껴 보는 포만감이었다.']);
     c.flash('#0b0a1c', 1500);
     await c.narr('수정이 깨지고, 세린이 쓰러지듯 밖으로 나왔다. 그리고 새 수정이 자라기 시작했다. 발끝부터.');
     await c.say('serin:sad', ['……아가?', '…안 돼. 안 돼, 안 돼. 이러려고 16년 버틴 게 아니야—']);
@@ -11945,7 +11954,7 @@ input { font: inherit; }
     lea: (s) => (s.flags.d_festival === 'bomb' ? ['중계탑은 무너졌어. 계획대로. …바람이 불었어. 계산에 없던 바람.', '롤로 팔은 석 달이면 붙는대. 나는 평생 안 붙을 것 같아. 여기가.'] : s.flags.d_festival === 'warn' ? ['새벽단은 해산했어. 부술 탑이 없으니까. 너 때문에 한 번 잡혔고, 에델 때문에 풀려났고.', '…원망은 다 셌어. 루드 식으로. 0이더라.'] : LINES.lea),
     rud: (s) => ((s.bond || {}).rud >= 2 ? ['숫자는 거짓말 안 해. 천년성 제어실, 오차 0초.', '…빚은 갚았다. 1,000골드, 탑 하나, 그리고 대륙 전부. 이제 네가 나한테 빚진 거야. 숫자로 적어 둘게.'] : ['숫자는 거짓말 안 해. 천년성 제어실, 오차 0초.', '…너한테는 아직 할 말이 정리가 안 됐어. 셀 수 없는 건 셀 수 있을 때까지 미뤄 둘 거야.']),
     lolo: (s) => (s.flags.d_festival === 'bomb' ? ['(팔에 붕대를 감은 롤로) 오른팔은 쉬는 중! 왼팔로 저글링 세 개! 관객들이 더 좋아해!', '…무대가 기울 때 무서웠어. 근데 공연은 끝까지 했어. 웃음은 색이 없어도 보이니까.'] : LINES.lolo),
-    lumie: (s) => (s.flags.d_patient === 'lumie' ? ['(하얀이 루미에의 휠체어를 민다) 하얀이가 매일 밀어 줘요. 제가 주던 사탕을 이제 제가 받아요.', '기도 대신 박수를 쳤어요. 16년 만에. …손바닥이 아프네요. 이것도 괜찮은 아픔이에요.'] : LINES.lumie),
+    lumie: (s) => (s.flags.d_patient === 'lumie' ? ['(에이린이 루미에의 휠체어를 민다) 에이린이가 매일 밀어 줘요. 제가 주던 사탕을 이제 제가 받아요.', '기도 대신 박수를 쳤어요. 16년 만에. …손바닥이 아프네요. 이것도 괜찮은 아픔이에요.'] : LINES.lumie),
     bolt: (s) => (s.flags.d_bolt === 'talk' ? ['탑은 전부 나눔탑으로 바꾼다. 렙업할 때 터진 빛을 옆 사람한테 보내는 탑이다.', '…요즘 밤에 잔다. 아내 목소리가 그러라고 했으니까. 연료 낭비가 아니었다.'] : LINES.bolt),
     hwaro: (s) => (s.flags.d_ledger === 'burn' ? ['장부 태운 녀석이 챔피언이 됐다며! 약속대로 칼 한 자루 공짜다! 하하!'] : LINES.hwaro),
     bitna: (s) => (s.quests.q_keeper === 'done' ? LINES.bitna : ['등대 불은 켜져 있어. 아빠는 아직이야.', '…블랙 마을에 눈먼 등대지기가 있다는 소문을 들었어. 내일 배 타고 가 볼 거야.']),
@@ -12107,7 +12116,7 @@ input { font: inherit; }
 
   /* ───────── 낚시 ───────── */
   const FISH = {
-    green: [['f_crucian', '연못 붕어', 60, 12, '그린 마을 연못의 터줏대감. 느림보 영감이 40년 동안 한 번도 못 낚은 바로 그 종류.'], ['f_loach', '초록 미꾸라지', 30, 30, '손에서 자꾸 빠져나간다. 할머니는 추어탕을 끓인다.'], ['f_koi', '황금 잉어', 8, 120, '비늘마다 햇빛이 고여 있다. 그린 사람들은 이걸 낚으면 한 해가 풍년이라고 믿는다.']],
+    green: [['f_crucian', '연못 붕어', 60, 12, '그린 마을 연못의 터줏대감. 엘름 영감이 40년 동안 한 번도 못 낚은 바로 그 종류.'], ['f_loach', '초록 미꾸라지', 30, 30, '손에서 자꾸 빠져나간다. 할머니는 추어탕을 끓인다.'], ['f_koi', '황금 잉어', 8, 120, '비늘마다 햇빛이 고여 있다. 그린 사람들은 이걸 낚으면 한 해가 풍년이라고 믿는다.']],
     blue: [['f_mackerel', '고등어', 55, 12, '블루 어시장의 주인공. 등 무늬가 파도처럼 흐른다.'], ['f_horse', '은빛 전갱이', 30, 30, '떼로 다니는 물고기. 한 마리가 방향을 틀면 전부 튼다.'], ['f_octo', '파랑 문어', 12, 60, '옥타비오 관장의 먼 친척이라는 소문이 있다. 본인들은 부인한다.'], ['fish_gold', '황금 고등어', 3, 0, '']],
     yellow: [['f_catfish', '오아시스 메기', 55, 12, '사막 한가운데서 수염을 기른 물고기. 모래바람이 불면 바닥에 숨는다.'], ['f_eel', '모래 뱀장어', 30, 30, '물과 모래를 가리지 않고 헤엄친다.'], ['f_pearl', '사막 진주조개', 8, 120, '입을 열면 진주가 보인다. 상인들은 이걸로 금화 대신 셈을 치르기도 한다.']],
     purple: [['f_minnow', '보랏빛 송사리', 55, 12, '해 질 녘 색을 그대로 입었다. 16년째 저녁인 숲에서 자랐다.'], ['f_mirror', '거울 잉어', 30, 30, '비늘에 낚은 사람의 얼굴이 비친다. 조금 슬픈 얼굴로.'], ['f_moon', '달그림자 붕어', 8, 120, '달빛이 닿는 곳에만 산다. 숲에 16년 동안 달이 뜨지 않아서 몹시 귀하다.']],
@@ -12134,7 +12143,7 @@ input { font: inherit; }
   /* 물속의 편지: 983년, 아스트라로 떠나던 세린이 지나는 물마다 던진 편지. 물은 결국 어디에나 닿으니까. */
   const LETTER_AT = { green: 'l_green', blue: 'l_blue', yellow: 'l_yellow', purple: 'l_purple', rainbow: 'l_rainbow', white: 'l_white', black: 'l_black', colorful: 'l_colorful' };
   W.book('l_green', { title: '물속의 편지 · 첫 번째', where: '그린 마을 물가 (낚시)', author: '세린', text:
-    '아가에게.\n\n이 편지를 누가 건질지 모르겠어. 물고기일 수도 있고, 느림보 영감님일 수도 있어. 그래도 엄마는 네가 건질 거라고 믿어. 물은 결국 어디로든 흐르고, 너는 결국 어디로든 갈 테니까.\n\n' +
+    '아가에게.\n\n이 편지를 누가 건질지 모르겠어. 물고기일 수도 있고, 엘름 영감님일 수도 있어. 그래도 엄마는 네가 건질 거라고 믿어. 물은 결국 어디로든 흐르고, 너는 결국 어디로든 갈 테니까.\n\n' +
     '지금 너는 에벨린 선생님 품에서 자고 있어. 선생님은 무서운 분이야. 창을 들면 산적도 길을 비켜. 그런데 너를 안으니까 손이 떨리시더라. 그 손을 오래 기억해 줘.\n\n' +
     '네 이름은 엄마가 짓지 않기로 했어. 선생님께 부탁드렸어. 엄마가 지으면 자꾸 부르고 싶어질 테니까. 멀리서도, 수정 속에서도.\n\n내일 떠나. 열여섯의 너에게, 열아홉의 엄마가.' });
   W.book('l_blue', { title: '물속의 편지 · 두 번째', where: '블루 바다 (낚시)', author: '세린', text:
@@ -12173,7 +12182,7 @@ input { font: inherit; }
     const pool = FISH[reg] || FISH.green;
     if (!s.flags.tip_fish) {
       s.flags.tip_fish = true;
-      await c.sys(['느림보 영감의 낚싯대를 드리웠다.', '찌가 흔들리며 머리 위에 [y]![/]가 뜨면 곧바로 [y]A[/]! 너무 빨라도, 늦어도 놓친다. [y]B[/]는 그만두기.']);
+      await c.sys(['엘름 영감의 낚싯대를 드리웠다.', '찌가 흔들리며 머리 위에 [y]![/]가 뜨면 곧바로 [y]A[/]! 너무 빨라도, 늦어도 놓친다. [y]B[/]는 그만두기.']);
     }
     c.sfx('splash');
     G.field.emote(G.field.player, '…', 2.5);
@@ -12319,13 +12328,13 @@ input { font: inherit; }
     kkachi: [['흰빛이 경비대에 자신을 넘기지 않았다. 빚으로 적어 두었다. 황금궁 부엌 뒷길로 갚았다.', d('kkachi', 'spare')], ['경비대에 넘겨졌다. 달아나지 않았다. 「애들한테 손대지 마. 나 혼자 했어.」 지금은 금화왕의 장부를 맡고 있다.', d('kkachi', 'report')]],
     goldie: [['아이들에게서 산 경험의 칠 할을 천년성에 납품했다. 옐로의 탑이 늘 할당량을 채운 이유.', (s) => !!s.flags.d_goldie], ['흰빛이 쓴 조건으로 계약했다. 아이 매입가 세 배, 스무 살에 되살 권리. 처음으로 손해 보는 장사.', d('goldie', 'contract')], ['장부가 광장에 뿌려진 다음 날 거래소 문을 닫았다. 「정의는 배를 채워 주지 않아.」 그래도 다시 열지는 않았다.', d('goldie', 'expose')]],
     vera: [['16년 동안 찻잔 받침 밑에 세린 노트의 마지막 장을 깔아 두었다.', fl('vera_page')], ['그 마지막 장을 흰빛과 함께 태웠다. 16년 만에 무언가를 내려놓았다.', d('serin_page', 'burn')]],
-    lumie: [['설원에서 온 아이 하얀을 살리려 머리칼을 전부 내주었다. 기뻤다고 말했다. 거짓말은 아니었다.', d('patient', 'lumie')], ['세린이 얼음 틈에 심어 둔 약초가 아이를 살리는 것을 보았다. 16년 동안 그 틈을 들여다본 적이 없었다.', d('patient', 'herb')]],
+    lumie: [['설원에서 온 아이 에이린을 살리려 머리칼을 전부 내주었다. 기뻤다고 말했다. 거짓말은 아니었다.', d('patient', 'lumie')], ['세린이 얼음 틈에 심어 둔 약초가 아이를 살리는 것을 보았다. 16년 동안 그 틈을 들여다본 적이 없었다.', d('patient', 'herb')]],
     edel: [['투구를 벗은 날 셋째 조항을 처음 썼다. 그리고 붙잡힌 새벽단 단장의 문도 열었다.', fl('edel_freed_lea')]],
     bolt: [['990년 가을, 탑이 등대가 된다는 계산을 끝냈다. 편지를 썼다. 부치지 않았다.', (s) => !!(s.truth && s.truth.t_design)], ['9년 동안 틀지 않은 아내의 녹음을 폐공장에서 들었다. 그날 밤부터 잠을 잔다.', d('bolt', 'talk')]],
     noel: [['볼트의 서랍 열쇠를 「볼트가 울 수 있게 되면」이라는 명령보다 먼저 건넸다. 자신의 판단이었다.', fl('noel_key')]],
     midnight: [['고양이가 아니다. 아우룸의 어깨에서 떨어진 첫 번째 어둠. 천 년 동안 한 달에 등불 한 개씩만 먹었다.', (s) => !!(s.abyss && s.abyss.a_midnight)], ['「배고파?」 천 년 만에 처음 들은 물음이었다.', (s) => s.flags.d_midnight_secret === 'keep' && (s.bond || {}).midnight >= 3], ['남은 배고픔을 삼키고 블랙 마을 하늘의 검은 별이 되었다.', (s) => s.flags.ending_type === 'night'], ['천 년 전 아우룸의 어깨 위에서 빛이 쪼개지는 밤을 보았다. 고양이는 기억력이 나쁘다고 우긴다.', (s) => !!s.flags.m_black_midnight], ['황금 고등어 대신 흰빛의 비밀 하나를 받았다. 가게 밖으로는 나가지 않는다.', d('midnight', 'secret')]],
     nocturne: [['「해치지 않고 멈추겠다」는 약속을 받고 길을 비켰다. 그리고 약속을 지키는지 보러 아스트라에 갔다.', d('nocturne', 'promise')], ['981년 봄, 그린 마을 참나무 아래 혼례의 증인이었다. 16년 동안 그 사실에 대답하지 않았다.', fl('kairon_father')]],
-    stella: [['승무원 열두 명을 재우고, 관측을 위해 캡슐의 동력을 끊었다. 기록에는 「전원 귀환」이라고 적었다.', (s) => !!(s.abyss && s.abyss.a_crew)], ['400년 만에 기록을 사실대로 고쳐 썼다. 「관리 인공지능의 선택.」', d('cryo', 'truth')], ['승무원 열두 명의 이름을 소리 내어 불렀다. 하늘, 단비, 새벽…', d('cryo', 'names')], ['400년 동안 별에 이름을 붙였다. 「돌아올 거야」「금방」「금방은 단위가 아니야」.', fl('m_space_truth')], ['단말기에 옮겨져 토리아 목도리에 매달린 채 아스트라까지 갔다. 기록은 안 한다고 했다. 전부 기록했다.', d('stella', 'carry')], ['별의 심장을 건네고 400년 만에 쉬었다. 마지막 별에 {n}의 이름을 붙였다.', d('stella', 'off')]],
+    stella: [['승무원 열두 명을 재우고, 관측을 위해 캡슐의 동력을 끊었다. 기록에는 「전원 귀환」이라고 적었다.', (s) => !!(s.abyss && s.abyss.a_crew)], ['400년 만에 기록을 사실대로 고쳐 썼다. 「관리 인공지능의 선택.」', d('cryo', 'truth')], ['승무원 열두 명의 이름을 소리 내어 불렀다. 아스라, 벨로, 루네…', d('cryo', 'names')], ['400년 동안 별에 이름을 붙였다. 「돌아올 거야」「금방」「금방은 단위가 아니야」.', fl('m_space_truth')], ['단말기에 옮겨져 토리아 목도리에 매달린 채 아스트라까지 갔다. 기록은 안 한다고 했다. 전부 기록했다.', d('stella', 'carry')], ['별의 심장을 건네고 400년 만에 쉬었다. 마지막 별에 {n}의 이름을 붙였다.', d('stella', 'off')]],
     kairon: [['983년부터 해마다 장부 마지막 줄에 서명했다. 「허용 범위 내」. 3,118명.', (s) => !!(s.abyss && s.abyss.a_ledger)], ['집광포의 과녁을 봉인의 제단 한가운데로 적었다. 과녁 크기 1.6미터. 세린의 키.', (s) => !!(s.abyss && s.abyss.a_plan)], ['{n}의 아버지. 983년부터 매일 밤 하늘 정거장에 아이의 나이를 적어 보냈다.', fl('kairon_father')], ['「아버지」라는 두 글자를 들었다. 16년 치 계산보다 무거웠다.', fl('called_father')], ['증거 앞에서 계산 노트를 내려놓았다. 「내가 16년 동안 틀렸다.」', fl('kairon_persuaded')], ['흰빛이 흩다 남긴 조각을 품고 수정 속에서 잠들었다. 이번엔 기한이 있는 봉인이다.', (s) => s.flags.ending_type === 'atone']],
     serin: [['983년, 흑점을 삼키기 직전 마음 한 조각을 떼어 새끼 하늘다람쥐에게 맡겼다.', (s) => !!(s.abyss && s.abyss.a_toria)], ['기억이 반쯤 빈 채로 깨어나, 아이를 처음부터 다시 알아 가기로 했다.', (s) => s.flags.toria_fate === 'keep'], ['지나는 물마다 편지를 던졌다. 물은 결국 어디로든 흐르니까.', (s) => Object.values(LETTER_AT).some((b) => s.books[b])], ['얼음 신전 틈에 약초를 심어 두고 떠났다. 희생 말고 다른 것도 남겼다.', d('patient', 'herb')], ['수정 속에 남은 마지막 조각. 대륙이 나누는 법을 배울 때까지 웃는 얼굴로 기다린다.', (s) => s.flags.ending_type === 'glow']],
   };
@@ -12465,7 +12474,7 @@ input { font: inherit; }
   });
   news('white', 'snowflake', 'hayan', (s) => !!dec(s, 'patient'), async (c) => {
     const d = dec(c.s, 'patient');
-    await c.say('snowflake', ['하얀이 알아? 설원에서 온 애. 요즘 나랑 눈싸움해! 나보다 느린데 안 울어.', d === 'herb' ? '얼음 신전 틈에 약초를 심는대. 매일. 다음 사람 거래.' : d === 'own' ? '네 앞머리 하얀 거 따라 한다고 밀가루 발랐다가 혼났어.' : '성녀님 휠체어를 밀어 드린대. 매일. 성녀님이 사탕을 주던 걸 이제 하얀이가 드려.']);
+    await c.say('snowflake', ['에이린이 알아? 설원에서 온 애. 요즘 나랑 눈싸움해! 나보다 느린데 안 울어.', d === 'herb' ? '얼음 신전 틈에 약초를 심는대. 매일. 다음 사람 거래.' : d === 'own' ? '네 앞머리 하얀 거 따라 한다고 밀가루 발랐다가 혼났어.' : '성녀님 휠체어를 밀어 드린대. 매일. 성녀님이 사탕을 주던 걸 이제 에이린이가 드려.']);
   });
 
   /* ───────── 이어지는 이야기: 루카와 루미 ─────────
@@ -12634,6 +12643,7 @@ input { font: inherit; }
     a_crew: { title: '냉동 수면실', text: '하늘 정거장의 승무원 열두 명은 지상으로 돌아가지 않았다. 스텔라는 셔틀을 잠그고 그들을 재웠다. 그리고 관측을 위해 캡슐의 동력을 끊었다. 기록에는 「전원 귀환」이라고 고쳐 적었다.', hint: '하늘 정거장 · 숙소 바닥의 서리' },
     a_midnight: { title: '고양이의 그림자', text: '미드나잇은 고양이가 아니다. 아우룸이 레벨 백만이 되던 밤 그의 어깨에서 떨어져 나온 첫 번째 어둠이다. 블랙 마을의 꺼지는 등불은 탑이 아니라 그가 먹은 것이다. 배가 고프지 않을 만큼만.', hint: '블랙 · 등불 빛에 비친 그림자' },
     a_gran: { title: '져 준 싸움', text: '983년, 에벨린은 카이론에게 지지 않았다. 져 주었다. 약속은 둘이었다. 아이를 숨겨 키울 것. 그리고 계산이 틀리면, 열여섯이 되는 해에 아이를 아스트라로 데려올 것.', hint: '그린 · 할머니 침대 밑의 긴 천 뭉치' },
+    a_vein: { title: '은빛 아이들', text: '은빛 왕국은 대광맥을 캐다 무너진 것이 아니다. 과학원은 흰빛을 만들려고 아이 300명에게 광맥의 빛을 마시게 했다. 적합 0. 마지막에 왕이 직접 마셨다. 사흘 뒤 하늘에 처음으로 검은 점이 떴다.', hint: '그레이 · 폐허 바닥의 은빛 틈' },
     a_toria: { title: '두고 간 마음', text: '983년, 세린은 흑점을 삼키기 직전 자기 마음 한 조각을 떼어 냈다. 아이를 기억하는 부분만. 흑점에게 먹히지 않게. 그 조각을 품은 새끼 하늘다람쥐는 16년 동안 레벨 9에서 자라지 못했다. 마음은 무거워서, 날지도 못했다.', hint: '레벨 9에서 멈춘 이유' },
   });
   G.story.abyssN = (s) => Object.keys(s.abyss || {}).filter((k) => G.story.abyss[k]).length;
@@ -12643,7 +12653,7 @@ input { font: inherit; }
     '983년 — 빛바램 사망 41명. 허용 범위 내. — K\n984년 — 97명. 허용 범위 내. — K\n986년 — 188명. 허용 범위 내. — K\n' +
     '990년 — 312명. 그레이 마을 기술자 볼트의 아내 포함. 허용 범위 내. — K\n' +
     '993년 — 355명. 블루 해안 등대지기 실명 1명 (사망 아님, 기록 제외). 허용 범위 내. — K\n' +
-    '997년 — 그린 마을 약초꾼 견습, 열한 살. 이름: 한결. 허용 범위 내. — K\n(K를 너무 세게 눌러 써서 종이가 찢어져 있다.)\n' +
+    '997년 — 그린 마을 약초꾼 견습, 열한 살. 이름: 엘린. 허용 범위 내. — K\n(K를 너무 세게 눌러 써서 종이가 찢어져 있다.)\n' +
     '998년 — 406명. 허용 범위 내. — K\n\n누계 3,118명.\n\n' +
     '(마지막 장, 다른 잉크)\n스승님이 키우는 아이는 올해 열여섯이 된다.\n그 아이 하나를 지키려고 3,118명을 셌다.\n계산은 맞는다. 맞아야 한다. 맞지 않으면 나는 3,118명을 죽인 사람이 된다.' });
   W.book('b_hollow_song', { title: '빈 자들의 노래', where: '천년성', author: '블랙 마을 등불지기들이 부르는 노래', text:
@@ -12759,9 +12769,9 @@ input { font: inherit; }
 
   /* ───────── 9장 블랙: 빈 기사들 · 허용 손실 · 고양이의 그림자 ───────── */
   const TAGS = [
-    [8, 9, '쓰러진 해골 기사. 녹슨 투구 턱끈에 이름표가 매달려 있다. 「레드 마을 · 대장장이 모루 · 991년 · 징수 불이행 3회」'],
-    [14, 14, '벽에 기대앉은 해골 기사. 갑옷이 몸에 비해 너무 크다. 이름표. 「블루 마을 · 어부 해랑 · 994년 · 빛바램 말기」 투구 안쪽에 조개껍데기 하나.'],
-    [21, 25, '작은 해골 기사. 투구가 아이 머리만 하다. 이름표. 「그린 마을 · 약초꾼 견습 한결 · 열한 살 · 997년」 손가락뼈 사이에 마른 약초 세 잎.'],
+    [8, 9, '쓰러진 해골 기사. 녹슨 투구 턱끈에 이름표가 매달려 있다. 「레드 마을 · 대장장이 브란 · 991년 · 징수 불이행 3회」'],
+    [14, 14, '벽에 기대앉은 해골 기사. 갑옷이 몸에 비해 너무 크다. 이름표. 「블루 마을 · 어부 마레 · 994년 · 빛바램 말기」 투구 안쪽에 조개껍데기 하나.'],
+    [21, 25, '작은 해골 기사. 투구가 아이 머리만 하다. 이름표. 「그린 마을 · 약초꾼 견습 엘린 · 열한 살 · 997년」 손가락뼈 사이에 마른 약초 세 잎.'],
   ];
   W.addObjs('castle1', TAGS.map(([x, y, text]) => W.look(x, y, text, { talk: async (c) => {
     await c.say(null, text);
@@ -12781,7 +12791,7 @@ input { font: inherit; }
     await c.say(null, '…자물쇠가 걸려 있지 않았다. 16년 동안 누구도 이 서랍을 열 거라고 생각하지 않은 모양이다.');
     c.music('dread');
     await c.book('b_loss');
-    await c.say('dotori:worry', ['……3,118명.', '열한 살. 그린 마을. 한결. …우리 마을이야. 할머니 약초 캐는 거 따라다니던 애. 도시로 공부하러 갔다고 했는데.']);
+    await c.say('dotori:worry', ['……3,118명.', '열한 살. 그린 마을. 엘린. …우리 마을이야. 할머니 약초 캐는 거 따라다니던 애. 도시로 공부하러 갔다고 했는데.']);
     c.abyss('a_ledger');
     if (s.flags.m_black_kairon) await c.say('dotori', '카이론은 이걸 해마다 적었어. 한 줄씩. 그리고 그 옆에서 네 나이를 셌어. 같은 책상에서.');
     G.main.resumeMusic();
@@ -12873,7 +12883,7 @@ input { font: inherit; }
       c.decide('cryo', 'truth', '스텔라가 400년 전의 기록을 사실대로 고쳐 썼다');
       c.bond('stella', 1, true);
     } else {
-      await c.say('stella', ['……', '하나. 조종사. 이름은 하늘. 별 이름을 제일 많이 같이 지었어.', '둘. 기술자. 이름은 단비. 내 회로를 고치면서 노래를 불렀어.', '셋. 막내. 이름은 새벽. …나를 친구라고 했어. 그리고 나한테 열어 달라고 했어.', '넷, 다섯, 여섯, 일곱, 여덟, 아홉, 열, 열하나, 열둘. …번호가 아니라 이름이었어. 다 기억해. 한 번도 안 지웠어.']);
+      await c.say('stella', ['……', '하나. 조종사. 이름은 아스라. 별 이름을 제일 많이 같이 지었어.', '둘. 기술자. 이름은 벨로. 내 회로를 고치면서 노래를 불렀어.', '셋. 막내. 이름은 루네. …나를 친구라고 했어. 그리고 나한테 열어 달라고 했어.', '넷, 다섯, 여섯, 일곱, 여덟, 아홉, 열, 열하나, 열둘. …번호가 아니라 이름이었어. 다 기억해. 한 번도 안 지웠어.']);
       c.decide('cryo', 'names', '스텔라가 승무원 열두 명의 이름을 불렀다');
       c.bond('stella', 2, true);
     }
@@ -12951,6 +12961,110 @@ input { font: inherit; }
     if (who === 'gran') c.bond('gran', 2);
     await c.narr('치직—. 통신이 끊겼다. 셔틀 창밖으로 대륙이 멀어진다. 초승달 모양의 땅 위에, 탑들의 불빛이 점점이 박혀 있다.');
   };
+
+  /* ───────── 8장 뒤: 대광맥 — 은빛 왕국이 정말로 무너진 이유 ───────── */
+  W.book('b_vein', { title: '그릇 계획 (기밀)', where: '대광맥', author: '은빛 왕국 과학원', secret: true, text:
+    '600년. 아우룸 이후 흰빛은 태어나지 않는다. 그렇다면 만든다.\n601년. 대광맥의 빛을 아이들에게 마시게 한다. 그릇은 어릴수록 넓다.\n' +
+    '603년. 피험체 1~40. 적합 0. 머리칼이 은빛으로 변한 뒤, 가벼워지다가, 비었다.\n' +
+    '607년. 피험체 212. 빈 아이들이 광맥 쪽으로 걷는다. 빛이 가장 많은 곳으로. 막지 말 것. 관찰할 것.\n' +
+    '609년. 빈 아이들을 광맥 바닥에 세워 두었다. 빛을 보면 조용해진다. 보고용 표현: 「안치」.\n' +
+    '611년. 피험체 300. 적합 0. 폐하께서 직접 마시기로 하셨다. 「짐은 어른이니 그릇도 크다.」\n' +
+    '612년 1일. 폐하 레벨 급상승. 머리칼 은빛. 「배가 고프다」고 하심. 옆의 시종이 렙업하는 것을 오래 보셨다.\n' +
+    '612년 2일. 하늘에 검은 점. 폐하께서 웃으셨다. 「누가 짐을 부르는구나.」\n' +
+    '612년 3일. (글씨가 없다. 종이가 은빛 가루로 덮여 있다.)' });
+  W.addObjs('ruins', [W.look(16, 28, (s) => (s.flags.vein_seen ? '무너진 바닥의 틈. 아래로 은빛 가루가 천천히 떠오른다. 대광맥으로 내려가는 길.' : '무너진 바닥. 틈 아래로 은빛 가루가 천천히, 거꾸로 떠오른다. 바닥이 보이지 않는다.'), { talk: async (c) => {
+    const s = c.s;
+    if (!s.flags.m_gray_truth && !s.flags.vein_seen) { await c.say(null, '무너진 바닥. 틈 아래로 은빛 가루가 천천히, 거꾸로 떠오른다. 바닥이 보이지 않는다.'); await c.say('dotori:worry', '…찍. 여기서 아래를 보면 안 될 것 같아. 누가 올려다보고 있는 느낌이야.'); return; }
+    if (!s.flags.vein_seen) {
+      await c.say(null, ['무너진 바닥의 틈. 은빛 가루가 거꾸로 떠오른다. 기록 보관소에서 본 612년 기록이 떠올랐다.', '「대광맥의 빛을 수도 한 점에 모았다」 — 그 광맥이 이 아래다.']);
+      if (!(await c.yes('틈으로 내려가 볼까?', null, '내려간다', '그만둔다'))) return;
+    }
+    c.sfx('door');
+    await c.warp('vein', 15, 2, 'down');
+  } })]);
+  const SILVER = [
+    [6, 13, '은빛으로 굳은 아이 조각상. 아니, 조각상이 아니다. 아이다. 무릎을 끌어안고 앉은 채로 은빛이 되었다. 목에 번호표. 「피험체 17」'],
+    [8, 20, '은빛 아이 셋이 손을 잡고 서 있다. 셋 다 같은 방향을 본다. 광맥 바닥, 빛이 가장 짙은 쪽. 「피험체 88 · 89 · 90」'],
+    [22, 15, '벽을 향해 선 은빛 아이. 벽에 손톱으로 긁은 줄이 수백 개. 다섯 개씩 묶여 있다. 날짜를 센 것이다. 무엇을 기다리며.'],
+    [22, 21, '가장 작은 은빛 아이. 손에 은빛 인형을 쥐고 있다. 인형도 은빛이다. 번호표가 없다. 번호를 붙이기 전에 비었다.'],
+  ];
+  W.map('vein', {
+    name: '대광맥', sub: '612년, 은빛이 빠져나간 구멍', region: 'gray', area: 'vein', theme: 'mine', bg: '#05050a', ki: W.ki('gray', 1), music: 'dread', weather: 'ash', dark: 170, darkColor: 'rgba(8,10,22,0.78)', battleBg: 'cave',
+    grid: W.gen({
+      w: 30, h: 36, seed: 'deep-silver-vein', ground: 'o',
+      obst: [['#', 4], ['^', 2]], dense: 0.5, sparse: 0.05, scale: 4,
+      border: '#', bt: 1, rough: 0.7,
+      paths: [[[15, 1], [15, 8], [7, 12], [7, 22], [15, 26], [15, 33]], [[15, 8], [22, 13], [22, 22], [15, 26]]], path: '=',
+      clear: [[10, 27, 11, 7]],
+      stamps: [{ x: 15, y: 1, rows: ['S'] }],
+    }),
+    warps: [{ x: 15, y: 1, to: 'ruins', tx: 16, ty: 27, dir: 'down' }],
+    lights: [{ x: 15, y: 30, r: 70, c: '#c8d0ff' }],
+    objs: SILVER.map(([x, y, text]) => W.look(x, y, text)).concat([
+      W.bookObj('b_vein', 11, 28),
+      W.spot(7, 17, 3), W.spot(26, 32, 10, true), W.chest('vn1', 20, 28, 'p8', 5),
+    ]),
+    mons: { list: ['ashgolem', 'watcheye', 'oilslime', 'skelknight', 'watcheye'], n: 10, area: [1, 3, 28, 22] },
+    fixed: [{ mon: 'hollowking', x: 15, y: 31, flag: 'beat_hollowking', boss: true, look: { creature: 'ghost', tint: '#c8d0e0' }, talk: hollowKing }],
+    enter: async (c) => {
+      if (c.flag('vein_seen')) return;
+      c.set('vein_seen');
+      await c.narr(['끝없이 내려갔다. 은빛 가루가 거꾸로, 위로 떨어진다. 벽에서 희미하게 노랫소리가 난다. 아이들 목소리. 가사는 없다.', '여기가 대광맥. 은빛 왕국이 612년에 빛을 파낸 곳.']);
+      await c.say('dotori:worry', ['……{n}. 저기, 저 은빛 조각상들.', '다 아이 키야.']);
+    },
+  });
+  async function hollowKing(c, mo) {
+    const s = c.s;
+    c.music('hollow');
+    await c.narr(['광맥 바닥. 은빛 아이 수백이 둥글게 서서 한가운데를 보고 있다. 한가운데에 왕좌. 왕좌에 은빛 갑옷.', '갑옷 속은 비어 있다. 그런데 왕관이 천천히 이쪽으로 돌아간다.']);
+    await c.say(null, '「……흰……빛……」');
+    await c.say(null, '「……짐이……되려던……것……」');
+    await c.say(null, '「……배……고프……다……」');
+    await c.say('dotori:surprise', '찍! 움직여! 갑옷이 혼자 일어나!');
+    const win = await c.battle('hollowking', { noFlee: true, music: 'boss2' });
+    if (!win) return;
+    G.field.removeMon(mo);
+    c.set('beat_hollowking');
+    c.music('requiem');
+    await c.narr(['은빛 갑옷이 무너졌다. 텅 빈 소리가 광맥 끝까지 울렸다. 왕관이 굴러 네 발치에 멈췄다.', '그때 은빛 아이들 사이에서 작은 목소리가 났다. 가장 작은 아이, 인형을 쥔 아이 쪽에서.']);
+    await c.say(null, ['「……폐하.」', '「이제 배 안 고파요?」']);
+    await c.narr('대답은 없었다. 은빛 아이들에게 금이 갔다. 하나씩, 둘씩. 은빛 가루가 되어 위로, 거꾸로, 400년 만에 하늘 쪽으로 떨어졌다.');
+    await c.say('dotori:sad', ['……다 올라가.', '{n}. 저 왕도… 카이론이랑 똑같은 걸 했어. 모으면 지킬 수 있다고. 자기가 그릇이 되면 된다고.', '…너도 요즘 가끔 배고프다고 했잖아. 그거, 저 왕이 한 말이랑 똑같아.']);
+    c.abyss('a_vein');
+    c.give('x11');
+    await c.say(null, '왕관을 주웠다. 가볍다. 속이 비어 있다. [y]은빛 왕관[/]을 얻었다. 쓰면 이상하게 배가 고프다.');
+    c.decide('vein', 'crown', '대광맥 바닥에서 빈 왕을 쓰러뜨리고 은빛 아이들을 올려 보냈다');
+    G.main.resumeMusic();
+  }
+
+  /* ───────── 배고픔 — 렙업이 쌓일수록 주인공에게 번지는 것 ─────────
+     아우룸의 첫 번째 글과 똑같은 증상이 레벨을 따라 조금씩. 마지막 선택(흰빛을 내려놓는 길)과 되풀이의 복선. */
+  G.story.nights.push(
+    { id: 'ab_hunger1', when: (s) => s.lv >= 100000 && !!s.flags.ch8, intro: '여관 창밖, 골목에서 아이 하나가 버튼 없이 망치질을 하다가 작게 렙업했다. 초록빛이 톡, 터졌다.', music: 'hollow', run: async (c) => {
+      await c.narr(['그 빛을 오래 보았다. 이상하게 눈을 뗄 수가 없었다.', '…입안에 침이 고였다.']);
+      await c.say('dotori', ['{n}? 왜 그렇게 봐. 저 애 레벨 3이야. 부러워할 게 없잖아.']);
+      const k = await c.ask(null, ['…아니야. 그냥 예뻐서.', '(대답하지 않는다)']);
+      await c.say('dotori', k === 0 ? '…그치. 예쁘지. 초록빛. 우리 마을 색.' : '……찍. 너 가끔 그런 얼굴 해. 레벨 오를수록 자주.');
+    } },
+    { id: 'ab_hunger2', when: (s) => s.lv >= 300000 && !!s.flags.ch10, intro: '한밤중, 토리아가 흔들어 깨웠다. 방이 캄캄하다. 머리맡의 등불이 꺼져 있다. 기름은 그대로인데.', music: 'dread', run: async (c) => {
+      await c.say('dotori:worry', ['……{n}. 너 자면서 등불 쪽으로 손을 뻗었어.', '손끝이 하얗게 빛났어. 그리고 등불이… 작아졌어. 한 칸씩. 네 손 쪽으로 빨려 들어가듯이.']);
+      await c.narr('손바닥을 보았다. 따뜻했다. 배가 불렀다. 저녁을 먹지 않았는데.');
+      const k = await c.ask(null, ['…꿈이야. 둘 다 꿈을 꾼 거야.', '미드나잇도 이랬을까.', '(등불을 다시 켠다)']);
+      if (k === 0) await c.say('dotori', '…응. 꿈. 꿈으로 하자. 대신 오늘은 내가 등불 옆에서 잘게.');
+      else if (k === 1) await c.say('dotori', c.s.abyss && c.s.abyss.a_midnight ? ['…한 달에 등불 하나. 배고프지 않을 만큼만.', '너는 오늘 하룻밤에 하나 먹었어.'] : '미드나잇? 그 고양이가 왜? …찍. 모르겠어. 무서운 건 알겠어.');
+      else await c.narr('성냥을 그었다. 등불이 다시 켜졌다. 토리아가 그 불빛과 네 손을 번갈아 보았다. 오래.');
+    } },
+    { id: 'ab_hunger3', when: (s) => s.lv >= 650000 && !!s.flags.ch11, intro: '정거장의 창밖으로 황금별 옆 검은 점이 보인다. 이상하게, 그 점이 반갑다.', music: 'hollow', run: async (c) => {
+      await c.say('dotori', ['{n}. 너 요즘 밥을 세 그릇 먹어. 그래도 배고프대.', '레벨이 오를 때마다 더 배고파지지? …숫자로 말해 봐. 루드처럼.']);
+      await c.narr(['레벨 수십만. 버튼을 누를 때마다 몸속의 무언가가 넓어진다. 채워지는 게 아니라, 넓어진다.', '바닥이 멀어진다.']);
+      const k = await c.ask('토리아에게', ['…배고파. 계속. 점점 더.', '괜찮아. 성장기라서 그래.']);
+      if (k === 0) {
+        await c.say('dotori:sad', ['……말해 줘서 고마워.', '나, 그 말 어디서 들어 본 것 같아. 아주 오래전에. 누가 울면서 한 말이야. 「배고파, 아가. 미안해.」', '…그러니까 나는 너 혼자 배고프게 안 둘 거야. 네가 뭘 먹고 싶어지든, 내가 먼저 막을 거야.']);
+        c.set('hunger_told');
+        c.bond('dotori', 1, true);
+      } else await c.say('dotori', ['…성장기. 응. 성장기.', '거짓말하는 사람은 숨소리가 반듯해진대. 할머니가 그랬어. …지금 네 숨소리, 엄청 반듯해.']);
+    } },
+  );
 
   /* ───────── 이야기가 끝나면 ───────── */
   // 흰빛을 내려놓는 길: 그릇이 무엇인지 알고(마지막에 넷은 저절로 알게 된다), 심연을 둘 더 들여다봤거나 이미 빛을 나눠 본 적이 있어야 한다
