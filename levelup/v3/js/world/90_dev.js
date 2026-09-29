@@ -13,7 +13,7 @@
     c5: { flags: ['ch:c5', 'c5_vera', 'c5_viola', 'c5_sybil', 'c5_tea', 'c5_done', 'open:rainbow', 'd5:boss', 'd5:heart'], items: ['mirror', 'tome_ice'], truth: ['t_note'], hearts: 1, lv: 20 },
     c6: { flags: ['ch:c6', 'c6_chroma', 'c6_rolo', 'c6_ember', 'c6_finale', 'c6_done', 'open:white', 'd6:boss', 'd6:heart', 'white_hair', 'pillar_broken'], items: ['glove'], spells: ['light'], hearts: 1, lv: 25 },
     c7: { flags: ['ch:c7', 'c7_lumie', 'c7_iska', 'c7_plan', 'c7_noah', 'c7_edel', 'noah_to_white', 'noah_herb', 'c7_done', 'open:gray', 'd7:boss', 'd7:heart'], items: ['sw_silver', 'ar_cold'], spells: ['heal'], hearts: 1, lv: 30 },
-    c8: { flags: ['ch:c8', 'c8_done', 'open:black', 'd8:boss', 'd8:heart'], items: ['lantern'], truth: ['t_grey', 't_bolt'], hearts: 1, lv: 35 },
+    c8: { flags: ['ch:c8', 'c8_bolt', 'c8_color', 'c8_proof', 'c8_mk7', 'c8_recording', 'c8_done', 'open:black', 'd8:boss', 'd8:heart'], items: ['lantern', 'reverser', 'silver_rec'], truth: ['t_grey', 't_bolt'], hearts: 1, lv: 35 },
     c9: { flags: ['ch:c9', 'c9_done', 'open:colorful', 'd9:boss', 'd9:heart'], items: ['bw_long'], hearts: 1, lv: 40 },
     c10: { flags: ['ch:c10', 'c10_done'], items: [], hearts: 1, lv: 44 },
     c11: { flags: ['ch:c11', 'c11_done'], items: [], truth: ['t_star'], hearts: 1, lv: 48 },

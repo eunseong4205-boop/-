@@ -163,6 +163,8 @@
       case 'warp': osc('sine', 200, t, 0.5, 0.1, null, { to: 1600, slide: 0.5 }); [84, 91, 96].forEach((m, i) => osc('sine', hz(m), t + 0.3 + i * 0.05, 0.3, 0.06)); break;
       case 'save': [72, 79, 84, 88].forEach((m, i) => osc('sine', hz(m), t + i * 0.08, 0.3, 0.09, null, { r: 0.3 })); break;
       case 'talk': osc('sq12', 880, t, 0.03, 0.05); break;
+      case 'charge': osc('sq25', 220, t, 0.5, 0.06, null, { to: 880, slide: 0.5 }); osc('sine', 110, t, 0.5, 0.08, null, { to: 440, slide: 0.5 }); break;
+      case 'stairs': [0, 0.08, 0.16].forEach((d) => noise(t + d, 0.05, 0.2, null, 900)); break;
       case 'pop': noise(t, 0.05, 0.4, null, 3000); osc('sq25', 880, t, 0.06, 0.1, null, { to: 1760, slide: 0.05 }); break;
       case 'drain': osc('sine', 330, t, 1.6, 0.14, null, { to: 80, slide: 1.6 }); osc('sawtooth', 165, t, 1.6, 0.05, null, { to: 40, slide: 1.6 }); noise(t, 1.4, 0.05, null, null, 500); break;
       case 'bell': osc('sine', hz(84), t, 1.2, 0.12, null, { r: 1 }); osc('sine', hz(96), t, 0.8, 0.05, null, { r: 1 }); break;
