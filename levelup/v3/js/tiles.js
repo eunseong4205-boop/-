@@ -10,21 +10,33 @@
   const T = {
     VOID: 0, GRASS: 1, DIRT: 2, SAND: 3, SNOW: 4, ASH: 5, STONE: 6, WOOD: 7, CARPET: 8, WATER: 9, DEEP: 10, LAVA: 11, ICE: 12,
     CLIFF: 13, STAIRS: 14, WALL: 15, FLOOR: 16, PIT: 17, BRIDGE: 18, DARK: 19, CLOUD: 20, CRYSTAL: 21, METAL: 22, FARM: 23, SWAMP: 24, ROAD: 25, TILE: 26, RUG: 27,
+    // 들 · 숲 바닥
+    MEADOW: 28, MOSS: 29, GRAVEL: 30, LEAVES: 31, MUD: 32, DRY: 33, ROCKY: 34, PETALS: 41, CRACKED: 42,
+    // 마을 바닥
+    COBBLE: 35, BRICK: 36, MARBLE: 37, SANDSTONE: 38, PLANK: 39, PLAZA: 40,
+    // 던전 바닥
+    CAVE: 43, ROOTS: 44, WETSTONE: 45, HIERO: 46, MIRROR: 47, ICEBRICK: 48, GRATE: 49, CHECKER: 50, PANEL: 51, ORE: 52, SKYTILE: 53,
   };
-  const NAMES = Object.keys(T);
+  const NAMES = []; for (const k of Object.keys(T)) NAMES[T[k]] = k;   // 번호 → 이름
   // 성질: s=막힘 · w=물(얕음) · d=깊은 물 · h=위험(구덩이 · 용암) · slow=느림 · slip=미끄러움
   const PROP = [];
-  for (const k of NAMES) PROP[T[k]] = {};
+  for (const k of Object.keys(T)) PROP[T[k]] = {};
   Object.assign(PROP[T.VOID], { s: 1 }); Object.assign(PROP[T.CLIFF], { s: 1, face: 1 }); Object.assign(PROP[T.WALL], { s: 1, wall: 1 });
   Object.assign(PROP[T.DEEP], { s: 1, d: 1, liquid: 1 }); Object.assign(PROP[T.WATER], { w: 1, slow: 0.72, liquid: 1 }); Object.assign(PROP[T.SWAMP], { slow: 0.6, liquid: 1 });
   Object.assign(PROP[T.LAVA], { h: 'lava', liquid: 1 }); Object.assign(PROP[T.PIT], { h: 'pit' }); Object.assign(PROP[T.ICE], { slip: 1 }); Object.assign(PROP[T.STAIRS], { stairs: 1 });
-  Object.assign(PROP[T.SNOW], { slow: 0.9 }); Object.assign(PROP[T.SAND], { slow: 0.94 });
-  // 경계를 섞는 순위 (높을수록 이웃 칸으로 번진다)
-  const PRI = new Array(32).fill(0);
+  Object.assign(PROP[T.SNOW], { slow: 0.9 }); Object.assign(PROP[T.SAND], { slow: 0.94 }); Object.assign(PROP[T.MUD], { slow: 0.84 });
+  // 경계를 섞는 순위 (값이 비슷할 때 누가 이기나) · 부드럽게 섞이는 지형
+  const PRI = new Array(64).fill(0);
   PRI[T.GRASS] = 6; PRI[T.DARK] = 6; PRI[T.SNOW] = 7; PRI[T.DIRT] = 3; PRI[T.SAND] = 2; PRI[T.ASH] = 4; PRI[T.FARM] = 1; PRI[T.SWAMP] = 5;
-  PRI[T.ROAD] = 1; PRI[T.CLOUD] = 5; PRI[T.CRYSTAL] = 3;
-  const BLEND = new Array(32).fill(false);
-  for (const k of ['GRASS', 'DIRT', 'SAND', 'SNOW', 'ASH', 'DARK', 'FARM', 'SWAMP', 'ROAD', 'CLOUD', 'CRYSTAL']) BLEND[T[k]] = true;
+  PRI[T.ROAD] = 1; PRI[T.CLOUD] = 5; PRI[T.CRYSTAL] = 3; PRI[T.MEADOW] = 6.5; PRI[T.PETALS] = 6.4; PRI[T.MOSS] = 5.8; PRI[T.LEAVES] = 5.5; PRI[T.DRY] = 5.9;
+  PRI[T.MUD] = 3.5; PRI[T.GRAVEL] = 2.8; PRI[T.ROCKY] = 2.5; PRI[T.CRACKED] = 2.2; PRI[T.CAVE] = 2; PRI[T.ROOTS] = 2.4; PRI[T.ORE] = 2.1;
+  PRI[T.COBBLE] = 1.2; PRI[T.WATER] = 8; PRI[T.DEEP] = 9; PRI[T.LAVA] = 9; PRI[T.ICE] = 4;
+  const BLEND = new Array(64).fill(false);
+  for (const k of ['GRASS', 'DIRT', 'SAND', 'SNOW', 'ASH', 'DARK', 'FARM', 'SWAMP', 'ROAD', 'CLOUD', 'CRYSTAL', 'MEADOW', 'MOSS', 'GRAVEL', 'LEAVES', 'MUD', 'DRY', 'ROCKY', 'PETALS', 'CRACKED', 'CAVE', 'ROOTS', 'ORE', 'COBBLE', 'WATER', 'DEEP', 'LAVA', 'ICE']) BLEND[T[k]] = true;
+  const LIQ = new Array(64).fill(false); LIQ[T.WATER] = LIQ[T.DEEP] = true;
+  // 자연 바닥 (큰 무늬 색 흔들림)
+  const NATURAL = new Array(64).fill(false);
+  for (const k of ['GRASS', 'MEADOW', 'PETALS', 'DRY', 'MOSS', 'LEAVES', 'DIRT', 'SAND', 'SNOW', 'DARK']) NATURAL[T[k]] = true;
 
   /* ───────── 지역 팔레트 ─────────
      g: 풀 [어둠, 가운데, 밝음, 꽃], d: 흙, s: 모래, c: 절벽 [어둠, 가운데, 밝음], w: 물 [깊음, 가운데, 밝음, 거품] */
@@ -53,6 +65,28 @@
   function mul(a, f) { return [a[0] * f, a[1] * f, a[2] * f]; }
   // 세 색 사이를 v(0~1)로 고른다 (단계가 보이게)
   function band(arr, v) { return v < 0.33 ? rgb(arr[0]) : v < 0.72 ? rgb(arr[1]) : rgb(arr[2]); }
+  /** 흔들린 격자 점들로 만든 조각 무늬: 가장 가까운 두 점까지의 거리와 조각 번호 */
+  let VD1 = 0, VD2 = 0, VID = 0, VCX = 0, VCY = 0;
+  function vor(x, y, s, seed) {
+    const gx = Math.floor(x / s), gy = Math.floor(y / s);
+    let d1 = 1e9, d2 = 1e9, id = 0, cx = 0, cy = 0;
+    for (let j = -1; j <= 1; j++) for (let i = -1; i <= 1; i++) {
+      const X = gx + i, Y = gy + j;
+      const px = (X + 0.15 + n2(X, Y, seed) * 0.7) * s, py = (Y + 0.15 + n2(X, Y, seed + 1) * 0.7) * s;
+      const d = (px - x) * (px - x) + (py - y) * (py - y);
+      if (d < d1) { d2 = d1; d1 = d; id = n2(X, Y, seed + 2); cx = px; cy = py; } else if (d < d2) d2 = d;
+    }
+    VD1 = Math.sqrt(d1); VD2 = Math.sqrt(d2); VID = id; VCX = cx; VCY = cy;
+  }
+  /** 둥근 돌: 조각 무늬 + 줄눈 + 왼쪽 위 빛 */
+  function stones(x, y, s, seed, cols, mortar, gap) {
+    vor(x, y, s, seed);
+    if (VD2 - VD1 < (gap || 1.1)) return mortar;
+    let c = VID < 0.33 ? cols[0] : VID < 0.7 ? cols[1] : cols[2];
+    const dx = x - VCX, dy = y - VCY;
+    if (dx + dy < -s * 0.35) c = mixc(c, [255, 255, 255], 0.16); else if (dx + dy > s * 0.35) c = mul(c, 0.86);
+    return c;
+  }
 
   /** 지형 한 픽셀의 기본 색 (경계 섞기 전) — x, y는 지도 전체의 픽셀 좌표 */
   function base(t, P, x, y, v, m, tx, ty) {
@@ -206,32 +240,317 @@
         if ((bx === 3 || bx === 12) && (by === 3 || by === 12)) c = [150, 158, 176];
         return c;
       }
+      case T.MEADOW: case T.PETALS: {
+        // 꽃밭: 풀 위에 작은 꽃 무더기 · 꽃잎
+        let c = base(T.GRASS, P, x, y, v, m, tx, ty);
+        const cx = x >> 2, cy = y >> 2, r = n2(cx, cy, 331);
+        if (t === T.MEADOW && r > 0.82 && U.vnoise(x / 20, y / 20, 332) > 0.42) {
+          const ox = 1 + ((n2(cx, cy, 333) * 2) | 0), oy = 1 + ((n2(cx, cy, 335) * 2) | 0), lx2 = x & 3, ly2 = y & 3;
+          const cols = [P.g[3], '#ffffff', '#ffd84a', '#ff8ab8', '#b8a8ff'];
+          const fc = rgb(cols[(n2(cx, cy, 337) * cols.length) | 0]);
+          if ((lx2 === ox && ly2 === oy)) return mixc(fc, [255, 255, 255], 0.35);
+          if (Math.abs(lx2 - ox) + Math.abs(ly2 - oy) === 1) return fc;
+        }
+        if (t === T.PETALS) { const q = n2(x, y, 339); if (q > 0.992) return rgb(P.g[3]); if (q > 0.987) return mixc(c, [255, 240, 248], 0.6); }
+        return c;
+      }
+      case T.DRY: {
+        // 마른 풀: 누런 바탕에 짚 같은 줄
+        const f = U.fbm(x / 24, y / 24, 341, 3);
+        const lo = mixc(rgb(P.g[0]), rgb(P.s[0]), 0.55), mid = mixc(rgb(P.g[1]), rgb(P.s[1]), 0.6), hi = mixc(rgb(P.g[2]), rgb(P.s[2]), 0.6);
+        let c = f < 0.36 ? lo : f < 0.7 ? mid : hi;
+        const cx = x >> 2, cy = y >> 2;
+        if (n2(cx, cy, 343) > 0.72) { const ox = (n2(cx, cy, 345) * 3) | 0; if ((x & 3) === ox && (y & 3) >= 1) c = (y & 3) === 1 ? mixc(hi, [255, 250, 210], 0.35) : hi; }
+        return c;
+      }
+      case T.MOSS: {
+        // 이끼: 어두운 초록 덩어리 사이로 돌이 비친다
+        const f = U.fbm(x / 9, y / 9, 351, 3);
+        const g0 = mixc(rgb(P.g[0]), [36, 64, 40], 0.45), g1 = mixc(rgb(P.g[1]), [60, 100, 56], 0.4);
+        let c = f > 0.56 ? g1 : f > 0.4 ? g0 : mixc(rgb(P.c[1]), g0, 0.4);
+        const q = n2(x >> 1, y >> 1, 353);
+        if (f > 0.5 && q > 0.93) c = mixc(g1, [200, 230, 150], 0.35);
+        return c;
+      }
+      case T.LEAVES: {
+        // 숲 바닥: 흙 위에 떨어진 잎
+        const f = U.fbm(x / 14, y / 14, 361, 2);
+        let c = mixc(rgb(P.d[0]), rgb(P.g[0]), 0.35 + f * 0.3);
+        const cx = x >> 2, cy = y >> 2, r = n2(cx, cy, 363);
+        if (r > 0.45) {
+          const lx2 = x & 3, ly2 = y & 3, ox = (n2(cx, cy, 365) * 2) | 0, oy = (n2(cx, cy, 367) * 2) | 0;
+          if (lx2 >= ox && lx2 <= ox + 1 && ly2 >= oy && ly2 <= oy + 1 && !(lx2 === ox + 1 && ly2 === oy)) {
+            const k = n2(cx, cy, 369);
+            const lc = k < 0.4 ? rgb(P.g[1]) : k < 0.65 ? rgb(P.g[0]) : k < 0.85 ? [196, 128, 58] : [168, 84, 44];
+            return lx2 === ox && ly2 === oy ? mixc(lc, [255, 255, 220], 0.2) : lc;
+          }
+        }
+        if (n2(x, y, 371) > 0.985) c = mul(c, 0.7);
+        return c;
+      }
+      case T.MUD: {
+        const f = U.fbm(x / 11, y / 11, 381, 3);
+        let c = mixc([70, 52, 38], mul(rgb(P.d[0]), 0.8), 0.4);
+        if (f > 0.62) c = mixc(rgb(P.w[2]), [90, 76, 60], 0.55);          // 물웅덩이
+        else if (f > 0.56) c = [58, 42, 30];
+        else if (f < 0.3) c = mixc(c, rgb(P.d[1]), 0.35);
+        if (f > 0.66 && n2(x, y, 383) > 0.9) c = mixc(c, [255, 255, 255], 0.4);
+        return c;
+      }
+      case T.ROCKY: {
+        // 맨 바위: 결 · 금 · 자잘한 돌
+        const C = P.c.map(rgb);
+        const f = U.fbm(x / 16, y / 16, 391, 3);
+        let c = mixc(mixc(C[1], C[2], 0.55), rgb(P.d[1]), 0.25);
+        if (f > 0.62) c = mixc(C[2], [255, 255, 255], 0.08); else if (f < 0.38) c = mixc(C[1], C[0], 0.3);
+        if (Math.abs(U.fbm(x / 10, y / 10, 393, 2) - 0.5) < 0.018) c = C[0];
+        const q = n2(x >> 1, y >> 1, 395); if (q > 0.965) c = mul(c, 0.8); else if (q > 0.955) c = mixc(c, [255, 255, 255], 0.2);
+        return c;
+      }
+      case T.GRAVEL: {
+        // 자갈: 흙 바탕에 작은 돌
+        let c = mixc(rgb(P.d[0]), rgb(P.s[0]), 0.5);
+        vor(x, y, 3.2, 401);
+        if (VD1 < 1.25) { const k = VID; c = k < 0.3 ? [120, 116, 110] : k < 0.6 ? mixc(rgb(P.s[1]), [150, 146, 140], 0.5) : k < 0.85 ? [170, 164, 152] : mul(rgb(P.d[1]), 0.9); if (x - VCX + y - VCY < -0.6) c = mixc(c, [255, 255, 255], 0.22); }
+        else if (VD1 < 1.8) c = mul(c, 0.82);
+        return c;
+      }
+      case T.CRACKED: {
+        // 갈라진 땅
+        const base0 = P.ash ? rgb(P.ash[1]) : rgb(P.d[1]);
+        vor(x, y, 7, 411);
+        let c = mixc(base0, rgb(P.s[1]), 0.45 + VID * 0.2);
+        if (VD2 - VD1 < 0.8) return mul(c, 0.74);
+        if (VD2 - VD1 < 1.6) c = mul(c, 0.92); else if (x - VCX + y - VCY < -2) c = mixc(c, [255, 255, 255], 0.08);
+        return c;
+      }
+      case T.COBBLE: {
+        const cols = [mixc(rgb(P.s[0]), [120, 116, 112], 0.4), mixc(rgb(P.s[1]), [150, 146, 140], 0.35), mixc(rgb(P.s[2]), [180, 176, 168], 0.3)];
+        return stones(x, y, 5.2, 421, cols, mul(rgb(P.d[0]), 0.72), 1.05);
+      }
+      case T.BRICK: {
+        // 헤링본 벽돌
+        const bx = Math.floor(x / 8), by = Math.floor(y / 8), lx2 = x & 7, ly2 = y & 7;
+        const vert = (bx + by) & 1;
+        const a = vert ? lx2 : ly2, b2 = vert ? ly2 : lx2;
+        const cols = [[138, 70, 56], [166, 88, 66], [190, 110, 84]];
+        if (a === 0 || a === 4 || b2 === 0) return [96, 62, 52];
+        let c = cols[(n2(bx * 2 + (a > 4 ? 1 : 0), by, 431) * 3) | 0];
+        if (a === 1 || a === 5) c = mixc(c, [255, 230, 200], 0.14);
+        return c;
+      }
+      case T.MARBLE: {
+        // 흰 대리석 격자 + 결
+        const bx = x >> 3, by = y >> 3, lx2 = x & 7, ly2 = y & 7;
+        let c = (bx + by) & 1 ? [222, 222, 232] : [200, 204, 218];
+        if (lx2 === 0 || ly2 === 0) c = [168, 172, 190];
+        const vein = Math.abs(U.fbm(x / 13, y / 13, 441, 3) - 0.5);
+        if (vein < 0.02) c = mul(c, 0.86);
+        if (lx2 === 1 && ly2 === 1) c = [246, 246, 252];
+        return c;
+      }
+      case T.SANDSTONE: case T.HIERO: {
+        // 큰 사암 판석 (HIERO: 판석마다 새긴 문양)
+        const row = Math.floor(y / 8), off = (row & 1) * 8;
+        const bx = Math.floor((x + off) / 16), lx2 = (x + off) & 15, ly2 = y & 7;
+        const C = [rgb(PAL.yellow.s[0]), rgb(PAL.yellow.s[1]), rgb(PAL.yellow.s[2])];
+        if (lx2 === 0 || ly2 === 0) return mul(C[0], 0.7);
+        let c = mixc(C[1], C[(n2(bx, row, 451) * 3) | 0], 0.5);
+        if (ly2 === 1 || lx2 === 1) c = mixc(c, [255, 250, 230], 0.2);
+        if (ly2 === 7 || lx2 === 15) c = mul(c, 0.88);
+        if (t === T.HIERO && n2(bx, row, 453) > 0.55 && lx2 > 3 && lx2 < 13 && ly2 > 1 && ly2 < 7) {
+          const g = (n2(bx, row, 455) * 5) | 0, gx = lx2 - 4, gy = ly2 - 2;
+          const on = g === 0 ? (gx === 4 && gy < 4) || (gy === 1 && gx > 2 && gx < 6)                   // 앙크
+            : g === 1 ? (gy === 2 && gx > 1 && gx < 7) || (gy === 1 && (gx === 3 || gx === 5)) || (gx === 4 && gy === 2)   // 눈
+            : g === 2 ? (gx === 2 && gy < 5) || (gy === 4 && gx < 7) || (gx === 6 && gy > 1)             // 새 발자국
+            : g === 3 ? (gy === 0 && gx > 1 && gx < 7) || (gy === 4 && gx > 1 && gx < 7) || gx === 4          // 기둥
+            : ((gx + gy) % 3 === 0 && gy < 5);                                                         // 물결
+          if (on) c = mul(c, 0.62);
+        }
+        if (n2(x, y, 457) > 0.99) c = mul(c, 0.85);
+        return c;
+      }
+      case T.PLANK: {
+        // 부두 판자 (틈이 보이는 가로 널)
+        const plank = Math.floor(y / 5), seam = (x + plank * 11) % 24;
+        if (y % 5 === 0) return [40, 30, 26];
+        let c = n2(plank, Math.floor((x + plank * 11) / 24), 461) > 0.5 ? [150, 116, 82] : [134, 100, 70];
+        if (seam === 0) c = [78, 56, 40];
+        else if (seam === 2 && y % 5 === 2) c = [70, 70, 80];                       // 못
+        else if (y % 5 === 1) c = mixc(c, [255, 240, 210], 0.18);
+        if (n2(x >> 1, plank, 463) > 0.9) c = mul(c, 0.9);
+        return c;
+      }
+      case T.PLAZA: {
+        // 광장: 가운데서 퍼지는 동심원 포석
+        const pz = m && m.plazaNear ? m.plazaNear(x, y) : null;
+        if (!pz) return base(T.COBBLE, P, x, y, v, m, tx, ty);
+        const dx = x - pz.x, dy = y - pz.y, r = Math.sqrt(dx * dx + dy * dy);
+        const ring = Math.floor(r / 5), ang = Math.atan2(dy, dx) + ring * 0.37;
+        const seg = Math.max(6, Math.round((ring + 0.5) * 5 * Math.PI * 2 / 7));
+        const a = ((ang / (Math.PI * 2)) * seg % 1 + 1) % 1;
+        const cols = pz.cols || [rgb(P.s[0]), rgb(P.s[1]), rgb(P.s[2])];
+        if (r < 6) return r < 4 ? mixc(cols[2], [255, 240, 200], 0.3) : mul(cols[0], 0.7);
+        if (r % 5 < 0.9 || a < 0.06) return mul(cols[0], 0.66);
+        let c = cols[((n2(ring, Math.floor(ang / (Math.PI * 2) * seg), 471) * 3) | 0)];
+        if (ring % 4 === 3) c = mixc(c, pz.accent ? rgb(pz.accent) : [200, 90, 70], 0.35);
+        if (r % 5 < 1.8) c = mixc(c, [255, 255, 255], 0.12);
+        return c;
+      }
+      case T.CAVE: case T.ROOTS: case T.ORE: {
+        // 동굴 바닥: 흙과 바위가 섞인 거친 바닥 (ROOTS: 뿌리가 기어간다, ORE: 금가루가 반짝)
+        const C = P.c.map(rgb);
+        const f = U.fbm(x / 12, y / 12, 481, 3);
+        let c = mixc(rgb(P.d[0]), C[1], 0.35 + f * 0.3);
+        if (f > 0.64) c = mixc(c, C[2], 0.35); else if (f < 0.34) c = mul(c, 0.86);
+        vor(x, y, 4.5, 483); if (VD1 < 1.2 && VID > 0.7) c = mixc(C[2], [255, 255, 255], 0.12); else if (VD1 < 1.7 && VID > 0.7) c = mul(c, 0.78);
+        if (t === T.ROOTS) {
+          const r1 = Math.abs(U.fbm(x / 22, y / 22, 485, 3) - 0.5), r2 = Math.abs(U.fbm(x / 17, y / 17, 487, 2) - 0.5);
+          if (r1 < 0.022 || r2 < 0.014) c = r1 < 0.01 || r2 < 0.006 ? [132, 92, 58] : [96, 64, 40];
+          else if (r1 < 0.03) c = mul(c, 0.8);
+        }
+        if (t === T.ORE) { const q = n2(x, y, 489); if (q > 0.992) c = [255, 236, 140]; else if (q > 0.985) c = [220, 180, 80]; }
+        return c;
+      }
+      case T.WETSTONE: {
+        // 물에 젖은 돌: 청회색 판석, 줄눈의 이끼, 물웅덩이
+        const cols = [[74, 96, 112], [92, 116, 132], [112, 138, 152]];
+        let c = stones(x, y, 7, 491, cols, [46, 84, 76], 1.2);
+        const f = U.fbm(x / 15, y / 15, 493, 2);
+        if (f > 0.64) c = mixc(c, [150, 200, 230], 0.45); if (f > 0.7 && n2(x, y, 495) > 0.92) c = [220, 245, 255];
+        return c;
+      }
+      case T.MIRROR: {
+        // 거울 바닥: 짙은 보랏빛 윤기, 비스듬한 빛줄기, 별처럼 박힌 반짝임
+        const bx = x >> 4, by = y >> 4, lx2 = x & 15, ly2 = y & 15;
+        let c = (bx + by) & 1 ? [48, 36, 78] : [58, 44, 92];
+        if (lx2 === 0 || ly2 === 0) c = [120, 96, 170];
+        const d = (x + y * 0.6) % 40; if (d < 2) c = mixc(c, [220, 200, 255], 0.35); else if (d < 4) c = mixc(c, [200, 180, 255], 0.12);
+        if (n2(x, y, 501) > 0.994) c = [255, 255, 255];
+        return c;
+      }
+      case T.ICEBRICK: {
+        const row = Math.floor(y / 6), off = (row & 1) * 6, bx = Math.floor((x + off) / 12), lx2 = (x + off) % 12, ly2 = y % 6;
+        if (lx2 === 0 || ly2 === 0) return [120, 150, 190];
+        let c = mixc([176, 206, 232], [214, 236, 250], n2(bx, row, 511));
+        if (ly2 === 1) c = mixc(c, [255, 255, 255], 0.35);
+        if (Math.abs(U.fbm(x / 8, y / 8, 513, 2) - 0.5) < 0.02) c = [150, 186, 220];
+        return c;
+      }
+      case T.GRATE: {
+        // 쇠 격자: 구멍 사이로 아래 어둠, 볼트
+        const lx2 = x & 7, ly2 = y & 7, bx = x >> 4, by = y >> 4;
+        if ((x & 15) === 0 || (y & 15) === 0) return [60, 66, 80];
+        if (lx2 > 1 && lx2 < 6 && ly2 > 1 && ly2 < 6) return (x & 15) > 7 === (y & 15) > 7 ? [10, 12, 18] : [16, 18, 26];
+        let c = [98, 106, 124];
+        if (lx2 === 1 || ly2 === 1) c = [132, 140, 158];
+        if (n2(bx, by, 521) > 0.8) c = mixc(c, [150, 110, 80], 0.3);   // 녹
+        return c;
+      }
+      case T.CHECKER: {
+        // 성 바닥: 검은 대리석과 짙은 진홍 바둑판, 네 칸마다 금줄
+        const bx = x >> 4, by = y >> 4, lx2 = x & 15, ly2 = y & 15;
+        let c = (bx + by) & 1 ? [30, 24, 38] : [84, 24, 40];
+        if (((bx & 3) === 0 && lx2 === 0) || ((by & 3) === 0 && ly2 === 0)) return [200, 160, 80];
+        if (lx2 === 0 || ly2 === 0) c = mul(c, 0.7);
+        const vein = Math.abs(U.fbm(x / 11, y / 11, 531, 3) - 0.5); if (vein < 0.02) c = mixc(c, [255, 255, 255], 0.12);
+        if (lx2 === 1 || ly2 === 1) c = mixc(c, [255, 255, 255], 0.06);
+        return c;
+      }
+      case T.PANEL: {
+        // 정거장 판: 네모 판 · 빛줄 · 나사
+        const lx2 = x & 15, ly2 = y & 15, bx = x >> 4, by = y >> 4;
+        let c = [58, 66, 84];
+        if (lx2 === 0 || ly2 === 0) c = [26, 30, 42]; else if (lx2 === 1 || ly2 === 1) c = [84, 94, 116];
+        if ((lx2 === 3 || lx2 === 12) && (ly2 === 3 || ly2 === 12)) c = [130, 140, 160];
+        if (n2(bx, by, 541) > 0.7 && ly2 === 8 && lx2 > 3 && lx2 < 12) c = [90, 220, 255];
+        return c;
+      }
+      case T.SKYTILE: {
+        // 구름 신전 바닥: 옅은 하늘빛 대리석 + 금 테
+        const bx = x >> 4, by = y >> 4, lx2 = x & 15, ly2 = y & 15;
+        let c = mixc([232, 238, 252], [210, 222, 246], n2(bx, by, 551));
+        if (lx2 === 0 || ly2 === 0) c = [230, 196, 110];
+        else if (lx2 === 1 || ly2 === 1) c = [250, 252, 255];
+        const cx = lx2 - 7.5, cy = ly2 - 7.5, r = Math.sqrt(cx * cx + cy * cy);
+        if (Math.abs(r - 4.5) < 0.6 && (bx + by) % 2 === 0) c = [226, 206, 150];
+        return c;
+      }
       default: return [0, 0, 0];
     }
   }
 
-  /* ───────── 지형 한 칸의 소유 픽셀: 이웃 경계를 잡음으로 굽이지게 ───────── */
-  function owner(m, tx, ty, lx, ly, x, y) {
-    const t = m.T(tx, ty);
-    if (!BLEND[t]) return t;
-    const h = m.H(tx, ty);
-    let best = t, bp = PRI[t];
-    const W = 5;
-    const wob = (U.vnoise(x / 3.3, y / 3.3, 17) - 0.5) * 3.2;
-    const cons = (nx, ny, d) => {
-      const nt = m.T(nx, ny);
-      if (!BLEND[nt] || PRI[nt] <= bp || m.H(nx, ny) !== h) return;
-      if (d + wob < 2.4) { best = nt; bp = PRI[nt]; }
+  /* ───────── 지형 경계: 칸 중심 사이를 이중선형으로 이어 둥글게, 잡음으로 굽이지게 ─────────
+     부드러운 지형(풀 · 흙 · 모래 · 물 …)끼리는 네모 칸이 아니라 둥근 덩어리로 이어진다.
+     먼저 물/땅을 가르고(물가 거품 · 젖은 띠에 쓸 거리 oEdge), 그다음 같은 편 안에서 가장 센 지형을 고른다. */
+  let oT = 0, oEdge = 9, oLava = 0;
+  const cT = [0, 0, 0, 0], cW = [0, 0, 0, 0];
+  function cornerT(m, x, y, t0, h0) {
+    const t = m.T(x, y);
+    if (!BLEND[t] || m.H(x, y) !== h0) return t0;
+    return t;
+  }
+  function owner(m, tx, ty, x, y) {
+    const t0 = m.T(tx, ty);
+    oEdge = 9; oLava = 0;
+    if (!BLEND[t0]) { oT = t0; return t0; }
+    const h0 = m.H(tx, ty);
+    const fx = (x - 7.5) / 16, fy = (y - 7.5) / 16;
+    const ix = Math.floor(fx), iy = Math.floor(fy);
+    const u = fx - ix, v = fy - iy;
+    cT[0] = cornerT(m, ix, iy, t0, h0); cT[1] = cornerT(m, ix + 1, iy, t0, h0); cT[2] = cornerT(m, ix, iy + 1, t0, h0); cT[3] = cornerT(m, ix + 1, iy + 1, t0, h0);
+    if (cT[0] === t0 && cT[1] === t0 && cT[2] === t0 && cT[3] === t0) { oT = t0; return t0; }
+    cW[0] = (1 - u) * (1 - v); cW[1] = u * (1 - v); cW[2] = (1 - u) * v; cW[3] = u * v;
+    // 1) 물과 땅
+    let L = 0;
+    for (let k = 0; k < 4; k++) { if (LIQ[cT[k]]) L += cW[k]; if (cT[k] === T.LAVA) oLava += cW[k]; }
+    let wantLiq = L >= 1;
+    if (L > 0 && L < 1) {
+      const e = L - 0.5 + (U.vnoise(x / 6.1, y / 6.1, 401) - 0.5) * 0.44 + (U.vnoise(x / 2.2, y / 2.2, 403) - 0.5) * 0.08;
+      wantLiq = e > 0; oEdge = e;
+    }
+    // 2) 같은 편 안에서 가장 센 지형
+    let best = -1, bs = -9;
+    for (let k = 0; k < 4; k++) {
+      const t = cT[k]; if (LIQ[t] !== wantLiq) continue;
+      let sc = 0; for (let j = 0; j < 4; j++) if (cT[j] === t) sc += cW[j];
+      if (t === best) continue;
+      sc += (U.vnoise(x / 6.5, y / 6.5, 500 + t * 13) - 0.5) * 0.62 + (U.vnoise(x / 2.4, y / 2.4, 520 + t * 7) - 0.5) * 0.12 + PRI[t] * 0.002;
+      if (sc > bs) { bs = sc; best = t; }
+    }
+    oT = best < 0 ? t0 : best;
+    return oT;
+  }
+  /** 이중선형 표본 (칸 중심 기준) */
+  function bil(f, m, x, y) {
+    const fx = U.clamp((x - 7.5) / 16, 0, m.w - 1.001), fy = U.clamp((y - 7.5) / 16, 0, m.h - 1.001);
+    const ix = Math.floor(fx), iy = Math.floor(fy), u = fx - ix, v = fy - iy, i = iy * m.w + ix;
+    const x1 = ix + 1 < m.w ? 1 : 0, y1 = iy + 1 < m.h ? m.w : 0;
+    return (f[i] * (1 - u) + f[i + x1] * u) * (1 - v) + (f[i + y1] * (1 - u) + f[i + y1 + x1] * u) * v;
+  }
+  /** 지역 경계 흐림: 지역마다 칸 비율을 흐린 장(field) → 칸마다 가장 가까운 다른 지역 */
+  function regionFields(m, R) {
+    const W = m.w, H = m.h, N = W * H, nR = REGIONS.length;
+    const F = [], tmp = new Float32Array(N);
+    const blur = (a) => {
+      for (let pass = 0; pass < 2; pass++) {
+        for (let y = 0; y < H; y++) { let acc = 0; const row = y * W; for (let x = -R; x <= R; x++) acc += a[row + U.clamp(x, 0, W - 1)]; for (let x = 0; x < W; x++) { tmp[row + x] = acc / (2 * R + 1); acc += a[row + Math.min(W - 1, x + R + 1)] - a[row + Math.max(0, x - R)]; } }
+        for (let x = 0; x < W; x++) { let acc = 0; for (let y = -R; y <= R; y++) acc += tmp[U.clamp(y, 0, H - 1) * W + x]; for (let y = 0; y < H; y++) { a[y * W + x] = acc / (2 * R + 1); acc += tmp[Math.min(H - 1, y + R + 1) * W + x] - tmp[Math.max(0, y - R) * W + x]; } }
+      }
     };
-    if (lx < W) cons(tx - 1, ty, lx);
-    if (lx > 15 - W) cons(tx + 1, ty, 15 - lx);
-    if (ly < W) cons(tx, ty - 1, ly);
-    if (ly > 15 - W) cons(tx, ty + 1, 15 - ly);
-    if (lx < W && ly < W) cons(tx - 1, ty - 1, Math.hypot(lx, ly) * 0.9);
-    if (lx > 15 - W && ly < W) cons(tx + 1, ty - 1, Math.hypot(15 - lx, ly) * 0.9);
-    if (lx < W && ly > 15 - W) cons(tx - 1, ty + 1, Math.hypot(lx, 15 - ly) * 0.9);
-    if (lx > 15 - W && ly > 15 - W) cons(tx + 1, ty + 1, Math.hypot(15 - lx, 15 - ly) * 0.9);
-    return best;
+    const used = new Set(m.reg);
+    for (let r = 0; r < nR; r++) {
+      if (!used.has(r)) { F.push(null); continue; }
+      const a = new Float32Array(N); for (let i = 0; i < N; i++) a[i] = m.reg[i] === r ? 1 : 0;
+      blur(a); F.push(a);
+    }
+    const reg2 = new Uint8Array(N);
+    for (let i = 0; i < N; i++) {
+      const own = m.reg[i]; let bi = -1, bv = 0.015;
+      for (let r = 0; r < nR; r++) if (F[r] && r !== own && F[r][i] > bv) { bv = F[r][i]; bi = r; }
+      reg2[i] = bi + 1;
+    }
+    m.regF = F; m.reg2 = reg2;
   }
 
   /** 지도 픽셀 하나의 최종 색 */
@@ -241,32 +560,38 @@
     const P = m.pal(tx, ty);
     if (t0 === T.CLIFF) return cliff(m, tx, ty, lx, ly, x, y);
     if (t0 === T.STAIRS) return stairs(m, tx, ty, lx, ly, x, y, P);
+    if (t0 === T.WALL) return wall(m, tx, ty, lx, ly, x, y, P);
     if (t0 === T.VOID) return [0, 0, 0];
-    const t = owner(m, tx, ty, lx, ly, x, y);
+    const t = owner(m, tx, ty, x, y);
+    const edge = oEdge, lava = oLava;
     let c = base(t, P, x, y, 0, m, tx, ty);
+    // 지역 경계: 두 지역의 빛깔을 천천히 섞는다
+    if (m.regF) {
+      const i = ty * m.w + tx, r2 = m.reg2[i];
+      if (r2) {
+        const fa = bil(m.regF[m.reg[i]], m, x, y), fb = bil(m.regF[r2 - 1], m, x, y);
+        let k = fb / (fa + fb + 1e-6);
+        k += (U.vnoise(x / 7, y / 7, 611) - 0.5) * 0.22 * Math.min(1, k * 4) * Math.min(1, (1 - k) * 4);
+        if (k > 0.015) c = mixc(c, base(t, PAL[REGIONS[r2 - 1]] || P, x, y, 0, m, tx, ty), U.clamp(k, 0, 1));
+      }
+    }
+    // 넓은 땅: 아주 큰 무늬로 색을 조금씩 흔든다 (단조롭지 않게)
+    if (m.outdoor && NATURAL[t]) {
+      const mv = U.vnoise(x / 150, y / 150, 777) - 0.5, mv2 = U.vnoise(x / 60, y / 60, 779) - 0.5;
+      c = [c[0] * (1 + mv * 0.12 + mv2 * 0.05), c[1] * (1 + mv * 0.03 + mv2 * 0.04), c[2] * (1 - mv * 0.1)];
+    }
     const h = m.H(tx, ty);
     // 높은 땅은 조금 더 밝고 따뜻하게 (고저차가 눈에 보이도록)
     if (h > 0 && m.outdoor) c = mixc(c, [255, 250, 226], Math.min(0.16, h * 0.045));
-    // 물가: 물 쪽은 거품, 땅 쪽은 젖은 띠
-    const liquid = (tt) => tt === T.WATER || tt === T.DEEP;
-    if (liquid(t0)) {
-      let d = 9;
-      if (!liquid(m.T(tx - 1, ty)) && m.T(tx - 1, ty) !== T.BRIDGE) d = Math.min(d, lx);
-      if (!liquid(m.T(tx + 1, ty)) && m.T(tx + 1, ty) !== T.BRIDGE) d = Math.min(d, 15 - lx);
-      if (!liquid(m.T(tx, ty - 1)) && m.T(tx, ty - 1) !== T.BRIDGE) d = Math.min(d, ly);
-      if (!liquid(m.T(tx, ty + 1)) && m.T(tx, ty + 1) !== T.BRIDGE) d = Math.min(d, 15 - ly);
-      const wob = (U.vnoise(x / 4, y / 4, 29) - 0.5) * 2.4;
-      if (d + wob < 1.2) c = rgb(P.w[3]);
-      else if (d + wob < 3.2) c = mixc(c, rgb(P.w[2]), 0.55);
-      else if (t0 === T.DEEP && d + wob < 6) c = mixc(c, rgb(P.w[1]), 0.5);
-    } else if (t0 !== T.BRIDGE) {
-      let d = 9;
-      if (liquid(m.T(tx - 1, ty))) d = Math.min(d, lx);
-      if (liquid(m.T(tx + 1, ty))) d = Math.min(d, 15 - lx);
-      if (liquid(m.T(tx, ty - 1))) d = Math.min(d, ly);
-      if (liquid(m.T(tx, ty + 1))) d = Math.min(d, 15 - ly);
-      if (d < 2) c = mul(c, 0.78);
-    }
+    // 물가: 물 쪽은 거품 · 밝은 띠, 땅 쪽은 젖은 띠
+    if (LIQ[t]) {
+      if (edge < 0.06) c = rgb(P.w[3]);
+      else if (edge < 0.13) c = mixc(c, rgb(P.w[3]), 0.35);
+      else if (edge < 0.3) c = mixc(c, rgb(P.w[2]), 0.45);
+    } else if (edge < 0 && edge > -0.1) c = mul(c, 0.74 + (edge + 0.1) * 1.2);
+    else if (edge <= -0.1 && edge > -0.16) c = mul(c, 0.9);
+    // 용암 둘레: 식은 딱지와 열기
+    if (t !== T.LAVA && lava > 0.2) { c = lava > 0.42 ? mixc([40, 22, 20], [255, 120, 40], (lava - 0.42) * 1.5) : mixc(c, [60, 30, 24], (lava - 0.2) * 3); }
     // 고원 가장자리: 옆 · 아래가 낮으면 테두리, 위가 낮으면 밝은 턱
     const hl = m.H(tx - 1, ty), hr = m.H(tx + 1, ty), hu = m.H(tx, ty - 1);
     const fl = m.T(tx - 1, ty) === T.CLIFF, fr = m.T(tx + 1, ty) === T.CLIFF;
@@ -278,8 +603,130 @@
     if (hr > h && lx > 12 && m.T(tx + 1, ty) !== T.CLIFF) c = mul(c, 0.72 + (15 - lx) * 0.08);
     // 절벽 면 바로 아래: 발치 그림자
     if (m.T(tx, ty - 1) === T.CLIFF && ly < 4) c = mul(c, 0.66 + ly * 0.085);
-    // 벽 아래 그림자 (실내)
-    if (m.T(tx, ty - 1) === T.WALL && ly < 4) c = mul(c, 0.7 + ly * 0.075);
+    // 벽 아래 그림자 (실내 · 던전)
+    if (m.T(tx, ty - 1) === T.WALL && ly < 5) c = mul(c, 0.62 + ly * 0.075);
+    if (m.T(tx - 1, ty) === T.WALL && lx < 2 && !m.outdoor) c = mul(c, 0.8 + lx * 0.08);
+    return c;
+  }
+
+  /* ───────── 벽: 비스듬히 내려다본 벽 (아래가 트인 칸은 앞면, 나머지는 윗면) ─────────
+     m.wallStyle: brick · rock · root · mine · vein · sand · mirror · marble · ice · castle · tech · house */
+  const WS = {
+    brick: { top: [42, 36, 56], rim: [120, 110, 140] }, rock: { top: [34, 28, 30], rim: [110, 92, 80] }, root: { top: [30, 34, 24], rim: [96, 110, 70] },
+    mine: { top: [38, 28, 22], rim: [130, 96, 64] }, vein: { top: [24, 26, 32], rim: [110, 116, 130] }, sand: { top: [110, 78, 44], rim: [230, 196, 130] },
+    mirror: { top: [30, 22, 50], rim: [200, 170, 255] }, marble: { top: [176, 186, 214], rim: [250, 240, 200] }, ice: { top: [96, 130, 170], rim: [220, 240, 255] },
+    castle: { top: [20, 16, 28], rim: [110, 60, 80] }, tech: { top: [22, 26, 36], rim: [90, 200, 240] }, house: { top: [58, 40, 30], rim: [150, 110, 76] },
+  };
+  function wallStyle(m) { return m.wallStyle || (m.indoor ? 'house' : 'brick'); }
+  function wall(m, tx, ty, lx, ly, x, y, P) {
+    const st = wallStyle(m), S = WS[st] || WS.brick;
+    const below = m.T(tx, ty + 1);
+    if (below !== T.WALL && below !== T.VOID) return wallFace(st, m, tx, ty, lx, ly, x, y, P);
+    // 윗면
+    let c = S.top.slice();
+    const f = U.fbm(x / 7, y / 7, 601, 2);
+    c = mul(c, 0.86 + f * 0.28);
+    if (st === 'marble' || st === 'ice' || st === 'sand') { if (((x >> 3) + (y >> 3)) & 1) c = mul(c, 0.95); }
+    if (st === 'root' && Math.abs(U.fbm(x / 12, y / 12, 603, 2) - 0.5) < 0.03) c = [70, 50, 34];
+    const open = (t) => t !== T.WALL && t !== T.VOID;
+    const nu = open(m.T(tx, ty - 1)), nl = open(m.T(tx - 1, ty)), nr = open(m.T(tx + 1, ty));
+    if (nu && ly < 2) c = ly === 0 ? mul(S.rim, 0.6) : S.rim;
+    if (nl && lx < 2) c = lx === 0 ? mul(S.rim, 0.6) : S.rim;
+    if (nr && lx > 13) c = lx === 15 ? mul(S.rim, 0.6) : S.rim;
+    return c;
+  }
+  function wallFace(st, m, tx, ty, lx, ly, x, y, P) {
+    const S = WS[st] || WS.brick;
+    // 벽 횃불
+    if (m.sconce && m.sconce[ty * m.w + tx] && lx >= 5 && lx <= 10 && ly >= 1 && ly <= 13) {
+      if (ly >= 9 && lx >= 6 && lx <= 9) return ly === 9 ? [150, 110, 60] : [70, 50, 34];          // 받침
+      if (ly >= 7 && ly <= 8 && lx >= 7 && lx <= 8) return [90, 64, 40];
+      const fx2 = lx - 7.5, fy2 = ly - 4.5;
+      if (fx2 * fx2 / 4 + fy2 * fy2 / 9 < 1) return fy2 > 0.5 ? [255, 150, 60] : Math.abs(fx2) < 0.8 ? [255, 250, 200] : [255, 210, 90];
+    }
+    const dk = 1.02 - ly * 0.02;                 // 아래로 조금씩 어둡게
+    let c;
+    switch (st) {
+      case 'rock': case 'root': case 'mine': case 'vein': {
+        const C = P.c.map(rgb);
+        const vx = U.vnoise(x / 3.2, ty * 2.7, 611), sx = Math.sin((y + U.vnoise(x / 5, y / 9, 613) * 6) * 0.8);
+        c = vx > 0.64 ? C[2] : vx < 0.3 ? C[0] : C[1];
+        if (sx > 0.9) c = mixc(c, C[2], 0.4); else if (sx < -0.93) c = mixc(c, C[0], 0.6);
+        if (st === 'vein') { const r = Math.abs(U.fbm(x / 9, y / 5, 615, 2) - 0.5); c = mixc(C[0], [120, 124, 136], 0.5); if (vx > 0.6) c = mixc(c, [150, 156, 170], 0.5); if (r < 0.025) c = r < 0.01 ? [236, 240, 255] : [180, 190, 214]; }
+        if (st === 'root') { const r = Math.abs(U.fbm(x / 6, y / 16, 617, 2) - 0.5); if (r < 0.04) c = r < 0.018 ? [120, 84, 52] : [84, 58, 36]; if (ly > 11 && U.vnoise(x / 2, 0, 619) > 0.55) c = [70, 110, 60]; }
+        if (st === 'mine' && (tx % 5 === 2)) { if (lx > 3 && lx < 12) { c = lx === 4 || lx === 11 ? [70, 46, 28] : [128, 88, 52]; if (ly % 5 === 0) c = [96, 64, 38]; } }
+        if (st === 'mine' && ly < 3) c = ly === 0 ? [70, 46, 28] : [128, 88, 52];
+        break;
+      }
+      case 'sand': {
+        const row = Math.floor(ly / 8), off = (row & 1) * 8, bx = Math.floor((x + off) / 16), l2 = (x + off) & 15;
+        const C = [rgb(PAL.yellow.s[0]), rgb(PAL.yellow.s[1]), rgb(PAL.yellow.s[2])];
+        c = mixc(C[1], C[(n2(bx, ty * 2 + row, 621) * 3) | 0], 0.5);
+        if (l2 === 0 || ly % 8 === 0) c = mul(C[0], 0.72);
+        if (ly >= 5 && ly <= 7 && (x % 6 === 0 || (x % 6 === 3 && ly === 6))) c = mul(c, 0.6);   // 새긴 띠
+        if (tx % 7 === 3 && ly > 1 && ly < 13) { const gx = lx - 4, gy = ly - 2; if (gx >= 0 && gx < 8 && ((gx === 3 || gx === 4) || (gy === 3 && gx > 0 && gx < 7))) c = [200, 60, 50]; }
+        break;
+      }
+      case 'mirror': {
+        c = [52, 38, 86];
+        const d = (x * 0.8 + ly * 1.6) % 22; if (d < 2) c = [150, 120, 220]; else if (d < 3) c = [96, 76, 150];
+        if (lx === 0 || lx === 15) c = [34, 24, 58];
+        if (ly < 2) c = [220, 180, 90];
+        break;
+      }
+      case 'marble': {
+        c = ((x >> 3) & 1) ? [226, 230, 244] : [210, 216, 236];
+        if ((x & 7) === 0) c = [180, 186, 210];
+        if (ly < 3) c = ly === 1 ? [250, 222, 140] : [210, 170, 90];
+        if (ly > 12) c = [180, 190, 220];
+        if (tx % 4 === 1 && lx > 5 && lx < 10) c = lx === 6 || lx === 9 ? [196, 202, 226] : [240, 242, 252];   // 기둥
+        break;
+      }
+      case 'ice': {
+        const row = Math.floor(ly / 5), off = (row & 1) * 6, l2 = (x + off) % 12;
+        c = mixc([150, 190, 226], [196, 226, 248], n2(Math.floor((x + off) / 12), ty * 4 + row, 631));
+        if (l2 === 0 || ly % 5 === 0) c = [106, 146, 190];
+        if ((x + ly * 2) % 17 === 0) c = [240, 250, 255];
+        if (ly > 12) c = mixc(c, [255, 255, 255], 0.45);
+        break;
+      }
+      case 'castle': {
+        const row = Math.floor(ly / 4), off = (row & 1) * 5, l2 = (x + off) % 10;
+        c = mixc([48, 44, 64], [62, 56, 80], n2(Math.floor((x + off) / 10), ty * 4 + row, 641));
+        if (l2 === 0 || ly % 4 === 0) c = [26, 22, 36];
+        if (tx % 6 === 3 && lx > 3 && lx < 12 && ly < 14) {           // 진홍 깃발
+          c = lx === 4 || lx === 11 ? [100, 20, 36] : [150, 30, 50];
+          if (ly === 13 && (lx === 7 || lx === 8)) c = [26, 22, 36];
+          if (ly > 4 && ly < 9 && lx > 5 && lx < 10) c = (lx + ly) % 2 ? [220, 180, 90] : [180, 140, 60];
+          if (ly === 0) c = [200, 160, 80];
+        }
+        break;
+      }
+      case 'tech': {
+        c = [52, 60, 78];
+        if (lx === 0 || lx === 15) c = [30, 34, 46];
+        if (ly === 9 || ly === 10) c = (tx + Math.floor(x / 3)) % 5 === 0 ? [140, 240, 255] : [60, 170, 210];
+        if (ly < 2) c = [100, 110, 130];
+        if ((lx === 3 || lx === 12) && ly === 4) c = [150, 160, 180];
+        break;
+      }
+      case 'house': {
+        // 회벽 + 아래 나무 판벽 + 걸레받이
+        const pw = mixc(rgb(P.s[2]), [246, 238, 222], 0.55);
+        c = ly < 9 ? mixc(pw, [255, 255, 255], (U.vnoise(x / 5, y / 5, 651) - 0.5) * 0.1) : ly === 9 ? [120, 84, 56] : ly > 13 ? [70, 48, 34] : ((x + (tx & 1) * 3) % 6 === 0 ? [110, 76, 50] : [146, 104, 70]);
+        if (ly === 0) c = [96, 66, 44]; else if (ly === 1) c = mul(pw, 0.85);
+        break;
+      }
+      default: {
+        const C = P.c.map(rgb);
+        const row = Math.floor(ly / 5), off = (row & 1) * 4, bx = (x + off) % 8;
+        c = mixc(C[1], C[2], n2((x + off) >> 3, ty * 4 + row, 97) * 0.6);
+        if (ly % 5 === 0 || bx === 0) c = C[0];
+        if (ly < 2) c = ly === 0 ? mul(S.rim, 0.7) : S.rim;
+      }
+    }
+    c = mul(c, dk);
+    if (ly === 15) c = mul(c, 0.6);
     return c;
   }
 
@@ -351,5 +798,18 @@
     }
   }
 
-  G.tiles = { TS, T, NAMES, PROP, PRI, PAL, REGIONS, pixel, base, waterFx, rgb };
+  /** 작은 지도 한 칸 색 */
+  function miniCol(t, P) {
+    switch (t) {
+      case T.WATER: return P.w[2]; case T.DEEP: return P.w[1]; case T.LAVA: return '#ff6a2a'; case T.CLIFF: return P.c[1];
+      case T.SAND: return '#d8c088'; case T.SNOW: return '#e8f0f8'; case T.ICE: return '#bfe4f8';
+      case T.ROAD: case T.DIRT: case T.FARM: return '#b89868'; case T.MUD: return '#6a5040'; case T.GRAVEL: return '#9a8e7e'; case T.ROCKY: return P.c[2];
+      case T.CRACKED: return '#a89070'; case T.DRY: return '#b8b060'; case T.LEAVES: return P.g[0]; case T.MOSS: return '#4a6a44'; case T.MEADOW: case T.PETALS: return P.g[2];
+      case T.WALL: return '#4a4058'; case T.COBBLE: case T.STONE: case T.TILE: case T.FLOOR: case T.PLAZA: case T.MARBLE: return '#9a98a8';
+      case T.BRICK: return '#a86050'; case T.SANDSTONE: case T.HIERO: return '#d8b070'; case T.PLANK: case T.WOOD: case T.BRIDGE: return '#9a6a3e';
+      case T.ASH: return '#6a6670'; case T.VOID: return '#05040a'; case T.PIT: return '#141018'; case T.CLOUD: return '#f0f0ff';
+      default: return P.g[2];
+    }
+  }
+  G.tiles = { miniCol, TS, T, NAMES, PROP, PRI, PAL, REGIONS, BLEND, LIQ, pixel, base, waterFx, rgb, regionFields, WS };
 })();

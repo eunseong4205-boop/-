@@ -71,7 +71,7 @@
   function weather(g, m, W, cx, cy, v) {
     const kind = m.weatherAt ? m.weatherAt(W.player) : m.weather;
     if (!kind) { L.drops.length = 0; return; }
-    const want = { rain: 90, snow: 60, ash: 50, petals: 24, leaves: 16, dust: 40, stars: 40, spores: 30 }[kind] || 0;
+    const want = { rain: 90, snow: 60, ash: 50, petals: 24, leaves: 16, dust: 40, stars: 40, spores: 30, bubbles: 26, embers: 34, motes: 30, mist: 14, drips: 18, sparks: 20 }[kind] || 0;
     while (L.drops.length < want) L.drops.push({ x: Math.random() * v.w, y: Math.random() * v.h, s: 0.5 + Math.random(), p: Math.random() * 6 });
     if (L.drops.length > want) L.drops.length = want;
     const dt = 1 / 60;
@@ -85,6 +85,11 @@
       else if (kind === 'petals' || kind === 'leaves') { d.x += (20 + Math.sin(W.t * 2 + d.p) * 20) * dt; d.y += 18 * dt * d.s; }
       else if (kind === 'dust') { d.x += 70 * dt * d.s; d.y += Math.sin(W.t * 3 + d.p) * 6 * dt; }
       else if (kind === 'spores') { d.y -= 8 * dt * d.s; d.x += Math.sin(W.t + d.p) * 6 * dt; }
+      else if (kind === 'bubbles') { d.y -= 16 * dt * d.s; d.x += Math.sin(W.t * 2 + d.p) * 8 * dt; }
+      else if (kind === 'embers' || kind === 'sparks') { d.y -= (kind === 'sparks' ? 30 : 14) * dt * d.s; d.x += Math.sin(W.t * 3 + d.p) * 10 * dt; }
+      else if (kind === 'motes') { d.y += Math.sin(W.t * 0.8 + d.p) * 4 * dt; d.x += Math.cos(W.t * 0.6 + d.p) * 4 * dt; }
+      else if (kind === 'mist') { d.x += 6 * dt * d.s; }
+      else if (kind === 'drips') { d.y += 120 * dt * d.s; }
       d.x = ((d.x % v.w) + v.w) % v.w; d.y = ((d.y % v.h) + v.h) % v.h;
       const x = Math.round(d.x), y = Math.round(d.y);
       if (kind === 'rain') { g.fillStyle = 'rgba(180,200,255,0.45)'; g.fillRect(x, y, 1, 4); }
@@ -95,6 +100,12 @@
       else if (kind === 'dust') { g.fillStyle = 'rgba(230,200,140,0.5)'; g.fillRect(x, y, 2, 1); }
       else if (kind === 'stars') { if (Math.sin(W.t * 3 + d.p * 7) > 0.3) { g.fillStyle = '#fff'; g.fillRect(x, y, 1, 1); } }
       else if (kind === 'spores') { g.fillStyle = 'rgba(200,255,180,0.7)'; g.fillRect(x, y, 1, 1); }
+      else if (kind === 'bubbles') { g.strokeStyle = 'rgba(190,230,255,0.55)'; g.strokeRect(x - 0.5, y - 0.5, d.s > 1 ? 3 : 2, d.s > 1 ? 3 : 2); }
+      else if (kind === 'embers') { g.fillStyle = d.p > 3 ? 'rgba(255,170,80,0.85)' : 'rgba(255,220,120,0.7)'; g.fillRect(x, y, 1, 1); }
+      else if (kind === 'sparks') { if (Math.sin(W.t * 9 + d.p * 5) > 0) { g.fillStyle = 'rgba(140,230,255,0.9)'; g.fillRect(x, y, 1, 2); } }
+      else if (kind === 'motes') { g.fillStyle = 'rgba(255,236,170,' + (0.35 + Math.sin(W.t * 2 + d.p) * 0.25).toFixed(2) + ')'; g.fillRect(x, y, 1, 1); }
+      else if (kind === 'mist') { g.fillStyle = 'rgba(220,235,255,0.06)'; g.beginPath(); g.ellipse(x, y, 30 * d.s, 8 * d.s, 0, 0, Math.PI * 2); g.fill(); }
+      else if (kind === 'drips') { g.fillStyle = 'rgba(160,210,255,0.6)'; g.fillRect(x, y, 1, 2); }
     }
     if (kind === 'rain' && Math.random() < 0.003) { L.flash = 0.25; if (G.audio) G.audio.sfx('thunder'); }
     if (L.flash > 0) { L.flash -= 1 / 60; g.fillStyle = 'rgba(255,255,255,' + L.flash + ')'; g.fillRect(0, 0, v.w, v.h); }

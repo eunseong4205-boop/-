@@ -13,21 +13,31 @@
   const DUN = {};
   const RW = 20, RH = 14;            // 방 크기 (벽 포함)
 
+  /* 던전 모양 (방마다 또는 던전 전체): rect(네모) · cave(굽은 자연 벽) · round(둥근 방) · open(벽 없이 허공 위의 섬) · hall(기둥이 늘어선 큰 방)
+     D.pos: 방 이름 → 격자 자리 (이름은 이야기와 깃발에 쓰이니 그대로, 자리만 옮긴다)
+     D.merge: [[방, 방], …] 둘 사이 벽을 허물어 큰 방으로
+     이웃하지 않은 방 사이의 문은 계단이 된다: D.stairAt['가>나'] = [[x, y], [x, y]] (각 방 안 자리)
+     D.floors: 방 → 층 이름 (지도 · 계단에서 보인다) · D.decor: 벽가에 흩을 사물 · D.ambient: 떠다니는 것 · D.sconce: 벽 횃불 색 */
+  function roomPos(D, k) { const p = D.pos && D.pos[k]; return p || k.split(',').map(Number); }
   function build(id, D) {
     const keys = Object.keys(D.rooms);
-    const gx = keys.map((k) => +k.split(',')[0]), gy = keys.map((k) => +k.split(',')[1]);
-    const gw = Math.max(...gx) + 1, gh = Math.max(...gy) + 1;
+    const P = {}; for (const k of keys) P[k] = roomPos(D, k);
+    const gw = Math.max(...keys.map((k) => P[k][0])) + 1, gh = Math.max(...keys.map((k) => P[k][1])) + 1;
     const m = new G.GameMap({ id, name: D.name, w: gw * RW, h: gh * RH, region: TL.REGIONS.indexOf(D.pal || 'dungeon'), edge: T.VOID, music: D.music || 'cave' });
     m.palName = D.pal || 'dungeon';
     m.dungeon = id; m.dark = D.dark || 0; m.darkCol = D.darkCol; m.sub = D.sub || '';
+    m.wallStyle = D.wall || { green: 'root', red: 'mine', blue: 'rock', yellow: 'sand', purple: 'mirror', rainbow: 'marble', white: 'ice', gray: 'vein', black: 'castle', space: 'tech' }[D.pal] || 'brick';
+    m.weather = D.ambient || null;
     m.ter.fill(T.VOID);
     m.rooms = {};
     const floor = D.floor || T.FLOOR;
+    const at = {}; for (const k of keys) at[P[k][0] + ',' + P[k][1]] = k;
+    const adj = (a, b) => Math.abs(P[a][0] - P[b][0]) + Math.abs(P[a][1] - P[b][1]) === 1;
     for (const k of keys) {
       const R = D.rooms[k];
-      const [rx, ry] = k.split(',').map(Number);
+      const [rx, ry] = P[k];
       const x0 = rx * RW, y0 = ry * RH;
-      m.rooms[k] = { k, x0, y0, R };
+      m.rooms[k] = { k, x0, y0, R, gx: rx, gy: ry, floor: D.floors ? D.floors[k] : null };
       for (let y = 0; y < RH; y++) for (let x = 0; x < RW; x++) {
         const i = m.i(x0 + x, y0 + y);
         const wall = y < 2 || x === 0 || x === RW - 1 || y === RH - 1;
@@ -36,7 +46,7 @@
       // 지형: [종류, x, y, w, h, 높이]
       for (const t of R.ter || []) {
         const [kind, tx, ty, tw, th, hh] = t;
-        const tt = { pit: T.PIT, water: T.WATER, deep: T.DEEP, lava: T.LAVA, ice: T.ICE, rug: T.RUG, carpet: T.CARPET, wall: T.WALL, stone: T.STONE, tile: T.TILE, grass: T.GRASS, dirt: T.DIRT, sand: T.SAND, snow: T.SNOW, metal: T.METAL, cloud: T.CLOUD, crystal: T.CRYSTAL, dark: T.DARK, floor }[kind];
+        const tt = { pit: T.PIT, water: T.WATER, deep: T.DEEP, lava: T.LAVA, ice: T.ICE, rug: T.RUG, carpet: T.CARPET, wall: T.WALL, stone: T.STONE, tile: T.TILE, grass: T.GRASS, dirt: T.DIRT, sand: T.SAND, snow: T.SNOW, metal: T.METAL, cloud: T.CLOUD, crystal: T.CRYSTAL, dark: T.DARK, moss: T.MOSS, swamp: T.SWAMP, gravel: T.GRAVEL, floor }[kind];
         for (let y = ty; y < ty + th; y++) for (let x = tx; x < tx + tw; x++) {
           if (kind === 'h') { m.hgt[m.i(x0 + x, y0 + y)] = hh; continue; }
           if (tt != null) m.ter[m.i(x0 + x, y0 + y)] = tt;
@@ -45,17 +55,125 @@
     }
     // 방 안 사물 (돌 · 덤불 · 수정 …): [이름, x, y]
     for (const k of keys) { const { x0, y0, R } = m.rooms[k]; for (const [on, ox, oy] of R.objs || []) m.obj[m.i(x0 + ox, y0 + oy)] = G.objs.O[on.toUpperCase()]; }
-    // 방 사이 문: 벽에 2칸 구멍
-    m.doorways = [];
+    // ── 비워 둘 칸 (모양을 깎을 때 건드리지 않는다): 소품 · 적 · 지형 · 문 · 계단 · 입구 둘레
+    const res = new Uint8Array(m.w * m.h);
+    const mark = (x, y, r) => { for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) if (m.inb(x + dx, y + dy)) res[m.i(x + dx, y + dy)] = 1; };
+    for (const k of keys) {
+      const { x0, y0, R } = m.rooms[k];
+      for (const pr of R.props || []) mark(x0 + pr[1], y0 + pr[2], pr[0] === 'boss' ? 3 : 1);
+      for (const fo of R.foes || []) mark(x0 + fo[1], y0 + fo[2], 1);
+      for (const t of R.ter || []) for (let y = t[2] - 1; y <= t[2] + t[4]; y++) for (let x = t[1] - 1; x <= t[1] + t[3]; x++) mark(x0 + x, y0 + y, 0);
+      for (const st of R.stairs || []) mark(x0 + st[0], y0 + st[1], 2);
+      for (const [, ox, oy] of R.objs || []) mark(x0 + ox, y0 + oy, 1);
+      // 방 가운데 십자는 늘 트여 있게
+      for (let x = 1; x < RW - 1; x++) for (const y of [(RH >> 1), (RH >> 1) + 1]) res[m.i(x0 + x, y0 + y)] = 1;
+      for (let y = 2; y < RH - 1; y++) for (const x of [(RW >> 1) - 1, RW >> 1]) res[m.i(x0 + x, y0 + y)] = 1;
+    }
+    if (D.start) { const r = m.rooms[D.start[0]]; mark(r.x0 + D.start[1], r.y0 + D.start[2], 2); }
+    if (D.exit) { const r = m.rooms[D.exit.at[0]]; mark(r.x0 + D.exit.at[1], r.y0 + D.exit.at[2], 2); }
+    // 방 사이 문: 벽에 2칸 구멍 (이웃한 방) · 계단 (떨어진 방)
+    m.doorways = []; m.stairLinks = [];
+    const stairRes = new Uint8Array(m.w * m.h);
     for (const d of D.doors || []) {
       const [a, b, kind, extra] = d;
-      const [ax, ay] = a.split(',').map(Number), [bx, by] = b.split(',').map(Number);
+      if (!adj(a, b)) {
+        // 계단 자리: 정해 두지 않았으면 방 네 귀퉁이 중 빈 곳
+        const pick = (k) => {
+          const r = m.rooms[k];
+          const cand = [];
+          for (let cy = 3; cy <= RH - 4; cy++) for (let cx = 2; cx <= RW - 4; cx++) cand.push([cx, cy, Math.min(cx - 2, RW - 4 - cx) + Math.min(cy - 3, RH - 4 - cy) * 1.5 + (cy > RH / 2 ? 0.5 : 0)]);
+          cand.sort((p1, p2) => p1[2] - p2[2]);
+          const free = (cx, cy, strict) => { for (let y = cy - 1; y <= cy + 1; y++) for (let x = cx - 1; x <= cx + 2; x++) { const i = m.i(r.x0 + x, r.y0 + y); if ((strict && res[i]) || stairRes[i] || m.ter[i] !== (r.R.floor || floor) || m.obj[i]) return false; } return true; };
+          for (const strict of [true, false]) for (const [cx, cy] of cand) if (free(cx, cy, strict)) return [cx, cy];
+          return [RW - 5, 3];
+        };
+        let sa, sb;
+        if (D.stairAt && D.stairAt[a + '>' + b]) [sa, sb] = D.stairAt[a + '>' + b];
+        else if (D.stairAt && D.stairAt[b + '>' + a]) [sb, sa] = D.stairAt[b + '>' + a];
+        else { sa = pick(a); sb = pick(b); }
+        const ra = m.rooms[a], rb = m.rooms[b];
+        mark(ra.x0 + sa[0], ra.y0 + sa[1], 2); mark(rb.x0 + sb[0], rb.y0 + sb[1], 2);
+        for (const [X, Y] of [[ra.x0 + sa[0], ra.y0 + sa[1]], [rb.x0 + sb[0], rb.y0 + sb[1]]]) for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 3; dx++) if (m.inb(X + dx, Y + dy)) stairRes[m.i(X + dx, Y + dy)] = 1;
+        m.stairLinks.push({ a, b, kind, extra, pa: [ra.x0 + sa[0], ra.y0 + sa[1]], pb: [rb.x0 + sb[0], rb.y0 + sb[1]] });
+        m.doorways.push({ a, b, kind, extra, cells: [], stair: true });
+        continue;
+      }
+      const [ax, ay] = P[a], [bx, by] = P[b];
       const horiz = ay === by;             // 좌우로 이웃
       let cells = [];
       if (horiz) { const x = Math.max(ax, bx) * RW; const y = ay * RH + (RH >> 1); cells = [[x - 1, y], [x, y], [x - 1, y + 1], [x, y + 1]]; }
       else { const y = Math.max(ay, by) * RH; const x = ax * RW + (RW >> 1); cells = [[x - 1, y - 1], [x, y - 1], [x - 1, y], [x, y], [x - 1, y + 1], [x, y + 1]]; }
       for (const [x, y] of cells) if (kind !== 'bomb' && kind !== 'wall') m.ter[m.i(x, y)] = floor;
+      for (const [x, y] of cells) mark(x, y, 1);
+      // 문 앞 통로 (안쪽으로 세 칸)
+      for (const [x, y] of cells) for (let k2 = 1; k2 <= 3; k2++) { if (horiz) { mark(x - k2, y, 0); mark(x + k2, y, 0); } else { mark(x, y - k2, 0); mark(x, y + k2, 0); } }
       m.doorways.push({ a, b, kind, extra, cells, horiz });
+    }
+    // ── 큰 방: 두 방 사이 벽 허물기
+    for (const [a, b] of D.merge || []) {
+      if (!adj(a, b)) continue;
+      const A = m.rooms[a], B = m.rooms[b];
+      if (P[a][1] === P[b][1]) { const L2 = P[a][0] < P[b][0] ? A : B; for (let y = L2.y0 + 2; y < L2.y0 + RH - 1; y++) for (const x of [L2.x0 + RW - 1, L2.x0 + RW]) { m.ter[m.i(x, y)] = floor; res[m.i(x, y)] = 1; } }
+      else { const U2 = P[a][1] < P[b][1] ? A : B; for (let x = U2.x0 + 1; x < U2.x0 + RW - 1; x++) for (const y of [U2.y0 + RH - 1, U2.y0 + RH, U2.y0 + RH + 1]) { m.ter[m.i(x, y)] = floor; res[m.i(x, y)] = 1; } }
+      const dw = m.doorways.find((d) => (d.a === a && d.b === b) || (d.a === b && d.b === a)); if (dw) dw.kind = 'open';
+      A.merged = B.merged = true;
+    }
+    // ── 모양 깎기
+    const baseFloor = (t) => t === floor || t === (D.floor || T.FLOOR);
+    for (const k of keys) {
+      const { x0, y0, R } = m.rooms[k];
+      const shape = R.shape || D.shape || 'rect';
+      const seed = U.hash(id + k) % 997;
+      if (shape === 'cave') {
+        const carved = [];
+        for (let y = 2; y < RH - 1; y++) for (let x = 1; x < RW - 1; x++) {
+          const i = m.i(x0 + x, y0 + y); if (res[i] || !baseFloor(m.ter[i])) continue;
+          const d = Math.min(x - 1, RW - 2 - x, y - 2, RH - 2 - y);
+          const n = U.vnoise((x0 + x) / 2.3, (y0 + y) / 2.3, seed) * 0.7 + U.noise2(x0 + x, y0 + y, seed) * 0.3;
+          const corner = Math.min(x - 1, RW - 2 - x) + Math.min(y - 2, RH - 2 - y) < 2;
+          if (corner || n * 2.6 > d + 0.75) { m.ter[i] = T.WALL; carved.push(i); }
+        }
+        // 외톨이 벽 조각 지우기
+        for (const i of carved) { const x = i % m.w, y = (i / m.w) | 0; let nb = 0; for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) if (m.T(x + dx, y + dy) === T.WALL) nb++; if (nb <= 1) m.ter[i] = R.floor || floor; }
+      } else if (shape === 'round') {
+        const cx = (RW - 1) / 2, cy = (RH + 1) / 2, rx = RW / 2 - 0.6, ry = (RH - 2) / 2;
+        for (let y = 2; y < RH - 1; y++) for (let x = 1; x < RW - 1; x++) {
+          const i = m.i(x0 + x, y0 + y); if (res[i] || !baseFloor(m.ter[i])) continue;
+          if (((x - cx) / rx) ** 2 + ((y - cy) / ry) ** 2 > 1) m.ter[i] = T.WALL;
+        }
+      } else if (shape === 'open') {
+        // 벽 대신 허공: 벽 칸을 구덩이로 (문 자리는 다리처럼 남는다)
+        for (let y = 0; y < RH; y++) for (let x = 0; x < RW; x++) { const i = m.i(x0 + x, y0 + y); if (m.ter[i] === T.WALL) m.ter[i] = T.PIT; }
+        // 가장자리를 조금 들쭉날쭉하게
+        for (let y = 2; y < RH - 1; y++) for (let x = 1; x < RW - 1; x++) {
+          const i = m.i(x0 + x, y0 + y); if (res[i] || !baseFloor(m.ter[i])) continue;
+          const d = Math.min(x - 1, RW - 2 - x, y - 2, RH - 2 - y);
+          if (d === 0 && U.vnoise((x0 + x) / 2, (y0 + y) / 2, seed) > 0.62) m.ter[i] = T.PIT;
+        }
+      } else if (shape === 'hall') {
+        for (let y = 4; y < RH - 2; y += 3) for (const x of [3, RW - 4]) { const i = m.i(x0 + x, y0 + y); if (!res[i] && baseFloor(m.ter[i]) && !m.obj[i]) m.obj[i] = G.objs.O.PILLAR; }
+      }
+      // 붉은 융단 (성)
+      if (R.runner || D.runner) {
+        for (let y = 2; y < RH - 1; y++) for (const x of [(RW >> 1) - 1, RW >> 1]) { const i = m.i(x0 + x, y0 + y); if (baseFloor(m.ter[i])) m.ter[i] = T.CARPET; }
+      }
+    }
+    // ── 벽가 장식 · 벽 횃불
+    m.sconce = new Uint8Array(m.w * m.h);
+    m.lights = [];
+    const rnd = U.rng(U.hash('dec:' + id));
+    for (const k of keys) {
+      const { x0, y0, R } = m.rooms[k];
+      const shape = R.shape || D.shape || 'rect';
+      if (D.decor && shape !== 'open') for (let y = 2; y < RH - 1; y++) for (let x = 1; x < RW - 1; x++) {
+        const i = m.i(x0 + x, y0 + y); if (res[i] || !baseFloor(m.ter[i]) || m.obj[i]) continue;
+        let nearWall = false; for (const [dx, dy] of [[1, 0], [-1, 0], [0, -1], [0, 1]]) if (m.T(x0 + x + dx, y0 + y + dy) === T.WALL) nearWall = true;
+        if (nearWall && rnd() < (D.decorRate || 0.09)) m.obj[i] = U.pick(D.decor, rnd());
+      }
+      if (D.sconce) for (let x = 3; x < RW - 3; x += 5) {
+        const i = m.i(x0 + x, y0 + 1);
+        if (m.ter[i] === T.WALL && m.T(x0 + x, y0 + 2) !== T.WALL && m.T(x0 + x, y0 + 2) !== T.VOID) { m.sconce[i] = 1; m.lights.push({ x: (x0 + x) * TS + 8, y: (y0 + 1) * TS + 8, r: 58, warm: D.sconce }); }
+      }
     }
     // 방 안 높이 → 절벽 · 계단
     G.gen.cliffs(m);
@@ -64,9 +182,54 @@
     if (D.start) { const [sk, sx, sy] = D.start; const r = m.rooms[sk]; m.entry = { x: (r.x0 + sx) * TS + 8, y: (r.y0 + sy) * TS + 12 }; }
     if (D.exit) { const [ek, ex, ey] = D.exit.at; const r = m.rooms[ek]; for (let dx = 0; dx < 2; dx++) { m.ter[m.i(r.x0 + ex + dx, r.y0 + ey)] = floor; m.warps.push({ x: r.x0 + ex + dx, y: r.y0 + ey, w: 1, h: 1, to: D.exit.to, tx: D.exit.tx, ty: D.exit.ty, dir: 'down', exit: true }); } }
     for (const w of D.warps || []) { const [wk, wx, wy] = w.at; const r = m.rooms[wk]; m.warps.push(Object.assign({ x: r.x0 + wx, y: r.y0 + wy, w: w.w || 1, h: w.h || 1 }, w)); }
-    // 벽 등불 (방마다 네 모서리 조금 밝게)
-    m.lights = [];
     return m;
+  }
+
+  /** 층과 층을 잇는 계단: 밟으면 어두워졌다가 이어진 계단 앞에 선다 */
+  class StairLink extends E.Ent {
+    constructor(o) { super(Object.assign({ kind: 'stairlink', solid: false, sortBias: -30 }, o)); this.armed = true; }
+    get open() {
+      const s = S();
+      if (this.kind2 === 'key' || this.kind2 === 'big') return !!s.flags[this.key];
+      if (this.kind2 === 'switch') return !!s.flags[this.flag];
+      return true;
+    }
+    update(dt, Wd) {
+      this.t += dt;
+      const p = Wd.player; if (!p || G.script.running) return;
+      const on = Math.abs(p.x - this.x) < 13 && p.y > this.y - 14 && p.y < this.y + 2;
+      if (!on) { this.armed = true; return; }
+      if (!this.armed) return;
+      if (!this.open) {
+        const s = S();
+        if (this.kind2 === 'key' && (s.keys[this.did] || 0) > 0) { s.keys[this.did]--; s.flags[this.key] = true; sfx('unlock'); }
+        else if (this.kind2 === 'big' && s.bigkeys[this.did]) { s.flags[this.key] = true; sfx('unlock'); }
+        else { this.armed = false; G.ui.toast(this.kind2 === 'key' ? '계단 앞 창살에 자물쇠가 걸려 있다 (작은 열쇠)' : this.kind2 === 'big' ? '큰 자물쇠가 계단을 막고 있다' : '계단이 막혀 있다', 'bad'); sfx('buzz'); return; }
+      }
+      this.armed = false; const to = this.link; to.armed = false;
+      G.script.run(async (c) => {
+        sfx('stairs'); c.lock(true);
+        await c.fade(true, { sec: 0.25 });
+        p.x = to.x; p.y = to.y + 16; p.dir = 'down'; p.kx = p.ky = 0; G.world.snap();
+        await c.fade(false, { sec: 0.25 });
+        c.lock(false);
+      });
+    }
+    draw(g, cx, cy) {
+      const x = Math.round(this.x - cx) - 16, y = Math.round(this.y - cy) - 26;
+      const down = this.dir === 'down';
+      g.fillStyle = '#0a0810'; g.fillRect(x, y, 32, 28);
+      for (let k = 0; k < 6; k++) {
+        const yy = down ? y + 3 + k * 4 : y + 23 - k * 4;
+        const shade = down ? 1 - k * 0.15 : 0.55 + k * 0.08;
+        const c = Math.round(150 * shade), c2 = Math.round(130 * shade);
+        g.fillStyle = 'rgb(' + c + ',' + c2 + ',' + Math.round(c * 1.1) + ')'; g.fillRect(x + 2 + (down ? k : 0), yy, 28 - (down ? k * 2 : 0), 3);
+        g.fillStyle = 'rgba(0,0,0,0.4)'; g.fillRect(x + 2 + (down ? k : 0), yy + 3, 28 - (down ? k * 2 : 0), 1);
+      }
+      g.fillStyle = '#2a2436'; g.fillRect(x, y, 2, 28); g.fillRect(x + 30, y, 2, 28);
+      if (!this.open) { g.fillStyle = '#8a8098'; for (let i = 3; i < 30; i += 5) g.fillRect(x + i, y + 2, 2, 24); g.fillStyle = this.kind2 === 'big' ? '#d83a5a' : '#e8c850'; g.fillRect(x + 13, y + 10, 6, 7); }
+      else if (Math.sin(this.t * 3) > 0.6) { g.fillStyle = 'rgba(255,240,200,0.25)'; g.fillRect(x + 4, y + (down ? 22 : 2), 24, 3); }
+    }
   }
 
   /* ───────── 방 관리자 ───────── */
@@ -79,6 +242,7 @@
       const s = S();
       const inside = this.inside(p);
       if (inside && !this.seen) { this.seen = true; s.flags['room:' + this.did + ':' + this.k] = true; }
+      if (inside && this.floorName && Wd.map.curFloor !== this.floorName) { const first = Wd.map.curFloor == null; Wd.map.curFloor = this.floorName; if (!first) G.cine.area(this.floorName, Wd.map.name); }
       if (inside && !this.active) {
         this.active = true;
         const R = this.R;
@@ -195,13 +359,13 @@
         const tier = D.tier || 0;
         for (const k of Object.keys(m.rooms)) {
           const { x0, y0, R } = m.rooms[k];
-          const ctl = Wd.add(new RoomCtl({ did: id, k, x0, y0, R, tier, x: (x0 + RW / 2) * TS, y: (y0 + RH / 2) * TS }));
+          const ctl = Wd.add(new RoomCtl({ did: id, k, x0, y0, R, tier, floorName: m.rooms[k].floor, x: (x0 + RW / 2) * TS, y: (y0 + RH / 2) * TS }));
           m.rooms[k].ctl = ctl;
           for (const pr of R.props || []) addProp(m, Wd, id, k, x0, y0, pr);
         }
         // 문
         for (const dw of m.doorways) {
-          if (dw.kind === 'open') continue;
+          if (dw.kind === 'open' || dw.stair) continue;
           const cells = dw.horiz ? dw.cells.filter(([x, y]) => true) : dw.cells.filter((c, i) => i >= 2 && i < 4);
           const xs = cells.map((c) => c[0]), ys = cells.map((c) => c[1]);
           const bx = Math.min(...xs) * TS, by = Math.min(...ys) * TS, bw = (Math.max(...xs) - Math.min(...xs) + 1) * TS, bh = (Math.max(...ys) - Math.min(...ys) + 1) * TS;
@@ -217,6 +381,16 @@
           const g = new Gate({ did: id, kind2: dw.kind === 'switch' ? 'shut' : dw.kind, flag: dw.extra, key: id + ':door:' + dw.a + '-' + dw.b, cells, ctls, bx, by, bw2: bw, bh2: bh, x: bx + bw / 2, y: by + bh, sortBias: -8 });
           if (dw.kind === 'trap') g.ctls = ctls.filter(Boolean);
           Wd.add(g);
+        }
+        // 층 계단
+        for (const sl of m.stairLinks || []) {
+          const key = id + ':door:' + sl.a + '-' + sl.b;
+          const A = new StairLink({ did: id, x: sl.pa[0] * TS + 16, y: sl.pa[1] * TS + 16, dir: 'down', kind2: sl.kind === 'switch' ? 'switch' : sl.kind, flag: sl.extra, key, floor: m.rooms[sl.b].floor || null });
+          const B = new StairLink({ did: id, x: sl.pb[0] * TS + 16, y: sl.pb[1] * TS + 16, dir: 'up', kind2: 'open', key, floor: m.rooms[sl.a].floor || null });
+          const ay = m.rooms[sl.a].gy, by2 = m.rooms[sl.b].gy;
+          if (by2 < ay) { A.dir = 'up'; B.dir = 'down'; }
+          A.link = B; B.link = A; A.room = sl.a; B.room = sl.b;
+          Wd.add(A); Wd.add(B);
         }
         if (D.ents) D.ents(m, Wd);
       },
@@ -258,5 +432,5 @@
     }
   }
 
-  G.dungeon = { def, DUN, RW, RH, RoomCtl, Gate, Eye, build };
+  G.dungeon = { def, DUN, RW, RH, RoomCtl, Gate, Eye, build, StairLink };
 })();

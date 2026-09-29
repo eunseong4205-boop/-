@@ -261,7 +261,7 @@
       let col = colOf[key];
       if (!col) {
         const P = TL.PAL[rg] || TL.PAL.green;
-        col = t === TL.T.WATER ? P.w[2] : t === TL.T.DEEP ? P.w[1] : t === TL.T.LAVA ? '#ff6a2a' : t === TL.T.CLIFF ? P.c[1] : t === TL.T.SAND ? '#d8c088' : t === TL.T.SNOW ? '#e8f0f8' : t === TL.T.ROAD || t === TL.T.DIRT ? '#b89868' : t === TL.T.WALL ? '#4a4058' : t === TL.T.STONE || t === TL.T.TILE || t === TL.T.FLOOR ? '#9a98a8' : t === TL.T.ASH ? '#6a6670' : t === TL.T.VOID ? '#05040a' : P.g[2];
+        col = TL.miniCol(t, P);
         if (key.endsWith('|1')) col = U.shade(col, 0.7);
         colOf[key] = col;
       }

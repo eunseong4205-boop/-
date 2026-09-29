@@ -9,6 +9,7 @@
     NONE: 0, TREE: 1, PINE: 2, PALM: 3, DEAD: 4, BLOSSOM: 5, SHROOM: 6, CRYSTAL: 7, BUSH: 8, ROCK: 9, BOULDER: 10,
     FLOWER: 11, TALL: 12, STUMP: 13, CACTUS: 14, REED: 15, ICESPIKE: 16, PEBBLE: 17, FENCEH: 18, FENCEV: 19, LILY: 20,
     SNOWTREE: 21, BIGTREE: 22, GRAVE: 23, BONES: 24, CORAL: 25, LAMP: 26, SIGNPOST: 27, WELL: 28, PILLAR: 29, RUBBLE: 30,
+    HEDGE: 31, WALLH: 32, WALLV: 33, BARREL: 34, CRATE: 35, BENCH: 36, PLANTER: 37, HAY: 38, SCARECROW: 39, CART: 40, BANNER: 41, NET: 42, POTS: 43,
   };
   const DEF = [];
   const def = (id, p) => { DEF[id] = Object.assign({ id }, p); };
@@ -42,6 +43,19 @@
   def(O.WELL, { name: '우물', solid: 1, big: 1 });
   def(O.PILLAR, { name: '돌기둥', solid: 1, big: 1 });
   def(O.RUBBLE, { name: '잔해', solid: 1, bomb: 1 });
+  def(O.HEDGE, { name: '생울타리', solid: 1 });
+  def(O.WALLH, { name: '돌담', solid: 1 });
+  def(O.WALLV, { name: '돌담', solid: 1 });
+  def(O.BARREL, { name: '통', solid: 1 });
+  def(O.CRATE, { name: '나무 상자', solid: 1 });
+  def(O.BENCH, { name: '긴 의자', solid: 1 });
+  def(O.PLANTER, { name: '꽃 화분', solid: 1 });
+  def(O.HAY, { name: '건초 더미', solid: 1, burn: 1 });
+  def(O.SCARECROW, { name: '허수아비', solid: 1, big: 1 });
+  def(O.CART, { name: '수레', solid: 1, big: 1 });
+  def(O.BANNER, { name: '깃발', solid: 1, big: 1 });
+  def(O.NET, { name: '그물 걸이', solid: 1, big: 1 });
+  def(O.POTS, { name: '항아리', solid: 1 });
 
   const n2 = U.noise2;
   const cache = {};
@@ -263,6 +277,88 @@
         rockInto(b, 5, 8, 4, P, v); rockInto(b, 12, 9, 5, P, v + 1); rockInto(b, 9, 5, 3, P, v + 2);
         return X.outline(b.put());
       }
+      case O.HEDGE: {
+        const b = X.brush(16, 20);
+        const L = leafPal(reg, 'bush');
+        b.rect(0, 5, 16, 13, L[1]); b.rect(0, 5, 16, 3, L[2]); b.hline(0, 15, 17, L[0]);
+        for (let i = 0; i < 9; i++) { const x = (i * 7 + v * 3) % 15, y = 7 + (i * 5) % 9; b.px(x, y, L[3]); b.px(x + 1, y + 1, L[0]); }
+        b.hline(1, 14, 4, L[3]);
+        return X.outline(b.put());
+      }
+      case O.WALLH: case O.WALLV: {
+        // 낮은 돌담: 둥근 돌을 쌓고 위에 판석
+        const b = X.brush(16, 20);
+        const C = P.c;
+        if (id === O.WALLH) {
+          b.rect(0, 6, 16, 13, C[1]);
+          for (let r = 0; r < 3; r++) for (let k = 0; k < 3; k++) { const x = k * 6 + (r & 1) * 3 - 1, y = 8 + r * 4; b.rect(x, y, 5, 3, C[2]); b.px(x, y, U.shade(C[2], 1.15)); }
+          b.rect(0, 4, 16, 3, U.shade(C[2], 1.1)); b.hline(0, 15, 4, U.shade(C[2], 1.3)); b.hline(0, 15, 18, C[0]);
+        } else {
+          b.rect(4, 0, 8, 19, C[1]); for (let y = 2; y < 18; y += 4) { b.rect(5, y, 3, 3, C[2]); b.rect(9, y + 2, 2, 2, C[2]); }
+          b.rect(4, 0, 8, 2, U.shade(C[2], 1.2)); b.hline(4, 11, 18, C[0]);
+        }
+        return X.outline(b.put());
+      }
+      case O.BARREL: case O.POTS: {
+        const b = X.brush(16, 18);
+        if (id === O.BARREL) { b.ellipse(8, 10, 6.5, 7.5, '#8a5a32'); b.ellipse(8, 4, 6, 2.5, '#a8784a'); b.ellipse(8, 4, 4, 1.4, '#6a4424'); b.hline(2, 13, 8, '#4a4a5a'); b.hline(2, 13, 14, '#4a4a5a'); b.vline(5, 4, 16, '#a8784a'); }
+        else { const cols = ['#c87a4a', '#a8603a', '#d8a070']; b.ellipse(5, 11, 4, 5, cols[v % 3]); b.ellipse(5, 6.5, 2, 1, '#4a2a18'); b.ellipse(11, 12, 4.5, 4.5, cols[(v + 1) % 3]); b.ellipse(11, 8, 2, 1, '#4a2a18'); b.hline(8, 14, 12, '#e8c890'); b.px(3, 9, '#ffffff'); }
+        return X.outline(b.put());
+      }
+      case O.CRATE: {
+        const b = X.brush(16, 17);
+        b.rect(0, 1, 16, 16, '#a8784a'); b.rect(0, 0, 16, 4, '#c8985a'); b.rect(1, 5, 14, 11, '#8a5a32'); b.line(1, 5, 14, 15, '#a8784a'); b.line(1, 15, 14, 5, '#a8784a');
+        if (v % 2) { b.rect(3, 0, 10, 3, ['#e84a4a', '#ffd84a', '#6ae07a', '#5ab8ff'][v % 4]); b.px(5, 0, '#ffffff'); }
+        return X.outline(b.put());
+      }
+      case O.BENCH: {
+        const b = X.brush(16, 14);
+        b.rect(0, 2, 16, 5, '#a8784a'); b.hline(0, 15, 2, '#c8985a'); b.hline(0, 15, 4, '#8a5a32'); b.rect(1, 7, 2, 7, '#6a4424'); b.rect(13, 7, 2, 7, '#6a4424'); b.rect(0, 0, 16, 2, '#8a5a32');
+        return X.outline(b.put());
+      }
+      case O.PLANTER: {
+        const b = X.brush(16, 18);
+        b.rect(1, 9, 14, 8, '#8a5a3a'); b.hline(1, 14, 9, '#b8805a'); b.hline(1, 14, 16, '#5a3a2a');
+        const L = leafPal(reg, 'bush');
+        b.ellipse(8, 7, 7, 4, L[1]); b.ellipse(6, 6, 4, 2.5, L[2]);
+        const cols = [P.g[3], '#ff8ab0', '#ffd84a', '#ffffff'];
+        for (let i = 0; i < 5; i++) { const x = 3 + (i * 3 + v) % 11, y = 4 + (i * 2 + v) % 5; b.px(x, y, cols[(i + v) % 4]); b.px(x + 1, y, cols[(i + v) % 4]); }
+        return X.outline(b.put());
+      }
+      case O.HAY: {
+        const b = X.brush(18, 16);
+        b.ellipse(9, 9, 8.5, 6.5, '#d8b050'); b.ellipse(8, 7, 6, 4, '#f0d070'); for (let i = 0; i < 8; i++) b.line(2 + i * 2, 12, 4 + i * 2, 6 + (i % 3), '#b8903a'); b.hline(2, 16, 14, '#a8803a');
+        return X.outline(b.put());
+      }
+      case O.SCARECROW: {
+        const b = X.brush(18, 30);
+        b.vline(9, 8, 29, '#6a4424'); b.hline(1, 17, 13, '#6a4424'); b.rect(4, 12, 10, 9, '#8a6ab8'); b.rect(4, 12, 10, 2, '#a88ad8');
+        b.ellipse(9, 7, 4, 4, '#e8d8a8'); b.px(7, 7, '#1a1020'); b.px(11, 7, '#1a1020'); b.hline(7, 11, 9, '#8a3a2a');
+        b.rect(3, 2, 12, 2, '#c8a050'); b.rect(6, 0, 6, 3, '#c8a050'); for (let i = 0; i < 4; i++) b.px(2 + i * 4, 14 + (i % 2), '#f0d070');
+        return X.outline(b.put());
+      }
+      case O.CART: {
+        const b = X.brush(28, 22);
+        b.rect(2, 6, 22, 8, '#8a5a32'); b.rect(2, 6, 22, 2, '#a8784a'); b.hline(2, 23, 13, '#6a4424');
+        const load = ['#e84a4a', '#ffd84a', '#6ae07a', '#c8a050'][v % 4]; b.ellipse(8, 5, 4, 3, load); b.ellipse(14, 4, 4, 3, U.shade(load, 1.15)); b.ellipse(19, 5, 3.5, 2.5, load);
+        b.ellipse(7, 16, 5, 5, '#4a3020'); b.ellipse(7, 16, 3, 3, '#8a6a4a'); b.px(7, 16, '#4a3020'); b.ellipse(19, 16, 5, 5, '#4a3020'); b.ellipse(19, 16, 3, 3, '#8a6a4a'); b.px(19, 16, '#4a3020');
+        b.line(24, 9, 27, 12, '#6a4424');
+        return X.outline(b.put());
+      }
+      case O.BANNER: {
+        const b = X.brush(14, 34);
+        b.vline(3, 0, 33, '#5a4a3a'); b.rect(2, 31, 3, 3, '#3a2a20'); b.px(3, 0, '#e8c048');
+        const col = { green: '#4aa84a', red: '#d84a3a', blue: '#3a7ad8', yellow: '#e8b83a', purple: '#8a5ad8', rainbow: '#ff7ab8', white: '#e8eef8', gray: '#8a8a96', black: '#3a2a5a', colorful: '#ff8a3a' }[reg] || '#d84a3a';
+        b.rect(4, 2, 9, 14, col); b.rect(4, 2, 9, 2, U.shade(col, 1.25)); b.px(4, 16, col); b.px(12, 16, col); b.px(8, 16, col); b.rect(7, 7, 3, 4, '#f4e8c8');
+        return X.outline(b.put());
+      }
+      case O.NET: {
+        const b = X.brush(20, 26);
+        b.vline(2, 2, 25, '#6a4424'); b.vline(17, 2, 25, '#6a4424'); b.hline(1, 18, 3, '#8a5a32');
+        for (let y = 5; y < 20; y += 3) b.hline(3, 16, y, '#c8b890'); for (let x = 4; x < 17; x += 3) b.vline(x, 4, 20, '#c8b890');
+        b.ellipse(10, 21, 3, 2, '#5a8ac8'); b.px(9, 21, '#ffffff');
+        return X.outline(b.put());
+      }
       default: return null;
     }
   }
@@ -291,7 +387,8 @@
     }
     // 발 기준점: 칸 가운데 아래
     const out = { c, ox: Math.round(c ? c.width / 2 : 8), oy: c ? c.height - (DEF[id] && DEF[id].ground ? 16 : 3) : 0 };
-    if (id === O.BUSH || id === O.ROCK || id === O.STUMP) out.oy = c.height - 2;
+    if (id === O.BUSH || id === O.ROCK || id === O.STUMP || id === O.BARREL || id === O.CRATE || id === O.POTS || id === O.PLANTER || id === O.BENCH || id === O.HAY) out.oy = c.height - 2;
+    if (id === O.HEDGE || id === O.WALLH) out.oy = c.height - 1;
     return (cache[key] = out);
   }
 

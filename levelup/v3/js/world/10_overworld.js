@@ -45,6 +45,7 @@
     // 1) 지역
     for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { const n = regionAt(x, y); regName[y * W + x] = n; reg[y * W + x] = RG(n); }
     const RN = (x, y) => regName[U.clamp(y, 0, H - 1) * W + U.clamp(x, 0, W - 1)];
+    TL.regionFields(m, 5);          // 지역 경계에서 빛깔을 섞을 흐린 장
     // 2) 바다 · 땅
     const sea = new Uint8Array(N);
     for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
@@ -141,26 +142,44 @@
     }
     // 화산 분화구 · 설산 꼭대기
     for (let y = VY - 12; y < VY + 12; y++) for (let x = VX - 12; x < VX + 12; x++) { const d = U.dist(x, y, VX, VY) + (U.vnoise(x / 2, y / 2, 71) - 0.5) * 2; if (d < 3.4 && hgt[y * W + x] === 4) ter[y * W + x] = T.LAVA; }
-    // 6) 지형 무늬
+    // 6) 지형 무늬: 지역마다 여러 바닥 (숲 바닥 · 꽃밭 · 마른 풀 · 자갈 · 바위 · 갈라진 땅 · 이끼 …)
     for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
       const i = y * W + x; if (sea[i] || ter[i] === T.LAVA) continue;
-      const n = regName[i];
+      const n = regName[i], hh = hgt[i];
       const f = U.fbm(x / 12, y / 12, 81, 3), f2 = U.fbm(x / 6, y / 6, 83, 2);
+      const forest = U.fbm(x / 10, y / 10, 101, 3), mead = U.fbm(x / 14, y / 14, 85, 3), rock = U.fbm(x / 9, y / 9, 87, 2);
       let t = T.GRASS;
       switch (n) {
-        case 'green': t = f2 > 0.7 ? T.DIRT : T.GRASS; break;
-        case 'red': t = hgt[i] >= 2 ? (f2 > 0.45 ? T.ASH : T.DIRT) : f > 0.58 ? T.DIRT : T.GRASS; break;
-        case 'blue': t = T.GRASS; break;
-        case 'yellow': t = f > 0.72 && hgt[i] === 0 ? T.GRASS : T.SAND; break;
-        case 'purple': t = f2 > 0.74 ? T.DIRT : T.GRASS; break;
-        case 'rainbow': t = f2 > 0.76 ? T.CLOUD : T.GRASS; break;
-        case 'white': t = hgt[i] >= 2 ? T.SNOW : f > 0.5 ? T.SNOW : T.GRASS; break;
-        case 'gray': t = f > 0.42 ? T.ASH : T.DIRT; break;
-        case 'black': t = T.DARK; break;
-        case 'colorful': t = T.GRASS; break;
+        case 'green': t = forest > 0.6 ? T.LEAVES : mead > 0.64 ? T.MEADOW : f2 > 0.72 ? T.DIRT : rock > 0.76 ? T.GRAVEL : T.GRASS; break;
+        case 'red':
+          if (hh >= 2) t = f2 > 0.45 ? T.ASH : rock > 0.5 ? T.ROCKY : T.GRAVEL;
+          else if (hh === 1) t = rock > 0.6 ? T.GRAVEL : f > 0.55 ? T.DIRT : T.DRY;
+          else t = forest > 0.62 ? T.LEAVES : f > 0.58 ? T.DIRT : mead > 0.6 ? T.DRY : T.GRASS;
+          break;
+        case 'blue': t = forest > 0.62 ? T.LEAVES : mead > 0.65 ? T.MEADOW : f2 > 0.76 ? T.DIRT : T.GRASS; break;
+        case 'yellow':
+          if (f > 0.72 && hh === 0) t = T.GRASS;
+          else if (f > 0.64 && hh === 0) t = T.DRY;
+          else if (rock > 0.68) t = T.CRACKED;
+          else if (hh >= 1 && f2 > 0.58) t = T.ROCKY;
+          else t = T.SAND;
+          break;
+        case 'purple': t = forest > 0.5 ? (f2 > 0.62 ? T.LEAVES : T.MOSS) : mead > 0.66 ? T.MEADOW : f2 > 0.74 ? T.DIRT : T.GRASS; break;
+        case 'rainbow': t = f2 > 0.76 ? T.CLOUD : mead > 0.7 ? T.MEADOW : mead > 0.55 ? T.PETALS : T.GRASS; break;
+        case 'white': t = hh >= 2 ? (rock > 0.74 ? T.ROCKY : T.SNOW) : f > 0.5 ? T.SNOW : rock > 0.7 ? T.GRAVEL : T.GRASS; break;
+        case 'gray': t = f > 0.42 ? (rock > 0.66 ? T.CRACKED : T.ASH) : f2 > 0.76 ? T.GRAVEL : T.DIRT; break;
+        case 'black': t = forest > 0.62 ? T.MOSS : rock > 0.74 ? T.GRAVEL : T.DARK; break;
+        case 'colorful': t = forest > 0.64 ? T.LEAVES : mead > 0.58 ? T.MEADOW : f2 > 0.76 ? T.DIRT : T.GRASS; break;
         default: break;
       }
       ter[i] = t;
+    }
+    // 강 · 호숫가 진흙 (같은 높이, 잡음으로 드문드문)
+    for (let y = 2; y < H - 2; y++) for (let x = 2; x < W - 2; x++) {
+      const i = y * W + x; if (sea[i]) continue;
+      const n = regName[i]; if (!['green', 'blue', 'purple', 'colorful'].includes(n)) continue;
+      let nearR = false; for (let dy = -2; dy <= 2 && !nearR; dy++) for (let dx = -2; dx <= 2; dx++) { const j = i + dy * W + dx; if (sea[j] === 3 && hgt[j] === hgt[i]) { nearR = true; break; } }
+      if (nearR && U.fbm(x / 5, y / 5, 89, 2) > 0.56) ter[i] = T.MUD;
     }
     // 바다 옆 모래사장
     for (let y = 1; y < H - 1; y++) for (let x = 1; x < W - 1; x++) {
@@ -197,12 +216,15 @@
   function roads(m, sea) {
     OW.roadTiles = new Uint8Array(W * H);
     OW.stairsAt = [];
+    OW.roadPaths = [];
     for (const [a, b] of LINKS) {
       const p = astar(m, sea, townCenter(a), townCenter(b));
       if (!p) { console.warn('길 없음', a, b); continue; }
-      carve(m, p, a, b);
+      carve(m, sea, p, a, b);
     }
   }
+  /* A*: 여덟 방향. 대각선은 평평한 곳에서만, 높이는 남북으로만 오르내린다(계단).
+     절벽 가장자리 · 물은 비싸게, 이미 난 길은 싸게 */
   function astar(m, sea, [sx, sy], [gx, gy]) {
     const N = W * H;
     const g = new Float32Array(N).fill(1e9), came = new Int32Array(N).fill(-1), closed = new Uint8Array(N);
@@ -212,64 +234,159 @@
     const si = sy * W + sx, gi = gy * W + gx;
     g[si] = 0; push(si, 0);
     const hg = m.hgt, tr = m.ter;
+    const bad = (j) => sea[j] === 1 || sea[j] === 2 || tr[j] === T.LAVA;
+    const DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]];
     while (heap.length) {
       const [, i] = pop();
       if (i === gi) break;
       if (closed[i]) continue; closed[i] = 1;
       const x = i % W, y = (i / W) | 0;
-      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+      for (const [dx, dy] of DIRS) {
         const nx = x + dx, ny = y + dy; if (nx < 1 || ny < 1 || nx >= W - 1 || ny >= H - 1) continue;
-        const j = ny * W + nx; if (closed[j]) continue;
-        if (sea[j] === 1 || sea[j] === 2 || tr[j] === T.LAVA) continue;
-        // 절벽 면 칸: 남북으로만 지나간다 (계단이 된다)
-        let c = 1;
+        const j = ny * W + nx; if (closed[j] || bad(j)) continue;
         const tj = tr[j], ti = tr[i];
-        if (tj === T.CLIFF || ti === T.CLIFF) { if (dx !== 0) continue; c += 7; }
-        else if (hg[j] !== hg[i]) { if (dx !== 0) continue; c += 7; }
+        let c = 1;
+        if (dx && dy) {
+          // 대각선: 세 칸이 모두 같은 높이, 절벽 없음
+          const a = y * W + nx, b = ny * W + x;
+          if (bad(a) || bad(b) || tj === T.CLIFF || ti === T.CLIFF || tr[a] === T.CLIFF || tr[b] === T.CLIFF) continue;
+          if (hg[j] !== hg[i] || hg[a] !== hg[i] || hg[b] !== hg[i]) continue;
+          c = 1.414;
+        } else if (tj === T.CLIFF || ti === T.CLIFF || hg[j] !== hg[i]) { if (dx !== 0) continue; c += 7; }
         if (tj === T.DEEP) c += 6; else if (tj === T.WATER) c += 2;
-        c += (U.noise2(nx, ny, 91) * 0.6);
-        if (OW.roadTiles[j]) c *= 0.5;        // 이미 난 길을 좋아한다
+        // 절벽 가장자리 바로 옆은 피한다 (길이 벼랑에 붙지 않게)
+        if (tj !== T.CLIFF && (tr[j - 1] === T.CLIFF || tr[j + 1] === T.CLIFF || tr[j + W] === T.CLIFF)) c += 0.9;
+        c += U.noise2(nx, ny, 91) * 0.35;
+        if (OW.roadTiles[j]) c *= 0.55;
         const ng = g[i] + c;
-        if (ng < g[j]) { g[j] = ng; came[j] = i; push(j, ng + (Math.abs(nx - gx) + Math.abs(ny - gy)) * 1.05); }
+        if (ng < g[j]) { g[j] = ng; came[j] = i; const ax = Math.abs(nx - gx), ay = Math.abs(ny - gy); push(j, ng + (Math.max(ax, ay) + 0.414 * Math.min(ax, ay)) * 1.02); }
       }
     }
     if (came[gi] < 0) return null;
     const path = []; let k = gi; while (k >= 0) { path.push(k); k = came[k]; }
     return path.reverse();
   }
-  function carve(m, path, a, b) {
-    const tr = m.ter;
-    for (let k = 0; k < path.length; k++) {
-      const i = path[k], x = i % W, y = (i / W) | 0;
-      const prev = k > 0 ? path[k - 1] : i;
-      const vertical = Math.abs(prev - i) === W || (k + 1 < path.length && Math.abs(path[k + 1] - i) === W);
-      for (const [dx, dy] of [[0, 0], [1, 0]]) {
-        const xx = x + dx, yy = y + dy; if (!m.inb(xx, yy)) continue;
-        const j = yy * W + xx;
-        if (dx && !vertical && (tr[j] === T.CLIFF)) continue;
-        if (tr[j] === T.CLIFF) { tr[j] = T.STAIRS; m.obj[j] = 0; OW.stairsAt.push([xx, yy]); OW.roadTiles[j] = 1; continue; }
-        if (tr[j] === T.STAIRS) continue;
-        if (dx && m.hgt[j] !== m.hgt[i]) continue;
-        if (tr[j] === T.DEEP || tr[j] === T.WATER) tr[j] = T.BRIDGE;
-        else if (tr[j] !== T.BRIDGE) tr[j] = regionRoad(OW.regName[j]);
-        m.obj[j] = 0; OW.roadTiles[j] = 1;
+  /** 두 점 사이 곧은 선이 한 높이의 평지로만 지나가나 (물은 짧게만) */
+  function los(m, sea, ax, ay, bx, by, h) {
+    const n = Math.ceil(Math.max(Math.abs(bx - ax), Math.abs(by - ay)) * 3) + 1;
+    let wet = 0;
+    for (let s = 0; s <= n; s++) {
+      const t = s / n, fx = ax + (bx - ax) * t, fy = ay + (by - ay) * t;
+      for (const [ox, oy] of [[0, 0], [0.45, 0], [-0.45, 0], [0, 0.45], [0, -0.45]]) {
+        const x = Math.round(fx + ox), y = Math.round(fy + oy); if (!m.inb(x, y)) return false;
+        const j = y * W + x, tt = m.ter[j];
+        if (sea[j] === 1 || sea[j] === 2 || tt === T.LAVA || tt === T.CLIFF || tt === T.STAIRS || m.hgt[j] !== h) return false;
       }
+      const j = Math.round(fy) * W + Math.round(fx);
+      if (m.ter[j] === T.WATER || m.ter[j] === T.DEEP) { wet++; if (wet > 18) return false; }
+    }
+    return true;
+  }
+  function roadKind(x, y, n) {
+    // 마을 가까이는 돌길, 멀어지면 지역의 흙길
+    let near = 99;
+    for (const t of Object.values(TOWNS)) near = Math.min(near, Math.max(t.x - x, x - (t.x + t.w), t.y - y, y - (t.y + t.h)));
+    if (near < 9) return n === 'yellow' ? T.ROAD : T.COBBLE;
+    return { yellow: T.ROAD, white: T.ROAD, black: T.COBBLE, gray: T.GRAVEL, red: T.DIRT }[n] || T.DIRT;
+  }
+  function carve(m, sea, path, a, b) {
+    const tr = m.ter, hg = m.hgt;
+    const pt = path.map((i) => [i % W, (i / W) | 0]);
+    // 1) 오르내림(계단) 칸은 그대로, 평지 구간은 곧은 선으로 줄이고(끈 당기기) 모서리를 둥글린다(차이킨)
+    const segs = []; let cur = [pt[0]];
+    for (let k = 1; k < pt.length; k++) {
+      const [x0, y0] = pt[k - 1], [x1, y1] = pt[k];
+      const step = hg[y1 * W + x1] !== hg[y0 * W + x0] || tr[y1 * W + x1] === T.CLIFF || tr[y0 * W + x0] === T.CLIFF;
+      if (step) { if (cur.length > 1) segs.push({ flat: true, pts: cur }); segs.push({ flat: false, pts: [pt[k - 1], pt[k]] }); cur = [pt[k]]; }
+      else cur.push(pt[k]);
+    }
+    if (cur.length > 1) segs.push({ flat: true, pts: cur });
+    const paint = (x, y, h, core) => {
+      if (!m.inb(x, y)) return;
+      const j = y * W + x, tt = tr[j];
+      if (hg[j] !== h || tt === T.CLIFF || tt === T.STAIRS || tt === T.LAVA || sea[j] === 1 || sea[j] === 2) return;
+      if (tt === T.DEEP || tt === T.WATER) { if (!core) return; tr[j] = T.BRIDGE; }
+      else if (tt !== T.BRIDGE) tr[j] = roadKind(x, y, OW.regName[j]);
+      m.obj[j] = 0; OW.roadTiles[j] = 1;
+    };
+    for (const sg of segs) {
+      if (!sg.flat) {
+        // 계단: 절벽 칸 → 계단 (두 칸 폭)
+        for (const [x, y] of sg.pts) for (const xx of [x, x + 1]) {
+          const j = y * W + xx; if (!m.inb(xx, y)) continue;
+          if (tr[j] === T.CLIFF) { tr[j] = T.STAIRS; m.obj[j] = 0; OW.stairsAt.push([xx, y]); OW.roadTiles[j] = 1; }
+          else if (tr[j] !== T.STAIRS && hg[j] === hg[sg.pts[0][1] * W + sg.pts[0][0]] && tr[j] !== T.DEEP && tr[j] !== T.WATER) { tr[j] = roadKind(xx, y, OW.regName[j]); m.obj[j] = 0; OW.roadTiles[j] = 1; }
+        }
+        continue;
+      }
+      const P = sg.pts, h = hg[P[0][1] * W + P[0][0]];
+      // 끈 당기기
+      const keep = [P[0]]; let i = 0;
+      while (i < P.length - 1) {
+        let j = Math.min(P.length - 1, i + 60);
+        while (j > i + 1 && !los(m, sea, P[i][0], P[i][1], P[j][0], P[j][1], h)) j--;
+        keep.push(P[j]); i = j;
+      }
+      // 긴 곧은 구간은 잡음으로 살짝 굽힌다 (자연스러운 길)
+      let poly = [keep[0].slice()];
+      for (let k = 0; k < keep.length - 1; k++) {
+        const [ax, ay] = keep[k], [bx, by] = keep[k + 1], L = Math.hypot(bx - ax, by - ay);
+        const parts = Math.max(1, Math.round(L / 7));
+        const nx = -(by - ay) / (L || 1), ny = (bx - ax) / (L || 1);
+        for (let q = 1; q <= parts; q++) {
+          const t = q / parts; let px = ax + (bx - ax) * t, py = ay + (by - ay) * t;
+          if (q < parts) {
+            const off = (U.vnoise(px / 9, py / 9, 97) - 0.5) * Math.min(4.5, L * 0.18);
+            const cx = px + nx * off, cy = py + ny * off, prev = poly[poly.length - 1];
+            if (los(m, sea, prev[0], prev[1], cx, cy, h) && los(m, sea, cx, cy, bx, by, h)) { px = cx; py = cy; }
+          }
+          poly.push([px, py]);
+        }
+      }
+      // 차이킨 두 번 (가능할 때만)
+      for (let it = 0; it < 2 && poly.length > 2; it++) {
+        const out = [poly[0]];
+        for (let k = 0; k < poly.length - 1; k++) {
+          const [ax, ay] = poly[k], [bx, by] = poly[k + 1];
+          const q = [ax * 0.75 + bx * 0.25, ay * 0.75 + by * 0.25], r = [ax * 0.25 + bx * 0.75, ay * 0.25 + by * 0.75];
+          if (k > 0) out.push(q); if (k < poly.length - 2) out.push(r);
+        }
+        out.push(poly[poly.length - 1]);
+        let ok = true; for (let k = 0; k < out.length - 1 && ok; k++) ok = los(m, sea, out[k][0], out[k][1], out[k + 1][0], out[k + 1][1], h);
+        if (ok) poly = out; else break;
+      }
+      OW.roadPaths.push(poly);
+      // 둥근 붓으로 칠하기 (폭 두세 칸, 조금씩 넓어졌다 좁아졌다)
+      for (let k = 0; k < poly.length - 1; k++) {
+        const [ax, ay] = poly[k], [bx, by] = poly[k + 1];
+        const n = Math.ceil(Math.hypot(bx - ax, by - ay) * 4) + 1;
+        for (let s2 = 0; s2 <= n; s2++) {
+          const t = s2 / n, fx = ax + (bx - ax) * t + 0.5, fy = ay + (by - ay) * t + 0.5;
+          const r = 1.0 + U.vnoise(fx / 7, fy / 7, 95) * 0.35;
+          for (let y = Math.floor(fy - r); y <= Math.floor(fy + r); y++) for (let x = Math.floor(fx - r); x <= Math.floor(fx + r); x++) {
+            const d = Math.hypot(x + 0.5 - fx, y + 0.5 - fy);
+            if (d <= r) paint(x, y, h, d < 0.8);
+          }
+        }
+      }
+      // 원래 칸도 길로 (끊기지 않게)
+      for (const [x, y] of P) paint(x, y, h, true);
     }
     // 고원 북쪽 가장자리(면이 없는 쪽)를 오르는 곳: 낮은 칸을 계단으로
     for (let k = 1; k < path.length; k++) {
       const i = path[k], p = path[k - 1];
       if (Math.abs(i - p) !== W) continue;
-      if (m.hgt[i] !== m.hgt[p] && tr[i] !== T.STAIRS && tr[p] !== T.STAIRS) {
-        const lo = m.hgt[i] < m.hgt[p] ? i : p;
-        for (const j of [lo, lo + 1]) if (tr[j] !== T.CLIFF) { tr[j] = T.STAIRS; m.obj[j] = 0; }
+      if (hg[i] !== hg[p] && tr[i] !== T.STAIRS && tr[p] !== T.STAIRS) {
+        const lo = hg[i] < hg[p] ? i : p;
+        for (const j of [lo, lo + 1]) if (tr[j] !== T.CLIFF) { tr[j] = T.STAIRS; m.obj[j] = 0; OW.roadTiles[j] = 1; }
       }
     }
     void a; void b;
   }
-  function regionRoad(n) { return n === 'yellow' ? T.ROAD : n === 'white' ? T.ROAD : n === 'black' ? T.STONE : n === 'gray' ? T.ROAD : T.DIRT; }
+  function regionRoad(n) { return n === 'yellow' ? T.ROAD : n === 'white' ? T.ROAD : n === 'black' ? T.COBBLE : n === 'gray' ? T.GRAVEL : T.DIRT; }
 
   function paveTown(m, n, t) {
-    const road = n === 'yellow' || n === 'black' || n === 'white' || n === 'gray' ? T.STONE : n === 'rainbow' ? T.TILE : T.ROAD;
+    const road = (OW.PLAN && OW.PLAN[n] && OW.PLAN[n].pave) || (n === 'yellow' || n === 'black' || n === 'white' || n === 'gray' ? T.STONE : n === 'rainbow' ? T.TILE : T.ROAD);
     const cx = t.x + (t.w >> 1), cy = t.y + (t.h >> 1);
     // 가운데 광장 + 십자 길
     for (let y = cy - 3; y <= cy + 3; y++) for (let x = cx - 4; x <= cx + 4; x++) setGround(m, x, y, road);
@@ -300,15 +417,15 @@
       const r = rnd();
       let o = 0;
       switch (n) {
-        case 'green': o = forest > 0.6 ? (r < 0.55 ? O.TREE : r < 0.62 ? O.BUSH : 0) : r < 0.05 ? O.TALL : r < 0.075 ? O.FLOWER : r < 0.085 ? O.BUSH : r < 0.09 ? O.ROCK : 0; break;
-        case 'red': o = t === T.ASH ? (r < 0.04 ? O.DEAD : r < 0.07 ? O.ROCK : r < 0.075 ? O.BOULDER : 0) : forest > 0.62 ? (r < 0.4 ? O.TREE : r < 0.46 ? O.DEAD : 0) : r < 0.03 ? O.ROCK : r < 0.05 ? O.TALL : r < 0.055 ? O.BUSH : 0; break;
-        case 'blue': o = t === T.SAND ? (r < 0.03 ? O.PALM : r < 0.045 ? O.PEBBLE : 0) : forest > 0.62 ? (r < 0.5 ? O.TREE : r < 0.6 ? O.BUSH : 0) : r < 0.05 ? O.TALL : r < 0.07 ? O.FLOWER : r < 0.075 ? O.REED : 0; break;
-        case 'yellow': o = t === T.SAND ? (r < 0.02 ? O.CACTUS : r < 0.03 ? O.ROCK : r < 0.036 ? O.BONES : r < 0.042 ? O.PEBBLE : 0) : r < 0.3 ? O.PALM : r < 0.4 ? O.TALL : 0; break;
-        case 'purple': o = forest > 0.5 ? (r < 0.4 ? O.TREE : r < 0.5 ? O.SHROOM : r < 0.55 ? O.BUSH : 0) : r < 0.05 ? O.TALL : r < 0.08 ? O.FLOWER : r < 0.09 ? O.SHROOM : 0; break;
+        case 'green': o = t === T.MUD ? (r < 0.12 ? O.REED : 0) : t === T.GRAVEL ? (r < 0.06 ? O.ROCK : r < 0.1 ? O.PEBBLE : 0) : t === T.MEADOW ? (r < 0.12 ? O.FLOWER : r < 0.16 ? O.TALL : 0) : forest > 0.6 ? (r < 0.55 ? O.TREE : r < 0.62 ? O.BUSH : r < 0.64 ? O.SHROOM : 0) : r < 0.05 ? O.TALL : r < 0.075 ? O.FLOWER : r < 0.085 ? O.BUSH : r < 0.09 ? O.ROCK : 0; break;
+        case 'red': o = t === T.ASH || t === T.ROCKY ? (r < 0.04 ? O.DEAD : r < 0.07 ? O.ROCK : r < 0.075 ? O.BOULDER : 0) : t === T.GRAVEL ? (r < 0.05 ? O.ROCK : r < 0.09 ? O.PEBBLE : 0) : t === T.DRY ? (r < 0.06 ? O.TALL : r < 0.075 ? O.DEAD : r < 0.085 ? O.ROCK : 0) : forest > 0.62 ? (r < 0.4 ? O.TREE : r < 0.46 ? O.DEAD : 0) : r < 0.03 ? O.ROCK : r < 0.05 ? O.TALL : r < 0.055 ? O.BUSH : 0; break;
+        case 'blue': o = t === T.SAND ? (r < 0.03 ? O.PALM : r < 0.045 ? O.PEBBLE : 0) : t === T.MUD ? (r < 0.14 ? O.REED : 0) : t === T.MEADOW ? (r < 0.1 ? O.FLOWER : 0) : forest > 0.62 ? (r < 0.5 ? O.TREE : r < 0.6 ? O.BUSH : 0) : r < 0.05 ? O.TALL : r < 0.07 ? O.FLOWER : r < 0.075 ? O.REED : 0; break;
+        case 'yellow': o = t === T.SAND || t === T.CRACKED || t === T.ROCKY ? (r < 0.02 ? O.CACTUS : r < 0.03 ? O.ROCK : r < 0.036 ? O.BONES : r < 0.042 ? O.PEBBLE : 0) : t === T.DRY ? (r < 0.05 ? O.TALL : r < 0.06 ? O.CACTUS : r < 0.07 ? O.PALM : 0) : r < 0.3 ? O.PALM : r < 0.4 ? O.TALL : 0; break;
+        case 'purple': o = t === T.MUD ? (r < 0.1 ? O.REED : r < 0.14 ? O.SHROOM : 0) : forest > 0.5 ? (r < 0.4 ? O.TREE : r < 0.5 ? O.SHROOM : r < 0.55 ? O.BUSH : 0) : t === T.MEADOW ? (r < 0.12 ? O.FLOWER : 0) : r < 0.05 ? O.TALL : r < 0.08 ? O.FLOWER : r < 0.09 ? O.SHROOM : 0; break;
         case 'rainbow': o = forest > 0.62 ? (r < 0.4 ? O.BLOSSOM : 0) : r < 0.1 ? O.FLOWER : r < 0.13 ? O.TALL : 0; break;
         case 'white': o = forest > 0.55 ? (r < 0.5 ? O.SNOWTREE : r < 0.55 ? O.PINE : 0) : r < 0.02 ? O.ICESPIKE : r < 0.035 ? O.ROCK : r < 0.04 ? O.PINE : 0; break;
-        case 'gray': o = r < 0.02 ? O.RUBBLE : r < 0.035 ? O.DEAD : r < 0.045 ? O.ROCK : r < 0.05 ? O.PILLAR : r < 0.055 ? O.BONES : 0; break;
-        case 'black': o = forest > 0.6 ? (r < 0.35 ? O.DEAD : r < 0.42 ? O.TREE : 0) : r < 0.02 ? O.GRAVE : r < 0.035 ? O.TALL : r < 0.04 ? O.DEAD : 0; break;
+        case 'gray': o = t === T.GRAVEL ? (r < 0.05 ? O.RUBBLE : r < 0.09 ? O.PEBBLE : 0) : r < 0.02 ? O.RUBBLE : r < 0.035 ? O.DEAD : r < 0.045 ? O.ROCK : r < 0.05 ? O.PILLAR : r < 0.055 ? O.BONES : 0; break;
+        case 'black': o = forest > 0.6 ? (r < 0.35 ? O.DEAD : r < 0.42 ? O.TREE : r < 0.46 ? O.SHROOM : 0) : t === T.GRAVEL ? (r < 0.04 ? O.ROCK : r < 0.05 ? O.GRAVE : 0) : r < 0.02 ? O.GRAVE : r < 0.035 ? O.TALL : r < 0.04 ? O.DEAD : 0; break;
         case 'colorful': o = t === T.SAND ? (r < 0.04 ? O.PALM : 0) : forest > 0.64 ? (r < 0.4 ? O.TREE : r < 0.5 ? O.BLOSSOM : 0) : r < 0.1 ? O.FLOWER : r < 0.13 ? O.TALL : 0; break;
         default: break;
       }
@@ -318,7 +435,7 @@
     }
     for (let i = 0; i < W * H; i++) if (tr[i] === T.WATER && rnd() < 0.05 && ['green', 'blue', 'purple', 'rainbow', 'colorful'].includes(regName[i]) && !OW.roadTiles[i]) m.obj[i] = O.LILY;
     // 블랙: 길가에 가로등
-    for (let i = 0; i < W * H; i++) if (OW.roadTiles[i] && regName[i] === 'black' && (i % 7 === 0) && !OW.roadTiles[i + 2] && tr[i + 2] === T.DARK && !m.obj[i + 2]) { m.obj[i + 2] = O.LAMP; m.lights.push({ x: ((i + 2) % W) * TS + 8, y: (((i + 2) / W) | 0) * TS + 2, r: 46, warm: 'rgba(255,210,120,0.18)' }); }
+    for (let i = 0; i < W * H; i++) if (OW.roadTiles[i] && regName[i] === 'black' && (i % 7 === 0) && !OW.roadTiles[i + 2] && (tr[i + 2] === T.DARK || tr[i + 2] === T.MOSS || tr[i + 2] === T.GRAVEL) && !m.obj[i + 2]) { m.obj[i + 2] = O.LAMP; m.lights.push({ x: ((i + 2) % W) * TS + 8, y: (((i + 2) / W) | 0) * TS + 2, r: 46, warm: 'rgba(255,210,120,0.18)' }); }
   }
 
   /* ───────── 빈 칸 찾기 (이야기 파일이 쓴다) ───────── */

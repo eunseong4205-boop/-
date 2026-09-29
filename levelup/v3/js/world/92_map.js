@@ -52,25 +52,33 @@
   function dungeonCanvas(m) {
     const s = S(), did = m.dungeon, RW = G.dungeon.RW, RH = G.dungeon.RH;
     const keys = Object.keys(m.rooms);
-    const gx = Math.max(...keys.map((k) => +k.split(',')[0])) + 1, gy = Math.max(...keys.map((k) => +k.split(',')[1])) + 1;
-    const cw = 64, ch = 46, pad = 10;
-    const c = G.gfx.canvas(gx * cw + pad * 2, gy * ch + pad * 2), g = G.gfx.ctx(c);
+    const RP = (k) => [m.rooms[k].gx, m.rooms[k].gy];
+    const gx = Math.max(...keys.map((k) => RP(k)[0])) + 1, gy = Math.max(...keys.map((k) => RP(k)[1])) + 1;
+    const cw = 64, ch = 46, pad = 10, lab = m.rooms[keys[0]].floor != null ? 56 : 0;
+    const c = G.gfx.canvas(gx * cw + pad * 2 + lab, gy * ch + pad * 2), g = G.gfx.ctx(c);
     const hasMap = !!s.flags['dmap:' + did], hasComp = !!s.flags['dcomp:' + did];
-    const p = G.world.player; const cur = p ? Math.floor(p.x / TS / RW) + ',' + Math.floor(p.y / TS / RH) : '';
-    // 문 (이어진 방 사이 선)
-    g.strokeStyle = '#6a6080'; g.lineWidth = 3;
+    const p = G.world.player;
+    const pgx = p ? Math.floor(p.x / TS / RW) : -1, pgy = p ? Math.floor(p.y / TS / RH) : -1;
+    const cur = keys.find((k) => RP(k)[0] === pgx && RP(k)[1] === pgy) || '';
+    const X0 = pad + lab;
+    // 층 이름 (왼쪽)
+    if (lab) { g.font = "11px 'Galmuri11', sans-serif"; g.textAlign = 'left'; const rows = {}; for (const k of keys) { const fl = m.rooms[k].floor; if (fl && (s.flags['room:' + did + ':' + k] || hasMap)) rows[RP(k)[1]] = fl; } for (const [ry, fl] of Object.entries(rows)) { g.fillStyle = '#c8b8e8'; g.fillText(fl, 4, pad + ry * ch + ch / 2 + 4); } }
+    // 문 (이어진 방 사이 선) · 계단 (점선)
     for (const dw of m.doorways || []) {
       const seenA = s.flags['room:' + did + ':' + dw.a], seenB = s.flags['room:' + did + ':' + dw.b];
       if (!hasMap && !(seenA || seenB)) continue;
-      const [ax, ay] = dw.a.split(',').map(Number), [bx, by] = dw.b.split(',').map(Number);
-      g.beginPath(); g.moveTo(pad + ax * cw + cw / 2, pad + ay * ch + ch / 2); g.lineTo(pad + bx * cw + cw / 2, pad + by * ch + ch / 2); g.stroke();
+      const [ax, ay] = RP(dw.a), [bx, by] = RP(dw.b);
+      g.strokeStyle = dw.stair ? '#b8a0e8' : '#6a6080'; g.lineWidth = dw.stair ? 2 : 3;
+      if (dw.stair) g.setLineDash([3, 3]);
+      g.beginPath(); g.moveTo(X0 + ax * cw + cw / 2, pad + ay * ch + ch / 2); g.lineTo(X0 + bx * cw + cw / 2, pad + by * ch + ch / 2); g.stroke();
+      g.setLineDash([]);
     }
     g.lineWidth = 1;
     for (const k of keys) {
-      const [rx, ry] = k.split(',').map(Number);
+      const [rx, ry] = RP(k);
       const seen = s.flags['room:' + did + ':' + k];
       if (!seen && !hasMap) continue;
-      const x = pad + rx * cw + 4, y = pad + ry * ch + 4, w = cw - 8, h = ch - 8;
+      const x = X0 + rx * cw + 4, y = pad + ry * ch + 4, w = cw - 8, h = ch - 8;
       g.fillStyle = k === cur ? '#6a5a98' : seen ? '#3a3458' : '#241f36'; g.fillRect(x, y, w, h);
       g.strokeStyle = k === cur ? '#ffe08a' : '#8a80a8'; g.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1);
       if (s.flags[did + ':' + k + ':clear']) { g.fillStyle = '#6ae07a'; g.fillRect(x + 3, y + 3, 3, 3); }
@@ -92,7 +100,7 @@
     let cv;
     if (m && m.dungeon) {
       cv = dungeonCanvas(m);
-      title.textContent = (m.name || '던전') + (s.flags['dmap:' + m.dungeon] ? ' · 지도 있음' : '') + (s.flags['dcomp:' + m.dungeon] ? ' · 나침반 있음' : '');
+      title.textContent = (m.name || '던전') + (m.curFloor ? ' — ' + m.curFloor : '') + (s.flags['dmap:' + m.dungeon] ? ' · 지도 있음' : '') + (s.flags['dcomp:' + m.dungeon] ? ' · 나침반 있음' : '');
     } else {
       cv = worldCanvas();
       title.textContent = '이리스 대륙' + (m && !m.overworld && m.name ? ' — 지금: ' + m.name : '');
