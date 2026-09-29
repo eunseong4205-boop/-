@@ -50,6 +50,7 @@
     blacksun: { strike: 2, drain: 4, hex: 3, heavy: 3, shield: 1 },
   };
   const GUARD_WIN = 0.7, PERFECT = 0.22, GUARD_CD = 1.1;
+  const potMax = () => B.opt.potMax || D.B.potMax;
 
   const B = {
     active: false, mon: null, phase: 'none', t: 0, enemyT: 0, floats: [], slashes: [], parts: [], opt: {}, resolve: null, result: null, hurtT: 0, lunge: 0,
@@ -97,8 +98,8 @@
     const box = $('bh-cmd');
     let h = '<button class="bcmd run" data-b="run">' + (B.opt.noFlee || B.mon.boss ? '도망 불가' : '도망') + '</button>';
     h += '<button class="bcmd guard" data-b="guard"><span>◆ 막기 (B)</span><i class="cd"></i></button>';
-    const pot = bestPotion(), left = D.B.potMax - B.potUsed;
-    h += '<button class="bcmd pot" data-b="pot"' + (pot && left > 0 ? '' : ' disabled') + '>♥ ' + (pot ? D.ITEMS[pot].name + ' ' + s.inv[pot] : '물약 없음') + ' <small>' + left + '/' + D.B.potMax + '</small></button>';
+    const pot = bestPotion(), left = potMax() - B.potUsed;
+    h += '<button class="bcmd pot" data-b="pot"' + (pot && left > 0 ? '' : ' disabled') + '>♥ ' + (pot ? D.ITEMS[pot].name + ' ' + s.inv[pot] : '물약 없음') + ' <small>' + left + '/' + potMax() + '</small></button>';
     for (const sk of D.SKILLS) if (E.skillUnlocked(s, sk)) h += '<button class="bcmd" data-b="' + sk.id + '"><span>' + sk.icon + ' ' + sk.name + '</span><i class="cd"></i></button>';
     box.innerHTML = h;
     box.onclick = (e) => { const b = e.target.closest('[data-b]'); if (!b || B.phase !== 'fight') return; const k = b.dataset.b; if (k === 'run') flee(); else if (k === 'guard') guard(); else if (k === 'pot') potion(); else skill(k); };
@@ -112,7 +113,7 @@
   function potion() {
     if (B.phase !== 'fight') return;
     if (B.hexT > 0) { G.audio.sfx('buzz'); G.ui.toast('저주 때문에 병마개가 열리지 않는다!', 'bad'); return; }
-    if (B.potUsed >= D.B.potMax) { G.audio.sfx('buzz'); G.ui.toast('이번 전투에서는 더 마실 수 없다', 'bad'); return; }
+    if (B.potUsed >= potMax()) { G.audio.sfx('buzz'); G.ui.toast('이번 전투에서는 더 마실 수 없다', 'bad'); return; }
     const id = bestPotion(); if (!id) { G.audio.sfx('buzz'); return; }
     E.usePotion(G.state, id); G.audio.sfx('heal'); B.potUsed++;
     addFloat('HP 회복', '#6ee7a8', 0.5, 0.78);
@@ -363,7 +364,7 @@
     const gb = document.querySelector('#bh-cmd [data-b="guard"]');
     if (gb) { gb.classList.toggle('on', guarding()); const bar = gb.querySelector('.cd'); if (bar) bar.style.width = (B.guardCd > 0 ? (1 - B.guardCd / GUARD_CD) * 100 : 100) + '%'; }
     const pb = document.querySelector('#bh-cmd [data-b="pot"]');
-    if (pb) pb.disabled = B.phase !== 'fight' || B.hexT > 0 || B.potUsed >= D.B.potMax || !bestPotion();
+    if (pb) pb.disabled = B.phase !== 'fight' || B.hexT > 0 || B.potUsed >= potMax() || !bestPotion();
     const s = G.state;
     document.querySelectorAll('#bh-cmd [data-b^="k_"]').forEach((b) => {
       const sk = D.SKILLS.find((k) => k.id === b.dataset.b); const c = s.cd[sk.id];

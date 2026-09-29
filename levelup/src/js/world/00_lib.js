@@ -11,6 +11,7 @@
   G.story.talks = G.story.talks || [];
   G.story.nights = G.story.nights || [];
   G.story.truths = G.story.truths || {};
+  G.story.abyss = G.story.abyss || {};
 
   const W = {};
   const DIR4 = [[1, 0], [-1, 0], [0, 1], [0, -1]];

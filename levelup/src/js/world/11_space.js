@@ -189,8 +189,10 @@
   });
   async function heraldTalk(c, mo) {
     await c.say(null, '창밖의 황금별을 가리고, 사람 모양의 그림자가 떠 있다. 그림자 속에서 붉은 점 하나가 깜빡인다.');
+    c.music('dread');
     await c.say('blacksun', ['………빛………', '………여기………가장………맛있는………빛………']);
     await c.say('dotori:angry', '찍! {n}은(는) 맛있는 게 아니야!');
+    await c.say(null, '그림자가 고개를 기울였다. 사람이 아기를 들여다볼 때처럼. 붉은 점이 한 번, 천천히 깜빡였다.');
     const win = await c.battle('herald', { noFlee: true, music: 'boss' });
     if (!win) return;
     G.field.removeMon(mo);
@@ -203,6 +205,7 @@
     if (s.quests.m11 !== 4 && s.quests.m11 !== 'done') { await c.say(null, '궤도 셔틀 탑승구. 화면에 「운항 정지 — 관리자 승인 필요」라고 떠 있다.'); return; }
     if (s.lv < 600000 || (s.ranks.r5 || 0) < 20) { await c.say('stella', ['조건 미달. 레벨 ' + G.u.fmtInt(s.lv) + ', 전설 ' + (s.ranks.r5 || 0) + '차.', '레벨 60만, 전설 20차. 그 아래로는 아스트라의 기운에 그릇이 깨져. 내 계산은 틀리지 않아.']); return; }
     if (!(await c.yes('궤도 셔틀을 타고 황금별 아스트라로 갈까?', 'stella', '간다', '아직'))) return;
+    await G.story.council(c);
     await c.say('stella', ['셔틀 발진. 목적지 아스트라. 도착 예정: 천년제 날 밤.', '…다녀와. 금방. 아니, 금방은 단위가 아니지. …그냥 다녀와.']);
     await c.fadeOut(900, true);
     c.quest('m11', 'done');

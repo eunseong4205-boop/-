@@ -143,6 +143,18 @@
         return true;
       },
       truthN: () => Object.keys(s().truth || {}).filter((k) => (G.story.truths || {})[k]).length,
+      /** 심연의 기록: 평범해 보이는 대륙 밑바닥에 가라앉은 것들. 알수록 마지막에 고를 수 있는 길이 늘어난다 */
+      abyss(id) {
+        const st = s(); st.abyss = st.abyss || {};
+        if (st.abyss[id]) return false;
+        st.abyss[id] = 1;
+        const A = G.story.abyss || {};
+        const n = Object.keys(st.abyss).filter((k) => A[k]).length, all = Object.keys(A).length;
+        G.audio.jingle('secret');
+        UI.toast('[r]심연의 기록[/] ' + n + ' / ' + all + ' — ' + (A[id] ? A[id].title : id), 'bad');
+        return true;
+      },
+      abyssN: () => Object.keys(s().abyss || {}).filter((k) => (G.story.abyss || {})[k]).length,
       /** 낚시 입질: wait초 뒤 찌가 움직이고, win초 안에 A를 누르면 'ok' · 너무 빠르면 'early' · 늦으면 'miss' · B는 'cancel' */
       bite(waitSec, win) {
         return new Promise((res) => {

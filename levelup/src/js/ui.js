@@ -601,6 +601,19 @@
         tids.map((k) => (s.truth[k] ? '<div class="row" style="align-items:flex-start"><span class="ic" style="color:var(--r5)">◆</span><span class="nm"><b>' + esc(T[k].title) + '</b><small>' + markup(T[k].text) + '</small></span></div>'
           : '<div class="row"><span class="ic" style="color:var(--muted)">◇</span><span class="nm"><small style="color:var(--muted)">' + esc(T[k].hint || '아직 모르는 조각') + '</small></span></div>')).join('');
     }
+    // 심연의 기록: 모르는 것은 제목조차 보이지 않는다
+    const A = G.story.abyss || {};
+    const aids = Object.keys(A);
+    if (aids.length && Object.keys(s.abyss || {}).length) {
+      const got = aids.filter((k) => s.abyss[k]);
+      h += '<div class="sec abyss" style="margin-top:10px">심연의 기록 ' + got.length + ' / ' + aids.length + '</div>' +
+        aids.map((k) => (s.abyss[k] ? '<div class="row abyss" style="align-items:flex-start"><span class="ic" style="color:#ff5a6a">◆</span><span class="nm"><b>' + esc(A[k].title) + '</b><small>' + markup(A[k].text) + '</small></span></div>'
+          : '<div class="row"><span class="ic" style="color:var(--muted)">◇</span><span class="nm"><small style="color:var(--muted)">' + esc(A[k].hint || '아직 가라앉아 있는 것') + '</small></span></div>')).join('');
+    }
+    // 본 결말들
+    const EN = G.story.ENDINGS || {};
+    const seen = Object.keys(EN).filter((k) => (s.endings || {})[k]);
+    if (seen.length) h += '<div class="sec" style="margin-top:10px">본 결말 ' + seen.length + ' / ' + Object.keys(EN).length + '</div>' + Object.keys(EN).map((k) => ((s.endings || {})[k] ? '<div class="row" style="align-items:flex-start"><span class="ic" style="color:var(--gold)">✦</span><span class="nm"><b>' + esc(EN[k].name) + '</b><small>' + markup(EN[k].desc) + '</small></span></div>' : '<div class="row"><span class="ic" style="color:var(--muted)">✧</span><span class="nm"><small style="color:var(--muted)">아직 보지 못한 결말</small></span></div>')).join('');
     // 결정의 기록
     if ((s.log || []).length) {
       h += '<div class="sec" style="margin-top:10px">내가 내린 결정</div>' + s.log.map((d) => '<div class="row"><span class="ic" style="color:var(--gold)">▸</span><span class="nm"><b>' + esc(U.nameSub(d.t || d.k, s.name)) + '</b><small>' + esc(d.ch || '') + '</small></span></div>').join('');

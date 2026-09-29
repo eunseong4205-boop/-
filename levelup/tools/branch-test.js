@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/* 갈림길 테스트: 이야기의 대안 경로와 세 가지 결말을 실제 브라우저에서 돌린다.
+/* 갈림길 테스트: 이야기의 대안 경로, 심연의 기록, 여덟 가지 결말을 실제 브라우저에서 돌린다.
    story-test.js가 기본 선택(늘 첫 번째 답)으로 끝까지 가는 길을 확인한다면, 이쪽은 다른 답을 고른 길을 확인한다.
    사용법: node levelup/tools/branch-test.js [levelup.html 경로] */
 'use strict';
@@ -29,13 +29,42 @@ const SCENES = [
   ['9장 · 미드나잇에게 비밀을', { map: 'midnight_shop', x: 4, y: 5, dir: 'up' }, { npc: 'midnight' }, (s) => s.flags.d_midnight === 'secret' && s.flags.m_black_midnight && s.truth.t_colors],
   ['9장 · 녹턴과의 약속', { lv: 250000, quests: { m9: 4 }, map: 'castle2', x: 13, y: 6, dir: 'up' }, { npc: 'nocturne' }, (s) => s.flags.d_nocturne === 'promise' && s.flags.nocturne_ally && s.inv.night_key && s.quests.m9 === 6, [1, 0, 1]],
   ['6장 뒤 · 쌍둥이에게 빛을', { flags: { m_rainbow_share: true }, map: 'red_rud', x: 1, y: 4, dir: 'up' }, { npc: 'luka' }, (s) => s.flags.twins_healed],
-  ['결말 · 나눔 (설득)', Object.assign({ fresh: true, truths: ALL_TRUTHS, flags: GOOD, bond: { rud: 2, vera: 1 }, quests: { m12: 2, q_light: 'done', q_noel: 'done', q_lamps: 'done', q_miru: 'done' } }, FINAL), { npc: 'kairon' }, (s) => s.flags.ending_type === 'share' && s.flags.kairon_persuaded && s.flags.called_father && s.map === 'festival', [0, 0]],
-  ['결말 · 나눔 천년제', { map: 'festival', x: 19, y: 12, dir: 'up' }, { npc: 'gran' }, (s) => s.quests.m13 === 'done'],
+  ['2장 · 화로가 기억하는 983년', { flags: { red_intro: true }, map: 'red_forge', x: 5, y: 4, dir: 'up' }, { npc: 'hwaro' }, (s) => s.flags.hwaro_983],
+  ['3장 · 흰빛이 사라진 해들', { map: 'library', x: 18, y: 9, dir: 'up' }, { obj: [18, 8] }, () => true],
+  ['5장 · 거울 연못의 두 그림자', { map: 'mirror_pond', x: 15, y: 16, dir: 'up' }, { obj: [15, 15] }, (s) => s.flags.pond_twice],
+  ['7장 · 눈을 가린 세 성녀', { map: 'cathedral', x: 5, y: 4, dir: 'up' }, { obj: [5, 3] }, () => true],
+  ['10장 · 갈 때 하나, 올 때 둘', { map: 'hangar', x: 4, y: 4, dir: 'up' }, { obj: [4, 3] }, () => true],
+  ['밤 · 토리아의 자장가', {}, { night: 'ab_lullaby' }, (s) => true, [1]],
+  ['밤 · 유리 속의 꿈', {}, { night: 'ab_glass' }, (s) => true, [2]],
+  ['밤 · 흰 털 한 가닥', { flags: { hero_streak: true } }, { night: 'ab_hair' }, (s) => true],
+  ['동행 · 전령의 목소리', {}, { talk: 'ab_herald' }, (s) => true],
+  ['9장 · 고양이의 그림자', { flags: { m_black_midnight: true }, map: 'midnight_shop', x: 7, y: 5, dir: 'down' }, { obj: [7, 6] }, (s) => s.flags.saw_shadow],
+  ['9장 · 미드나잇의 고백', { map: 'midnight_shop', x: 4, y: 5, dir: 'up' }, { npc: 'midnight' }, (s) => s.abyss.a_midnight && s.flags.midnight_trust && s.flags.d_midnight_secret === 'keep', [2]],
+  ['9장 · 허용 손실 장부', { flags: { m_black_nocturne: true, m_black_kairon: true }, map: 'castle2', x: 21, y: 3, dir: 'up' }, { obj: [21, 2] }, (s) => s.abyss.a_ledger && s.books.b_loss],
+  ['9장 · 빈 기사의 이름표', { map: 'castle1', x: 21, y: 24, dir: 'down' }, { obj: [21, 25] }, (s) => s.abyss.a_hollow && s.books.b_hollow_song],
+  ['뒤 · 할머니의 창', { map: 'home', x: 10, y: 3, dir: 'up' }, { examine: [10, 2, 'q'] }, (s) => s.abyss.a_gran && s.flags.spear_found],
+  ['8장 · 과녁 크기', { map: 'workshop', x: 12, y: 3, dir: 'up' }, { obj: [12, 2] }, (s) => s.abyss.a_plan],
+  ['11장 · 냉동 수면실', { quests: { q_crew: 'done' }, flags: { m_space_truth: true }, map: 'quarters', x: 10, y: 5, dir: 'down' }, { obj: [10, 6] }, (s) => s.map === 'cryo' && s.flags.cryo_seen],
+  ['11장 · 원본 기록', { map: 'cryo', x: 7, y: 6, dir: 'up' }, { obj: [7, 5] }, (s) => s.abyss.a_crew && s.flags.d_cryo === 'truth' && s.flags.stella_confessed, [1]],
+  ['11장 · 탑 통신망 (미드나잇)', { lv: 650000, ranks: { r5: 20 }, quests: { m11: 4 }, map: 'deck', x: 12, y: 5, dir: 'up' }, { obj: [12, 4] }, (s) => s.flags.creed === 'midnight' && s.map === 'astra_gate', [0, 5]],
+  ['12장 · 벨라의 고백', { map: 'astra_fort', x: 24, y: 10, dir: 'up' }, { npc: 'bella' }, (s) => s.abyss.a_vessel && s.truth.t_bella],
+  ['12장 · 아우룸의 잔상', { flags: { visit_astra_gate: true }, map: 'astra_gate', x: 11, y: 10, dir: 'up' }, { npc: 'aurum' }, (s) => s.abyss.a_midnight],
+  ['결말 · 나눔 (흰빛을 내려놓다)', Object.assign({ fresh: true, truths: ALL_TRUTHS, flags: Object.assign({ hero_streak: true }, GOOD), bond: { rud: 2, vera: 1 }, quests: { m12: 2, q_light: 'done', q_noel: 'done', q_lamps: 'done', q_miru: 'done' } }, FINAL), { npc: 'kairon' }, (s) => s.flags.ending_type === 'true' && s.flags.kairon_persuaded && s.flags.called_father && s.flags.hero_green && s.follower === 'dotori' && s.abyss.a_toria && s.map === 'festival', [0, 0, 0, 2]],
+  ['결말 · 나눔 천년제 (할머니의 약속)', { map: 'festival', x: 19, y: 12, dir: 'up' }, { npc: 'gran' }, (s) => s.quests.m13 === 'done' && s.flags.gran_pact_talked && s.endings.true],
   ['결말 · 베르나의 네잎클로버', { inv: { clover: 1 }, map: 'festival', x: 15, y: 17, dir: 'up' }, { npc: 'bomi' }, (s) => s.flags.clover_asked && !s.inv.clover],
-  ['결말 · 속죄', Object.assign({ fresh: true, truths: ['t_chart', 't_log', 't_colors', 't_612', 't_bella'], flags: BAD }, FINAL), { npc: 'kairon' }, (s) => s.flags.ending_type === 'atone' && s.flags.kairon_persuaded && s.map === 'festival', [0]],
+  ['결말 · 새벽 (토리아를 돌려보낸다)', Object.assign({ fresh: true, truths: ALL_TRUTHS, flags: GOOD, bond: { rud: 2, vera: 1 }, quests: { m12: 2, q_light: 'done', q_noel: 'done', q_lamps: 'done', q_miru: 'done' } }, FINAL), { npc: 'kairon' }, (s) => s.flags.ending_type === 'dawn' && !s.follower && s.map === 'festival', [0, 0, 0, 0]],
+  ['결말 · 새벽 천년제', { map: 'festival', x: 19, y: 12, dir: 'up' }, { npc: 'gran' }, (s) => s.quests.m13 === 'done'],
+  ['결말 · 둥지 (검으로 · 토리아를 붙잡는다)', Object.assign({ fresh: true, truths: ALL_TRUTHS, flags: GOOD, bond: { rud: 2, vera: 1 }, quests: { m12: 2, q_light: 'done', q_noel: 'done', q_lamps: 'done', q_miru: 'done' } }, FINAL), { npc: 'kairon' }, (s) => s.flags.ending_type === 'nest' && !s.flags.kairon_persuaded && s.follower === 'dotori' && s.map === 'festival', [0, 1, 1, 1]],
+  ['결말 · 둥지 천년제', { map: 'festival', x: 19, y: 12, dir: 'up' }, { npc: 'gran' }, (s) => s.quests.m13 === 'done'],
+  ['결말 · 속죄', Object.assign({ fresh: true, truths: ['t_chart', 't_log', 't_colors', 't_612', 't_bella'], flags: BAD }, FINAL), { npc: 'kairon' }, (s) => s.flags.ending_type === 'atone' && s.flags.kairon_persuaded && s.map === 'festival', [0, 0, 0]],
   ['결말 · 속죄 천년제', { map: 'festival', x: 19, y: 12, dir: 'up' }, { npc: 'gran' }, (s) => s.quests.m13 === 'done'],
-  ['결말 · 잔광', Object.assign({ fresh: true, truths: [], flags: BAD }, FINAL), { npc: 'kairon' }, (s) => s.flags.ending_type === 'glow' && !s.flags.kairon_persuaded && s.map === 'festival', [0]],
+  ['결말 · 밤 (미드나잇)', Object.assign({ fresh: true, truths: [], flags: Object.assign({ creed: 'midnight', midnight_trust: true }, BAD), abyss: ['a_midnight'] }, FINAL), { npc: 'kairon' }, (s) => s.flags.ending_type === 'night' && s.map === 'festival', [0, 1, 1]],
+  ['결말 · 밤 천년제', { map: 'festival', x: 19, y: 12, dir: 'up' }, { npc: 'gran' }, (s) => s.quests.m13 === 'done'],
+  ['결말 · 잔광', Object.assign({ fresh: true, truths: [], flags: BAD }, FINAL), { npc: 'kairon' }, (s) => s.flags.ending_type === 'glow' && !s.flags.kairon_persuaded && s.map === 'festival', [0, 0]],
   ['결말 · 잔광 천년제', { map: 'festival', x: 19, y: 12, dir: 'up' }, { npc: 'gran' }, (s) => s.quests.m13 === 'done'],
+  ['결말 · 재 (수정을 태운다)', Object.assign({ fresh: true, truths: [], flags: BAD }, FINAL), { npc: 'kairon' }, (s) => s.endings.ash && !s.flags.ending && s.flags.finale_rewind && s.map === 'astra_seal', [1]],
+  ['결말 · 되풀이 (다시, 수정 앞에서)', { map: 'astra_seal', x: 12, y: 8, dir: 'up' }, { npc: 'kairon' }, (s) => s.endings.repeat && s.endings.ash && !s.flags.ending && s.map === 'astra_seal', [2]],
+  ['결말 · 되돌아온 뒤 잔광', { map: 'astra_seal', x: 12, y: 8, dir: 'up' }, { npc: 'kairon' }, (s) => s.flags.ending_type === 'glow' && s.endings.glow && s.map === 'festival', [0, 0]],
 ];
 
 (async () => {
@@ -88,6 +117,8 @@ const SCENES = [
       Object.assign(s.quests, prep.quests || {}); Object.assign(s.books, prep.books || {}); Object.assign(s.inv, prep.inv || {}); Object.assign(s.flags, prep.flags || {});
       s.bond = Object.assign(s.bond || {}, prep.bond || {});
       if (prep.truths) { s.truth = {}; for (const t of prep.truths) s.truth[t] = 1; }
+      if (prep.abyss) { s.abyss = {}; for (const t of prep.abyss) s.abyss[t] = 1; }
+      if (prep.fresh) G.field.setFollower('dotori');
       for (const k in prep.ranks || {}) s.ranks[k] = Math.max(s.ranks[k] || 0, prep.ranks[k]);
       for (const r of ['r2', 'r3', 'r4', 'r5']) s.pw[r] = true;
       s.hp = G.engine.derive(s).hpMax;
@@ -101,6 +132,9 @@ const SCENES = [
       else if (t.fixed) { const mo = F.mons.find((x) => x.mon === t.fixed); if (!mo) throw new Error('몬스터 없음: ' + t.fixed); F.onEncounter(mo); }
       else if (t.trigger != null) { const tr = m.triggers[t.trigger]; if (tr.once) G.state.flags[tr.once] = true; G.script.run(tr.run); }
       else if (t.obj) { const o = F.objAt(t.obj[0], t.obj[1]); if (!o) throw new Error('오브젝트 없음 ' + t.obj); F.onInteract({ type: 'obj', obj: o }); }
+      else if (t.night) { const n = G.story.nights.find((x) => x.id === t.night); if (!n) throw new Error('밤 없음 ' + t.night); G.script.run(async (c) => { await n.run(c); }); }
+      else if (t.talk) { const n = G.story.talks.find((x) => x.id === t.talk); if (!n) throw new Error('대화 없음 ' + t.talk); G.script.run(async (c) => { await n.run(c); }); }
+      else if (t.examine) { const fn = m.examine(t.examine[0], t.examine[1], t.examine[2]); if (typeof fn !== 'function') throw new Error('살펴볼 곳 없음 ' + t.examine); G.script.run(fn); }
       else if (t.build) { const bb = F.builds.find((x) => x.talk && x.talk.name === t.build); if (!bb) throw new Error('건물 없음 ' + t.build); F.onInteract({ type: 'door', b: bb }); }
     }, target).catch((e) => errs.push(name + ': ' + e.message));
     const res = await drive(120000);

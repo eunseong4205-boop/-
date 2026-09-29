@@ -90,6 +90,26 @@
   T.calm = { bpm: 84, chords: 'Cmaj7 Am7 Fmaj7 G Cmaj7 Am7 Fmaj7 G', bass: 'long', arp: 'updown', arpWave: 'sine', arpVol: 0.06, drums: 'none', leadWave: 'sine', leadVol: 0.13,
     lead: 'o5 l8 e2 g4 e4 c2. r4 a2 g4 f4 d2. r4 e4. f g4 >c4< a2 g4 e4 f4. e d4 f4 g2. r4' };
 
+  // 소름 — 심장 소리와 낮게 긁는 소리. 무언가가 이쪽을 보고 있다
+  T.dread = { bpm: 60, chords: 'Cm Cm Dbmaj7 Cm Cm Cm Gdim Cm', bass: 'long', bassVol: 0.22, arp: 'pad', arpWave: 'sine', arpVol: 0.03,
+    drumMML: 'l8 [k k r r r r r r]', drumVol: 0.55, leadWave: 'sine', leadVol: 0.09,
+    lead: 'o6 l4 r1 c2. <b4 r1 r2 >c4 d-4 c1 r1 r2. <b4 f+1',
+    harm: 'o3 l1 c c d- c c c <b >c', harmWave: 'sawtooth', harmVol: 0.03 };
+  // 정적 — 거의 아무 소리도 없다. 가끔 멀리서 한 음
+  T.hollow = { bpm: 50, chords: 'Am:8 F:8 Am:8 E:8', bass: 'long', bassVol: 0.1, drums: 'none', leadWave: 'sine', leadVol: 0.06,
+    lead: 'o6 l1 r r e r d r r c' };
+  // 꿈 — 물속에서 듣는 자장가
+  T.dream = { bpm: 72, chords: 'Fmaj7 Em7 Dm7 Cmaj7 Fmaj7 Em7 Am7 G', bass: 'long', bassVol: 0.18, arp: 'updown', arpWave: 'sine', arpVol: 0.05, drums: 'none', leadWave: 'sine', leadVol: 0.12,
+    lead: 'o6 l4 c2 <a4 g4 e2. r4 f2 e4 d4 e2. r4 >c2 <a4 >c4 e2 d4 c4 <b2. r4 a1',
+    harm: 'o5 l2 e f e d c d e c e f e d c <b >c e', harmWave: 'sine', harmVol: 0.045 };
+  // 진혼곡 — 떠난 사람과 남은 사람
+  T.requiem = { bpm: 58, chords: 'Dm Bb Gm A Dm Bb Gm:2 A:2 Dm', bass: 'long', arp: 'broken8', arpVol: 0.035, drums: 'none', leadWave: 'sq12', leadVol: 0.12,
+    lead: 'o5 l4 a2 f4 d4 b-2. a4 g2 f4 e4 c+2. e4 f2 a4 >d4< d2. c4 b-4 a4 g4 e4 d1' };
+  // 웅장 — 대륙이 한목소리를 낼 때
+  T.epic = { bpm: 100, chords: 'Dm Bb C F Gm Bb A A', bass: 'oct', arp: 'up16', arpVol: 0.045, drums: 'march', drumVol: 0.8, leadWave: 'sq50', leadVol: 0.1,
+    lead: 'o5 l8 d4. e f4 a4 b-4. a g4 f4 e4. f g4 c4 f2. r4 g4. a b-4 >d4 c4< b- a g4 d4 a4. g f4 e4 c+2 e2',
+    harm: 'o5 l8 <a4. >c d4 f4 g4. f e4 d4 c4. d e4 <a4 >c2. r4 e4. f g4 b-4 a4 g f e4 <b-4> f4. e d4 c+4 <a2 >c+2', harmWave: 'sq25', harmVol: 0.06 };
+
   /* ───────── 팡파르 ───────── */
   const J = {
     levelup: { bpm: 200, parts: [{ mml: 'o5 l16 c e g >c8< g8 >c4.<', wave: 'sq50', vol: 0.12 }, { mml: 'o3 l16 c8 r8 g8 >c4.<', wave: 'triangle', vol: 0.3 }] },
