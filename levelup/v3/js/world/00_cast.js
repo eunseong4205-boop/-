@@ -52,7 +52,7 @@
   /* ── 무지개 ── */
   add('rolo', { name: '롤로', color: '#ffb0e0', voice: 1.1, desc: '무지개 서커스의 광대. 빛바램으로 색을 잃어 얼굴에 색을 칠하고 산다.', look: { hair: 'messy', hc: '#c8c8c8', eye: '#8a8a9a', skin: 'pale', top: 'coat', tc: '#e84a8a', trim: '#ffd84a', bottom: 'pants', bc: '#4a4ae8', acc: ['scarf'], scarfC: '#4ae8a8', blush: true } });
   add('chroma', { name: '크로마 위원장', color: '#c8f0a8', voice: 0.85, desc: '천년제 준비 위원장.', look: { gender: 'girl', age: 'old', hair: 'bun', hc: '#ff8ab0', eye: '#4a9a6a', top: 'dress', tc: '#8ae08a', bottom: 'long', bc: '#8a8ae8' } });
-  add('nube', { name: '누베', color: '#bfe4ff', voice: 0.55, desc: '구름고래. 무지개 마을까지 태워다 준다.', look: { kind: 'shade' } });
+  add('nube', { name: '누베', color: '#bfe4ff', voice: 0.55, desc: '구름고래. 무지개 마을까지 태워다 준다.', look: { kind: 'whale' } });
 
   /* ── 화이트 ── */
   add('lumie', { name: '성녀 루미에', color: '#fff4d0', voice: 1.05, desc: '사천왕 · 하양의 자리. 병자를 공짜로 고친다. 희생을 신의 뜻이라 믿는다.', look: { gender: 'girl', hair: 'long', hc: '#f0e8d0', eye: '#8ab8e8', top: 'robe', tc: '#f4f4f8', trim: '#e8c860', bottom: 'long', bc: '#d8e0ea', hat: 'veil', hatC: '#f4f4f8', eyeShape: 'sleepy', acc: ['necklace'], gem: '#8ab8e8' } });
@@ -85,7 +85,7 @@
   /* ── 괴물 · 그림자 ── */
   add('blacksun', { name: '흑점', color: '#ff5a7a', voice: 0.4, look: { kind: 'shade' }, desc: '빛을 먹는 떠돌이 어둠.' });
   add('hollowking', { name: '빈 왕', color: '#bfe8ff', voice: 0.45, look: { kind: 'armor' }, desc: '광맥 바닥의 왕좌에 앉은, 속이 빈 은빛 갑옷.' });
-  add('treant', { name: '속삭임의 나무 정령', color: '#b8e8a0', voice: 0.5, look: { kind: 'shade' }, desc: '천 년 동안 숲의 수다를 들어 왔다.' });
+  add('treant', { name: '속삭임의 나무 정령', color: '#b8e8a0', voice: 0.5, look: { kind: 'spirit' }, desc: '천 년 동안 숲의 수다를 들어 왔다.' });
 
   /* ── 이름 없는 사람들 (모습만) ── */
   const FOLK = {

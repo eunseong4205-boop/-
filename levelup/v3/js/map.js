@@ -59,6 +59,8 @@
         }
       }
       c = b.put();
+      // 묶음은 최대 64개만 기억한다 (넓은 지도에서 메모리 절약)
+      if (this.chunks.size > 64) { const first = this.chunks.keys().next().value; this.chunks.delete(first); }
       // 바닥에 붙은 사물 (꽃 · 풀숲 · 자갈 …)
       const g = X.ctx(c);
       for (let ty = cy * CH; ty < (cy + 1) * CH && ty < this.h; ty++) for (let tx = cx * CH; tx < (cx + 1) * CH && tx < this.w; tx++) {
@@ -77,8 +79,10 @@
       for (let cy = cy0; cy <= cy1; cy++) for (let cx = cx0; cx <= cx1; cx++) {
         if (cx < 0 || cy < 0 || cx * CH >= this.w || cy * CH >= this.h) continue;
         const k = cx + ',' + cy;
-        if (!this.chunks.has(k)) { if (made >= (budget || 99)) { g.fillStyle = '#1a2a1a'; g.fillRect(Math.round(cx * CPX - camX), Math.round(cy * CPX - camY), CPX, CPX); continue; } made++; }
-        g.drawImage(this.chunk(cx, cy), Math.round(cx * CPX - camX), Math.round(cy * CPX - camY));
+        let c = this.chunks.get(k);
+        if (!c) { if (made >= (budget || 99)) { g.fillStyle = '#1a2a1a'; g.fillRect(Math.round(cx * CPX - camX), Math.round(cy * CPX - camY), CPX, CPX); continue; } made++; c = this.chunk(cx, cy); }
+        else { this.chunks.delete(k); this.chunks.set(k, c); }      // 최근에 쓴 것은 뒤로
+        g.drawImage(c, Math.round(cx * CPX - camX), Math.round(cy * CPX - camY));
       }
     }
     /** 주변 묶음을 미리 만든다 (지도에 들어설 때) */

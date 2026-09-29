@@ -170,7 +170,7 @@
       },
 
       /* ── 존재 ── */
-      spawn(spec) { const n = new G.props.NPC(spec); n.x = spec.x; n.y = spec.y; E.settle(W().map, n); return W().add(n); },
+      spawn(spec) { const n = new G.props.NPC(spec); n.x = spec.x; n.y = spec.y; if (!n.look || !Object.keys(n.look).length) { const cc = spec.cid && G.cast.get(spec.cid); if (cc) n.look = cc.look; } if (n.look && n.look.kind && !spec.drawFn && G.story.beastDraw) n.drawFn = G.story.beastDraw(n, n.look.kind); if (!n.name && spec.cid) n.name = G.cast.name(spec.cid); E.settle(W().map, n); return W().add(n); },
       remove(w) { const e = who(w); if (e) e.dead = true; },
       foe(type, x, y, o) { return G.foes.spawn(type, x, y, o); },
       /** 다른 지도로 */

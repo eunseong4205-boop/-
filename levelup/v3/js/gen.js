@@ -18,7 +18,7 @@
         for (let k = 0; k < d && y + k < h; k++) faces.push([x, y + k, here]);
       }
     }
-    for (const [x, y, hh] of faces) { const i = y * w + x; if (m.ter[i] !== T.STAIRS) { m.ter[i] = T.CLIFF; m.hgt[i] = Math.min(m.hgt[i], hh); m.obj[i] = 0; } }
+    for (const [x, y, hh] of faces) { const i = y * w + x; if (m.noCliff && m.noCliff.has(i)) continue; if (m.ter[i] !== T.STAIRS) { m.ter[i] = T.CLIFF; m.hgt[i] = Math.min(m.hgt[i], hh); m.obj[i] = 0; } }
   }
   /** (x, y)에서 시작하는 면 줄을 계단으로. 폭 w칸 */
   function stairs(m, x, y, wdt) {
@@ -119,5 +119,10 @@
     return seen;
   }
 
-  G.gen = { cliffs, stairs, stairsBelow, fill, ellipse, path, scatter, clump, reach };
+  /** 절벽에 동굴 입구: 면 칸을 땅으로 남기고(절벽 계산에서 빼고) 문을 단다 */
+  function caveMouth(m, x, y, w) {
+    m.noCliff = m.noCliff || new Set();
+    for (let dx = 0; dx < (w || 2); dx++) { const i = m.i(x + dx, y); m.noCliff.add(i); m.ter[i] = T.DIRT; m.obj[i] = 0; }
+  }
+  G.gen = { cliffs, stairs, stairsBelow, fill, ellipse, path, scatter, clump, reach, caveMouth };
 })();

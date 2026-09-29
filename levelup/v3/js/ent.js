@@ -9,6 +9,7 @@
   let nextId = 1;
   class Ent {
     constructor(o) {
+      if (o && ('tx' in o || 'ty' in o)) { o = Object.assign({}, o); delete o.tx; delete o.ty; }   // tx · ty는 위치에서 계산한다
       Object.assign(this, {
         id: 'e' + (nextId++), kind: 'ent', x: 0, y: 0, z: 0, bw: 10, bh: 6, vx: 0, vy: 0, kx: 0, ky: 0, dir: 'down',
         jz: 0, jvz: 0, onStairs: false, swim: false, fly: false, dead: false, t: 0, anim: 'idle', at: 0, hidden: false, solid: true,

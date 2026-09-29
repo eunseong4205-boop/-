@@ -17,7 +17,7 @@
   /** 적에게 피해. info: { src, kx, ky, el, crit, stun, power, pierce } */
   function damage(e, amt, info) {
     info = info || {};
-    if (!e || e.dead || e.inv > 0) return false;
+    if (!e || e.dead || e.dying || e.inv > 0) return false;
     // 막기 (방패 든 적: 정면)
     if (e.guards && e.guards(info) && !info.unblockable) {
       sfx('clank'); G.fx.sparks(e.x, e.y - 8, 6, '#ffffff', 80);
@@ -100,7 +100,7 @@
       const lv = G.data.ITEMS[s.equip.shield].lv || 1;
       if (Math.abs(U.angDiff(a, f)) < 1.0 && (src.blockLv || 1) <= lv) {
         sfx('shield'); G.fx.sparks(p.x + Math.cos(f) * 8, p.y - 10 + Math.sin(f) * 6, 6, '#ffffff', 70);
-        if (src.reflectable && lv >= 3) { src.vx *= -1.3; src.vy *= -1.3; src.owner = 'player'; return false; }
+        if (src.reflectable && lv >= 3) { src.vx *= -1.3; src.vy *= -1.3; src.owner = 'player'; src.reflected = true; src.hit = new Set(); return false; }
         src.dead = true; return false;
       }
     }
@@ -188,7 +188,7 @@
           if (U.dist(this.x, this.y, e.x, e.y - (e.h || 16) / 2) < (e.r || 8) + this.r) {
             this.hit.add(e);
             const [nx, ny] = U.norm(this.vx, this.vy);
-            damage(e, this.dmg, { src: this.src || 'shot', kx: nx, ky: ny, el: this.el, stun: this.stun, power: this.power || 0.6 });
+            damage(e, this.reflected ? this.dmg * 2 : this.dmg, { src: this.src || 'shot', kx: nx, ky: ny, el: this.el, stun: this.stun, power: this.power || 0.6, refl: this.reflected });
             if (this.onHitFoe) this.onHitFoe(e);
             if (this.pierce-- <= 0) { this.die(); return true; }
           }
@@ -738,6 +738,7 @@
       g.fillStyle = '#e8e8f0'; g.fillRect(Math.round(h.x - cx) - 2, Math.round(h.y - cy) - 2, 4, 4);
     }
     if (p.carry && p.carry.img) g.drawImage(p.carry.img, hx - p.carry.img.width / 2, hy - 14 - p.carry.img.height / 2);
+    if (p.state === 'hold' && p.holdItem && G.ui.itemIcon) { const ic = G.ui.itemIcon(p.holdItem); const bob = Math.sin(W().t * 4); g.globalAlpha = 0.35; g.fillStyle = '#fff8c0'; g.beginPath(); g.arc(hx, hy - 20, 9 + bob, 0, Math.PI * 2); g.fill(); g.globalAlpha = 1; g.drawImage(ic, Math.round(hx - ic.width / 2), Math.round(hy - 20 - ic.height / 2 + bob)); }
   }
 
   /* ───────── 번개 줄기 · 매 프레임 ───────── */
@@ -782,7 +783,7 @@
     };
   }
 
-  Object.assign(C, { damage, kill, hurtPlayer, addSpecial, cutAt, shoot, Shot, Pickup, spawnPickup, explode, update, drawWeapon, drawBolts, makeIcons, levelUp, freezeWater, foes });
+  Object.assign(C, { drops, damage, kill, hurtPlayer, addSpecial, cutAt, shoot, Shot, Pickup, spawnPickup, explode, update, drawWeapon, drawBolts, makeIcons, levelUp, freezeWater, foes });
   C.actions = { attack: atk, bow, magic, tool, special, hook: hookAct, charge: atk, spin: atk, dash: atk, lift: atk, cast: atk };
   G.combat = C;
 })();

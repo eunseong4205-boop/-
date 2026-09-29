@@ -43,7 +43,7 @@
     waystone(on) { return img('way' + on, 16, 28, (b) => { b.rect(3, 22, 10, 6, '#5a5068'); b.hline(2, 13, 22, '#8a8098'); for (let y = 2; y < 22; y++) { const w = 3 + Math.round(Math.sin((y / 22) * Math.PI) * 3); b.hline(8 - w, 7 + w, y, y < 4 ? '#b8b0c8' : '#8a8098'); b.px(8 - w, y, '#b8b0c8'); } b.vline(7, 6, 18, on ? '#8ad8ff' : '#4a4058'); b.vline(8, 6, 18, on ? '#d8f4ff' : '#5a5068'); b.hline(5, 10, 10, on ? '#8ad8ff' : '#4a4058'); b.px(7, 2, on ? '#ffffff' : '#8a8098'); }); },
     crack() { return img('crack', 16, 16, (b) => { b.line(3, 2, 7, 7, '#1a1020'); b.line(7, 7, 5, 12, '#1a1020'); b.line(7, 7, 12, 9, '#1a1020'); b.line(12, 9, 14, 14, '#1a1020'); b.px(8, 8, '#2a2030'); }); },
     heart(big) { return img('hc' + big, big ? 14 : 10, big ? 13 : 9, (b) => { const rows = big ? ['  rrr   rrr  ', ' rwwrr rrrrr ', 'rwwrrrrrrrrrr', 'rwrrrrrrrrrrr', 'rrrrrrrrrrrrr', ' rrrrrrrrrrr ', '  rrrrrrrrr  ', '   rrrrrrr   ', '    rrrrr    ', '     rrr     ', '      r      '] : [' rr  rr ', 'rwrrrrrr', 'rrrrrrrr', 'rrrrrrrr', ' rrrrrr ', '  rrrr  ', '   rr   ']; b.stamp(0, 0, rows, { r: '#ff3a5a', w: '#ffd0d8' }); if (!big) { b.px(7, 1, '#1a1020'); b.px(7, 2, '#1a1020'); b.px(6, 3, '#1a1020'); } }); },
-    bed() { return img('bed', 16, 26, (b) => { b.rect(0, 0, 16, 26, '#6a4424'); b.rect(1, 1, 14, 24, '#e8e0cc'); b.rect(2, 2, 12, 6, '#ffffff'); b.rect(1, 10, 14, 15, '#5a8ad8'); b.hline(1, 14, 10, '#8ab8ff'); b.rect(1, 18, 14, 1, '#4a6ab8'); }); },
+    bed(col) { col = col || '#5a8ad8'; return img('bed' + col, 16, 26, (b) => { const r = X.ramp(col, 5); b.rect(0, 0, 16, 26, '#6a4424'); b.rect(1, 1, 14, 24, '#e8e0cc'); b.rect(2, 2, 12, 6, '#ffffff'); b.hline(2, 13, 7, '#d8d0c0'); b.rect(1, 10, 14, 15, r[2]); b.hline(1, 14, 10, r[3]); b.rect(1, 18, 14, 1, r[1]); b.rect(1, 22, 14, 3, r[1]); }); },
     pedestal() { return img('ped', 20, 20, (b) => { b.rect(1, 10, 18, 10, '#6a6480'); b.rect(2, 10, 16, 3, '#9a98b0'); b.rect(3, 14, 14, 5, '#5a5470'); b.hline(0, 19, 19, '#3a3448'); b.ellipse(10, 11, 3, 1.5, '#2a2438'); }); },
   };
 
@@ -309,11 +309,11 @@
   /** 침대 · 쉼터: 쉬면 회복 · 저장 */
   class Bed extends Prop {
     constructor(o) { super(Object.assign({ bw: 16, bh: 22 }, o)); }
-    blockBox() { return { x: this.x - 8, y: this.y - 24, w: 16, h: 24 }; }
+    blockBox() { return this.solid === false ? null : { x: this.x - 8, y: this.y - 24, w: 16, h: 24 }; }
     canUse() { return true; }
     get label() { return '쉰다'; }
     use() { G.script.run(async (c) => { if (this.onRest) await this.onRest(c); else await c.rest(); }); }
-    draw(g, cx, cy) { this.drawImg(g, cx, cy, ART.bed(), 1); }
+    draw(g, cx, cy) { this.drawImg(g, cx, cy, ART.bed(this.col), 1); }
   }
 
   /** 그냥 조사하는 곳 (책장 · 창문 · 벽의 빗금 …): 그림 없음 */

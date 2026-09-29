@@ -229,6 +229,8 @@
     const t = owner(m, tx, ty, lx, ly, x, y);
     let c = base(t, P, x, y, 0, m, tx, ty);
     const h = m.H(tx, ty);
+    // 높은 땅은 조금 더 밝고 따뜻하게 (고저차가 눈에 보이도록)
+    if (h > 0 && m.outdoor) c = mixc(c, [255, 250, 226], Math.min(0.16, h * 0.045));
     // 물가: 물 쪽은 거품, 땅 쪽은 젖은 띠
     const liquid = (tt) => tt === T.WATER || tt === T.DEEP;
     if (liquid(t0)) {

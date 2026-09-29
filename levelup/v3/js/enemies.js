@@ -40,6 +40,7 @@
     hollow: { name: '빈 기사', hp: 16, atk: 5, speed: 34, r: 8, h: 22, exp: 16, gold: 0, weight: 1.8, ai: 'hollow', undead: true, dark: true, weak: ['light'], col: '#9aa0b0', mat: 'm_tag' },
     mimic: { name: '가짜 상자', hp: 18, atk: 5, speed: 60, r: 8, h: 14, exp: 20, gold: 30, weight: 2, ai: 'mimic', col: '#a87a3a' },
     shade: { name: '흑점의 그림자', hp: 12, atk: 5, speed: 56, r: 8, h: 18, exp: 18, gold: 0, weight: 1, ai: 'shade', fly: true, dark: true, weak: ['light'], col: '#1a1028' },
+    dummy: { name: '허수아비', hp: 999, atk: 0, speed: 0, r: 7, h: 20, exp: 0, gold: 0, weight: 99, ai: 'none', col: '#c8a060' },
     drone: { name: '감시 드론', hp: 10, atk: 4, speed: 50, r: 7, h: 12, exp: 12, gold: 6, weight: 1, ai: 'drone', fly: true, weak: ['bolt'], col: '#9aa8b8', mat: 'm_gear' },
   };
 
@@ -283,6 +284,15 @@
       for (let x = 3; x < 16; x++) b.vline(x, 12, 15 + ((x + sw) % 3), '#1a1028');
       b.rect(5, 6, 3, 2, '#ff3a6a'); b.rect(11, 6, 3, 2, '#ff3a6a'); b.px(6, 6, '#ffd0d8'); b.px(12, 6, '#ffd0d8');
       b.hline(6, 12, 11, '#0a0610');
+      return b.put();
+    },
+    dummy(f) {
+      const w = 16, h = 22, b = X.brush(w, h);
+      b.vline(8, 8, 21, '#6a4424'); b.hline(1, 14, 10, '#6a4424');
+      b.ellipse(8, 13, 5, 6, '#c8a060'); b.ellipse(7, 12, 3, 4, '#e8c888');
+      b.ellipse(8, 5, 4, 4, '#e8d8b0'); b.px(6, 5, '#3a2a1a'); b.px(10, 5, '#3a2a1a'); b.hline(6, 10, 7, '#8a6a4a');
+      b.ellipse(8, 2, 5, 2, '#a8783a'); for (let x = 3; x < 14; x += 2) b.px(x, 11 + (x % 3), '#a8783a');
+      if (f) { b.px(4, 3, '#ff4a4a'); }
       return b.put();
     },
     drone(f, col) {
@@ -532,10 +542,12 @@
     mimic: (e) => ['mimic', e.st === 'sleep' ? 0 : e.st === 'bite' ? 2 : 1],
     shade: (e) => ['shade', Math.floor(e.t * 8) % 4],
     drone: (e) => ['drone', e.tele > 0 ? 2 : Math.floor(e.t * 12) % 2],
+    none: (e) => [e.type, e.hurtT > 0 ? 1 : 0],
   };
 
   /* ───────── 행동 ───────── */
   const INIT = {
+    none(e) { e.noContact = true; e.noKnock = true; e.weight = 99; e.preKill = () => { e.hp = e.maxHp; return true; }; },
     turret(e) { e.noKnock = true; e.weight = 99; },
     plant(e) { e.weight = 99; },
     worm(e) { e.st = 'hidden'; e.noContact = true; },

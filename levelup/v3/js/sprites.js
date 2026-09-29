@@ -21,6 +21,8 @@
       sleeve: 'short', glasses: false, scar: false, ears: null, mask: false, beard: null, build: 'slim', eyeShape: 'round',
     }, spec || {});
     s.skinC = SKIN[s.skin] || s.skin;
+    if (s.hat === 'straw' && !spec.hatC) s.hatC = '#e8c878';
+    if (s.hat === 'helm' && !spec.hatC) s.hatC = '#9a9ab8';
     return s;
   }
 

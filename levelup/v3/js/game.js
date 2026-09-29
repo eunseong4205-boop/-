@@ -55,6 +55,9 @@
         W.update(dt);
         if (G.combat) G.combat.update(dt);
         if (G.state) G.state.t += dt;
+        if (G.ow && G.ow.tick) G.ow.tick(dt);
+        if (G.story && G.story.tick) G.story.tick(dt);
+        trackPos(dt);
       }
       if (G.interact) G.interact.update();
       if (G.cine && G.cine.update) G.cine.update(dt);
@@ -125,6 +128,88 @@
     GM.scene = 'play';
   }
 
+  /* ───────── 지도 오가기 ───────── */
+  /** 다른 지도로: x, y는 픽셀 */
+  function goto(mapId, x, y, dir, o) {
+    o = o || {};
+    const s = G.state;
+    const m = G.build.get(mapId);
+    let p = W.player;
+    if (!p || o.fresh) p = W.player = makePlayer(x, y);
+    p.look = G.story && G.story.heroLook ? G.story.heroLook(s) : p.look; p.sheet = null;
+    p.carry = null; p.hook = null; p.locked = false; p.autoMove = null; p.lantern = p.lantern && !!s.tools.lantern;
+    if (p.state !== 'dead') p.setState('idle'); else { p.setState('idle'); }
+    p.kx = p.ky = 0; p.inv = Math.max(p.inv, 0.5);
+    W.ents = [p];
+    if (G.fx) G.fx.clear();
+    if (G.cine) G.cine.clearBubbles();
+    W.cam.lock = null;
+    W.load(m, x, y, dir || p.dir);
+    G.build.populate(m);
+    s.map = mapId; s.x = x; s.y = y;
+    GM.scene = 'play';
+    if (!o.keepMusic) { const mus = m.overworld ? null : (typeof m.music === 'function' ? m.music() : m.music); if (mus && G.audio) G.audio.music(mus); }
+    if (!m.overworld && m.name && !o.quiet && !m.noCard) G.cine.area(m.name, m.sub || '');
+    if (m.onEnter) m.onEnter(m);
+    if (m.def && m.def.onEnter) m.def.onEnter(m);
+    if (G.story && G.story.onEnter) G.story.onEnter(m);
+  }
+  /** 문 · 계단 · 동굴 입구 */
+  function useWarp(w) {
+    G.script.run(async (c) => {
+      c.sfx(w.exit ? 'door' : w.sfx || 'door');
+      await c.fade(true, { sec: 0.22 });
+      const TS = TL.TS;
+      let tx = w.tx, ty = w.ty;
+      const target = G.build.MAPS[w.to];
+      if (tx == null && target) { const m2 = G.build.get(w.to); if (m2.entry) { tx = (m2.entry.x - 8) / TS; ty = (m2.entry.y - 12) / TS; } }
+      goto(w.to, tx * TS + 8, ty * TS + 12, w.dir || (w.exit ? 'down' : 'up'));
+      if (G.state.settings.autosave !== false) G.st.save(G.state);
+      await c.fade(false, { sec: 0.22 });
+    });
+  }
+  function newGame(name, gender) {
+    const s = G.state = G.st.fresh(name, gender);
+    W.player = null;
+    if (G.story && G.story.start) G.story.start(s);
+    else { const t = G.ow.towns.green; goto('world', (t.x + 17) * 16 + 8, (t.y + 12) * 16 + 12, 'down', { fresh: true }); }
+  }
+  function continueGame(save) {
+    G.state = save;
+    W.player = null;
+    const s = G.state;
+    const r = s.map ? s : s.respawn;
+    try { goto(r.map || 'world', r.x, r.y, 'down', { fresh: true }); }
+    catch (e) { console.error(e); const rp = s.respawn || { map: 'world', x: 99 * 16, y: 182 * 16 }; goto(rp.map, rp.x, rp.y, 'down', { fresh: true }); }
+    if (G.story && G.story.onContinue) G.story.onContinue(s);
+  }
+  async function onDeath(p) {
+    G.audio && G.audio.stop(0.6);
+    G.audio && G.audio.sfx('faint');
+    W.slowmo(0.3, 0.8);
+    await G.script.wait(1.4);
+    const r = await G.ui.gameOver();
+    const s = G.state, d = G.st.derive(s);
+    if (r === 'title') { toTitle(); return; }
+    s.hp = Math.min(d.hpMax, 12); s.mp = Math.max(s.mp, d.mpMax * 0.5);
+    const rp = s.respawn || { map: 'world', x: (G.ow.towns.green.x + 17) * 16 + 8, y: (G.ow.towns.green.y + 12) * 16 + 12 };
+    p.setState('idle'); p.inv = 2;
+    G.script.run(async (c) => { await c.fade(true, { sec: 0.01 }); goto(rp.map, rp.x, rp.y, 'down'); await c.wait(0.3); await c.fade(false, { sec: 0.6 }); c.toast('빛이 다시 몸을 채웠다', 'good'); });
+  }
+  function toTitle() {
+    G.script.queue.length = 0;
+    G.ui.closeDialog();
+    W.map = null; W.ents = []; W.player = null;
+    GM.scene = 'title';
+    G.ui.title();
+  }
+  let posT = 0;
+  function trackPos(dt) {
+    posT -= dt; if (posT > 0) return; posT = 1;
+    const p = W.player, s = G.state; if (!p || !W.map) return;
+    if (p.state !== 'fall' && p.state !== 'jump' && !p.onStairs) { s.x = p.safe.x; s.y = p.safe.y; s.map = W.map.id; }
+  }
+
   function boot(hot) {
     I.bindTouch();
     if (G.combat) G.combat.makeIcons();
@@ -133,11 +218,13 @@
     addEventListener('orientationchange', () => setTimeout(resize, 200));
     resize();
     GM.debug = /debug/.test(location.search) || (hot && hot.debug);
-    if (G.game.start) G.game.start(hot); else startDev();
+    if (/dev/.test(location.search)) startDev();
+    else if (G.game.start) G.game.start(hot);
+    else G.ui.title();
     requestAnimationFrame(frame);
   }
 
-  Object.assign(GM, { boot, resize, devMap, startDev, makePlayer });
+  Object.assign(GM, { boot, resize, devMap, startDev, makePlayer, goto, useWarp, newGame, continueGame, onDeath, toTitle });
   // 다른 모듈이 먼저 G.game에 붙인 것(start 등)을 살리고, 이후로는 같은 객체를 쓴다
   G.game = Object.assign(GM, G.game || {});
 })();

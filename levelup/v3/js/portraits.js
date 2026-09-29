@@ -513,6 +513,24 @@
       if (face === 'angry' || face === 'shock') { for (let x = 20; x < 45; x++) b.px(x, 44 + Math.round(Math.sin(x) * 1.5), '#ff2a5a'); }
       return X.outline(b.put(), '#000000');
     },
+    spirit(face) { // 나무 정령: 잎으로 된 얼굴, 빛나는 눈
+      const b = X.brush(SZ, SZ), L = tones('#6ab85a');
+      for (let i = 0; i < 70; i++) { const a = (i / 70) * Math.PI * 2, r = 22 + Math.sin(i * 1.7) * 5; b.ellipse(32 + Math.cos(a) * r * 0.9, 32 + Math.sin(a) * r, 5, 4, i % 3 ? L[2] : L[1]); }
+      b.ellipse(32, 32, 19, 21, '#5a3a22'); b.ellipse(32, 30, 16, 18, '#7a5232'); for (let y = 16; y < 50; y += 5) b.hline(20, 44, y, '#6a4428');
+      const shut = face === 'closed' || face === 'sad';
+      for (const x of [25, 39]) { if (shut) b.hline(x - 3, x + 3, 30, '#d8ffb0'); else { b.ellipse(x, 30, 3.5, 3, '#d8ffb0'); b.ellipse(x, 30, 1.5, 1.5, '#ffffff'); } }
+      b.ellipse(32, 42, 5, face === 'smile' ? 2 : 1.5, '#3a2414');
+      for (let i = 0; i < 8; i++) b.px(10 + i * 6, 8 + (i % 3) * 3, '#e8ffb0');
+      return X.outline(b.put(), OUT);
+    },
+    whale(face) { // 구름고래 누베
+      const b = X.brush(SZ, SZ);
+      b.ellipse(32, 36, 28, 20, '#bfe4ff'); b.ellipse(28, 30, 20, 12, '#e8f6ff'); b.ellipse(32, 50, 22, 8, '#ffffff');
+      for (const [x, y] of [[8, 20], [56, 18], [12, 52], [54, 50]]) b.ellipse(x, y, 6, 4, '#ffffff');
+      b.ellipse(22, 34, 3.5, 4, '#1a2a4a'); b.px(21, 32, '#ffffff'); b.line(30, 44, 44, 42, '#6a8ab8');
+      b.px(44, 16, '#ffffff'); b.px(46, 12, '#e8f6ff'); b.px(42, 10, '#e8f6ff');
+      return X.outline(b.put(), '#4a6a9a');
+    },
     armor(face) { // 빈 왕: 속이 빈 은빛 갑옷
       const b = X.brush(SZ, SZ), M = tones('#b8c0d8');
       poly(b, [[6, 64], [10, 50], [22, 46], [42, 46], [54, 50], [58, 64]], M[1]);

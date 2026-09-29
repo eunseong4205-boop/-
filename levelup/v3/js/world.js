@@ -18,6 +18,7 @@
     const p = W.player;
     if (p) { p.x = x; p.y = y; if (dir) p.dir = dir; G.ent.settle(map, p); p.jz = 0; p.vx = p.vy = 0; }
     snap();
+    W.lastTx = Math.floor(x / TS); W.lastTy = Math.floor((y - 2) / TS);
     map.warm(x, y, 360);
     if (G.world.onLoad) G.world.onLoad(map);
   }
@@ -77,6 +78,31 @@
     }
     if (G.fx) G.fx.update(dt);
     updateCam(dt);
+    checkTiles();
+  }
+
+  /* ───────── 발밑 칸: 문(다른 지도) · 칸 트리거 ───────── */
+  function checkTiles() {
+    const p = W.player, m = W.map;
+    if (!p || !m) return;
+    const tx = Math.floor(p.x / TS), ty = Math.floor((p.y - 2) / TS);
+    if (tx === W.lastTx && ty === W.lastTy) return;
+    if (G.script.running || p.state === 'jump' || p.state === 'dead' || p.state === 'fall') return;
+    W.lastTx = tx; W.lastTy = ty;
+    for (const w of m.warps || []) {
+      if (tx < w.x || ty < w.y || tx >= w.x + (w.w || 1) || ty >= w.y + (w.h || 1)) continue;
+      if (w.cond && !w.cond()) { if (w.msg) { G.ui.toast(typeof w.msg === 'function' ? w.msg() : w.msg, 'bad'); const [ux, uy] = U.DV[p.dir]; p.x -= ux * 6; p.y -= uy * 6; } continue; }
+      if (G.game.useWarp) G.game.useWarp(w);
+      return;
+    }
+    for (const t of m.triggers || []) {
+      if (tx < t.x || ty < t.y || tx >= t.x + (t.w || 1) || ty >= t.y + (t.h || 1)) continue;
+      if (t.once && G.state.flags[t.once]) continue;
+      if (t.cond && !t.cond()) continue;
+      if (t.once) G.state.flags[t.once] = true;
+      t.fn(p, m);
+      return;
+    }
   }
 
   /* ───────── 그리기 ───────── */
@@ -90,12 +116,13 @@
     const tx0 = Math.floor(cx / TS) - 1, ty0 = Math.floor(cy / TS) - 1, tx1 = Math.floor((cx + v.w) / TS) + 1, ty1 = Math.floor((cy + v.h) / TS) + 1;
     for (let ty = ty0; ty <= ty1; ty++) for (let tx = tx0; tx <= tx1; tx++) TL.waterFx(g, m, tx, ty, tx * TS - cx, ty * TS - cy, W.t);
     // 바닥에 붙는 것 (그림자 · 떨어진 물건 · 효과)
-    for (const e of W.ents) if (!e.dead && !e.hidden && e.drawShadow) e.drawShadow(g, cx, cy);
+    for (const e of W.ents) if (!e.dead && !e.hidden && e.drawShadow && e.x > cx - 60 && e.x < cx + v.w + 60 && e.y > cy - 20 && e.y < cy + v.h + 60) e.drawShadow(g, cx, cy);
     if (G.fx) G.fx.drawUnder(g, cx, cy);
     // y 정렬: 서 있는 사물 + 존재
     const list = [];
     m.collect(list, tx0, ty0, tx1, ty1 + 3);
-    for (const e of W.ents) if (!e.dead && !e.hidden && e.draw) list.push({ y: e.y + (e.sortBias || 0), ent: e });
+    const x0 = cx - 80, x1 = cx + v.w + 80, y0 = cy - 40, y1 = cy + v.h + 170;
+    for (const e of W.ents) if (!e.dead && !e.hidden && e.draw && e.x > x0 && e.x < x1 && e.y > y0 && e.y < y1) list.push({ y: e.y + (e.sortBias || 0), ent: e });
     list.sort((a, b) => a.y - b.y);
     for (const it of list) {
       if (it.ent) it.ent.draw(g, cx, cy);
