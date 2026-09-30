@@ -9994,7 +9994,7 @@ button.stat small.fx { color: var(--paper-dim); }
       },
 
       /* ── 존재 ── */
-      spawn(spec) { if (spec.cid) for (const v of SC.visitors) if (v.cid === spec.cid && !v.dead) { v.dead = true; if (spec.x == null) { spec.x = v.x; spec.y = v.y; } } const n = new G.props.NPC(spec); if (spec.cid) for (const e of W().ents) if (e.walker && e.cid === spec.cid && !e.dead) e.hideIf = () => !n.dead;   // 길 위의 같은 사람은 장면 동안 숨는다 n.x = spec.x; n.y = spec.y; if (!n.look || !Object.keys(n.look).length) { const cc = spec.cid && G.cast.get(spec.cid); if (cc) n.look = cc.look; } if (n.look && n.look.kind && !spec.drawFn && G.story.beastDraw) n.drawFn = G.story.beastDraw(n, n.look.kind); if (!n.name && spec.cid) n.name = G.cast.name(spec.cid); E.settle(W().map, n); return W().add(n); },
+      spawn(spec) { if (spec.cid) for (const v of SC.visitors) if (v.cid === spec.cid && !v.dead) { v.dead = true; if (spec.x == null) { spec.x = v.x; spec.y = v.y; } } const n = new G.props.NPC(spec); if (spec.cid) for (const e of W().ents) if (e.walker && e.cid === spec.cid && !e.dead) e.hideIf = () => !n.dead; /* 길 위의 같은 사람은 장면 동안 숨는다 */ n.x = spec.x; n.y = spec.y; if (!n.look || !Object.keys(n.look).length) { const cc = spec.cid && G.cast.get(spec.cid); if (cc) n.look = cc.look; } if (n.look && n.look.kind && !spec.drawFn && G.story.beastDraw) n.drawFn = G.story.beastDraw(n, n.look.kind); if (!n.name && spec.cid) n.name = G.cast.name(spec.cid); E.settle(W().map, n); return W().add(n); },
       remove(w) { const e = who(w); if (e) e.dead = true; },
       foe(type, x, y, o) { return G.foes.spawn(type, x, y, o); },
       /** 다른 지도로 */
