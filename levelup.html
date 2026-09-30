@@ -85,6 +85,7 @@ html.touch #touch { display: block; position: absolute; inset: 0; pointer-events
 #stage.cinema .cine { height: 11%; }
 #fade { position: absolute; inset: 0; background: #000; opacity: 0; pointer-events: none; z-index: 40; transition: opacity .35s; }
 #fade.white { background: #fff; }
+#stage.blackout #dialog { z-index: 41; } #stage.blackout #choices { z-index: 42; }
 #bubbles { position: absolute; inset: 0; pointer-events: none; z-index: 12; overflow: hidden; }
 .bub { position: absolute; left: 0; top: 0; max-width: 170px; padding: 5px 9px 6px; background: rgba(250, 245, 232, .97); color: #1e1628; border-radius: 10px;
   font-size: 12px; line-height: 1.4; word-break: keep-all; text-align: center; box-shadow: 0 0 0 1px #2a2040, 0 3px 8px rgba(0, 0, 0, .45); transform: translate(-50%, -100%); animation: bubIn .18s ease-out; }
@@ -164,7 +165,7 @@ html.touch #touch { display: block; position: absolute; inset: 0; pointer-events
 .ch .tag.dawn { color: #ffa87a; } .ch .tag.order { color: #c8dcff; } .ch .tag.night { color: #c49bff; }
 
 /* ── 장 제목 ── */
-#chapter { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 10px; z-index: 34; text-align: center; padding: 20px;
+#chapter { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 10px; z-index: 43; text-align: center; padding: 20px;
   background: radial-gradient(70% 45% at 50% 50%, #120e20, #05040a 75%); }
 #chapter small { font-size: 12px; letter-spacing: .45em; color: var(--gold); padding-left: .45em; }
 #chapter b { position: relative; font-family: var(--disp); font-weight: normal; font-size: 30px; color: #fff; text-shadow: 0 0 18px rgba(255, 240, 200, .35); padding: 12px 18px; }
@@ -470,7 +471,7 @@ html.touch #touch { display: block; position: absolute; inset: 0; pointer-events
   const PAD = { 0: ['attack', 'confirm'], 1: ['dodge', 'cancel'], 2: ['bow'], 3: ['magic'], 4: ['cycleL'], 5: ['tool'], 6: ['cycle'], 7: ['special'], 8: ['map'], 9: ['menu'], 12: ['up'], 13: ['down'], 14: ['left'], 15: ['right'] };
 
   const I = {
-    st: {}, raw: { key: {}, touch: {}, pad: {} },
+    st: {}, raw: { key: {}, touch: {}, pad: {} }, latch: {},
     axisX: 0, axisY: 0, stick: { active: false, id: null, ox: 0, oy: 0, x: 0, y: 0 },
     lastSource: 'key', touchMode: false, nav: { dir: null, t: 0, rep: 0 },
   };
@@ -483,7 +484,7 @@ html.touch #touch { display: block; position: absolute; inset: 0; pointer-events
     const tag = (e.target && e.target.tagName) || '';
     if (tag === 'INPUT' || tag === 'TEXTAREA') return;
     e.preventDefault();
-    for (const a of acts) I.raw.key[a] = down;
+    for (const a of acts) { I.raw.key[a] = down; if (down) I.latch[a] = true; }
     I.lastSource = 'key';
     if (down && I.touchMode) setTouchMode(false);
   }
@@ -493,9 +494,14 @@ html.touch #touch { display: block; position: absolute; inset: 0; pointer-events
 
   /* ───────── 터치: 가상 스틱 (왼쪽) · 버튼 (오른쪽) ───────── */
   function setTouchMode(on) {
+    if (I.touchMode === on && document.documentElement.classList.contains('touch') === on) return;
     I.touchMode = on;
     document.documentElement.classList.toggle('touch', on);
+    // 세로 화면은 터치판 자리만큼 게임 화면이 줄어든다 → 크기를 다시 잰다
+    if (G.game && G.game.resize) requestAnimationFrame(() => G.game.resize());
   }
+  // 키보드를 쓰다가 화면을 손가락으로 만지면 터치판이 다시 나온다 (터치판이 숨어 있어도)
+  addEventListener('pointerdown', (e) => { if ((e.pointerType === 'touch' || e.pointerType === 'pen') && !I.touchMode) { setTouchMode(true); I.lastSource = 'touch'; } }, true);
   function stickEl() { return document.getElementById('stick'); }
   function bindTouch() {
     const zone = document.getElementById('stickzone');
@@ -534,7 +540,7 @@ html.touch #touch { display: block; position: absolute; inset: 0; pointer-events
     // 버튼: data-act="attack" 등. 여러 손가락을 동시에 쓸 수 있다.
     document.querySelectorAll('[data-act]').forEach((b) => {
       const acts = b.dataset.act.split(' ');
-      const set = (v) => { for (const a of acts) I.raw.touch[a] = v; b.classList.toggle('on', v); };
+      const set = (v) => { for (const a of acts) { I.raw.touch[a] = v; if (v) I.latch[a] = true; } b.classList.toggle('on', v); };
       b.addEventListener('pointerdown', (e) => { e.preventDefault(); setTouchMode(true); I.lastSource = 'touch'; set(true); try { b.setPointerCapture(e.pointerId); } catch (_) { /* 무시 */ } });
       b.addEventListener('pointerup', () => set(false));
       b.addEventListener('pointercancel', () => set(false));
@@ -573,7 +579,8 @@ html.touch #touch { display: block; position: absolute; inset: 0; pointer-events
     I.axisX = x; I.axisY = y;
     for (const a of ACTIONS) {
       const s = I.st[a];
-      let v = !!(k[a] || I.raw.touch[a] || p[a]);
+      // 한 프레임보다 짧은 톡 누름도 놓치지 않는다 (latch)
+      let v = !!(k[a] || I.raw.touch[a] || p[a] || I.latch[a]);
       // 방향 동작은 축에서도 (메뉴 이동용)
       if (a === 'up') v = v || y < -0.6; else if (a === 'down') v = v || y > 0.6; else if (a === 'left') v = v || x < -0.6; else if (a === 'right') v = v || x > 0.6;
       s.pressed = v && !s.down;
@@ -583,6 +590,7 @@ html.touch #touch { display: block; position: absolute; inset: 0; pointer-events
       s.down = v;
       if (s.released) s.eaten = false;
     }
+    I.latch = {};
     // 메뉴 이동: 누르고 있으면 반복
     const nd = ['up', 'down', 'left', 'right'].find((d) => I.st[d].down) || null;
     if (nd !== I.nav.dir) { I.nav.dir = nd; I.nav.t = 0; I.nav.rep = nd ? 1 : 0; }
@@ -599,7 +607,7 @@ html.touch #touch { display: block; position: absolute; inset: 0; pointer-events
   I.eatAll = () => { for (const a of ACTIONS) I.st[a].eaten = true; };
   /** 메뉴용 방향 (반복 포함) */
   I.nav4 = () => (I.nav.rep ? I.nav.dir : null);
-  I.clear = () => { I.raw.key = {}; I.raw.touch = {}; for (const a of ACTIONS) Object.assign(I.st[a], { down: false, pressed: false, released: false, t: 0 }); };
+  I.clear = () => { I.raw.key = {}; I.raw.touch = {}; I.latch = {}; for (const a of ACTIONS) Object.assign(I.st[a], { down: false, pressed: false, released: false, t: 0 }); };
 
   Object.assign(I, { update, bindTouch, setTouchMode, ACTIONS });
   // 처음 화면이 닿기 전에도 터치 기기라면 터치 모드
@@ -2558,6 +2566,9 @@ html.touch #touch { display: block; position: absolute; inset: 0; pointer-events
         if (L) { this.startJump(L); return; }
       }
       if (G.fx && Math.random() < dt * 20) G.fx.dust(this.x, this.y, 1);
+      // 구르는 공 뒤로 옅은 잔상
+      this.ghostT = (this.ghostT || 0) - dt;
+      if (G.fx && this.sheet && this.ghostT <= 0 && this.st > 0.04) { this.ghostT = 0.05; const pa = G.sprites.pickAnim(this), img = this.sheet.get(pa.anim, this.dir, pa.frame); G.fx.afterimage(img, this.x - img.width / 2, this.y - img.height + 1, 0.3); }
       if (this.st >= dur) this.setState('idle');
       this.checkGround(m, dt);
     }
@@ -3072,7 +3083,7 @@ html.touch #touch { display: block; position: absolute; inset: 0; pointer-events
     hold: { n: 1, pose: () => ({ armL: 'up', armR: 'up', mouth: 'open', bob: -1, eyes: 'happy' }) },
     sit: { n: 1, pose: () => ({ crouch: 1, legL: 2, legR: 2 }) },
     down: { n: 1, pose: () => ({ crouch: 1, eyes: 'closed', bob: 2 }) },
-    roll: { n: 4, pose: () => ({ crouch: 1, armL: 'up', armR: 'up', legL: 2, legR: 2 }) },
+    roll: { n: 6, pose: (f) => (f === 0 ? { crouch: 1, bob: 2, armL: 'fwd', armR: 'fwd', legL: 2, legR: 2, eyes: 'closed', brow: 'angry' } : { crouch: 1, bob: 1, armL: 1, armR: -1, legL: 1, legR: 0, brow: 'angry' }) },
     talk: { n: 2, pose: (f) => ({ mouth: f ? 'open' : null, armR: f ? 1 : 0 }) },
     blink: { n: 1, pose: () => ({ blink: true }) },
     smile: { n: 1, pose: () => ({ mouth: 'smile', eyes: 'happy' }) },
@@ -3081,10 +3092,63 @@ html.touch #touch { display: block; position: absolute; inset: 0; pointer-events
     shock: { n: 1, pose: () => ({ mouth: 'open', armL: 2, armR: -2 }) },
   };
 
-  function rotate90(src, k) {
-    const c = X.canvas(src.width, src.height), g = X.ctx(c);
-    g.translate(src.width / 2, src.height / 2 + 6); g.rotate(k * Math.PI / 2); g.drawImage(src, -src.width / 2, -src.height / 2 - 6);
-    return c;
+  /* 구르기: 웅크림 → 몸을 만 공이 네 번 돈다 → 일어섬.
+     옆으로 구를 때는 화면 안에서 돌고, 앞 · 뒤로 구를 때는 머리가 앞으로 넘어가 몸 뒤로 숨었다 다시 올라온다. */
+  function shadedBall(b, cx, cy, rx, ry, K, a) {
+    for (let y = Math.floor(cy - ry); y <= Math.ceil(cy + ry); y++) for (let x = Math.floor(cx - rx); x <= Math.ceil(cx + rx); x++) {
+      const dx = (x + 0.5 - cx) / rx, dy = (y + 0.5 - cy) / ry, r2 = dx * dx + dy * dy;
+      if (r2 > 1) continue;
+      const l = dx * 0.6 + dy * 0.8;
+      b.px(x, y, r2 > 0.72 && l > 0.1 ? K[1] : l < -0.45 ? K[3] : l > 0.55 ? K[1] : K[2], a);
+    }
+  }
+  function rollBall(s, dir, f) {
+    const b = X.brush(FW, FH);
+    const C = { SK: tones(s.skinC), H: tones(s.hc), T: tones(s.tc), B: tones(s.bottom === 'skirt' || s.bottom === 'long' || s.top === 'robe' || s.top === 'dress' ? s.tc : s.bc), BT: tones(s.boots), E: tones(s.eye) };
+    const CP = s.cape ? tones(s.cape) : null;
+    const cx = 12, cy = 23, a = (f - 1) * Math.PI / 2 + Math.PI / 4;
+    const parts = [];
+    if (dir === 'left') {
+      // 옆: (x, y)를 a만큼 돌린다 — 위가 앞(왼쪽)으로 넘어간다
+      const ca = Math.cos(a), sa = Math.sin(a);
+      const R = (x, y) => [cx + x * ca + y * sa, cy - x * sa + y * ca];
+      const sw = Math.abs(sa) > 0.7;
+      if (CP) parts.push({ z: -2, p: R(3.4, -0.5), r: [4.8, 5.4], K: CP });
+      parts.push({ z: 0, p: R(0.6, 0), r: [6.4, 6], K: C.T });
+      parts.push({ z: 1, p: R(-2.6, 2.6), r: sw ? [2.4, 3.2] : [3.2, 2.4], K: C.B });
+      parts.push({ z: 2, p: R(-1.6, 5.2), r: [2.2, 2.2], K: C.BT });
+      parts.push({ z: 3, p: R(-4.6, 1), r: [1.6, 1.6], K: C.SK });
+      const hp = R(-2.6, -3.6);
+      parts.push({ z: 4, p: hp, r: [4.4, 4.2], K: C.H, head: true });
+      const fp = R(-5, -2.8);
+      parts.push({ z: 5, p: fp, r: [1.6, 1.9], K: C.SK, face: true });
+    } else {
+      // 앞 · 뒤: 몸 기준 (y, z) 평면에서 돈다 (z = 몸 앞). 뒤로 구를 때는 몸이 화면 반대쪽을 본다.
+      const sg = dir === 'down' ? 1 : -1, ca = Math.cos(a), sa = Math.sin(a);
+      const add = (y, z, rx, ry, K, extra) => { const Y = y * ca + z * sa, Z = -y * sa + z * ca; parts.push(Object.assign({ z: sg * Z, p: [cx, cy + Y * 0.95], r: [rx, ry], K }, extra)); return parts[parts.length - 1]; };
+      if (CP) add(0.5, -3.4, 6.2, 4.6, CP);
+      parts.push({ z: 0, p: [cx, cy], r: [6.4, 5.8], K: C.T });
+      add(2.8, 2.6, 5, 2.4, C.B);
+      add(4.8, 1.8, 1.8, 1.8, C.BT, { dx: -3 });
+      add(4.8, 1.8, 1.8, 1.8, C.BT, { dx: 3 });
+      add(1.2, 3.8, 1.4, 1.4, C.SK, { dx: -5 });
+      add(1.2, 3.8, 1.4, 1.4, C.SK, { dx: 5 });
+      const hd = add(-3.8, 1, 4.6, 4.2, C.H, { head: true });
+      // 얼굴이 향하는 쪽 (몸 앞)이 화면을 볼 때만 얼굴이 보인다
+      const nz = sg * ca, ny = sa;
+      if (nz > 0.2) parts.push({ z: hd.z + 0.1, p: [cx, hd.p[1] + 1 + ny * 2], r: [3, 1.4 + nz], K: C.SK, face: true });
+    }
+    parts.sort((u, v) => u.z - v.z);
+    for (const q of parts) {
+      const x = q.p[0] + (q.dx || 0), y = q.p[1];
+      if (q.face) {
+        b.ellipse(x, y, q.r[0], q.r[1], C.SK[2]);
+        if (dir === 'left') b.px(x - 1, y - 0.5, C.E[0]);
+        else { b.px(x - 1.5, y - 0.5, OUT); b.px(x + 1.5, y - 0.5, OUT); }
+      } else shadedBall(b, x, y, q.r[0], q.r[1], q.K);
+      if (q.head) { const hx = Math.round(x), hy = Math.round(y); b.px(hx + 1, hy - 2, C.H[4]); b.px(hx + 2, hy - 2, C.H[3]); }
+    }
+    return X.outline(b.put(), OUT);
   }
 
   const cache = new Map();
@@ -3103,10 +3167,8 @@ html.touch #touch { display: block; position: absolute; inset: 0; pointer-events
         if (frames[k]) return frames[k];
         const d = dir === 'right' ? 'left' : dir;
         let img;
-        if (anim === 'roll') {
-          const base = drawFrame(s, Object.assign({ dir: d }, A.pose(0)));
-          img = rotate90(base, d === 'left' ? -f : f);
-        } else img = drawFrame(s, Object.assign({ dir: d }, A.pose(f)));
+        if (anim === 'roll' && f >= 1 && f <= 4) img = rollBall(s, d, f);
+        else img = drawFrame(s, Object.assign({ dir: d }, A.pose(f)));
         return (frames[k] = dir === 'right' ? X.flipX(img) : img);
       },
       n: (anim) => (ANIM[anim] || ANIM.idle).n,
@@ -3132,7 +3194,7 @@ html.touch #touch { display: block; position: absolute; inset: 0; pointer-events
     if (e.forceAnim) return { anim: e.forceAnim, frame: Math.floor(t * (e.forceFps || 4)) };
     switch (e.state) {
       case 'walk': { const run = U.len(e.vx || 0, e.vy || 0) > 100; return { anim: run ? 'run' : 'walk', frame: Math.floor((e.walkT || 0) * (run ? 2.4 : 1.8)) }; }
-      case 'roll': return { anim: 'roll', frame: Math.floor((e.st || 0) * 12) };
+      case 'roll': return { anim: 'roll', frame: Math.min(5, Math.floor((e.st || 0) / (e.rollTime || 0.34) * 6)) };
       case 'jump': return { anim: 'jump', frame: 0 };
       case 'hurt': case 'fall': return { anim: 'hurt', frame: 0 };
       case 'attack': case 'spin': case 'dash': return { anim: 'atk', frame: e.atkFrame != null ? e.atkFrame : 1 };
@@ -7878,6 +7940,8 @@ html.touch #touch { display: block; position: absolute; inset: 0; pointer-events
     f.classList.toggle('white', o.col === 'white');
     f.style.transition = 'opacity ' + (o.sec == null ? 0.35 : o.sec) + 's';
     f.style.opacity = out ? '1' : '0';
+    // 암전 중에도 이야기 글 · 고르기 · 장 제목은 검은 화면 위에 보인다
+    $('stage').classList.toggle('blackout', !!out);
     return G.script.wait((o.sec == null ? 0.35 : o.sec) + 0.02);
   }
   function flash(col, sec) {

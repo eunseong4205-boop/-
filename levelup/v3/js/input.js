@@ -16,7 +16,7 @@
   const PAD = { 0: ['attack', 'confirm'], 1: ['dodge', 'cancel'], 2: ['bow'], 3: ['magic'], 4: ['cycleL'], 5: ['tool'], 6: ['cycle'], 7: ['special'], 8: ['map'], 9: ['menu'], 12: ['up'], 13: ['down'], 14: ['left'], 15: ['right'] };
 
   const I = {
-    st: {}, raw: { key: {}, touch: {}, pad: {} },
+    st: {}, raw: { key: {}, touch: {}, pad: {} }, latch: {},
     axisX: 0, axisY: 0, stick: { active: false, id: null, ox: 0, oy: 0, x: 0, y: 0 },
     lastSource: 'key', touchMode: false, nav: { dir: null, t: 0, rep: 0 },
   };
@@ -29,7 +29,7 @@
     const tag = (e.target && e.target.tagName) || '';
     if (tag === 'INPUT' || tag === 'TEXTAREA') return;
     e.preventDefault();
-    for (const a of acts) I.raw.key[a] = down;
+    for (const a of acts) { I.raw.key[a] = down; if (down) I.latch[a] = true; }
     I.lastSource = 'key';
     if (down && I.touchMode) setTouchMode(false);
   }
@@ -39,9 +39,14 @@
 
   /* ───────── 터치: 가상 스틱 (왼쪽) · 버튼 (오른쪽) ───────── */
   function setTouchMode(on) {
+    if (I.touchMode === on && document.documentElement.classList.contains('touch') === on) return;
     I.touchMode = on;
     document.documentElement.classList.toggle('touch', on);
+    // 세로 화면은 터치판 자리만큼 게임 화면이 줄어든다 → 크기를 다시 잰다
+    if (G.game && G.game.resize) requestAnimationFrame(() => G.game.resize());
   }
+  // 키보드를 쓰다가 화면을 손가락으로 만지면 터치판이 다시 나온다 (터치판이 숨어 있어도)
+  addEventListener('pointerdown', (e) => { if ((e.pointerType === 'touch' || e.pointerType === 'pen') && !I.touchMode) { setTouchMode(true); I.lastSource = 'touch'; } }, true);
   function stickEl() { return document.getElementById('stick'); }
   function bindTouch() {
     const zone = document.getElementById('stickzone');
@@ -80,7 +85,7 @@
     // 버튼: data-act="attack" 등. 여러 손가락을 동시에 쓸 수 있다.
     document.querySelectorAll('[data-act]').forEach((b) => {
       const acts = b.dataset.act.split(' ');
-      const set = (v) => { for (const a of acts) I.raw.touch[a] = v; b.classList.toggle('on', v); };
+      const set = (v) => { for (const a of acts) { I.raw.touch[a] = v; if (v) I.latch[a] = true; } b.classList.toggle('on', v); };
       b.addEventListener('pointerdown', (e) => { e.preventDefault(); setTouchMode(true); I.lastSource = 'touch'; set(true); try { b.setPointerCapture(e.pointerId); } catch (_) { /* 무시 */ } });
       b.addEventListener('pointerup', () => set(false));
       b.addEventListener('pointercancel', () => set(false));
@@ -119,7 +124,8 @@
     I.axisX = x; I.axisY = y;
     for (const a of ACTIONS) {
       const s = I.st[a];
-      let v = !!(k[a] || I.raw.touch[a] || p[a]);
+      // 한 프레임보다 짧은 톡 누름도 놓치지 않는다 (latch)
+      let v = !!(k[a] || I.raw.touch[a] || p[a] || I.latch[a]);
       // 방향 동작은 축에서도 (메뉴 이동용)
       if (a === 'up') v = v || y < -0.6; else if (a === 'down') v = v || y > 0.6; else if (a === 'left') v = v || x < -0.6; else if (a === 'right') v = v || x > 0.6;
       s.pressed = v && !s.down;
@@ -129,6 +135,7 @@
       s.down = v;
       if (s.released) s.eaten = false;
     }
+    I.latch = {};
     // 메뉴 이동: 누르고 있으면 반복
     const nd = ['up', 'down', 'left', 'right'].find((d) => I.st[d].down) || null;
     if (nd !== I.nav.dir) { I.nav.dir = nd; I.nav.t = 0; I.nav.rep = nd ? 1 : 0; }
@@ -145,7 +152,7 @@
   I.eatAll = () => { for (const a of ACTIONS) I.st[a].eaten = true; };
   /** 메뉴용 방향 (반복 포함) */
   I.nav4 = () => (I.nav.rep ? I.nav.dir : null);
-  I.clear = () => { I.raw.key = {}; I.raw.touch = {}; for (const a of ACTIONS) Object.assign(I.st[a], { down: false, pressed: false, released: false, t: 0 }); };
+  I.clear = () => { I.raw.key = {}; I.raw.touch = {}; I.latch = {}; for (const a of ACTIONS) Object.assign(I.st[a], { down: false, pressed: false, released: false, t: 0 }); };
 
   Object.assign(I, { update, bindTouch, setTouchMode, ACTIONS });
   // 처음 화면이 닿기 전에도 터치 기기라면 터치 모드

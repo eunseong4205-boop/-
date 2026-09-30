@@ -18,6 +18,8 @@
     f.classList.toggle('white', o.col === 'white');
     f.style.transition = 'opacity ' + (o.sec == null ? 0.35 : o.sec) + 's';
     f.style.opacity = out ? '1' : '0';
+    // 암전 중에도 이야기 글 · 고르기 · 장 제목은 검은 화면 위에 보인다
+    $('stage').classList.toggle('blackout', !!out);
     return G.script.wait((o.sec == null ? 0.35 : o.sec) + 0.02);
   }
   function flash(col, sec) {

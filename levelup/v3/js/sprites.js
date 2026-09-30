@@ -436,7 +436,7 @@
     hold: { n: 1, pose: () => ({ armL: 'up', armR: 'up', mouth: 'open', bob: -1, eyes: 'happy' }) },
     sit: { n: 1, pose: () => ({ crouch: 1, legL: 2, legR: 2 }) },
     down: { n: 1, pose: () => ({ crouch: 1, eyes: 'closed', bob: 2 }) },
-    roll: { n: 4, pose: () => ({ crouch: 1, armL: 'up', armR: 'up', legL: 2, legR: 2 }) },
+    roll: { n: 6, pose: (f) => (f === 0 ? { crouch: 1, bob: 2, armL: 'fwd', armR: 'fwd', legL: 2, legR: 2, eyes: 'closed', brow: 'angry' } : { crouch: 1, bob: 1, armL: 1, armR: -1, legL: 1, legR: 0, brow: 'angry' }) },
     talk: { n: 2, pose: (f) => ({ mouth: f ? 'open' : null, armR: f ? 1 : 0 }) },
     blink: { n: 1, pose: () => ({ blink: true }) },
     smile: { n: 1, pose: () => ({ mouth: 'smile', eyes: 'happy' }) },
@@ -445,10 +445,63 @@
     shock: { n: 1, pose: () => ({ mouth: 'open', armL: 2, armR: -2 }) },
   };
 
-  function rotate90(src, k) {
-    const c = X.canvas(src.width, src.height), g = X.ctx(c);
-    g.translate(src.width / 2, src.height / 2 + 6); g.rotate(k * Math.PI / 2); g.drawImage(src, -src.width / 2, -src.height / 2 - 6);
-    return c;
+  /* 구르기: 웅크림 → 몸을 만 공이 네 번 돈다 → 일어섬.
+     옆으로 구를 때는 화면 안에서 돌고, 앞 · 뒤로 구를 때는 머리가 앞으로 넘어가 몸 뒤로 숨었다 다시 올라온다. */
+  function shadedBall(b, cx, cy, rx, ry, K, a) {
+    for (let y = Math.floor(cy - ry); y <= Math.ceil(cy + ry); y++) for (let x = Math.floor(cx - rx); x <= Math.ceil(cx + rx); x++) {
+      const dx = (x + 0.5 - cx) / rx, dy = (y + 0.5 - cy) / ry, r2 = dx * dx + dy * dy;
+      if (r2 > 1) continue;
+      const l = dx * 0.6 + dy * 0.8;
+      b.px(x, y, r2 > 0.72 && l > 0.1 ? K[1] : l < -0.45 ? K[3] : l > 0.55 ? K[1] : K[2], a);
+    }
+  }
+  function rollBall(s, dir, f) {
+    const b = X.brush(FW, FH);
+    const C = { SK: tones(s.skinC), H: tones(s.hc), T: tones(s.tc), B: tones(s.bottom === 'skirt' || s.bottom === 'long' || s.top === 'robe' || s.top === 'dress' ? s.tc : s.bc), BT: tones(s.boots), E: tones(s.eye) };
+    const CP = s.cape ? tones(s.cape) : null;
+    const cx = 12, cy = 23, a = (f - 1) * Math.PI / 2 + Math.PI / 4;
+    const parts = [];
+    if (dir === 'left') {
+      // 옆: (x, y)를 a만큼 돌린다 — 위가 앞(왼쪽)으로 넘어간다
+      const ca = Math.cos(a), sa = Math.sin(a);
+      const R = (x, y) => [cx + x * ca + y * sa, cy - x * sa + y * ca];
+      const sw = Math.abs(sa) > 0.7;
+      if (CP) parts.push({ z: -2, p: R(3.4, -0.5), r: [4.8, 5.4], K: CP });
+      parts.push({ z: 0, p: R(0.6, 0), r: [6.4, 6], K: C.T });
+      parts.push({ z: 1, p: R(-2.6, 2.6), r: sw ? [2.4, 3.2] : [3.2, 2.4], K: C.B });
+      parts.push({ z: 2, p: R(-1.6, 5.2), r: [2.2, 2.2], K: C.BT });
+      parts.push({ z: 3, p: R(-4.6, 1), r: [1.6, 1.6], K: C.SK });
+      const hp = R(-2.6, -3.6);
+      parts.push({ z: 4, p: hp, r: [4.4, 4.2], K: C.H, head: true });
+      const fp = R(-5, -2.8);
+      parts.push({ z: 5, p: fp, r: [1.6, 1.9], K: C.SK, face: true });
+    } else {
+      // 앞 · 뒤: 몸 기준 (y, z) 평면에서 돈다 (z = 몸 앞). 뒤로 구를 때는 몸이 화면 반대쪽을 본다.
+      const sg = dir === 'down' ? 1 : -1, ca = Math.cos(a), sa = Math.sin(a);
+      const add = (y, z, rx, ry, K, extra) => { const Y = y * ca + z * sa, Z = -y * sa + z * ca; parts.push(Object.assign({ z: sg * Z, p: [cx, cy + Y * 0.95], r: [rx, ry], K }, extra)); return parts[parts.length - 1]; };
+      if (CP) add(0.5, -3.4, 6.2, 4.6, CP);
+      parts.push({ z: 0, p: [cx, cy], r: [6.4, 5.8], K: C.T });
+      add(2.8, 2.6, 5, 2.4, C.B);
+      add(4.8, 1.8, 1.8, 1.8, C.BT, { dx: -3 });
+      add(4.8, 1.8, 1.8, 1.8, C.BT, { dx: 3 });
+      add(1.2, 3.8, 1.4, 1.4, C.SK, { dx: -5 });
+      add(1.2, 3.8, 1.4, 1.4, C.SK, { dx: 5 });
+      const hd = add(-3.8, 1, 4.6, 4.2, C.H, { head: true });
+      // 얼굴이 향하는 쪽 (몸 앞)이 화면을 볼 때만 얼굴이 보인다
+      const nz = sg * ca, ny = sa;
+      if (nz > 0.2) parts.push({ z: hd.z + 0.1, p: [cx, hd.p[1] + 1 + ny * 2], r: [3, 1.4 + nz], K: C.SK, face: true });
+    }
+    parts.sort((u, v) => u.z - v.z);
+    for (const q of parts) {
+      const x = q.p[0] + (q.dx || 0), y = q.p[1];
+      if (q.face) {
+        b.ellipse(x, y, q.r[0], q.r[1], C.SK[2]);
+        if (dir === 'left') b.px(x - 1, y - 0.5, C.E[0]);
+        else { b.px(x - 1.5, y - 0.5, OUT); b.px(x + 1.5, y - 0.5, OUT); }
+      } else shadedBall(b, x, y, q.r[0], q.r[1], q.K);
+      if (q.head) { const hx = Math.round(x), hy = Math.round(y); b.px(hx + 1, hy - 2, C.H[4]); b.px(hx + 2, hy - 2, C.H[3]); }
+    }
+    return X.outline(b.put(), OUT);
   }
 
   const cache = new Map();
@@ -467,10 +520,8 @@
         if (frames[k]) return frames[k];
         const d = dir === 'right' ? 'left' : dir;
         let img;
-        if (anim === 'roll') {
-          const base = drawFrame(s, Object.assign({ dir: d }, A.pose(0)));
-          img = rotate90(base, d === 'left' ? -f : f);
-        } else img = drawFrame(s, Object.assign({ dir: d }, A.pose(f)));
+        if (anim === 'roll' && f >= 1 && f <= 4) img = rollBall(s, d, f);
+        else img = drawFrame(s, Object.assign({ dir: d }, A.pose(f)));
         return (frames[k] = dir === 'right' ? X.flipX(img) : img);
       },
       n: (anim) => (ANIM[anim] || ANIM.idle).n,
@@ -496,7 +547,7 @@
     if (e.forceAnim) return { anim: e.forceAnim, frame: Math.floor(t * (e.forceFps || 4)) };
     switch (e.state) {
       case 'walk': { const run = U.len(e.vx || 0, e.vy || 0) > 100; return { anim: run ? 'run' : 'walk', frame: Math.floor((e.walkT || 0) * (run ? 2.4 : 1.8)) }; }
-      case 'roll': return { anim: 'roll', frame: Math.floor((e.st || 0) * 12) };
+      case 'roll': return { anim: 'roll', frame: Math.min(5, Math.floor((e.st || 0) / (e.rollTime || 0.34) * 6)) };
       case 'jump': return { anim: 'jump', frame: 0 };
       case 'hurt': case 'fall': return { anim: 'hurt', frame: 0 };
       case 'attack': case 'spin': case 'dash': return { anim: 'atk', frame: e.atkFrame != null ? e.atkFrame : 1 };

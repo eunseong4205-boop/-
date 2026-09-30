@@ -113,6 +113,9 @@
         if (L) { this.startJump(L); return; }
       }
       if (G.fx && Math.random() < dt * 20) G.fx.dust(this.x, this.y, 1);
+      // 구르는 공 뒤로 옅은 잔상
+      this.ghostT = (this.ghostT || 0) - dt;
+      if (G.fx && this.sheet && this.ghostT <= 0 && this.st > 0.04) { this.ghostT = 0.05; const pa = G.sprites.pickAnim(this), img = this.sheet.get(pa.anim, this.dir, pa.frame); G.fx.afterimage(img, this.x - img.width / 2, this.y - img.height + 1, 0.3); }
       if (this.st >= dur) this.setState('idle');
       this.checkGround(m, dt);
     }
