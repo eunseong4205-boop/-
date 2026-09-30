@@ -12,7 +12,7 @@
   const f = (k) => !!S().flags[k];
   const CT = OW.towns.colorful, X0 = CT.x, Y0 = CT.y;       // 284, 204
   const px = (tx) => tx * TS + 8, py = (ty) => ty * TS + 12;
-  const PAD = { x: 302, y: 205 };                            // 발사대
+  const PAD = OW.pt(302, 205);                            // 발사대
   const girl = () => S().gender === 'girl';
   const PARTS = [
     { id: 'nozzle', name: '불꽃 노즐', who: 'volkan', where: '레드 볼칸의 대장간', map: 'r_forge' },
@@ -27,14 +27,14 @@
 
   ST.CH.push({ no: '제10장', id: 'c10', title: '무한호', sub: '40년 동안 한 번도 날지 못한 로켓. 하늘로 가는 부품은 대륙 곳곳, 네가 만난 사람들 손에 있다.',
     goal(s) {
-      if (!f('c10_pyros')) return { text: '곶의 발명 공방, 피로스 박사를 찾자.', map: 'world', x: 289, y: 211 };
+      if (!f('c10_pyros')) return { text: '곶의 발명 공방, 피로스 박사를 찾자.', map: 'world', ...OW.pt(289, 211) };
       if (got() < 6) {
         const n = PARTS.find((p) => !f('part:' + p.id));
         // 표시는 그 부품을 가진 사람이 있는 집 문 앞
         const wm = G.build.get('world'), b = wm.buildings.find((bb) => bb.id === n.map);
         return { text: '부품 모으기 (' + got() + '/6) — 다음: ' + n.name + ' (' + n.where + ')', map: 'world', x: b ? b.doorX : 289, y: b ? b.doorY : 211 };
       }
-      if (!f('c10_launch')) return { text: '부품이 다 모였다. 피로스 박사에게!', map: 'world', x: 289, y: 211 };
+      if (!f('c10_launch')) return { text: '부품이 다 모였다. 피로스 박사에게!', map: 'world', ...OW.pt(289, 211) };
       return { text: '하늘 정거장으로.', map: 'world', x: PAD.x + 2, y: PAD.y + 6 };
     } });
 
@@ -303,6 +303,6 @@
   /* ───────── 주민 · 가게 ───────── */
   ST.folk('c_shop', { name: '발명 공방 가게', folk: 'inventor', x: 5, y: 3, lines: { c10: async (c) => { const k = await c.choice('폭탄! 물약! 화살! 전부 조금씩 터진다!', ['물건을 산다', '괜찮아요'], { name: '발명 공방 가게' }); if (k === 0) await c.shop('colorful'); } } });
   ST.folk('c_inn', { name: '쾅쾅 여관 주인', folk: 'farmerw', x: 4, y: 3, lines: { c10: async (c) => { const k = await c.choice('베개에 귀마개가 달려 있어요. 쾅 소리 때문에. (60골드)', ['쉰다', '괜찮아요'], { name: '쾅쾅 여관 주인' }); if (k === 0) { if (S().gold >= 60) c.gold(-60); await c.rest(); } } } });
-  ST.folk('world', { name: '곶 아이', folk: 'kid', x: 295, y: 214, wander: 30, barks: ['쾅!', '로켓이다!'], lines: { c10: ['피로스 박사님 로켓 412번째래! 411번째는 우리 집 지붕에 떨어졌어! 지붕에 구멍 났는데 별이 보여서 좋아!', '봄바 누나는 폭탄 던지기 대회 1등이야. 나는 2등. 참가자 둘.'] } });
-  ST.folk('world', { name: '곶 어부', folk: 'sailor', x: 300, y: 222, lines: { c10: '바다에서 보면 곶이 하루에 세 번 번쩍여. 그걸로 시간을 알아. 로켓 시계야, 우리는.' } });
+  ST.folk('world', { name: '곶 아이', folk: 'kid', ...OW.pt(295, 214), wander: 30, barks: ['쾅!', '로켓이다!'], lines: { c10: ['피로스 박사님 로켓 412번째래! 411번째는 우리 집 지붕에 떨어졌어! 지붕에 구멍 났는데 별이 보여서 좋아!', '봄바 누나는 폭탄 던지기 대회 1등이야. 나는 2등. 참가자 둘.'] } });
+  ST.folk('world', { name: '곶 어부', folk: 'sailor', ...OW.pt(300, 222), lines: { c10: '바다에서 보면 곶이 하루에 세 번 번쩍여. 그걸로 시간을 알아. 로켓 시계야, 우리는.' } });
 })();

@@ -120,7 +120,7 @@
 
   /* ───────── 사람: 물안개 마을 ───────── */
   // 늪지기 모르간 — 16년 전 그 밤
-  ST.person('world', { id: 'morgan', x: 368, y: MY + 20, dir: 'left', mark: (s) => !s.flags['met:morgan'] ? '!' : (s.inv.lamp_morgan && !s.flags.morgan_done ? '!' : null),
+  ST.person('world', { id: 'morgan', x: OW.T('mist', 368, 0)[0], y: MY + 20, dir: 'left', mark: (s) => !s.flags['met:morgan'] ? '!' : (s.inv.lamp_morgan && !s.flags.morgan_done ? '!' : null),
     talk: async (c, n) => {
       const s = S();
       if (!f('met:morgan')) {
@@ -147,7 +147,7 @@
       await c.say(n, ST.lines({ c1: '안개가 짙은 날엔 물에 비친 얼굴을 보지 마라. 늦게 따라오는 게 네 얼굴이 아닐 수도 있어.', c7: '요즘 탑이 더 크게 운다. 물 아래서. 누가 또 셈에 들어갔나.', c10: '하늘로 배를 띄운다며? 나도 젊을 땐 물 위가 하늘인 줄 알았지.' }) || '…안개가 걷히면 말하마.', { face: 'closed' });
     } });
   // 소녀 유나 — 30년째 열한 살
-  ST.person('world', { id: 'yuna', x: 360, y: 139, dir: 'down', look: undefined, mark: () => ((s) => (!s.flags['met:yuna'] ? '!' : s.flags.yuan_seen && !s.flags.yuna_done ? '!' : null))(S()),
+  ST.person('world', { id: 'yuna', ...OW.pt(360, 139), dir: 'down', look: undefined, mark: () => ((s) => (!s.flags['met:yuna'] ? '!' : s.flags.yuan_seen && !s.flags.yuna_done ? '!' : null))(S()),
     init(n) { if (f('yuna_done') && ST.chIdx() >= ST.chIdx(S().flags.yuna_grew || 'c12')) n.look = Object.assign({}, G.cast.get('yuna').look, { age: 'teen', hair: 'long' }); },
     talk: async (c, n) => {
       if (!f('met:yuna')) {
@@ -309,7 +309,8 @@
   // 안개 백합: 늪 물가 다섯 곳
   for (const [x, y] of [[334, 70], [348, 132], [378, 124], [356, 170], [384, 88]]) ST.onMap('world', (m, Wd) => {
     const k = 'lily:' + x + ',' + y; if (f(k)) return;
-    Wd.add(new G.props.Spot({ sparkle: true, x: px(x), y: py(y), verb: '흰 꽃을 딴다', text: async (c) => { c.flag(k); await c.getItem('lily'); } }));
+    const [lx, ly] = OW.P(x, y);
+    Wd.add(new G.props.Spot({ sparkle: true, x: px(lx), y: py(ly), verb: '흰 꽃을 딴다', text: async (c) => { c.flag(k); await c.getItem('lily'); } }));
   });
   // 여관 주인들 · 가게 주인
   ST.person('m_inn', { x: 4, y: 3, dir: 'down', look: G.cast.folk('sailor', { hc: '#4a5a4a' }), name: '여관 주인 네라', talk: async (c, n) => { const k = await c.choice('안개등 여관이야. 쉬어 가. 안개 속에서는 잠이 잘 와. …너무 잘 와서 문제지.', ['쉰다 (기록)', '괜찮다']); if (k === 0) await c.rest(); } });
@@ -379,7 +380,8 @@
     [214, 262, '갑옷이 부딪히는 소리 사이로, 젊은 기사의 목소리.\n「장부에 내 이름은 쓰지 마. 아무도 모르게 사라지고 싶어.」'],
     [240, 280, '…그리고 아주 큰 목소리. 협곡 전체가 떨렸다. 단풍이 한꺼번에 떨어졌다.\n「둘 다 살려 줘요. 셈에 넣지 말고.」'],
   ];
-  ECHO.forEach(([x, y, text], i) => ST.onMap('world', (m, Wd) => {
+  ECHO.forEach(([x0, y0, text], i) => ST.onMap('world', (m, Wd) => {
+    const [x, y] = OW.P(x0, y0);
     Wd.add(new G.props.Spot({ sparkle: true, x: px(x), y: py(y), verb: '메아리 돌에 귀를 댄다', text: async (c) => {
       c.flag('echo:' + (i + 1)); c.shake(1, 0.4); c.sfx('crystal');
       await c.narr(text);

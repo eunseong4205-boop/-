@@ -11,7 +11,7 @@
   const f = (k) => !!S().flags[k];
   const YT = OW.towns.yellow, X0 = YT.x, Y0 = YT.y;     // 252, 142
   const px = (tx) => tx * TS + 8, py = (ty) => ty * TS + 12;
-  const PYR = { x: 232, y: 124 };                       // 피라미드 (발자리 왼쪽 위)
+  const PYR = OW.pt(232, 124);                       // 피라미드 (발자리 왼쪽 위)
   ST.YELLOW = { X0, Y0, PYR };
   const buddy = () => ({ dawn: 'rud', order: 'cassian', night: 'lyra' }[S().flags.route_lock1 || 'order']);
 
@@ -19,7 +19,7 @@
     goal(s) {
       if (!f('c4_goldy')) return { text: '옐로 한가운데 황금궁의 주인, 금화왕 골디를 만나자.', map: 'world', x: X0 + 19, y: Y0 + 3 };
       if (!f('c4_pika')) return { text: '대바자르에서 소매치기를 조심하자. 그늘 골목에 무언가 있다.', map: 'world', x: X0 + 5, y: Y0 + 20 };
-      if (!f('c4_yana')) return { text: '모래바다를 건널 길잡이, 여우 귀의 야나를 찾자. (오아시스 쪽)', map: 'world', x: 274, y: 136 };
+      if (!f('c4_yana')) return { text: '모래바다를 건널 길잡이, 여우 귀의 야나를 찾자. (오아시스 쪽)', map: 'world', ...OW.pt(274, 136) };
       if (!f('d4:boss')) return { text: '모래바다 서쪽, 태양 피라미드 깊은 곳의 「태양의 눈」을 가져오자.', map: 'world', x: PYR.x + 5, y: PYR.y + 3 };
       if (!f('c4_eye')) return { text: '태양의 눈을 들고 황금궁으로.', map: 'world', x: X0 + 19, y: Y0 + 3 };
       return { text: '북서쪽, 해 질 녘의 숲 퍼플로 가는 길이 열렸다.', map: 'world', x: OW.towns.purple.x + 16, y: OW.towns.purple.y + 12 };
@@ -39,7 +39,7 @@
     // 대바자르 노점
     for (const [dx, dy, col] of [[10, 10, '#e84a4a'], [14, 10, '#4a8ad8'], [22, 10, '#6ae07a'], [26, 10, '#e8c048'], [10, 18, '#b87aff'], [26, 18, '#ff8a3a']]) { OW.clear(m, X0 + dx, Y0 + dy, 3, 2, 0, null); G.build.placeBuilding(m, { special: 'stall', tx: X0 + dx, ty: Y0 + dy, w: 3, h: 1, col, door: false }); }
     // 오아시스 둘레 야자
-    for (const [x, y] of [[270, 130], [278, 130], [271, 135], [277, 135], [268, 132]]) if (m.inb(x, y)) m.obj[m.i(x, y)] = O.PALM;
+    for (const [x, y] of [[270, 130], [278, 130], [271, 135], [277, 135], [268, 132]].map(([a, b]) => OW.P(a, b))) if (m.inb(x, y)) m.obj[m.i(x, y)] = O.PALM;
     // 태양 피라미드
     OW.clear(m, PYR.x - 2, PYR.y - 2, 14, 10, 0, T.SAND);
     G.build.placeBuilding(m, { special: 'pyramid', tx: PYR.x, ty: PYR.y, w: 10, h: 3, to: 'd4', id: 'd4_gate', cond: () => f('c4_yana') || (S().party || []).includes('yana'), msg: '모래 폭풍이 입구를 가린다. 모래바다의 길잡이가 필요하다.' });
@@ -174,7 +174,7 @@
   ST.folk('y_alley', { name: '참새단 꼬마', folk: 'kidg', x: 5, y: 6, lines: { c4: () => '흰빛 ' + (S().gender === 'girl' ? '언니' : '오빠') + '? 진짜 하얘? 만져 봐도 돼?' } });
 
   /* ───────── 야나 (오아시스) ───────── */
-  ST.person('world', { id: 'yana', x: 274, y: 128, dir: 'down', when: () => !f('c4_yana'), mark: () => (f('c4_pika') ? '!' : null), talk: async (c, n) => {
+  ST.person('world', { id: 'yana', ...OW.pt(274, 128), dir: 'down', when: () => !f('c4_yana'), mark: () => (f('c4_pika') ? '!' : null), talk: async (c, n) => {
     c.flag('met:yana');
     if (!f('c4_pika')) { await c.say(n, '길잡이가 필요해? 값은 비싸. 금화왕 돈이면 두 배.', { face: 'smirk' }); return; }
     c.lock(true);
@@ -278,12 +278,12 @@
   } });
 
   /* ───────── 빛 씨앗 (옐로) ───────── */
-  ST.seed('y1', 'world', 282, 126, { under: true });
-  ST.seed('y2', 'world', 240, 160, {});
-  ST.seed('y3', 'world', 300, 150, { under: true });
+  ST.seed('y1', 'world', ...OW.P(282, 126), { under: true });
+  ST.seed('y2', 'world', ...OW.P(240, 160), {});
+  ST.seed('y3', 'world', ...OW.P(300, 150), { under: true });
   ST.seed('y4', 'world', PYR.x + 11, PYR.y + 1, {});
-  ST.seed('y5', 'world', 262, 176, {});
-  OW.hooks.push((m) => { m.obj[m.i(282, 126)] = O.ROCK; m.obj[m.i(300, 150)] = O.CACTUS; for (const [x, y] of [[240, 160], [262, 176]]) m.obj[m.i(x, y)] = 0; });
+  ST.seed('y5', 'world', ...OW.P(262, 176), {});
+  OW.hooks.push((m) => { m.obj[m.i(...OW.P(282, 126))] = O.ROCK; m.obj[m.i(...OW.P(300, 150))] = O.CACTUS; for (const [x, y] of [[240, 160], [262, 176]].map(([a, b]) => OW.P(a, b))) m.obj[m.i(x, y)] = 0; });
 
   /* ═════════ 태양 피라미드 (던전 4) ═════════ */
   G.dungeon.def('d4', {

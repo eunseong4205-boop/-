@@ -11,8 +11,8 @@
   const f = (k) => !!S().flags[k];
   const RT = OW.towns.red, X0 = RT.x, Y0 = RT.y;     // 36, 200
   const px = (tx) => tx * TS + 8, py = (ty) => ty * TS + 12;
-  const MINE = { x: 60, y: 193 };
-  const OBS = { x: 64, y: 178 };
+  const MINE = OW.pt(60, 193);
+  const OBS = OW.pt(64, 178);
   ST.RED = { X0, Y0, MINE, OBS };
 
   ST.CH.push({ no: '제2장', id: 'c2', title: '불꽃과 쇠', sub: '망치 소리가 심장 소리처럼 울리는 마을. 광산 깊은 곳에서 무언가가 빛을 짜내고 있다.',
@@ -22,7 +22,7 @@
       if (!f('d2:boss')) return { text: '황금 광산 깊은 곳으로. 폭탄을 찾아 막힌 길을 열자.', map: 'world', x: MINE.x, y: MINE.y };
       if (!f('c2_extractor')) return { text: '두더지왕이 지키던 문 너머, 광산 가장 깊은 방으로.', map: 'd2' };
       if (!f('c2_done')) return { text: '볼칸에게 돌아가자.', map: 'world', x: X0 + 5, y: Y0 + 6 };
-      return { text: '블루 가는 길의 산사태를 폭탄으로 치우고 블루 항구로.', map: 'world', x: 136, y: 196 };
+      return { text: '블루 가는 길의 산사태를 폭탄으로 치우고 블루 항구로.', map: 'world', ...OW.pt(136, 196) };
     } });
   ST.closedMsg.blue = '찍… 블루 가는 길은 산사태로 막혔대. 폭탄이라도 있으면 몰라.';
 
@@ -50,8 +50,9 @@
   OW.hooks.push((m) => {
     // 블루 지역 경계의 길 칸들을 찾아 바위를 쌓는다
     let found = null;
-    for (let y = 150; y < 230 && !found; y++) for (let x = 120; x < 160; x++) { const i = m.i(x, y); if (OW.roadTiles[i] && OW.regName[i] === 'blue' && OW.regName[i - 1] === 'green') { found = [x, y]; break; } }
-    if (!found) for (let y = 150; y < 230 && !found; y++) for (let x = 120; x < 170; x++) { const i = m.i(x, y); if (OW.roadTiles[i] && OW.regName[i] === 'blue') { found = [x, y]; break; } }
+    const [bx0, by0] = OW.P(120, 150), [bx1, by1] = OW.P(160, 230), [bx2] = OW.P(170, 200);
+    for (let y = by0; y < by1 && !found; y++) for (let x = bx0; x < bx1; x++) { const i = m.i(x, y); if (OW.roadTiles[i] && OW.regName[i] === 'blue' && OW.regName[i - 1] === 'green') { found = [x, y]; break; } }
+    if (!found) for (let y = by0; y < by1 && !found; y++) for (let x = bx0; x < bx2; x++) { const i = m.i(x, y); if (OW.roadTiles[i] && OW.regName[i] === 'blue') { found = [x, y]; break; } }
     if (found) { ST.RED.slideAt = found; for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 2; dx++) { const x = found[0] + dx, y = found[1] + dy; if (OW.roadTiles[m.i(x, y)]) { m.obj[m.i(x, y)] = O.BOULDER; } } }
   });
 
@@ -64,7 +65,7 @@
     // 광산을 막는 기사들
     if (!f('c2_mine_ok')) for (const dx of [-1, 2]) { const n = new P.NPC({ x: px(MINE.x + dx), y: py(MINE.y + 2), look: G.cast.folk('knight'), name: '징수 기사', dir: 'down', talk: async (c, npc) => { await c.say(npc, U.pick(['돌아가라. 여긴 부단장님 관할이다.', '광부가 아니면 들어갈 수 없다. 광부라도 들어가면 못 나오지만.', '…그 검, 이상하게 빛나는군. 저리 가.'])); } }); Wd.add(n); }
     // 관측소 앞 망원경 · 불꽃 고추 (마그다의 부탁)
-    for (const [i, [x, y]] of [[66, 172], [40, 182], [56, 186]].entries()) if (!f('pepper' + i) && S().quests.magda && S().quests.magda.st === 'on') Wd.add(new P.Spot({ x: px(x), y: py(y), verb: '고추를 딴다', sparkle: true, flagKey: 'pepper' + i, text: async (c) => { c.flag('pepper' + i); S().pepper = (S().pepper || 0) + 1; c.sfx('item'); c.toast('불꽃 고추 ' + S().pepper + ' / 3', 'gold'); for (const e of G.world.ents) if (e.flagKey === 'pepper' + i) e.dead = true; } }));
+    for (const [i, [x, y]] of [[66, 172], [40, 182], [56, 186]].map(([a, b]) => OW.P(a, b)).entries()) if (!f('pepper' + i) && S().quests.magda && S().quests.magda.st === 'on') Wd.add(new P.Spot({ x: px(x), y: py(y), verb: '고추를 딴다', sparkle: true, flagKey: 'pepper' + i, text: async (c) => { c.flag('pepper' + i); S().pepper = (S().pepper || 0) + 1; c.sfx('item'); c.toast('불꽃 고추 ' + S().pepper + ' / 3', 'gold'); for (const e of G.world.ents) if (e.flagKey === 'pepper' + i) e.dead = true; } }));
     // 산사태 앞 표지
     if (ST.RED.slideAt && !f('slide_clear')) Wd.add(new P.Sign({ x: px(ST.RED.slideAt[0] - 2), y: py(ST.RED.slideAt[1] + 1), text: '산사태. 길이 막혔다.\n「바위를 치울 폭약이 있으면 좋으련만」' }));
   });
@@ -274,11 +275,11 @@
   } });
 
   /* ───────── 빛 씨앗 (레드) ───────── */
-  ST.seed('r1', 'world', 44, 196, { under: true });
-  ST.seed('r2', 'world', 70, 186, {});
-  ST.seed('r3', 'world', 30, 210, { under: true });
-  ST.seed('r4', 'world', 52, 182, {});
-  OW.hooks.push((m) => { m.obj[m.i(44, 196)] = O.ROCK; m.obj[m.i(30, 210)] = O.BUSH; for (const [x, y] of [[70, 186], [52, 182]]) m.obj[m.i(x, y)] = 0; });
+  ST.seed('r1', 'world', ...OW.P(44, 196), { under: true });
+  ST.seed('r2', 'world', ...OW.P(70, 186), {});
+  ST.seed('r3', 'world', ...OW.P(30, 210), { under: true });
+  ST.seed('r4', 'world', ...OW.P(52, 182), {});
+  OW.hooks.push((m) => { m.obj[m.i(...OW.P(44, 196))] = O.ROCK; m.obj[m.i(...OW.P(30, 210))] = O.BUSH; for (const [x, y] of [[70, 186], [52, 182]].map(([a, b]) => OW.P(a, b))) m.obj[m.i(x, y)] = 0; });
 
   /* ═════════ 황금 광산 (던전 2) ═════════ */
   G.dungeon.def('d2', {

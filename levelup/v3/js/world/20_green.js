@@ -182,7 +182,7 @@
     } else await c.say(n, '올해 감자는 알이 굵다. 네 덕이야.', { face: 'smile' });
   } });
   ST.killHooks.push((e, s) => { if (s.quests.bram && s.quests.bram.st === 'on' && (e.type === 'slime' || e.type === 'bigslime') && G.ow.regionOf(Math.floor(e.x / TS), Math.floor(e.y / TS)) === 'green') { s.bramKills = (s.bramKills || 0) + 1; if (s.bramKills <= 5) G.ui.toast('젤리 ' + s.bramKills + ' / 5', ''); } });
-  ST.person(W, { id: 'elm', x: 104, y: 194, dir: 'down', state: 'sit', talk: async (c, n) => {
+  ST.person(W, { id: 'elm', ...OW.pt(104, 194), dir: 'down', state: 'sit', talk: async (c, n) => {
     c.flag('met:elm');
     if (!S().tools.rod) {
       await c.say(n, '쉿. 물고기가 듣는다. …오, 에벨린네 손주구나. 생일이라고? 허허. 그럼 이거 가져가라. 내 옛날 낚싯대다.');
@@ -244,10 +244,10 @@
   };
 
   /* ───────── 빛 씨앗 (그린) ───────── */
-  ST.seed('g1', 'world', 76, 178, { under: true, hint: '덤불 밑' });
-  ST.seed('g2', 'world', 120, 164, { under: true, hint: '바위 밑' });
-  ST.seed('g3', 'world', 88, 200, {});
-  ST.seed('g4', 'world', 104, 150, {});
-  ST.seed('g5', 'world', 130, 186, { under: true });
-  OW.hooks.push((m) => { m.obj[m.i(76, 178)] = O.BUSH; m.obj[m.i(120, 164)] = O.ROCK; m.obj[m.i(130, 186)] = O.BUSH; for (const [x, y] of [[88, 200], [104, 150]]) { m.obj[m.i(x, y)] = 0; if (m.ter[m.i(x, y)] === T.WATER) m.ter[m.i(x, y)] = T.GRASS; } });
+  ST.seed('g1', 'world', ...OW.P(76, 178), { under: true, hint: '덤불 밑' });
+  ST.seed('g2', 'world', ...OW.P(120, 164), { under: true, hint: '바위 밑' });
+  ST.seed('g3', 'world', ...OW.P(88, 200), {});
+  ST.seed('g4', 'world', ...OW.P(104, 150), {});
+  ST.seed('g5', 'world', ...OW.P(130, 186), { under: true });
+  OW.hooks.push((m) => { m.obj[m.i(...OW.P(76, 178))] = O.BUSH; m.obj[m.i(...OW.P(120, 164))] = O.ROCK; m.obj[m.i(...OW.P(130, 186))] = O.BUSH; for (const [x, y] of [[88, 200], [104, 150]].map(([a, b]) => OW.P(a, b))) { m.obj[m.i(x, y)] = 0; if (m.ter[m.i(x, y)] === T.WATER) m.ter[m.i(x, y)] = T.GRASS; } });
 })();

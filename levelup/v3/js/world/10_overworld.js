@@ -7,7 +7,11 @@
   const G = globalThis.G;
   const U = G.u, TL = G.tiles, OB = G.objs, GN = G.gen, E = G.ent;
   const T = TL.T, O = OB.O, TS = TL.TS;
-  const W = 400, H = 300;          // 넓어진 대륙 (옛 땅 320×240은 그대로, 동쪽 안개 늪 · 남쪽 단풍 협곡이 붙었다)
+  // 대륙 크기: 옛 좌표(400×300)의 땅을 SC배로 넓힌다. 마을은 크기 그대로 통째로 옮기고(둘레 RIG칸까지 모양 유지),
+  // 마을과 마을 사이 들판 · 숲 · 산이 늘어난다. 이야기 파일의 옛 좌표는 OW.P(x, y)로 새 좌표가 된다.
+  const SC = 1.4;
+  const WO = 400, HO = 300;
+  const W = Math.round(WO * SC), H = Math.round(HO * SC);
   const W0 = 320, H0 = 240;
   const RG = (n) => TL.REGIONS.indexOf(n);
   const VX = 46, VY = 170;   // 화산
@@ -28,7 +32,51 @@
     black: { x: 250, y: 44, w: 34, h: 24 }, colorful: { x: 284, y: 204, w: 28, h: 22 },
     mist: { x: 342, y: 100, w: 30, h: 22 }, amber: { x: 132, y: 262, w: 32, h: 22 },
   };
-  OW.towns = TOWNS;
+  // 옛 마을 자리 → 새 자리 (가운데를 SC배, 크기는 그대로)
+  const TOWNS0 = {};
+  for (const [n, t] of Object.entries(TOWNS)) {
+    TOWNS0[n] = Object.assign({}, t);
+    const cx = t.x + t.w / 2, cy = t.y + t.h / 2;
+    t.x = Math.round(t.x + cx * (SC - 1)); t.y = Math.round(t.y + cy * (SC - 1));
+  }
+  OW.towns = TOWNS; OW.towns0 = TOWNS0; OW.SC = SC;
+  /* 옛 좌표 → 새 좌표. 마을 둘레(RIG칸)는 마을과 똑같이 옮기고, 멀리는 SC배, 그 사이는 부드럽게 */
+  // 셰퍼드 보간: 마을 상자 안은 그 마을의 옮김 그대로, 멀어질수록 SC배(배경)에 가까워진다
+  const QP = 3, RB = 22, WB = 1 / Math.pow(RB, QP);
+  const TW = Object.entries(TOWNS0).map(([n, t]) => ({ x0: t.x, y0: t.y, x1: t.x + t.w, y1: t.y + t.h, dx: TOWNS[n].x - t.x, dy: TOWNS[n].y - t.y }));
+  function disp(x, y) {
+    let sw = WB, sx = (SC - 1) * x * WB, sy = (SC - 1) * y * WB;
+    for (const t of TW) {
+      const d = Math.max(t.x0 - x, x - t.x1, t.y0 - y, y - t.y1, 0);
+      if (d === 0) return [t.dx, t.dy];
+      const v = 1 / (d * d * d); sw += v; sx += v * t.dx; sy += v * t.dy;
+    }
+    return [sx / sw, sy / sw];
+  }
+  function fwd(x, y) { const [dx, dy] = disp(x, y); return [x + dx, y + dy]; }
+  /** 새 좌표 → 옛 좌표 (뉴턴법) */
+  function inv(X, Y) {
+    let x = X / SC, y = Y / SC;
+    for (let k = 0; k < 20; k++) {
+      const [fx, fy] = fwd(x, y); const ex = X - fx, ey = Y - fy;
+      if (ex * ex + ey * ey < 1e-4) break;
+      const h = 0.05, [ax, ay] = fwd(x + h, y), [bx, by] = fwd(x, y + h);
+      const a = (ax - fx) / h, c = (ay - fy) / h, b = (bx - fx) / h, d = (by - fy) / h, det = a * d - b * c;
+      let sx, sy;
+      if (Math.abs(det) > 1e-6) { sx = (d * ex - b * ey) / det; sy = (-c * ex + a * ey) / det; } else { sx = ex / SC; sy = ey / SC; }
+      const L = Math.hypot(sx, sy); if (L > 6) { sx *= 6 / L; sy *= 6 / L; }
+      x += sx; y += sy;
+    }
+    return [x, y];
+  }
+  /** 마을 기준 옮김: 그 마을과 똑같이 (마을 가까운 옛 좌표에) */
+  OW.T = (n, x, y) => [x + TOWNS[n].x - TOWNS0[n].x, y + TOWNS[n].y - TOWNS0[n].y];
+  OW.P = (x, y) => { const [X, Y] = fwd(x, y); return [Math.round(X), Math.round(Y)]; };
+  OW.pt = (x, y) => { const [X, Y] = OW.P(x, y); return { x: X, y: Y }; };
+  OW.PX = (x, y) => OW.P(x, y)[0]; OW.PY = (x, y) => OW.P(x, y)[1];
+  OW.px = (x, y) => OW.P(x, y)[0] * TS + 8; OW.py = (x, y) => OW.P(x, y)[1] * TS + 12;   // 옛 칸 → 새 픽셀
+  OW.inv = inv; OW.fwd = fwd;
+  const VP = OW.P(VX, VY);
 
   /** 점과 선분 사이 거리 */
   function segD(px, py, ax, ay, bx, by) { const vx = bx - ax, vy = by - ay, t = U.clamp(((px - ax) * vx + (py - ay) * vy) / (vx * vx + vy * vy), 0, 1); return Math.hypot(px - ax - vx * t, py - ay - vy * t); }
@@ -46,21 +94,25 @@
     const reg = m.reg, ter = m.ter, hgt = m.hgt;
     const N = W * H;
     const regName = new Array(N);
+    // 새 칸마다 옛 좌표 (지형 공식은 옛 좌표로 계산한다 — 같은 땅이 넓어진다)
+    const OX = new Float32Array(N), OY = new Float32Array(N);
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { const [ox, oy] = inv(x, y); OX[y * W + x] = ox; OY[y * W + x] = oy; }
+    OW.OX = OX; OW.OY = OY;
     // 1) 지역
-    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { const n = regionAt(x, y); regName[y * W + x] = n; reg[y * W + x] = RG(n); }
+    for (let i = 0; i < N; i++) { const n = regionAt(OX[i], OY[i]); regName[i] = n; reg[i] = RG(n); }
     const RN = (x, y) => regName[U.clamp(y, 0, H - 1) * W + U.clamp(x, 0, W - 1)];
     TL.regionFields(m, 5);          // 지역 경계에서 빛깔을 섞을 흐린 장
     // 2) 바다 · 땅
     const sea = new Uint8Array(N);
-    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
-      const i = y * W + x;
+    for (let Y = 0; Y < H; Y++) for (let X = 0; X < W; X++) {
+      const i = Y * W + X, x = OX[i], y = OY[i];
       const n = U.fbm(x / 22, y / 22, 31, 3), big = U.fbm(x / 48, y / 48, 37, 2);
       const oldLand = x < W0 && y < H0;
       let edge = oldLand ? Math.min(x, W0 - 1 - x, y * 1.2, (H0 - 1 - y) * 0.9) : -99;
       let coast = 2 + n * 12 + Math.max(0, big - 0.42) * 70;
       // 마을 근처는 땅으로 남긴다
       let nearTown = 99;
-      for (const t of Object.values(TOWNS)) nearTown = Math.min(nearTown, Math.max(t.x - x, x - (t.x + t.w), t.y - y, y - (t.y + t.h)));
+      for (const t of Object.values(TOWNS0)) nearTown = Math.min(nearTown, Math.max(t.x - x, x - (t.x + t.w), t.y - y, y - (t.y + t.h)));
       if (nearTown < 8) coast = Math.min(coast, 3 + Math.max(0, nearTown) * 1.5);
       if (U.dist(x, y, VX, VY) < 26) coast = Math.min(coast, 3);
       // 남쪽 해안은 들쭉날쭉, 블루 항구에 만
@@ -70,7 +122,7 @@
       if (x > 276 && y > 180) coast = Math.max(coast, 6 + n * 8 + (y > 226 ? 6 : 0));
       if (x > 300 && y > 150 && y < 188) coast += 14;
       // 무지개(하늘섬): 둘레가 구름바다
-      if (RN(x, y) === 'rainbow') { const d = U.dist(x, y, 164, 32); if (d > 26 + n * 10) sea[i] = 2; }
+      if (regName[i] === 'rainbow') { const d = U.dist(x, y, 164, 32); if (d > 26 + n * 10) sea[i] = 2; }
       if (edge < coast) sea[i] = sea[i] || 1;
       // 새 땅: 동쪽 안개 늪(섬 같은 큰 땅) · 남쪽 단풍 협곡, 좁은 목(지협)으로 옛 땅과 잇는다
       const nb = (U.vnoise(x / 9, y / 9, 131) - 0.5) * 0.28 + (U.vnoise(x / 3, y / 3, 133) - 0.5) * 0.08;
@@ -81,13 +133,14 @@
       const neckA2 = segD(x, y, 54, 216, 70, 262) < 4 + nb * 6;          // 레드 남쪽 → 단풍 협곡 서쪽
       if (mistD < 1 || amberD < 1 || neckM || neckA || neckA2) { if (sea[i] === 1) sea[i] = 0; if (!oldLand || neckM || neckA || neckA2) sea[i] = sea[i] === 2 ? 2 : 0; }
       else if (!oldLand) sea[i] = 1;
-      if (x < 2 || y < 2 || x > W - 3 || y > H - 3) sea[i] = 1;
+      if (X < 2 || Y < 2 || X > W - 3 || Y > H - 3) sea[i] = 1;
     }
     for (let i = 0; i < N; i++) { ter[i] = sea[i] === 1 ? T.DEEP : sea[i] === 2 ? T.CLOUD : T.GRASS; }
     // 3) 높이
-    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
-      const i = y * W + x; if (sea[i]) { hgt[i] = 0; continue; }
-      const n = RN(x, y);
+    for (let Y = 0; Y < H; Y++) for (let X = 0; X < W; X++) {
+      const i = Y * W + X; if (sea[i]) { hgt[i] = 0; continue; }
+      const x = OX[i], y = OY[i];
+      const n = regName[i];
       let h = BASEH[n];
       const f = U.fbm(x / 18, y / 18, 41, 3), f2 = U.fbm(x / 9, y / 9, 43, 2);
       switch (n) {
@@ -120,7 +173,8 @@
     // 절벽 면이 한 줄짜리 섬이 되지 않게: 높은 칸 아래 면이 들어갈 자리가 없으면 깎는다
     for (let y = 1; y < H - 4; y++) for (let x = 0; x < W; x++) { const i = y * W + x; const d = hgt[i] - hgt[i + W]; if (d > 0 && sea[i + W]) hgt[i] = hgt[i + W]; }
     // 4) 강 · 호수
-    const river = (pts, wd, seed) => {
+    const river = (pts0, wd, seed) => {
+      const pts = pts0.map(([x, y]) => fwd(x, y));
       for (let k = 1; k < pts.length; k++) {
         const [x0, y0] = pts[k - 1], [x1, y1] = pts[k];
         const n = Math.ceil(U.dist(x0, y0, x1, y1));
@@ -141,7 +195,8 @@
     river([[70, 62], [74, 90], [66, 120], [72, 150], [74, 168], [80, 200], [118, 236]], 1.6, 51);  // 설산 → 그린 → 남쪽 바다
     river([[164, 56], [154, 80], [146, 104], [139, 112]], 1.2, 53);                                 // 무지개 폭포 → 거울 호수
     river([[226, 70], [232, 100], [222, 132], [210, 160], [206, 196], [196, 236]], 1.6, 57);       // 블랙 → 옐로와 블루 사이
-    const lake = (cx, cy, rx, ry, seed) => { for (let y = cy - ry - 3; y <= cy + ry + 3; y++) for (let x = cx - rx - 3; x <= cx + rx + 3; x++) { if (!m.inb(x, y)) continue; const d = Math.hypot((x - cx) / rx, (y - cy) / ry) + (U.vnoise(x / 3, y / 3, seed) - 0.5) * 0.4; if (d < 1) { const i = y * W + x; ter[i] = d < 0.6 ? T.DEEP : T.WATER; sea[i] = 3; } } };
+    const lake = (cx0, cy0, rx, ry, seed) => {
+      const [cx, cy] = OW.P(cx0, cy0); for (let y = cy - ry - 3; y <= cy + ry + 3; y++) for (let x = cx - rx - 3; x <= cx + rx + 3; x++) { if (!m.inb(x, y)) continue; const d = Math.hypot((x - cx) / rx, (y - cy) / ry) + (U.vnoise(x / 3, y / 3, seed) - 0.5) * 0.4; if (d < 1) { const i = y * W + x; ter[i] = d < 0.6 ? T.DEEP : T.WATER; sea[i] = 3; } } };
     lake(138, 112, 7, 5, 61);    // 거울 호수 (퍼플)
     lake(104, 196, 3, 2, 63);    // 그린 연못
     lake(274, 132, 3, 2, 65);    // 사막 오아시스
@@ -169,7 +224,7 @@
       }
     }
     // 화산 분화구 · 설산 꼭대기
-    for (let y = VY - 12; y < VY + 12; y++) for (let x = VX - 12; x < VX + 12; x++) { const d = U.dist(x, y, VX, VY) + (U.vnoise(x / 2, y / 2, 71) - 0.5) * 2; if (d < 3.4 && hgt[y * W + x] === 4) ter[y * W + x] = T.LAVA; }
+    for (let y = VP[1] - 16; y < VP[1] + 16; y++) for (let x = VP[0] - 16; x < VP[0] + 16; x++) { if (!m.inb(x, y)) continue; const d = U.dist(x, y, VP[0], VP[1]) + (U.vnoise(x / 2, y / 2, 71) - 0.5) * 2; if (d < 3.4 * SC && hgt[y * W + x] === 4) ter[y * W + x] = T.LAVA; }
     // 6) 지형 무늬: 지역마다 여러 바닥 (숲 바닥 · 꽃밭 · 마른 풀 · 자갈 · 바위 · 갈라진 땅 · 이끼 …)
     for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
       const i = y * W + x; if (sea[i] || ter[i] === T.LAVA) continue;
@@ -589,7 +644,7 @@
     const s = G.state, k = Math.floor(s.t / 90) % 5;
     if (n === 'white') return 'snow';
     if (n === 'gray') return 'ash';
-    if (n === 'red' && U.dist(p.x / TS, p.y / TS, VX, VY) < 30) return 'ash';
+    if (n === 'red' && U.dist(p.x / TS, p.y / TS, VP[0], VP[1]) < 30 * SC) return 'ash';
     if (n === 'yellow') return k === 2 ? 'dust' : null;
     if (n === 'purple') return 'spores';
     if (n === 'rainbow') return 'petals';
@@ -663,4 +718,20 @@
   OW.near = near; OW.clear = clear; OW.regionAt = regionAt; OW.inTown = inTown; OW.TABLE = TABLE; OW.TIERS = TIERS; OW.ents = [];
   OW.tp = (x, y) => ({ x: x * TS + 8, y: y * TS + 12 });
   G.ow = OW;
+  // 옛 저장(400×300 대륙)의 자리 → 넓어진 대륙
+  OW.VER = 3;
+  if (G.prog && G.prog.migrate) {
+    const mg0 = G.prog.migrate;
+    G.prog.migrate = function (s) {
+      s = mg0(s);
+      if ((s.worldVer || 2) < OW.VER) {
+        const mv = (o) => { if (o && o.map === 'world' && o.x != null) { const [X, Y] = fwd((o.x - 8) / TS, (o.y - 12) / TS); o.x = Math.round(X) * TS + 8; o.y = Math.round(Y) * TS + 12; } };
+        mv(s); mv(s.respawn);
+        if (s.flags) delete s.flags['fog:world'];
+        s.worldVer = OW.VER;
+      }
+      return s;
+    };
+  }
+  if (G.story && G.story.start) { const st0 = G.story.start; G.story.start = function (s) { s.worldVer = OW.VER; return st0.apply(this, arguments); }; }
 })();

@@ -12090,7 +12090,11 @@ html.touch #touch { display: block; position: absolute; inset: 0; pointer-events
   const G = globalThis.G;
   const U = G.u, TL = G.tiles, OB = G.objs, GN = G.gen, E = G.ent;
   const T = TL.T, O = OB.O, TS = TL.TS;
-  const W = 400, H = 300;          // 넓어진 대륙 (옛 땅 320×240은 그대로, 동쪽 안개 늪 · 남쪽 단풍 협곡이 붙었다)
+  // 대륙 크기: 옛 좌표(400×300)의 땅을 SC배로 넓힌다. 마을은 크기 그대로 통째로 옮기고(둘레 RIG칸까지 모양 유지),
+  // 마을과 마을 사이 들판 · 숲 · 산이 늘어난다. 이야기 파일의 옛 좌표는 OW.P(x, y)로 새 좌표가 된다.
+  const SC = 1.4;
+  const WO = 400, HO = 300;
+  const W = Math.round(WO * SC), H = Math.round(HO * SC);
   const W0 = 320, H0 = 240;
   const RG = (n) => TL.REGIONS.indexOf(n);
   const VX = 46, VY = 170;   // 화산
@@ -12111,7 +12115,51 @@ html.touch #touch { display: block; position: absolute; inset: 0; pointer-events
     black: { x: 250, y: 44, w: 34, h: 24 }, colorful: { x: 284, y: 204, w: 28, h: 22 },
     mist: { x: 342, y: 100, w: 30, h: 22 }, amber: { x: 132, y: 262, w: 32, h: 22 },
   };
-  OW.towns = TOWNS;
+  // 옛 마을 자리 → 새 자리 (가운데를 SC배, 크기는 그대로)
+  const TOWNS0 = {};
+  for (const [n, t] of Object.entries(TOWNS)) {
+    TOWNS0[n] = Object.assign({}, t);
+    const cx = t.x + t.w / 2, cy = t.y + t.h / 2;
+    t.x = Math.round(t.x + cx * (SC - 1)); t.y = Math.round(t.y + cy * (SC - 1));
+  }
+  OW.towns = TOWNS; OW.towns0 = TOWNS0; OW.SC = SC;
+  /* 옛 좌표 → 새 좌표. 마을 둘레(RIG칸)는 마을과 똑같이 옮기고, 멀리는 SC배, 그 사이는 부드럽게 */
+  // 셰퍼드 보간: 마을 상자 안은 그 마을의 옮김 그대로, 멀어질수록 SC배(배경)에 가까워진다
+  const QP = 3, RB = 22, WB = 1 / Math.pow(RB, QP);
+  const TW = Object.entries(TOWNS0).map(([n, t]) => ({ x0: t.x, y0: t.y, x1: t.x + t.w, y1: t.y + t.h, dx: TOWNS[n].x - t.x, dy: TOWNS[n].y - t.y }));
+  function disp(x, y) {
+    let sw = WB, sx = (SC - 1) * x * WB, sy = (SC - 1) * y * WB;
+    for (const t of TW) {
+      const d = Math.max(t.x0 - x, x - t.x1, t.y0 - y, y - t.y1, 0);
+      if (d === 0) return [t.dx, t.dy];
+      const v = 1 / (d * d * d); sw += v; sx += v * t.dx; sy += v * t.dy;
+    }
+    return [sx / sw, sy / sw];
+  }
+  function fwd(x, y) { const [dx, dy] = disp(x, y); return [x + dx, y + dy]; }
+  /** 새 좌표 → 옛 좌표 (뉴턴법) */
+  function inv(X, Y) {
+    let x = X / SC, y = Y / SC;
+    for (let k = 0; k < 20; k++) {
+      const [fx, fy] = fwd(x, y); const ex = X - fx, ey = Y - fy;
+      if (ex * ex + ey * ey < 1e-4) break;
+      const h = 0.05, [ax, ay] = fwd(x + h, y), [bx, by] = fwd(x, y + h);
+      const a = (ax - fx) / h, c = (ay - fy) / h, b = (bx - fx) / h, d = (by - fy) / h, det = a * d - b * c;
+      let sx, sy;
+      if (Math.abs(det) > 1e-6) { sx = (d * ex - b * ey) / det; sy = (-c * ex + a * ey) / det; } else { sx = ex / SC; sy = ey / SC; }
+      const L = Math.hypot(sx, sy); if (L > 6) { sx *= 6 / L; sy *= 6 / L; }
+      x += sx; y += sy;
+    }
+    return [x, y];
+  }
+  /** 마을 기준 옮김: 그 마을과 똑같이 (마을 가까운 옛 좌표에) */
+  OW.T = (n, x, y) => [x + TOWNS[n].x - TOWNS0[n].x, y + TOWNS[n].y - TOWNS0[n].y];
+  OW.P = (x, y) => { const [X, Y] = fwd(x, y); return [Math.round(X), Math.round(Y)]; };
+  OW.pt = (x, y) => { const [X, Y] = OW.P(x, y); return { x: X, y: Y }; };
+  OW.PX = (x, y) => OW.P(x, y)[0]; OW.PY = (x, y) => OW.P(x, y)[1];
+  OW.px = (x, y) => OW.P(x, y)[0] * TS + 8; OW.py = (x, y) => OW.P(x, y)[1] * TS + 12;   // 옛 칸 → 새 픽셀
+  OW.inv = inv; OW.fwd = fwd;
+  const VP = OW.P(VX, VY);
 
   /** 점과 선분 사이 거리 */
   function segD(px, py, ax, ay, bx, by) { const vx = bx - ax, vy = by - ay, t = U.clamp(((px - ax) * vx + (py - ay) * vy) / (vx * vx + vy * vy), 0, 1); return Math.hypot(px - ax - vx * t, py - ay - vy * t); }
@@ -12129,21 +12177,25 @@ html.touch #touch { display: block; position: absolute; inset: 0; pointer-events
     const reg = m.reg, ter = m.ter, hgt = m.hgt;
     const N = W * H;
     const regName = new Array(N);
+    // 새 칸마다 옛 좌표 (지형 공식은 옛 좌표로 계산한다 — 같은 땅이 넓어진다)
+    const OX = new Float32Array(N), OY = new Float32Array(N);
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { const [ox, oy] = inv(x, y); OX[y * W + x] = ox; OY[y * W + x] = oy; }
+    OW.OX = OX; OW.OY = OY;
     // 1) 지역
-    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { const n = regionAt(x, y); regName[y * W + x] = n; reg[y * W + x] = RG(n); }
+    for (let i = 0; i < N; i++) { const n = regionAt(OX[i], OY[i]); regName[i] = n; reg[i] = RG(n); }
     const RN = (x, y) => regName[U.clamp(y, 0, H - 1) * W + U.clamp(x, 0, W - 1)];
     TL.regionFields(m, 5);          // 지역 경계에서 빛깔을 섞을 흐린 장
     // 2) 바다 · 땅
     const sea = new Uint8Array(N);
-    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
-      const i = y * W + x;
+    for (let Y = 0; Y < H; Y++) for (let X = 0; X < W; X++) {
+      const i = Y * W + X, x = OX[i], y = OY[i];
       const n = U.fbm(x / 22, y / 22, 31, 3), big = U.fbm(x / 48, y / 48, 37, 2);
       const oldLand = x < W0 && y < H0;
       let edge = oldLand ? Math.min(x, W0 - 1 - x, y * 1.2, (H0 - 1 - y) * 0.9) : -99;
       let coast = 2 + n * 12 + Math.max(0, big - 0.42) * 70;
       // 마을 근처는 땅으로 남긴다
       let nearTown = 99;
-      for (const t of Object.values(TOWNS)) nearTown = Math.min(nearTown, Math.max(t.x - x, x - (t.x + t.w), t.y - y, y - (t.y + t.h)));
+      for (const t of Object.values(TOWNS0)) nearTown = Math.min(nearTown, Math.max(t.x - x, x - (t.x + t.w), t.y - y, y - (t.y + t.h)));
       if (nearTown < 8) coast = Math.min(coast, 3 + Math.max(0, nearTown) * 1.5);
       if (U.dist(x, y, VX, VY) < 26) coast = Math.min(coast, 3);
       // 남쪽 해안은 들쭉날쭉, 블루 항구에 만
@@ -12153,7 +12205,7 @@ html.touch #touch { display: block; position: absolute; inset: 0; pointer-events
       if (x > 276 && y > 180) coast = Math.max(coast, 6 + n * 8 + (y > 226 ? 6 : 0));
       if (x > 300 && y > 150 && y < 188) coast += 14;
       // 무지개(하늘섬): 둘레가 구름바다
-      if (RN(x, y) === 'rainbow') { const d = U.dist(x, y, 164, 32); if (d > 26 + n * 10) sea[i] = 2; }
+      if (regName[i] === 'rainbow') { const d = U.dist(x, y, 164, 32); if (d > 26 + n * 10) sea[i] = 2; }
       if (edge < coast) sea[i] = sea[i] || 1;
       // 새 땅: 동쪽 안개 늪(섬 같은 큰 땅) · 남쪽 단풍 협곡, 좁은 목(지협)으로 옛 땅과 잇는다
       const nb = (U.vnoise(x / 9, y / 9, 131) - 0.5) * 0.28 + (U.vnoise(x / 3, y / 3, 133) - 0.5) * 0.08;
@@ -12164,13 +12216,14 @@ html.touch #touch { display: block; position: absolute; inset: 0; pointer-events
       const neckA2 = segD(x, y, 54, 216, 70, 262) < 4 + nb * 6;          // 레드 남쪽 → 단풍 협곡 서쪽
       if (mistD < 1 || amberD < 1 || neckM || neckA || neckA2) { if (sea[i] === 1) sea[i] = 0; if (!oldLand || neckM || neckA || neckA2) sea[i] = sea[i] === 2 ? 2 : 0; }
       else if (!oldLand) sea[i] = 1;
-      if (x < 2 || y < 2 || x > W - 3 || y > H - 3) sea[i] = 1;
+      if (X < 2 || Y < 2 || X > W - 3 || Y > H - 3) sea[i] = 1;
     }
     for (let i = 0; i < N; i++) { ter[i] = sea[i] === 1 ? T.DEEP : sea[i] === 2 ? T.CLOUD : T.GRASS; }
     // 3) 높이
-    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
-      const i = y * W + x; if (sea[i]) { hgt[i] = 0; continue; }
-      const n = RN(x, y);
+    for (let Y = 0; Y < H; Y++) for (let X = 0; X < W; X++) {
+      const i = Y * W + X; if (sea[i]) { hgt[i] = 0; continue; }
+      const x = OX[i], y = OY[i];
+      const n = regName[i];
       let h = BASEH[n];
       const f = U.fbm(x / 18, y / 18, 41, 3), f2 = U.fbm(x / 9, y / 9, 43, 2);
       switch (n) {
@@ -12203,7 +12256,8 @@ html.touch #touch { display: block; position: absolute; inset: 0; pointer-events
     // 절벽 면이 한 줄짜리 섬이 되지 않게: 높은 칸 아래 면이 들어갈 자리가 없으면 깎는다
     for (let y = 1; y < H - 4; y++) for (let x = 0; x < W; x++) { const i = y * W + x; const d = hgt[i] - hgt[i + W]; if (d > 0 && sea[i + W]) hgt[i] = hgt[i + W]; }
     // 4) 강 · 호수
-    const river = (pts, wd, seed) => {
+    const river = (pts0, wd, seed) => {
+      const pts = pts0.map(([x, y]) => fwd(x, y));
       for (let k = 1; k < pts.length; k++) {
         const [x0, y0] = pts[k - 1], [x1, y1] = pts[k];
         const n = Math.ceil(U.dist(x0, y0, x1, y1));
@@ -12224,7 +12278,8 @@ html.touch #touch { display: block; position: absolute; inset: 0; pointer-events
     river([[70, 62], [74, 90], [66, 120], [72, 150], [74, 168], [80, 200], [118, 236]], 1.6, 51);  // 설산 → 그린 → 남쪽 바다
     river([[164, 56], [154, 80], [146, 104], [139, 112]], 1.2, 53);                                 // 무지개 폭포 → 거울 호수
     river([[226, 70], [232, 100], [222, 132], [210, 160], [206, 196], [196, 236]], 1.6, 57);       // 블랙 → 옐로와 블루 사이
-    const lake = (cx, cy, rx, ry, seed) => { for (let y = cy - ry - 3; y <= cy + ry + 3; y++) for (let x = cx - rx - 3; x <= cx + rx + 3; x++) { if (!m.inb(x, y)) continue; const d = Math.hypot((x - cx) / rx, (y - cy) / ry) + (U.vnoise(x / 3, y / 3, seed) - 0.5) * 0.4; if (d < 1) { const i = y * W + x; ter[i] = d < 0.6 ? T.DEEP : T.WATER; sea[i] = 3; } } };
+    const lake = (cx0, cy0, rx, ry, seed) => {
+      const [cx, cy] = OW.P(cx0, cy0); for (let y = cy - ry - 3; y <= cy + ry + 3; y++) for (let x = cx - rx - 3; x <= cx + rx + 3; x++) { if (!m.inb(x, y)) continue; const d = Math.hypot((x - cx) / rx, (y - cy) / ry) + (U.vnoise(x / 3, y / 3, seed) - 0.5) * 0.4; if (d < 1) { const i = y * W + x; ter[i] = d < 0.6 ? T.DEEP : T.WATER; sea[i] = 3; } } };
     lake(138, 112, 7, 5, 61);    // 거울 호수 (퍼플)
     lake(104, 196, 3, 2, 63);    // 그린 연못
     lake(274, 132, 3, 2, 65);    // 사막 오아시스
@@ -12252,7 +12307,7 @@ html.touch #touch { display: block; position: absolute; inset: 0; pointer-events
       }
     }
     // 화산 분화구 · 설산 꼭대기
-    for (let y = VY - 12; y < VY + 12; y++) for (let x = VX - 12; x < VX + 12; x++) { const d = U.dist(x, y, VX, VY) + (U.vnoise(x / 2, y / 2, 71) - 0.5) * 2; if (d < 3.4 && hgt[y * W + x] === 4) ter[y * W + x] = T.LAVA; }
+    for (let y = VP[1] - 16; y < VP[1] + 16; y++) for (let x = VP[0] - 16; x < VP[0] + 16; x++) { if (!m.inb(x, y)) continue; const d = U.dist(x, y, VP[0], VP[1]) + (U.vnoise(x / 2, y / 2, 71) - 0.5) * 2; if (d < 3.4 * SC && hgt[y * W + x] === 4) ter[y * W + x] = T.LAVA; }
     // 6) 지형 무늬: 지역마다 여러 바닥 (숲 바닥 · 꽃밭 · 마른 풀 · 자갈 · 바위 · 갈라진 땅 · 이끼 …)
     for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
       const i = y * W + x; if (sea[i] || ter[i] === T.LAVA) continue;
@@ -12672,7 +12727,7 @@ html.touch #touch { display: block; position: absolute; inset: 0; pointer-events
     const s = G.state, k = Math.floor(s.t / 90) % 5;
     if (n === 'white') return 'snow';
     if (n === 'gray') return 'ash';
-    if (n === 'red' && U.dist(p.x / TS, p.y / TS, VX, VY) < 30) return 'ash';
+    if (n === 'red' && U.dist(p.x / TS, p.y / TS, VP[0], VP[1]) < 30 * SC) return 'ash';
     if (n === 'yellow') return k === 2 ? 'dust' : null;
     if (n === 'purple') return 'spores';
     if (n === 'rainbow') return 'petals';
@@ -12746,6 +12801,22 @@ html.touch #touch { display: block; position: absolute; inset: 0; pointer-events
   OW.near = near; OW.clear = clear; OW.regionAt = regionAt; OW.inTown = inTown; OW.TABLE = TABLE; OW.TIERS = TIERS; OW.ents = [];
   OW.tp = (x, y) => ({ x: x * TS + 8, y: y * TS + 12 });
   G.ow = OW;
+  // 옛 저장(400×300 대륙)의 자리 → 넓어진 대륙
+  OW.VER = 3;
+  if (G.prog && G.prog.migrate) {
+    const mg0 = G.prog.migrate;
+    G.prog.migrate = function (s) {
+      s = mg0(s);
+      if ((s.worldVer || 2) < OW.VER) {
+        const mv = (o) => { if (o && o.map === 'world' && o.x != null) { const [X, Y] = fwd((o.x - 8) / TS, (o.y - 12) / TS); o.x = Math.round(X) * TS + 8; o.y = Math.round(Y) * TS + 12; } };
+        mv(s); mv(s.respawn);
+        if (s.flags) delete s.flags['fog:world'];
+        s.worldVer = OW.VER;
+      }
+      return s;
+    };
+  }
+  if (G.story && G.story.start) { const st0 = G.story.start; G.story.start = function (s) { s.worldVer = OW.VER; return st0.apply(this, arguments); }; }
 })();
 
 /* js/world/20_green.js */
@@ -12933,7 +13004,7 @@ html.touch #touch { display: block; position: absolute; inset: 0; pointer-events
     } else await c.say(n, '올해 감자는 알이 굵다. 네 덕이야.', { face: 'smile' });
   } });
   ST.killHooks.push((e, s) => { if (s.quests.bram && s.quests.bram.st === 'on' && (e.type === 'slime' || e.type === 'bigslime') && G.ow.regionOf(Math.floor(e.x / TS), Math.floor(e.y / TS)) === 'green') { s.bramKills = (s.bramKills || 0) + 1; if (s.bramKills <= 5) G.ui.toast('젤리 ' + s.bramKills + ' / 5', ''); } });
-  ST.person(W, { id: 'elm', x: 104, y: 194, dir: 'down', state: 'sit', talk: async (c, n) => {
+  ST.person(W, { id: 'elm', ...OW.pt(104, 194), dir: 'down', state: 'sit', talk: async (c, n) => {
     c.flag('met:elm');
     if (!S().tools.rod) {
       await c.say(n, '쉿. 물고기가 듣는다. …오, 에벨린네 손주구나. 생일이라고? 허허. 그럼 이거 가져가라. 내 옛날 낚싯대다.');
@@ -12995,12 +13066,12 @@ html.touch #touch { display: block; position: absolute; inset: 0; pointer-events
   };
 
   /* ───────── 빛 씨앗 (그린) ───────── */
-  ST.seed('g1', 'world', 76, 178, { under: true, hint: '덤불 밑' });
-  ST.seed('g2', 'world', 120, 164, { under: true, hint: '바위 밑' });
-  ST.seed('g3', 'world', 88, 200, {});
-  ST.seed('g4', 'world', 104, 150, {});
-  ST.seed('g5', 'world', 130, 186, { under: true });
-  OW.hooks.push((m) => { m.obj[m.i(76, 178)] = O.BUSH; m.obj[m.i(120, 164)] = O.ROCK; m.obj[m.i(130, 186)] = O.BUSH; for (const [x, y] of [[88, 200], [104, 150]]) { m.obj[m.i(x, y)] = 0; if (m.ter[m.i(x, y)] === T.WATER) m.ter[m.i(x, y)] = T.GRASS; } });
+  ST.seed('g1', 'world', ...OW.P(76, 178), { under: true, hint: '덤불 밑' });
+  ST.seed('g2', 'world', ...OW.P(120, 164), { under: true, hint: '바위 밑' });
+  ST.seed('g3', 'world', ...OW.P(88, 200), {});
+  ST.seed('g4', 'world', ...OW.P(104, 150), {});
+  ST.seed('g5', 'world', ...OW.P(130, 186), { under: true });
+  OW.hooks.push((m) => { m.obj[m.i(...OW.P(76, 178))] = O.BUSH; m.obj[m.i(...OW.P(120, 164))] = O.ROCK; m.obj[m.i(...OW.P(130, 186))] = O.BUSH; for (const [x, y] of [[88, 200], [104, 150]].map(([a, b]) => OW.P(a, b))) { m.obj[m.i(x, y)] = 0; if (m.ter[m.i(x, y)] === T.WATER) m.ter[m.i(x, y)] = T.GRASS; } });
 })();
 
 /* js/world/21_c1.js */
@@ -13574,8 +13645,8 @@ html.touch #touch { display: block; position: absolute; inset: 0; pointer-events
   const f = (k) => !!S().flags[k];
   const RT = OW.towns.red, X0 = RT.x, Y0 = RT.y;     // 36, 200
   const px = (tx) => tx * TS + 8, py = (ty) => ty * TS + 12;
-  const MINE = { x: 60, y: 193 };
-  const OBS = { x: 64, y: 178 };
+  const MINE = OW.pt(60, 193);
+  const OBS = OW.pt(64, 178);
   ST.RED = { X0, Y0, MINE, OBS };
 
   ST.CH.push({ no: '제2장', id: 'c2', title: '불꽃과 쇠', sub: '망치 소리가 심장 소리처럼 울리는 마을. 광산 깊은 곳에서 무언가가 빛을 짜내고 있다.',
@@ -13585,7 +13656,7 @@ html.touch #touch { display: block; position: absolute; inset: 0; pointer-events
       if (!f('d2:boss')) return { text: '황금 광산 깊은 곳으로. 폭탄을 찾아 막힌 길을 열자.', map: 'world', x: MINE.x, y: MINE.y };
       if (!f('c2_extractor')) return { text: '두더지왕이 지키던 문 너머, 광산 가장 깊은 방으로.', map: 'd2' };
       if (!f('c2_done')) return { text: '볼칸에게 돌아가자.', map: 'world', x: X0 + 5, y: Y0 + 6 };
-      return { text: '블루 가는 길의 산사태를 폭탄으로 치우고 블루 항구로.', map: 'world', x: 136, y: 196 };
+      return { text: '블루 가는 길의 산사태를 폭탄으로 치우고 블루 항구로.', map: 'world', ...OW.pt(136, 196) };
     } });
   ST.closedMsg.blue = '찍… 블루 가는 길은 산사태로 막혔대. 폭탄이라도 있으면 몰라.';
 
@@ -13613,8 +13684,9 @@ html.touch #touch { display: block; position: absolute; inset: 0; pointer-events
   OW.hooks.push((m) => {
     // 블루 지역 경계의 길 칸들을 찾아 바위를 쌓는다
     let found = null;
-    for (let y = 150; y < 230 && !found; y++) for (let x = 120; x < 160; x++) { const i = m.i(x, y); if (OW.roadTiles[i] && OW.regName[i] === 'blue' && OW.regName[i - 1] === 'green') { found = [x, y]; break; } }
-    if (!found) for (let y = 150; y < 230 && !found; y++) for (let x = 120; x < 170; x++) { const i = m.i(x, y); if (OW.roadTiles[i] && OW.regName[i] === 'blue') { found = [x, y]; break; } }
+    const [bx0, by0] = OW.P(120, 150), [bx1, by1] = OW.P(160, 230), [bx2] = OW.P(170, 200);
+    for (let y = by0; y < by1 && !found; y++) for (let x = bx0; x < bx1; x++) { const i = m.i(x, y); if (OW.roadTiles[i] && OW.regName[i] === 'blue' && OW.regName[i - 1] === 'green') { found = [x, y]; break; } }
+    if (!found) for (let y = by0; y < by1 && !found; y++) for (let x = bx0; x < bx2; x++) { const i = m.i(x, y); if (OW.roadTiles[i] && OW.regName[i] === 'blue') { found = [x, y]; break; } }
     if (found) { ST.RED.slideAt = found; for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 2; dx++) { const x = found[0] + dx, y = found[1] + dy; if (OW.roadTiles[m.i(x, y)]) { m.obj[m.i(x, y)] = O.BOULDER; } } }
   });
 
@@ -13627,7 +13699,7 @@ html.touch #touch { display: block; position: absolute; inset: 0; pointer-events
     // 광산을 막는 기사들
     if (!f('c2_mine_ok')) for (const dx of [-1, 2]) { const n = new P.NPC({ x: px(MINE.x + dx), y: py(MINE.y + 2), look: G.cast.folk('knight'), name: '징수 기사', dir: 'down', talk: async (c, npc) => { await c.say(npc, U.pick(['돌아가라. 여긴 부단장님 관할이다.', '광부가 아니면 들어갈 수 없다. 광부라도 들어가면 못 나오지만.', '…그 검, 이상하게 빛나는군. 저리 가.'])); } }); Wd.add(n); }
     // 관측소 앞 망원경 · 불꽃 고추 (마그다의 부탁)
-    for (const [i, [x, y]] of [[66, 172], [40, 182], [56, 186]].entries()) if (!f('pepper' + i) && S().quests.magda && S().quests.magda.st === 'on') Wd.add(new P.Spot({ x: px(x), y: py(y), verb: '고추를 딴다', sparkle: true, flagKey: 'pepper' + i, text: async (c) => { c.flag('pepper' + i); S().pepper = (S().pepper || 0) + 1; c.sfx('item'); c.toast('불꽃 고추 ' + S().pepper + ' / 3', 'gold'); for (const e of G.world.ents) if (e.flagKey === 'pepper' + i) e.dead = true; } }));
+    for (const [i, [x, y]] of [[66, 172], [40, 182], [56, 186]].map(([a, b]) => OW.P(a, b)).entries()) if (!f('pepper' + i) && S().quests.magda && S().quests.magda.st === 'on') Wd.add(new P.Spot({ x: px(x), y: py(y), verb: '고추를 딴다', sparkle: true, flagKey: 'pepper' + i, text: async (c) => { c.flag('pepper' + i); S().pepper = (S().pepper || 0) + 1; c.sfx('item'); c.toast('불꽃 고추 ' + S().pepper + ' / 3', 'gold'); for (const e of G.world.ents) if (e.flagKey === 'pepper' + i) e.dead = true; } }));
     // 산사태 앞 표지
     if (ST.RED.slideAt && !f('slide_clear')) Wd.add(new P.Sign({ x: px(ST.RED.slideAt[0] - 2), y: py(ST.RED.slideAt[1] + 1), text: '산사태. 길이 막혔다.\n「바위를 치울 폭약이 있으면 좋으련만」' }));
   });
@@ -13837,11 +13909,11 @@ html.touch #touch { display: block; position: absolute; inset: 0; pointer-events
   } });
 
   /* ───────── 빛 씨앗 (레드) ───────── */
-  ST.seed('r1', 'world', 44, 196, { under: true });
-  ST.seed('r2', 'world', 70, 186, {});
-  ST.seed('r3', 'world', 30, 210, { under: true });
-  ST.seed('r4', 'world', 52, 182, {});
-  OW.hooks.push((m) => { m.obj[m.i(44, 196)] = O.ROCK; m.obj[m.i(30, 210)] = O.BUSH; for (const [x, y] of [[70, 186], [52, 182]]) m.obj[m.i(x, y)] = 0; });
+  ST.seed('r1', 'world', ...OW.P(44, 196), { under: true });
+  ST.seed('r2', 'world', ...OW.P(70, 186), {});
+  ST.seed('r3', 'world', ...OW.P(30, 210), { under: true });
+  ST.seed('r4', 'world', ...OW.P(52, 182), {});
+  OW.hooks.push((m) => { m.obj[m.i(...OW.P(44, 196))] = O.ROCK; m.obj[m.i(...OW.P(30, 210))] = O.BUSH; for (const [x, y] of [[70, 186], [52, 182]].map(([a, b]) => OW.P(a, b))) m.obj[m.i(x, y)] = 0; });
 
   /* ═════════ 황금 광산 (던전 2) ═════════ */
   G.dungeon.def('d2', {
@@ -13970,7 +14042,7 @@ html.touch #touch { display: block; position: absolute; inset: 0; pointer-events
   const BT = OW.towns.blue, X0 = BT.x, Y0 = BT.y;     // 160, 204
   const px = (tx) => tx * TS + 8, py = (ty) => ty * TS + 12;
   const LH = { x: X0 + 38, y: Y0 + 10 };               // 등대
-  const CAVE = { x: 146, y: 222 };                      // 해저 동굴 입구 (바다 쪽)
+  const CAVE = OW.pt(146, 222);                      // 해저 동굴 입구 (바다 쪽)
   ST.BLUE = { X0, Y0, LH, CAVE };
 
   ST.CH.push({ no: '제3장', id: 'c3', title: '파도와 지혜', sub: '책장이 파도처럼 넘어가는 항구. 엄마가 찾던 것이 금서고 깊은 곳에 잠들어 있다.',
@@ -14172,10 +14244,10 @@ html.touch #touch { display: block; position: absolute; inset: 0; pointer-events
 
   /* ───────── 빛 씨앗 (블루) ───────── */
   ST.seed('b1', 'world', X0 + 34, Y0 + 3, {});
-  ST.seed('b2', 'world', 188, 190, { under: true });
-  ST.seed('b3', 'world', 150, 200, { under: true });
+  ST.seed('b2', 'world', ...OW.P(188, 190), { under: true });
+  ST.seed('b3', 'world', ...OW.P(150, 200), { under: true });
   ST.seed('b4', 'world', CAVE.x + 4, CAVE.y - 3, {});
-  OW.hooks.push((m) => { m.obj[m.i(188, 190)] = O.BUSH; m.obj[m.i(150, 200)] = O.ROCK; m.obj[m.i(X0 + 34, Y0 + 3)] = 0; });
+  OW.hooks.push((m) => { m.obj[m.i(...OW.P(188, 190))] = O.BUSH; m.obj[m.i(...OW.P(150, 200))] = O.ROCK; m.obj[m.i(X0 + 34, Y0 + 3)] = 0; });
 
   /* ═════════ 해저 동굴 (던전 3) ═════════ */
   G.dungeon.def('d3', {
@@ -14315,7 +14387,7 @@ html.touch #touch { display: block; position: absolute; inset: 0; pointer-events
   const f = (k) => !!S().flags[k];
   const YT = OW.towns.yellow, X0 = YT.x, Y0 = YT.y;     // 252, 142
   const px = (tx) => tx * TS + 8, py = (ty) => ty * TS + 12;
-  const PYR = { x: 232, y: 124 };                       // 피라미드 (발자리 왼쪽 위)
+  const PYR = OW.pt(232, 124);                       // 피라미드 (발자리 왼쪽 위)
   ST.YELLOW = { X0, Y0, PYR };
   const buddy = () => ({ dawn: 'rud', order: 'cassian', night: 'lyra' }[S().flags.route_lock1 || 'order']);
 
@@ -14323,7 +14395,7 @@ html.touch #touch { display: block; position: absolute; inset: 0; pointer-events
     goal(s) {
       if (!f('c4_goldy')) return { text: '옐로 한가운데 황금궁의 주인, 금화왕 골디를 만나자.', map: 'world', x: X0 + 19, y: Y0 + 3 };
       if (!f('c4_pika')) return { text: '대바자르에서 소매치기를 조심하자. 그늘 골목에 무언가 있다.', map: 'world', x: X0 + 5, y: Y0 + 20 };
-      if (!f('c4_yana')) return { text: '모래바다를 건널 길잡이, 여우 귀의 야나를 찾자. (오아시스 쪽)', map: 'world', x: 274, y: 136 };
+      if (!f('c4_yana')) return { text: '모래바다를 건널 길잡이, 여우 귀의 야나를 찾자. (오아시스 쪽)', map: 'world', ...OW.pt(274, 136) };
       if (!f('d4:boss')) return { text: '모래바다 서쪽, 태양 피라미드 깊은 곳의 「태양의 눈」을 가져오자.', map: 'world', x: PYR.x + 5, y: PYR.y + 3 };
       if (!f('c4_eye')) return { text: '태양의 눈을 들고 황금궁으로.', map: 'world', x: X0 + 19, y: Y0 + 3 };
       return { text: '북서쪽, 해 질 녘의 숲 퍼플로 가는 길이 열렸다.', map: 'world', x: OW.towns.purple.x + 16, y: OW.towns.purple.y + 12 };
@@ -14343,7 +14415,7 @@ html.touch #touch { display: block; position: absolute; inset: 0; pointer-events
     // 대바자르 노점
     for (const [dx, dy, col] of [[10, 10, '#e84a4a'], [14, 10, '#4a8ad8'], [22, 10, '#6ae07a'], [26, 10, '#e8c048'], [10, 18, '#b87aff'], [26, 18, '#ff8a3a']]) { OW.clear(m, X0 + dx, Y0 + dy, 3, 2, 0, null); G.build.placeBuilding(m, { special: 'stall', tx: X0 + dx, ty: Y0 + dy, w: 3, h: 1, col, door: false }); }
     // 오아시스 둘레 야자
-    for (const [x, y] of [[270, 130], [278, 130], [271, 135], [277, 135], [268, 132]]) if (m.inb(x, y)) m.obj[m.i(x, y)] = O.PALM;
+    for (const [x, y] of [[270, 130], [278, 130], [271, 135], [277, 135], [268, 132]].map(([a, b]) => OW.P(a, b))) if (m.inb(x, y)) m.obj[m.i(x, y)] = O.PALM;
     // 태양 피라미드
     OW.clear(m, PYR.x - 2, PYR.y - 2, 14, 10, 0, T.SAND);
     G.build.placeBuilding(m, { special: 'pyramid', tx: PYR.x, ty: PYR.y, w: 10, h: 3, to: 'd4', id: 'd4_gate', cond: () => f('c4_yana') || (S().party || []).includes('yana'), msg: '모래 폭풍이 입구를 가린다. 모래바다의 길잡이가 필요하다.' });
@@ -14478,7 +14550,7 @@ html.touch #touch { display: block; position: absolute; inset: 0; pointer-events
   ST.folk('y_alley', { name: '참새단 꼬마', folk: 'kidg', x: 5, y: 6, lines: { c4: () => '흰빛 ' + (S().gender === 'girl' ? '언니' : '오빠') + '? 진짜 하얘? 만져 봐도 돼?' } });
 
   /* ───────── 야나 (오아시스) ───────── */
-  ST.person('world', { id: 'yana', x: 274, y: 128, dir: 'down', when: () => !f('c4_yana'), mark: () => (f('c4_pika') ? '!' : null), talk: async (c, n) => {
+  ST.person('world', { id: 'yana', ...OW.pt(274, 128), dir: 'down', when: () => !f('c4_yana'), mark: () => (f('c4_pika') ? '!' : null), talk: async (c, n) => {
     c.flag('met:yana');
     if (!f('c4_pika')) { await c.say(n, '길잡이가 필요해? 값은 비싸. 금화왕 돈이면 두 배.', { face: 'smirk' }); return; }
     c.lock(true);
@@ -14582,12 +14654,12 @@ html.touch #touch { display: block; position: absolute; inset: 0; pointer-events
   } });
 
   /* ───────── 빛 씨앗 (옐로) ───────── */
-  ST.seed('y1', 'world', 282, 126, { under: true });
-  ST.seed('y2', 'world', 240, 160, {});
-  ST.seed('y3', 'world', 300, 150, { under: true });
+  ST.seed('y1', 'world', ...OW.P(282, 126), { under: true });
+  ST.seed('y2', 'world', ...OW.P(240, 160), {});
+  ST.seed('y3', 'world', ...OW.P(300, 150), { under: true });
   ST.seed('y4', 'world', PYR.x + 11, PYR.y + 1, {});
-  ST.seed('y5', 'world', 262, 176, {});
-  OW.hooks.push((m) => { m.obj[m.i(282, 126)] = O.ROCK; m.obj[m.i(300, 150)] = O.CACTUS; for (const [x, y] of [[240, 160], [262, 176]]) m.obj[m.i(x, y)] = 0; });
+  ST.seed('y5', 'world', ...OW.P(262, 176), {});
+  OW.hooks.push((m) => { m.obj[m.i(...OW.P(282, 126))] = O.ROCK; m.obj[m.i(...OW.P(300, 150))] = O.CACTUS; for (const [x, y] of [[240, 160], [262, 176]].map(([a, b]) => OW.P(a, b))) m.obj[m.i(x, y)] = 0; });
 
   /* ═════════ 태양 피라미드 (던전 4) ═════════ */
   G.dungeon.def('d4', {
@@ -14651,7 +14723,7 @@ html.touch #touch { display: block; position: absolute; inset: 0; pointer-events
   const f = (k) => !!S().flags[k];
   const PT = OW.towns.purple, X0 = PT.x, Y0 = PT.y;     // 124, 96
   const px = (tx) => tx * TS + 8, py = (ty) => ty * TS + 12;
-  const POND = { x: 138, y: 112 };
+  const POND = OW.pt(138, 112);
   ST.PURPLE = { X0, Y0, POND };
 
   ST.CH.push({ no: '제5장', id: 'c5', title: '해 질 녘의 숲', sub: '해가 지지 않고, 뜨지도 않는 숲. 거울 연못은 보고 싶지 않은 얼굴을 비춘다.',
@@ -14854,11 +14926,11 @@ html.touch #touch { display: block; position: absolute; inset: 0; pointer-events
   ST.folk('world', { name: '숲지기', folk: 'farmer', x: X0 + 28, y: Y0 + 8, lines: { c5: ['해가 안 지니까 버섯이 미쳐 자라. 좋은 건지 나쁜 건지.', '밤이 없는 숲이 좋아 보여? 여긴 잠드는 법을 잊은 숲이야.'] } });
 
   /* ───────── 빛 씨앗 (퍼플) ───────── */
-  ST.seed('p1', 'world', 116, 128, { under: true });
-  ST.seed('p2', 'world', 160, 100, {});
-  ST.seed('p3', 'world', 150, 134, { under: true });
+  ST.seed('p1', 'world', ...OW.P(116, 128), { under: true });
+  ST.seed('p2', 'world', ...OW.P(160, 100), {});
+  ST.seed('p3', 'world', ...OW.P(150, 134), { under: true });
   ST.seed('p4', 'world', POND.x + 6, POND.y + 2, {});
-  OW.hooks.push((m) => { m.obj[m.i(116, 128)] = O.SHROOM === 0 ? O.BUSH : O.BUSH; m.obj[m.i(150, 134)] = O.BUSH; m.obj[m.i(160, 100)] = 0; });
+  OW.hooks.push((m) => { m.obj[m.i(...OW.P(116, 128))] = O.SHROOM === 0 ? O.BUSH : O.BUSH; m.obj[m.i(...OW.P(150, 134))] = O.BUSH; m.obj[m.i(...OW.P(160, 100))] = 0; });
 
   /* ═════════ 거꾸로 선 탑 (던전 5) ═════════ */
   G.dungeon.def('d5', {
@@ -14971,18 +15043,19 @@ html.touch #touch { display: block; position: absolute; inset: 0; pointer-events
   const f = (k) => !!S().flags[k];
   const RT = OW.towns.rainbow, X0 = RT.x, Y0 = RT.y;      // 150, 18
   const px = (tx) => tx * TS + 8, py = (ty) => ty * TS + 12;
-  const TEMPLE = { x: 145, y: 22 };                       // 구름 신전 (섬 북서쪽)
-  const STAGE = { x0: 162, y0: 20, w: 12, h: 4 };         // 봉헌식 무대 (한 칸 높다)
+  const RX = (x) => OW.T('rainbow', x, 0)[0], RY = (y) => OW.T('rainbow', 0, y)[1];   // 옛 좌표 → 넓어진 대륙 (무지개 마을과 함께 옮김)
+  const TEMPLE = { x: RX(145), y: RY(22) };                       // 구름 신전 (섬 북서쪽)
+  const STAGE = { x0: RX(162), y0: RY(20), w: 12, h: 4 };         // 봉헌식 무대 (한 칸 높다)
   const festival = () => f('ch:c6') && !f('c6_done');
   ST.RAINBOW = { X0, Y0, TEMPLE, STAGE };
 
   ST.CH.push({ no: '제6장', id: 'c6', title: '천년제', sub: '천 년에 한 번, 대륙의 모든 색이 한곳에 모인다. 빛도, 그림자도.',
     goal(s) {
-      if (!f('c6_chroma')) return { text: '천년제 위원회의 크로마 위원장을 만나자.', map: 'world', x: 179, y: 23 };
-      if (!f('c6_rolo')) return { text: '축제를 둘러보자. 서커스 천막의 광대가 무언가 알고 있다.', map: 'world', x: 155, y: 23 };
+      if (!f('c6_chroma')) return { text: '천년제 위원회의 크로마 위원장을 만나자.', map: 'world', x: RX(179), y: RY(23) };
+      if (!f('c6_rolo')) return { text: '축제를 둘러보자. 서커스 천막의 광대가 무언가 알고 있다.', map: 'world', x: RX(155), y: RY(23) };
       if (!f('d6:boss')) return { text: '섬 북서쪽 구름 신전에서 「무지개 불씨」를 가져오자.', map: 'world', x: TEMPLE.x + 2, y: TEMPLE.y + 2 };
-      if (!f('c6_ember')) return { text: '불씨를 크로마 위원장에게 가져가자.', map: 'world', x: 179, y: 23 };
-      if (!f('c6_finale')) return { text: '봉헌식이 시작된다. 준비되면 크로마 위원장에게.', map: 'world', x: 179, y: 23 };
+      if (!f('c6_ember')) return { text: '불씨를 크로마 위원장에게 가져가자.', map: 'world', x: RX(179), y: RY(23) };
+      if (!f('c6_finale')) return { text: '봉헌식이 시작된다. 준비되면 크로마 위원장에게.', map: 'world', x: RX(179), y: RY(23) };
       return { text: '북쪽 설산 화이트로. 힘 장갑으로 바위 고개를 연다.', map: 'world', x: OW.towns.white.x + 16, y: OW.towns.white.y + 12 };
     } });
   ST.closedMsg.white = '북쪽 설산 고개는 바위와 눈보라로 막혀 있어. 무거운 바위를 들 힘이 있으면 모를까… 찍.';
@@ -15090,9 +15163,9 @@ html.touch #touch { display: block; position: absolute; inset: 0; pointer-events
   OW.hooks.push((m) => {
     const road = RT.road || T.TILE;
     // 봉헌식 무대 + 무지개 기둥
-    OW.clear(m, STAGE.x0 - 1, 17, STAGE.w + 2, 9, m.hgt[m.i(STAGE.x0, 26)], road);
-    raise(m, STAGE.x0, STAGE.y0, STAGE.w, STAGE.h, T.WOOD, [167, 168]);
-    G.build.placeBuilding(m, { special: 'pillar', tx: 166, ty: 18, w: 3, h: 2, door: false });
+    OW.clear(m, STAGE.x0 - 1, RY(17), STAGE.w + 2, 9, m.hgt[m.i(STAGE.x0, RY(26))], road);
+    raise(m, STAGE.x0, STAGE.y0, STAGE.w, STAGE.h, T.WOOD, [RX(167), RX(168)]);
+    G.build.placeBuilding(m, { special: 'pillar', tx: RX(166), ty: RY(18), w: 3, h: 2, door: false });
     // 건물
     ST.house(m, { id: 'r_circus', region: 'rainbow', special: 'bigtent', tx: X0 + 1, ty: Y0 + 1, w: 8, h: 4, name: '무지개 서커스',
       room: { w: 20, h: 13, floor: T.RUG, music: 'rainbow', rug: [5, 4, 10, 6], furn: [['bench', 3, 10], ['bench', 7, 10], ['bench', 12, 10], ['bench', 16, 10], ['barrel', 1, 3], ['crate', 18, 3], ['lamp', 4, 3], ['lamp', 15, 3], ['painting', 9, 1, { wall: true, v: '#e8465a', text: '서커스 포스터. 「광대 롤로의 무지개 곡예! 색이 없는 광대가 색을 보여 드립니다」' }]] } });
@@ -15109,10 +15182,10 @@ html.touch #touch { display: block; position: absolute; inset: 0; pointer-events
     // 구름 신전
     OW.clear(m, TEMPLE.x - 2, TEMPLE.y - 3, 10, 8, m.hgt[m.i(TEMPLE.x + 2, TEMPLE.y + 2)], T.CLOUD);
     G.build.placeBuilding(m, { special: 'temple', tx: TEMPLE.x, ty: TEMPLE.y, w: 5, h: 1, col: '#e8eef8', glyph: '#8ab8ff', to: 'd6', id: 'd6_gate', cond: () => f('c6_chroma'), msg: '신전 문에 무지개 무늬 자물쇠. 천년제 위원회의 허락이 있어야 열린다.' });
-    for (let x = TEMPLE.x + 2; x <= 150; x++) for (const y of [TEMPLE.y + 1, TEMPLE.y + 2]) { const i = m.i(x, y); if (m.ter[i] !== T.CLIFF && m.ter[i] !== T.STAIRS) { m.ter[i] = x < TEMPLE.x + 5 ? T.CLOUD : road; m.obj[i] = 0; } }
-    for (let y = TEMPLE.y + 1; y <= 30; y++) for (const x of [150, 151]) { const i = m.i(x, y); if (m.ter[i] !== T.CLIFF && m.ter[i] !== T.STAIRS) { m.ter[i] = road; m.obj[i] = 0; } }
+    for (let x = TEMPLE.x + 2; x <= RX(150); x++) for (const y of [TEMPLE.y + 1, TEMPLE.y + 2]) { const i = m.i(x, y); if (m.ter[i] !== T.CLIFF && m.ter[i] !== T.STAIRS) { m.ter[i] = x < TEMPLE.x + 5 ? T.CLOUD : road; m.obj[i] = 0; } }
+    for (let y = TEMPLE.y + 1; y <= RY(30); y++) for (const x of [RX(150), RX(151)]) { const i = m.i(x, y); if (m.ter[i] !== T.CLIFF && m.ter[i] !== T.STAIRS) { m.ter[i] = road; m.obj[i] = 0; } }
     // 꾸미기: 가로등 · 벚꽃
-    for (const [x, y] of [[161, 26], [174, 26], [161, 34], [174, 34], [155, 29], [180, 29], [155, 33], [180, 33]]) { m.obj[m.i(x, y)] = O.LAMP; m.lights.push({ x: x * TS + 8, y: y * TS + 2, r: 56, warm: 'rgba(255,200,230,0.22)' }); }
+    for (const [x, y] of [[161, 26], [174, 26], [161, 34], [174, 34], [155, 29], [180, 29], [155, 33], [180, 33]].map(([a, b]) => [RX(a), RY(b)])) { m.obj[m.i(x, y)] = O.LAMP; m.lights.push({ x: x * TS + 8, y: y * TS + 2, r: 56, warm: 'rgba(255,200,230,0.22)' }); }
     for (const [x, y] of [[X0, Y0 + 12], [X0 + 33, Y0 + 12], [X0 + 1, Y0 + 23], [X0 + 32, Y0 + 23], [X0 + 16, Y0 + 23]]) if (m.inb(x, y) && !m.solidExtra[m.i(x, y)]) m.obj[m.i(x, y)] = O.BLOSSOM;
     // 설산으로 가는 길목의 바위 (힘 장갑)
     const W = m.w, H = m.h, reg = OW.regName;
@@ -15122,13 +15195,13 @@ html.touch #touch { display: block; position: absolute; inset: 0; pointer-events
     }
   });
   const BOOTHS = [
-    { id: 'red', name: '빨강', col: '#e84a4a', tx: 151, ty: 27, who: 'volkan' },
-    { id: 'orange', name: '주황', col: '#ff9a3a', tx: 156, ty: 27, who: 'goldy' },
-    { id: 'yellow', name: '노랑', col: '#f0d040', tx: 175, ty: 27, who: 'yana' },
-    { id: 'green', name: '초록', col: '#4ac860', tx: 180, ty: 27, who: 'marien' },
-    { id: 'blue', name: '파랑', col: '#4a8ae8', tx: 151, ty: 33, who: 'hemia' },
-    { id: 'indigo', name: '남색', col: '#5a4ad8', tx: 156, ty: 33, who: 'lyra' },
-    { id: 'violet', name: '보라', col: '#b86ae8', tx: 175, ty: 33, who: 'viola' },
+    { id: 'red', name: '빨강', col: '#e84a4a', tx: RX(151), ty: RY(27), who: 'volkan' },
+    { id: 'orange', name: '주황', col: '#ff9a3a', tx: RX(156), ty: RY(27), who: 'goldy' },
+    { id: 'yellow', name: '노랑', col: '#f0d040', tx: RX(175), ty: RY(27), who: 'yana' },
+    { id: 'green', name: '초록', col: '#4ac860', tx: RX(180), ty: RY(27), who: 'marien' },
+    { id: 'blue', name: '파랑', col: '#4a8ae8', tx: RX(151), ty: RY(33), who: 'hemia' },
+    { id: 'indigo', name: '남색', col: '#5a4ad8', tx: RX(156), ty: RY(33), who: 'lyra' },
+    { id: 'violet', name: '보라', col: '#b86ae8', tx: RX(175), ty: RY(33), who: 'viola' },
   ];
   const stamps = () => BOOTHS.filter((b) => f('stamp:' + b.id)).length;
   async function stamp(c, bo) {
@@ -15142,13 +15215,13 @@ html.touch #touch { display: block; position: absolute; inset: 0; pointer-events
     const P = G.props;
     Wd.add(new P.Waystone({ x: px(RT.plaza.x + 3), y: py(RT.plaza.y + 3), wid: 'w_rainbow', name: '하늘섬 무지개' }));
     Wd.add(new P.Waystone({ x: px(TEMPLE.x + 7), y: py(TEMPLE.y + 3), wid: 'w_temple', name: '구름 신전' }));
-    Wd.add(new P.Sign({ x: px(165), y: py(26), text: '천년제 — 제1000회\n「천 년 전 오늘, 흰빛이 전쟁을 끝냈다」\n봉헌식: 축제 마지막 밤, 무지개 기둥 앞' }));
+    Wd.add(new P.Sign({ x: px(RX(165)), y: py(RY(26)), text: '천년제 — 제1000회\n「천 년 전 오늘, 흰빛이 전쟁을 끝냈다」\n봉헌식: 축제 마지막 밤, 무지개 기둥 앞' }));
     Wd.add(new P.Sign({ x: px(TEMPLE.x + 6), y: py(TEMPLE.y + 2), text: '구름 신전\n「바람을 거스르지 마라. 바람에 실려라.」' }));
     for (const bo of BOOTHS) Wd.add(new P.Sign({ x: px(bo.tx + 1), y: py(bo.ty + 1) + 2, text: bo.name + ' 노점 — 천년제 도장 모으기\n「일곱 빛깔 도장을 모두 모으면 위원회에서 상을 드립니다」' }));
     if (!f('c6_done')) {
-      const cols = [[155, 29, 161, 26], [161, 26, 174, 26], [174, 26, 180, 29], [155, 33, 161, 34], [161, 34, 174, 34], [174, 34, 180, 33]];
+      const cols = [[155, 29, 161, 26], [161, 26, 174, 26], [174, 26, 180, 29], [155, 33, 161, 34], [161, 34, 174, 34], [174, 34, 180, 33]].map(([a, b2, c2, d]) => [RX(a), RY(b2), RX(c2), RY(d)]);
       cols.forEach(([a, b2, c2, d], i) => Wd.add(new Bunting({ ax: px(a), ay: py(b2), bx: px(c2), by: py(d), x: px((a + c2) / 2), seed: i })));
-      if (festival()) Wd.add(new Fireworks({ x: px(167), y: py(30), spread: 260 }));
+      if (festival()) Wd.add(new Fireworks({ x: px(RX(167)), y: py(RY(30)), spread: 260 }));
     }
   });
 
@@ -15495,24 +15568,24 @@ html.touch #touch { display: block; position: absolute; inset: 0; pointer-events
   }
 
   /* ───────── 축제의 다른 얼굴들 ───────── */
-  ST.folk('world', { id: 'cassian', name: '카시안', x: 176, y: 38, dir: 'down', when: () => festival() && !f('c6_arena'), lines: { c6: async (c, n) => { const rt = ST.route(); await c.say(n, rt === 'order' ? '봉헌식 경호를 맡았다. 스승님은 오지 않으신다고 했다. …그 말을 들은 그라우스가 웃었다. 기분 나쁘게.' : rt === 'dawn' ? '새벽단이 섬에 들어왔다는 첩보가 있다. 네가 모른다고 하면, 믿어 주지. 이번만.' : '리라라는 음유시인. 네 친구지? 그 여자 노래를 들으면 경호원들이 졸아. 우연인가?', { face: 'normal' }); await c.say(n, '투기장 시범 경기에 나간다. 네가 나오면… 반가울 거다. 봐주진 않겠지만.', { face: 'smirk' }); } } });
-  ST.folk('world', { id: 'lea', name: '레아', x: 159, y: 38, dir: 'down', when: festival, lines: { c6: async (c, n) => { const rt = ST.route(); if (rt === 'dawn') { await c.say(n, '쉿. 솜사탕 장수야, 지금은. 봉헌식 밤에 기둥 밑에 화약을 심을 거야. 새벽단 스무 명이 섬에 들어와 있어.', { face: 'smirk' }); await c.say(n, '네가 무대 위에 있을 거라며. 신호는 네가 줘. 불씨를 기둥에 넣지 않으면 — 그게 신호야.', { face: 'normal' }); } else { await c.say(n, '솜사탕 하나 사. 무지개맛. …얼굴 기억하는 척하지 마. 오늘은 그냥 장사꾼이야.', { face: 'smirk' }); } const k = await c.choice('무지개 솜사탕 (30골드)', ['산다', '안 산다'], { who: 'lea', name: '레아' }); if (k === 0 && S().gold >= 30) { c.gold(-30); await c.getItem('food_cotton'); } } } });
-  ST.folk('world', { id: 'rud', name: '루드', x: 161, y: 39, dir: 'up', when: festival, lines: { c6: ['천년제 입장객 사만 이천. 봉헌식 참가 예상 삼만. 기둥 효율을 계산해 봤어. …계산하지 말걸.', '누나가 솜사탕을 판다. 솜사탕 원가는 설탕 한 숟갈. 이익률이… 아니, 그 얘기가 아니지.'] } });
-  ST.folk('world', { id: 'pika', name: '피카', x: 170, y: 37, dir: 'down', wander: 30, when: festival, lines: { c6: ['헤헤, 축제는 지갑 축제야! …농담. 참새단 애들 데리고 구경 왔어. 골디 아저씨가 여비 줬어. 공짜로. 세상에.', '봉헌식? 우린 안 가. 참새들은 높은 데 앉아서 봐. 그게 제일 잘 보여.'] } });
-  ST.folk('world', { id: 'luce', name: '루체', x: 183, y: 30, dir: 'left', when: festival, lines: { c6: '구름 위에서 보니까 블루 등대가 보여! 아빠 일지에 그랬어. 「하늘섬에선 모든 등대가 보인다」. 진짜였어.' } });
-  ST.folk('world', { name: '축제 손님', folk: 'kidg', x: 164, y: 31, wander: 40, when: festival, barks: ['솜사탕!', '불꽃 또 터져!'], lines: { c6: ['봉헌식 때 기둥이 일곱 색으로 빛난대! 엄마가 맨 앞에서 보재!', '롤로 아저씨 곡예 봤어? 아저씨는 왜 늘 얼굴에 색칠해?'] } });
-  ST.folk('world', { name: '축제 손님', folk: 'merchant', x: 170, y: 32, wander: 40, when: festival, lines: { c6: ['옐로에서 왔소. 천년제 대목이오. 흰빛 인형이 제일 잘 팔려. 당신 닮았는데?', '작년 예행연습 날 광장 앞줄 사람들이 쓰러졌다는 소문? 에이, 더위 먹은 거겠지.'] } });
-  ST.folk('world', { name: '축제 손님', folk: 'sailor', x: 158, y: 30, wander: 30, when: festival, lines: { c6: '블루에서 배 타고 레드까지, 레드에서 구름고래로. 천년에 한 번인데 와 봐야지!' } });
-  ST.folk('world', { name: '축제 손님', folk: 'oldw', x: 172, y: 29, wander: 20, when: festival, lines: { c6: ['나는 구백구십 회 천년제 때도 왔어. 농담이야. 그땐 없었지. 그래도 세 번은 왔어.', '봉헌식 다음 날은 다들 좀 피곤해해. 축제라서 그런가 봐.'] } });
-  ST.folk('world', { name: '위원회 일꾼', folk: 'farmer', x: 183, y: 24, when: festival, lines: { c6: '기둥 고리 일곱 개에 기름칠하느라 죽겠어. 기름이 아니라 빛을 먹는 기둥인데 왜 기름칠을 하냐고? 나도 몰라.' } });
+  ST.folk('world', { id: 'cassian', name: '카시안', x: RX(176), y: RY(38), dir: 'down', when: () => festival() && !f('c6_arena'), lines: { c6: async (c, n) => { const rt = ST.route(); await c.say(n, rt === 'order' ? '봉헌식 경호를 맡았다. 스승님은 오지 않으신다고 했다. …그 말을 들은 그라우스가 웃었다. 기분 나쁘게.' : rt === 'dawn' ? '새벽단이 섬에 들어왔다는 첩보가 있다. 네가 모른다고 하면, 믿어 주지. 이번만.' : '리라라는 음유시인. 네 친구지? 그 여자 노래를 들으면 경호원들이 졸아. 우연인가?', { face: 'normal' }); await c.say(n, '투기장 시범 경기에 나간다. 네가 나오면… 반가울 거다. 봐주진 않겠지만.', { face: 'smirk' }); } } });
+  ST.folk('world', { id: 'lea', name: '레아', x: RX(159), y: RY(38), dir: 'down', when: festival, lines: { c6: async (c, n) => { const rt = ST.route(); if (rt === 'dawn') { await c.say(n, '쉿. 솜사탕 장수야, 지금은. 봉헌식 밤에 기둥 밑에 화약을 심을 거야. 새벽단 스무 명이 섬에 들어와 있어.', { face: 'smirk' }); await c.say(n, '네가 무대 위에 있을 거라며. 신호는 네가 줘. 불씨를 기둥에 넣지 않으면 — 그게 신호야.', { face: 'normal' }); } else { await c.say(n, '솜사탕 하나 사. 무지개맛. …얼굴 기억하는 척하지 마. 오늘은 그냥 장사꾼이야.', { face: 'smirk' }); } const k = await c.choice('무지개 솜사탕 (30골드)', ['산다', '안 산다'], { who: 'lea', name: '레아' }); if (k === 0 && S().gold >= 30) { c.gold(-30); await c.getItem('food_cotton'); } } } });
+  ST.folk('world', { id: 'rud', name: '루드', x: RX(161), y: RY(39), dir: 'up', when: festival, lines: { c6: ['천년제 입장객 사만 이천. 봉헌식 참가 예상 삼만. 기둥 효율을 계산해 봤어. …계산하지 말걸.', '누나가 솜사탕을 판다. 솜사탕 원가는 설탕 한 숟갈. 이익률이… 아니, 그 얘기가 아니지.'] } });
+  ST.folk('world', { id: 'pika', name: '피카', x: RX(170), y: RY(37), dir: 'down', wander: 30, when: festival, lines: { c6: ['헤헤, 축제는 지갑 축제야! …농담. 참새단 애들 데리고 구경 왔어. 골디 아저씨가 여비 줬어. 공짜로. 세상에.', '봉헌식? 우린 안 가. 참새들은 높은 데 앉아서 봐. 그게 제일 잘 보여.'] } });
+  ST.folk('world', { id: 'luce', name: '루체', x: RX(183), y: RY(30), dir: 'left', when: festival, lines: { c6: '구름 위에서 보니까 블루 등대가 보여! 아빠 일지에 그랬어. 「하늘섬에선 모든 등대가 보인다」. 진짜였어.' } });
+  ST.folk('world', { name: '축제 손님', folk: 'kidg', x: RX(164), y: RY(31), wander: 40, when: festival, barks: ['솜사탕!', '불꽃 또 터져!'], lines: { c6: ['봉헌식 때 기둥이 일곱 색으로 빛난대! 엄마가 맨 앞에서 보재!', '롤로 아저씨 곡예 봤어? 아저씨는 왜 늘 얼굴에 색칠해?'] } });
+  ST.folk('world', { name: '축제 손님', folk: 'merchant', x: RX(170), y: RY(32), wander: 40, when: festival, lines: { c6: ['옐로에서 왔소. 천년제 대목이오. 흰빛 인형이 제일 잘 팔려. 당신 닮았는데?', '작년 예행연습 날 광장 앞줄 사람들이 쓰러졌다는 소문? 에이, 더위 먹은 거겠지.'] } });
+  ST.folk('world', { name: '축제 손님', folk: 'sailor', x: RX(158), y: RY(30), wander: 30, when: festival, lines: { c6: '블루에서 배 타고 레드까지, 레드에서 구름고래로. 천년에 한 번인데 와 봐야지!' } });
+  ST.folk('world', { name: '축제 손님', folk: 'oldw', x: RX(172), y: RY(29), wander: 20, when: festival, lines: { c6: ['나는 구백구십 회 천년제 때도 왔어. 농담이야. 그땐 없었지. 그래도 세 번은 왔어.', '봉헌식 다음 날은 다들 좀 피곤해해. 축제라서 그런가 봐.'] } });
+  ST.folk('world', { name: '위원회 일꾼', folk: 'farmer', x: RX(183), y: RY(24), when: festival, lines: { c6: '기둥 고리 일곱 개에 기름칠하느라 죽겠어. 기름이 아니라 빛을 먹는 기둥인데 왜 기름칠을 하냐고? 나도 몰라.' } });
   ST.folk('r_shop', { name: '구름 잡화 주인', folk: 'clown', x: 5, y: 3, lines: { c6: async (c) => { const k = await c.choice('어서 와요! 솜사탕, 물약, 바람 깃털!', ['물건을 산다', '괜찮아요'], { name: '구름 잡화 주인' }); if (k === 0) await c.shop('rainbow'); } } });
   ST.folk('r_inn', { name: '구름 베개 주인', folk: 'oldw', x: 4, y: 3, lines: { c6: async (c) => { const k = await c.choice('구름으로 속을 채운 베개예요. 꿈을 안 꿔요. (50골드)', ['쉰다', '괜찮아요'], { name: '구름 베개 주인' }); if (k === 0) { if (S().gold >= 50) c.gold(-50); await c.rest(); } } } });
-  ST.person('world', { id: 'nube', x: 167, y: 39, dir: 'left', when: () => f('ch:c6'), talk: async (c) => {
+  ST.person('world', { id: 'nube', x: RX(167), y: RY(39), dir: 'left', when: () => f('ch:c6'), talk: async (c) => {
     const k = await c.choice('우우웅. 어디로 가겠소?', ['퍼플 — 해 질 녘의 숲', '그냥 쓰다듬는다', '아무 데도'], { who: 'nube', name: '누베' });
     if (k === 0) { await c.fade(true, { sec: 0.6 }); G.game.goto('world', px(OW.towns.purple.x + 16), py(OW.towns.purple.y + 5), 'down'); await c.fade(false, { sec: 0.6 }); }
     else if (k === 1) { c.sfx('wind'); await c.say('nube', '우우…웅. 좋소. 구름은 쓰다듬으면 조금 커지오.', { face: 'smile' }); c.bond('nube', 1); }
   } });
-  ST.person('world', { id: 'nube', x: OW.towns.purple.x + 16, y: OW.towns.purple.y + 3, dir: 'down', when: () => f('ch:c6'), talk: async (c) => { if (await c.confirm('하늘섬 무지개로 갈까?', '간다', '아직')) { await c.fade(true, { sec: 0.6 }); G.game.goto('world', px(167), py(38), 'up'); await c.fade(false, { sec: 0.6 }); } } });
+  ST.person('world', { id: 'nube', x: OW.towns.purple.x + 16, y: OW.towns.purple.y + 3, dir: 'down', when: () => f('ch:c6'), talk: async (c) => { if (await c.confirm('하늘섬 무지개로 갈까?', '간다', '아직')) { await c.fade(true, { sec: 0.6 }); G.game.goto('world', px(RX(167)), py(RY(38)), 'up'); await c.fade(false, { sec: 0.6 }); } } });
 
   /* ───────── 바람 길 (구름 신전): 실려 가면 구덩이 위도 떠서 건넌다 ───────── */
   class Gust extends G.ent.Ent {
@@ -15607,26 +15680,26 @@ html.touch #touch { display: block; position: absolute; inset: 0; pointer-events
     await c.cinema(true);
     await c.fade(true, { sec: 1 });
     ST.toNight();
-    G.game.goto('world', px(167) + 8, py(26), 'up');
+    G.game.goto('world', px(RX(167)) + 8, py(RY(26)), 'up');
     await c.wait(0.2);
     const Wd = G.world, p = Wd.player;
     const crowd = [];
     const add = (spec) => { const n = c.spawn(spec); crowd.push(n); return n; };
     // 무대 위: 크로마 · 리라 · 카시안 / 광장: 사람들
-    const ch = add({ cid: 'chroma', x: px(167) + 8, y: py(21), dir: 'down' });
-    const ly = add({ cid: 'lyra', x: px(164), y: py(22), dir: 'down' });
-    const cs = add({ cid: 'cassian', x: px(171), y: py(22), dir: 'down' });
-    const ro = add({ cid: 'rolo', x: px(163), y: py(28), dir: 'up' });
-    const vi = add({ cid: 'viola', x: px(172), y: py(28), dir: 'up' });
-    const le = add({ cid: 'lea', x: px(160), y: py(30), dir: 'up' });
-    add({ cid: 'rud', x: px(159), y: py(31), dir: 'up' });
-    add({ cid: 'volkan', x: px(175), y: py(30), dir: 'up' });
-    add({ cid: 'goldy', x: px(177), y: py(29), dir: 'up' });
-    add({ cid: 'berna', x: px(165), y: py(30), dir: 'up' }); add({ cid: 'karel', x: px(166), y: py(31), dir: 'up' });
-    add({ cid: 'marien', x: px(164), y: py(32), dir: 'up' }); add({ cid: 'yana', x: px(170), y: py(31), dir: 'up' });
-    add({ cid: 'hemia', x: px(171), y: py(32), dir: 'up' }); add({ cid: 'pika', x: px(158), y: py(27), dir: 'up' });
+    const ch = add({ cid: 'chroma', x: px(RX(167)) + 8, y: py(RY(21)), dir: 'down' });
+    const ly = add({ cid: 'lyra', x: px(RX(164)), y: py(RY(22)), dir: 'down' });
+    const cs = add({ cid: 'cassian', x: px(RX(171)), y: py(RY(22)), dir: 'down' });
+    const ro = add({ cid: 'rolo', x: px(RX(163)), y: py(RY(28)), dir: 'up' });
+    const vi = add({ cid: 'viola', x: px(RX(172)), y: py(RY(28)), dir: 'up' });
+    const le = add({ cid: 'lea', x: px(RX(160)), y: py(RY(30)), dir: 'up' });
+    add({ cid: 'rud', x: px(RX(159)), y: py(RY(31)), dir: 'up' });
+    add({ cid: 'volkan', x: px(RX(175)), y: py(RY(30)), dir: 'up' });
+    add({ cid: 'goldy', x: px(RX(177)), y: py(RY(29)), dir: 'up' });
+    add({ cid: 'berna', x: px(RX(165)), y: py(RY(30)), dir: 'up' }); add({ cid: 'karel', x: px(RX(166)), y: py(RY(31)), dir: 'up' });
+    add({ cid: 'marien', x: px(RX(164)), y: py(RY(32)), dir: 'up' }); add({ cid: 'yana', x: px(RX(170)), y: py(RY(31)), dir: 'up' });
+    add({ cid: 'hemia', x: px(RX(171)), y: py(RY(32)), dir: 'up' }); add({ cid: 'pika', x: px(RX(158)), y: py(RY(27)), dir: 'up' });
     for (let i = 0; i < 14; i++) add({ x: px(158 + (i % 7) * 3), y: py(33 + Math.floor(i / 7)), dir: 'up', look: G.cast.folk(['farmer', 'farmerw', 'kid', 'kidg', 'merchant', 'sailor', 'oldw', 'student'][i % 8]), name: '축제 손님' });
-    const fw = Wd.add(new Fireworks({ x: px(167), y: py(24), spread: 240, always: true, rate: 1.6 }));
+    const fw = Wd.add(new Fireworks({ x: px(RX(167)), y: py(RY(24)), spread: 240, always: true, rate: 1.6 }));
     c.music('rainbow');
     await c.fade(false, { sec: 1.2 });
     await c.narr('천년제 마지막 밤. 광장이 사람으로 가득 찼다. 무지개 기둥의 고리 일곱 개가 차례로 희미하게 빛난다.');
@@ -15643,7 +15716,7 @@ html.touch #touch { display: block; position: absolute; inset: 0; pointer-events
     c.music('rainbow');
     c.camFree();
     await c.say(n0(ch), '자, 흰빛의 손님! 무대로 올라와 불씨를 기둥에!', { face: 'happy' });
-    await c.walk('hero', 167, 23);
+    await c.walk('hero', RX(167), RY(23));
     c.face('hero', 'up');
     const opts = [{ t: '불씨를 기둥에 넣는다', sub: '천 년의 전통대로. 모두가 기다린다.' }];
     opts.push({ t: '넣지 않는다', sub: f('c6_rolo') ? '롤로의 회색 얼굴이 떠오른다.' : '어쩐지 손이 움직이지 않는다.', tag: 'dawn' });
@@ -15664,10 +15737,10 @@ html.touch #touch { display: block; position: absolute; inset: 0; pointer-events
     // 그라우스
     c.stopMusic(0.3);
     c.sfx('rumble'); c.shake(3, 1);
-    const gr = add({ cid: 'graus', x: px(167) + 8, y: py(21) + 2, dir: 'down' });
+    const gr = add({ cid: 'graus', x: px(RX(167)) + 8, y: py(RY(21)) + 2, dir: 'down' });
     G.fx.dust(gr.x, gr.y, 10);
     await c.say(gr, '불씨를 넣든 말든 상관없다.', { face: 'smirk' });
-    c.emote(ch, '!'); await c.move(ch, px(164) + 8, py(21), { speed: 90 });
+    c.emote(ch, '!'); await c.move(ch, px(RX(164)) + 8, py(RY(21)), { speed: 90 });
     gr.jz = 120; c.camOn(gr, 3);
     for (let t = 0; t < 1; t += 1 / 30) { gr.jz = 120 * (1 - t) * (1 - t); await c.wait(1 / 30); }
     gr.jz = 0; c.shake(4, 0.4); c.sfx('impact');
@@ -15684,9 +15757,9 @@ html.touch #touch { display: block; position: absolute; inset: 0; pointer-events
     await c.cutin({ who: 'graus', title: '그라우스', small: '징수 기사단 부단장', sub: '정면은 방패로 막는다 — 돌진 뒤 빈틈을!', col: '#6a1a2a', face: 'angry', sec: 1.8 });
     c.camFree();
     gr.dead = true;
-    const boss = G.bosses.spawn('graus', px(167) + 8, py(26), { hpMul: 1.5 });
-    boss.duel = true; boss.home = { x: px(167) + 8, y: py(28) };
-    const knights = [G.foes.spawn('knight', px(160), py(29), { tier: 5 }), G.foes.spawn('knight', px(175), py(29), { tier: 5 })];
+    const boss = G.bosses.spawn('graus', px(RX(167)) + 8, py(RY(26)), { hpMul: 1.5 });
+    boss.duel = true; boss.home = { x: px(RX(167)) + 8, y: py(RY(28)) };
+    const knights = [G.foes.spawn('knight', px(RX(160)), py(RY(29)), { tier: 5 }), G.foes.spawn('knight', px(RX(175)), py(RY(29)), { tier: 5 })];
     for (const n of crowd) if (n !== gr) n.solid = false;
     s.duel = true;
     await c.cinema(false);
@@ -15800,11 +15873,11 @@ html.touch #touch { display: block; position: absolute; inset: 0; pointer-events
     for (const n of crowd) n.dead = true;
     ST.toMorning();
     c.stopMusic(0.5);
-    G.game.goto('world', px(179), py(24), 'up');
+    G.game.goto('world', px(RX(179)), py(RY(24)), 'up');
     await c.fade(false, { sec: 1 });
     await c.narr('다음 날 아침. 광장에는 부러진 기둥이 그대로 누워 있었다. 아무도 치우지 않았다. 아무도 치우자고 하지 않았다.');
     c.music('rainbow');
-    const ch2 = c.spawn({ cid: 'chroma', x: px(179), y: py(24) - 30, dir: 'down' });
+    const ch2 = c.spawn({ cid: 'chroma', x: px(RX(179)), y: py(RY(24)) - 30, dir: 'down' });
     await c.say(n0(ch2), '…사십 년. 나는 사십 년 동안 불씨를 지키는 줄 알았어요. 사실은 불쏘시개를 모으고 있었는데.', { face: 'cry' });
     await c.say(n0(ch2), '설산 화이트로 가는 고개는 바위로 막혀 있어요. 그 장갑이면 들 수 있을 거예요. 루미에 성녀님이 계신 곳이에요. 병든 사람들이 모이는 곳.', { face: 'normal' });
     await c.say(n0(ch2), '…흰빛. 당신 머리. 한 가닥이 하얘요. 아프진 않아요?', { face: 'sad' });
@@ -15894,7 +15967,7 @@ html.touch #touch { display: block; position: absolute; inset: 0; pointer-events
   };
 
   /* ───────── 넓은 지도 ───────── */
-  const HIDE = { x: 44, y: 36 };           // 새벽단 은신처 (서쪽 설원 동굴)
+  const HIDE = OW.pt(44, 36);           // 새벽단 은신처 (서쪽 설원 동굴)
   const SPRING = { x: X0 + 28, y: Y0 + 20 }; // 온천
   OW.hooks.push((m) => {
     ST.house(m, { id: 'w_cath', region: 'white', special: 'cathedral', tx: X0 + 11, ty: Y0 + 1, w: 11, h: 5, name: '이리스 대성당',
@@ -16383,8 +16456,8 @@ html.touch #touch { display: block; position: absolute; inset: 0; pointer-events
   const f = (k) => !!S().flags[k];
   const GT = OW.towns.gray, X0 = GT.x, Y0 = GT.y;           // 18, 100
   const px = (tx) => tx * TS + 8, py = (ty) => ty * TS + 12;
-  const RUIN = { x: 20, y: 125 };                            // 은빛 왕국 폐허 (광맥 입구)
-  const FACT = { x: 52, y: 104 };                            // 폐공장
+  const RUIN = OW.pt(20, 125);                            // 은빛 왕국 폐허 (광맥 입구)
+  const FACT = OW.pt(52, 104);                            // 폐공장
   const girl = () => S().gender === 'girl';
   ST.GRAY = { X0, Y0, RUIN, FACT };
 
@@ -16791,9 +16864,9 @@ html.touch #touch { display: block; position: absolute; inset: 0; pointer-events
   const f = (k) => !!S().flags[k];
   const BT = OW.towns.black, X0 = BT.x, Y0 = BT.y;          // 250, 44
   const px = (tx) => tx * TS + 8, py = (ty) => ty * TS + 12;
-  const CASTLE = { x: 262, y: 32 };                          // 녹턴의 성 (마을 북쪽 고원)
-  const GRAVE = { x: 279, y: 63 };                           // 남동쪽 묘지 (뒷길)
-  const LAMPS = [[257, 52], [277, 52], [257, 62], [277, 62], [267, 66]];
+  const CASTLE = OW.pt(262, 32);                          // 녹턴의 성 (마을 북쪽 고원)
+  const GRAVE = OW.pt(279, 63);                           // 남동쪽 묘지 (뒷길)
+  const LAMPS = [[257, 52], [277, 52], [257, 62], [277, 62], [267, 66]].map(([a, b]) => OW.P(a, b));
   const buddy = () => ({ dawn: 'rud', order: 'cassian', night: 'lyra' }[S().flags.route_lock || 'order']);
   const girl = () => S().gender === 'girl';
   ST.BLACK = { X0, Y0, CASTLE, GRAVE };
@@ -16801,7 +16874,7 @@ html.touch #touch { display: block; position: absolute; inset: 0; pointer-events
   ST.CH.push({ no: '제9장', id: 'c9', title: '영원한 밤', sub: '16년 동안 해가 뜨지 않았다. 그림자는 주인보다 먼저 지쳤다.',
     goal(s) {
       const rt = s.flags.route_lock || 'order';
-      if (!f('c9_mid')) return { text: '등불 거리 서쪽, 밤의 정보상 미드나잇을 찾자.', map: 'world', x: 255, y: 50 };
+      if (!f('c9_mid')) return { text: '등불 거리 서쪽, 밤의 정보상 미드나잇을 찾자.', map: 'world', ...OW.pt(255, 50) };
       if (!f('c9_in')) return { text: ({ dawn: '성문 앞. 레아와 루드가 화약을 심고 기다린다.', order: '북쪽 성문. 정문 경비에게 통행증을 보이자.', night: '남동쪽 묘지의 기울어진 비석. 고양이 발자국을 따라.' })[rt], map: 'world', x: rt === 'night' ? GRAVE.x + 1 : CASTLE.x + 6, y: rt === 'night' ? GRAVE.y + 1 : CASTLE.y + 5 };
       if (!f('d9:boss')) return { text: '녹턴의 성 꼭대기로.', map: 'world', x: CASTLE.x + 6, y: CASTLE.y + 5 };
       if (!f('c9_done')) return { text: '성 꼭대기에서 녹턴과 이야기하자.', map: 'world', x: CASTLE.x + 6, y: CASTLE.y + 5 };
@@ -16987,13 +17060,13 @@ html.touch #touch { display: block; position: absolute; inset: 0; pointer-events
   });
 
   /* ───────── 등불지기 · 눈먼 등대지기 ───────── */
-  ST.person('world', { name: '등불지기 칸델', folk: 'oldm', x: 267, y: 54, dir: 'down', mark: () => (!f('lamps_done') ? '?' : null), talk: async (c, n) => {
+  ST.person('world', { name: '등불지기 칸델', folk: 'oldm', ...OW.pt(267, 54), dir: 'down', mark: () => (!f('lamps_done') ? '?' : null), talk: async (c, n) => {
     const k = LAMPS.filter((_, j) => f('lamp' + j)).length;
     if (f('lamps_done')) { await c.say(n, '16년 만에 퇴근했어. 집에 가니까 마누라가 누구냐고 하더군. 허허.', { face: 'happy' }); return; }
     if (k >= 5) { c.flag('lamps_done'); await c.say(n, '다섯 개 전부! 등불 거리가 이렇게 밝았던 적이 있었나! 이거 받게. 16년 치 야근 수당이야.', { face: 'happy' }); c.gold(3000); await c.getItem('heartpiece'); return; }
     await c.say(n, '등불지기 칸델이다. 해가 안 뜨는 마을이라 퇴근을 못 해. 16년째.||거리의 등불 다섯 개가 꺼졌어. 기름을 부어도 안 켜져. 탑이 불빛까지 먹는 거야. 흰빛이라면 켤 수 있을지도. (' + k + '/5)', { face: 'sad' });
   } });
-  ST.person('world', { name: '눈먼 노인', folk: 'sailor', x: 280, y: 57, dir: 'left', state: 'sit', mark: () => (!f('orhan_done') && (!f('orhan_q') || S().inv.letter_luce) ? '!' : null), talk: async (c, n) => {
+  ST.person('world', { name: '눈먼 노인', folk: 'sailor', ...OW.pt(280, 57), dir: 'left', state: 'sit', mark: () => (!f('orhan_done') && (!f('orhan_q') || S().inv.letter_luce) ? '!' : null), talk: async (c, n) => {
     if (f('orhan_done')) { await c.say(n, '…켜져 있다고. 그럼 됐다. 눈이 안 보여도 집을 찾을 수 있겠구나. 봄이 오면 가겠네. 밤이 끝나면.', { face: 'smile' }); return; }
     if (S().inv.letter_luce) {
       c.take('letter_luce');
@@ -17029,8 +17102,8 @@ html.touch #touch { display: block; position: absolute; inset: 0; pointer-events
   for (const sp of ST.people.world || []) if (sp.id === 'gordi' && !sp.x0c9) { if (sp.x >= X0 - 20) continue; const old = sp.when; sp.when = (s2) => !ST.after('c9') && (old ? old(s2) : true); }
   ST.folk('bk_shop', { name: '밤의 가게 주인', folk: 'nightm', x: 5, y: 3, lines: { c9: async (c) => { const k = await c.choice('소리 없이 사고, 소리 없이 파오.', ['물건을 산다', '괜찮아요'], { name: '밤의 가게 주인' }); if (k === 0) await c.shop('black'); } } });
   ST.folk('bk_inn', { name: '등불 여관 주인', folk: 'nightw', x: 4, y: 3, lines: { c9: async (c) => { const k = await c.choice('여긴 늘 밤이라 언제 자도 돼요. 대신 아침은 없어요. (60골드)', ['쉰다', '괜찮아요'], { name: '등불 여관 주인' }); if (k === 0) { if (S().gold >= 60) c.gold(-60); await c.rest(); } } } });
-  ST.folk('world', { name: '밤 사람', folk: 'nightw', x: 262, y: 58, wander: 24, lines: { c9: ['쉿. 크게 말하면 밤이 들어요. …농담이에요. 녹턴 님이 들어요.', '해? 그림으로 봤어요. 둥글고 노랗다면서요. 무섭지 않아요?'], c10: '어제 동쪽 하늘이 조금 파랬어요! 16년 만에! 다들 지붕에 올라가서 울었어요.' } });
-  ST.folk('world', { name: '밤 아이', folk: 'kid', x: 272, y: 60, wander: 20, lines: { c9: ['리라 누나 알아? 노래하는 누나. 어릴 때 성에서 살았대. 공주님이래!', '흰빛 형아' + (girl() ? '… 아니 누나' : '') + ' 옆에 있으면 그림자가 생겨! 신기해!'] } });
+  ST.folk('world', { name: '밤 사람', folk: 'nightw', ...OW.pt(262, 58), wander: 24, lines: { c9: ['쉿. 크게 말하면 밤이 들어요. …농담이에요. 녹턴 님이 들어요.', '해? 그림으로 봤어요. 둥글고 노랗다면서요. 무섭지 않아요?'], c10: '어제 동쪽 하늘이 조금 파랬어요! 16년 만에! 다들 지붕에 올라가서 울었어요.' } });
+  ST.folk('world', { name: '밤 아이', folk: 'kid', ...OW.pt(272, 60), wander: 20, lines: { c9: ['리라 누나 알아? 노래하는 누나. 어릴 때 성에서 살았대. 공주님이래!', '흰빛 형아' + (girl() ? '… 아니 누나' : '') + ' 옆에 있으면 그림자가 생겨! 신기해!'] } });
   ST.folk('world', { name: '해골 기사', folk: 'knight', x: CASTLE.x + 3, y: CASTLE.y + 4, dir: 'down', when: () => !f('c9_in'), lines: { c9: '「…밤의 성. 허가 없는 자. 출입. 불가. 교대 시간. 천 년째. 안 옴.」' } });
 
   /* ═════════ 녹턴의 성 (던전 9) ═════════ */
@@ -17187,7 +17260,7 @@ html.touch #touch { display: block; position: absolute; inset: 0; pointer-events
   const f = (k) => !!S().flags[k];
   const CT = OW.towns.colorful, X0 = CT.x, Y0 = CT.y;       // 284, 204
   const px = (tx) => tx * TS + 8, py = (ty) => ty * TS + 12;
-  const PAD = { x: 302, y: 205 };                            // 발사대
+  const PAD = OW.pt(302, 205);                            // 발사대
   const girl = () => S().gender === 'girl';
   const PARTS = [
     { id: 'nozzle', name: '불꽃 노즐', who: 'volkan', where: '레드 볼칸의 대장간', map: 'r_forge' },
@@ -17202,14 +17275,14 @@ html.touch #touch { display: block; position: absolute; inset: 0; pointer-events
 
   ST.CH.push({ no: '제10장', id: 'c10', title: '무한호', sub: '40년 동안 한 번도 날지 못한 로켓. 하늘로 가는 부품은 대륙 곳곳, 네가 만난 사람들 손에 있다.',
     goal(s) {
-      if (!f('c10_pyros')) return { text: '곶의 발명 공방, 피로스 박사를 찾자.', map: 'world', x: 289, y: 211 };
+      if (!f('c10_pyros')) return { text: '곶의 발명 공방, 피로스 박사를 찾자.', map: 'world', ...OW.pt(289, 211) };
       if (got() < 6) {
         const n = PARTS.find((p) => !f('part:' + p.id));
         // 표시는 그 부품을 가진 사람이 있는 집 문 앞
         const wm = G.build.get('world'), b = wm.buildings.find((bb) => bb.id === n.map);
         return { text: '부품 모으기 (' + got() + '/6) — 다음: ' + n.name + ' (' + n.where + ')', map: 'world', x: b ? b.doorX : 289, y: b ? b.doorY : 211 };
       }
-      if (!f('c10_launch')) return { text: '부품이 다 모였다. 피로스 박사에게!', map: 'world', x: 289, y: 211 };
+      if (!f('c10_launch')) return { text: '부품이 다 모였다. 피로스 박사에게!', map: 'world', ...OW.pt(289, 211) };
       return { text: '하늘 정거장으로.', map: 'world', x: PAD.x + 2, y: PAD.y + 6 };
     } });
 
@@ -17478,8 +17551,8 @@ html.touch #touch { display: block; position: absolute; inset: 0; pointer-events
   /* ───────── 주민 · 가게 ───────── */
   ST.folk('c_shop', { name: '발명 공방 가게', folk: 'inventor', x: 5, y: 3, lines: { c10: async (c) => { const k = await c.choice('폭탄! 물약! 화살! 전부 조금씩 터진다!', ['물건을 산다', '괜찮아요'], { name: '발명 공방 가게' }); if (k === 0) await c.shop('colorful'); } } });
   ST.folk('c_inn', { name: '쾅쾅 여관 주인', folk: 'farmerw', x: 4, y: 3, lines: { c10: async (c) => { const k = await c.choice('베개에 귀마개가 달려 있어요. 쾅 소리 때문에. (60골드)', ['쉰다', '괜찮아요'], { name: '쾅쾅 여관 주인' }); if (k === 0) { if (S().gold >= 60) c.gold(-60); await c.rest(); } } } });
-  ST.folk('world', { name: '곶 아이', folk: 'kid', x: 295, y: 214, wander: 30, barks: ['쾅!', '로켓이다!'], lines: { c10: ['피로스 박사님 로켓 412번째래! 411번째는 우리 집 지붕에 떨어졌어! 지붕에 구멍 났는데 별이 보여서 좋아!', '봄바 누나는 폭탄 던지기 대회 1등이야. 나는 2등. 참가자 둘.'] } });
-  ST.folk('world', { name: '곶 어부', folk: 'sailor', x: 300, y: 222, lines: { c10: '바다에서 보면 곶이 하루에 세 번 번쩍여. 그걸로 시간을 알아. 로켓 시계야, 우리는.' } });
+  ST.folk('world', { name: '곶 아이', folk: 'kid', ...OW.pt(295, 214), wander: 30, barks: ['쾅!', '로켓이다!'], lines: { c10: ['피로스 박사님 로켓 412번째래! 411번째는 우리 집 지붕에 떨어졌어! 지붕에 구멍 났는데 별이 보여서 좋아!', '봄바 누나는 폭탄 던지기 대회 1등이야. 나는 2등. 참가자 둘.'] } });
+  ST.folk('world', { name: '곶 어부', folk: 'sailor', ...OW.pt(300, 222), lines: { c10: '바다에서 보면 곶이 하루에 세 번 번쩍여. 그걸로 시간을 알아. 로켓 시계야, 우리는.' } });
 })();
 
 /* js/world/31_sky.js */
@@ -18119,7 +18192,7 @@ html.touch #touch { display: block; position: absolute; inset: 0; pointer-events
 
   /* ───────── 사람: 물안개 마을 ───────── */
   // 늪지기 모르간 — 16년 전 그 밤
-  ST.person('world', { id: 'morgan', x: 368, y: MY + 20, dir: 'left', mark: (s) => !s.flags['met:morgan'] ? '!' : (s.inv.lamp_morgan && !s.flags.morgan_done ? '!' : null),
+  ST.person('world', { id: 'morgan', x: OW.T('mist', 368, 0)[0], y: MY + 20, dir: 'left', mark: (s) => !s.flags['met:morgan'] ? '!' : (s.inv.lamp_morgan && !s.flags.morgan_done ? '!' : null),
     talk: async (c, n) => {
       const s = S();
       if (!f('met:morgan')) {
@@ -18146,7 +18219,7 @@ html.touch #touch { display: block; position: absolute; inset: 0; pointer-events
       await c.say(n, ST.lines({ c1: '안개가 짙은 날엔 물에 비친 얼굴을 보지 마라. 늦게 따라오는 게 네 얼굴이 아닐 수도 있어.', c7: '요즘 탑이 더 크게 운다. 물 아래서. 누가 또 셈에 들어갔나.', c10: '하늘로 배를 띄운다며? 나도 젊을 땐 물 위가 하늘인 줄 알았지.' }) || '…안개가 걷히면 말하마.', { face: 'closed' });
     } });
   // 소녀 유나 — 30년째 열한 살
-  ST.person('world', { id: 'yuna', x: 360, y: 139, dir: 'down', look: undefined, mark: () => ((s) => (!s.flags['met:yuna'] ? '!' : s.flags.yuan_seen && !s.flags.yuna_done ? '!' : null))(S()),
+  ST.person('world', { id: 'yuna', ...OW.pt(360, 139), dir: 'down', look: undefined, mark: () => ((s) => (!s.flags['met:yuna'] ? '!' : s.flags.yuan_seen && !s.flags.yuna_done ? '!' : null))(S()),
     init(n) { if (f('yuna_done') && ST.chIdx() >= ST.chIdx(S().flags.yuna_grew || 'c12')) n.look = Object.assign({}, G.cast.get('yuna').look, { age: 'teen', hair: 'long' }); },
     talk: async (c, n) => {
       if (!f('met:yuna')) {
@@ -18308,7 +18381,8 @@ html.touch #touch { display: block; position: absolute; inset: 0; pointer-events
   // 안개 백합: 늪 물가 다섯 곳
   for (const [x, y] of [[334, 70], [348, 132], [378, 124], [356, 170], [384, 88]]) ST.onMap('world', (m, Wd) => {
     const k = 'lily:' + x + ',' + y; if (f(k)) return;
-    Wd.add(new G.props.Spot({ sparkle: true, x: px(x), y: py(y), verb: '흰 꽃을 딴다', text: async (c) => { c.flag(k); await c.getItem('lily'); } }));
+    const [lx, ly] = OW.P(x, y);
+    Wd.add(new G.props.Spot({ sparkle: true, x: px(lx), y: py(ly), verb: '흰 꽃을 딴다', text: async (c) => { c.flag(k); await c.getItem('lily'); } }));
   });
   // 여관 주인들 · 가게 주인
   ST.person('m_inn', { x: 4, y: 3, dir: 'down', look: G.cast.folk('sailor', { hc: '#4a5a4a' }), name: '여관 주인 네라', talk: async (c, n) => { const k = await c.choice('안개등 여관이야. 쉬어 가. 안개 속에서는 잠이 잘 와. …너무 잘 와서 문제지.', ['쉰다 (기록)', '괜찮다']); if (k === 0) await c.rest(); } });
@@ -18378,7 +18452,8 @@ html.touch #touch { display: block; position: absolute; inset: 0; pointer-events
     [214, 262, '갑옷이 부딪히는 소리 사이로, 젊은 기사의 목소리.\n「장부에 내 이름은 쓰지 마. 아무도 모르게 사라지고 싶어.」'],
     [240, 280, '…그리고 아주 큰 목소리. 협곡 전체가 떨렸다. 단풍이 한꺼번에 떨어졌다.\n「둘 다 살려 줘요. 셈에 넣지 말고.」'],
   ];
-  ECHO.forEach(([x, y, text], i) => ST.onMap('world', (m, Wd) => {
+  ECHO.forEach(([x0, y0, text], i) => ST.onMap('world', (m, Wd) => {
+    const [x, y] = OW.P(x0, y0);
     Wd.add(new G.props.Spot({ sparkle: true, x: px(x), y: py(y), verb: '메아리 돌에 귀를 댄다', text: async (c) => {
       c.flag('echo:' + (i + 1)); c.shake(1, 0.4); c.sfx('crystal');
       await c.narr(text);
@@ -18467,7 +18542,7 @@ html.touch #touch { display: block; position: absolute; inset: 0; pointer-events
   BV('forgotking', 'hollowking', { name: '잊힌 왕', title: '잊힌 묘지 · 이름을 잃은 왕', hp: 320, atk: 8, col: '#b08aff', tint: '#8a5ad8', tintA: 0.5, exp: 760, gold: 520 });
 
   /* ───────── 입구 ───────── */
-  const GATE = { d12: { x: 226, y: 270 }, d13: { x: 366, y: 157 }, d14: { x: 350, y: 46 }, d15: { x: 80, y: 280 } };
+  const GATE = { d12: OW.pt(226, 270), d13: OW.pt(366, 157), d14: OW.pt(350, 46), d15: OW.pt(80, 280) };
   OW.hooks.push((m) => {
     ST.cave(m, { x: GATE.d12.x, y: GATE.d12.y, id: 'd12_gate', to: 'd12', col: '#a85a3a', rx: 8, ry: 4, h: 2 });
     OW.clear(m, GATE.d13.x - 1, GATE.d13.y - 1, 9, 5, m.hgt[m.i(GATE.d13.x, GATE.d13.y + 2)], null);
@@ -18624,6 +18699,7 @@ html.touch #touch { display: block; position: absolute; inset: 0; pointer-events
     { id: 'sec_purple', region: 'purple', x: 110, y: 120, name: '거울 뒤 서재', how: 'mirror', loot: [['ac_combo'], ['heartpiece']], foes: [['mage', 5, 5], ['ghost', 10, 5]], msg: '그냥 바위벽이다. …아닌가? 무언가 비치는 것 같다.' },
   ];
   for (const sc of SECRETS) {
+    [sc.x, sc.y] = OW.P(sc.x, sc.y);   // 넓어진 대륙의 자리
     const cond = () => {
       const s = S();
       if (sc.how === 'heat') return G.st.derive(s).heatOk;
@@ -20430,6 +20506,475 @@ html.touch #touch { display: block; position: absolute; inset: 0; pointer-events
       R.foes = R.foes.concat([[R.foes[0][0], nx, ny]]);
     }
   }
+})();
+
+/* js/world/38_roadside.js */
+/* 길가와 들판: 넓어진 대륙의 빈 곳을 채운다
+   길을 따라 30~46칸마다 쉼터 하나 — 야영지(쉬고 기록) · 길가 사당(축복) · 떠돌이 행상 · 이정표(가까운 마을까지 몇 칸)
+   · 폐허(정예가 지키는 상자) · 부서진 수레(열면 매복) · 우물 쉼터 · 몬스터 둥지(다 쓰러뜨리면 상자) · 수수께끼 비석 · 전망대(둘레 안개 걷기)
+   길에서 떨어진 들판에는 — 고목(요정 샘) · 선돌 고리 · 수정 광맥 · 외딴 무덤. 지역마다 말과 빛깔이 다르다. */
+(function () {
+  'use strict';
+  const G = globalThis.G;
+  const U = G.u, TL = G.tiles, OB = G.objs;
+  const T = TL.T, O = OB.O, TS = TL.TS;
+  const ST = G.story, OW = G.ow;
+  const S = () => G.state;
+  const f = (k) => !!S().flags[k];
+  const px = (tx) => tx * TS + 8, py = (ty) => ty * TS + 12;
+
+  /* ───────── 지역마다의 말 ───────── */
+  const NAME = (n) => (OW.SHORT && OW.SHORT[n]) || n;
+  const TRAVELER = {
+    green: [['farmer', '씨앗 장수', '그린 씨앗은 어디 심어도 싹이 나. 탑 근처만 빼고. 거긴 흙이 늘 배고파.'], ['kidg', '길 잃은 아이', '엄마가 이 길로 곧장 가면 집이래. 근데 길이 자꾸 구부러져.']],
+    red: [['miner', '떠돌이 광부', '광산이 문을 닫으면 우리는 걸어. 걷는 것도 캐는 거야. 발밑을.'], ['smith', '칼갈이', '칼을 갈아 줄까? …아니, 네 칼은 이미 무언가를 알고 있군.']],
+    blue: [['sailor', '뭍에 오른 선원', '파도 소리가 안 들리면 잠이 안 와. 그래서 조개껍질을 귀에 대고 자.'], ['scholar', '방랑 학자', '도서관에 없는 책은 길에 있어. 길이 제일 두꺼운 책이야.']],
+    yellow: [['merchant', '대상 우두머리', '모래는 발자국을 삼키지. 그래서 우리는 별을 따라가. 별은 값을 안 받거든.'], ['merchantw', '향신료 장수', '이 향 한 번 맡아 볼래? 공짜야. 두 번째부터 돈이야.']],
+    purple: [['mage', '떠돌이 마도사', '이 숲은 해가 지는 중이야. 천 년째. 서두르지 않는 게 이 숲의 매력이지.'], ['student', '도망친 학원생', '시험? 거울 연못에 비친 내가 대신 보러 갔어. …아마도.']],
+    rainbow: [['clown', '떠돌이 광대', '색이 빠진 사람들한테 색을 칠해 줘. 공짜로. 웃으면 색이 오래 가.'], ['kidg', '구름 보는 아이', '구름 하나가 고래 모양이었어! 진짜 고래였을지도.']],
+    white: [['nun', '순례하는 수녀', '기도는 공짜가 아니래요. 그래서 저는 걸어서 내요. 한 걸음에 한 마디.'], ['oldm', '얼음 낚시꾼', '얼음 밑에도 빛이 있어. 물고기들이 가져가지. 세금 없이.']],
+    gray: [['mech', '고철 줍는 이', '회색 땅의 고철엔 색이 조금 묻어 있어. 모으면 한 줌 된다고.'], ['miner', '폐광 순찰', '광맥 쪽엔 가지 마. 빛을 먹는 소리가 들려. 쩝, 쩝.']],
+    black: [['nightw', '등불 든 여인', '밤길엔 등불이 둘이면 좋아. 하나는 길을, 하나는 얼굴을 비추게.'], ['nightm', '그림자 세는 사내', '그림자가 주인보다 먼저 지쳤대. 오늘 내 그림자는 좀 쉬고 있어.']],
+    colorful: [['inventor', '떠돌이 발명가', '이 수레 바퀴는 네모야. 둥근 건 너무 흔하잖아. …아, 그래서 안 굴러가는구나.'], ['kid', '폭죽 줍는 아이', '어젯밤 불꽃 찌꺼기! 모아서 내가 로켓 만들 거야.']],
+    mist: [['sailor', '늪 뱃사공', '안개 속에선 소리가 늦게 와. 방금 네가 한 말, 난 내일 들을지도.'], ['oldw', '백합 캐는 할머니', '안개 백합은 달이 없을 때만 핀다오. 누군가 기다릴 때처럼.']],
+    amber: [['farmerw', '단풍 줍는 이', '협곡 단풍잎은 소리를 기억해. 밟으면 옛날 목소리가 바삭거려.'], ['guard', '협곡 순찰병', '메아리 협곡 쪽엔 대답하지 마. 협곡이 대신 대답하거든.']],
+  };
+  const SHRINE = {
+    green: '초록의 사당. 이끼 낀 돌 위에 누군가 매일 새 잎을 올려 둔다.', red: '불꽃의 사당. 식지 않는 돌 하나. 손을 대면 심장 소리가 난다.', blue: '파도의 사당. 조개껍질로 쌓은 탑. 바람이 불면 바다 소리가 난다.',
+    yellow: '황금의 사당. 동전이 가득한 그릇. 아무도 가져가지 않는다. 가져가면 모래가 된다고.', purple: '노을의 사당. 늘 해 질 녘의 빛이 머문다.', rainbow: '일곱 빛깔의 사당. 무지개 조각이 박힌 돌.',
+    white: '눈의 사당. 얼음 속에 촛불 하나가 녹지 않고 탄다.', gray: '잿빛의 사당. 색 없는 돌에 누군가 분필로 꽃을 그려 두었다.', black: '밤의 사당. 별 모양 구멍 사이로 빛이 샌다.',
+    colorful: '발명의 사당. 태엽 달린 작은 신상이 고개를 끄덕인다.', mist: '안개의 사당. 물에 반쯤 잠긴 돌. 비친 얼굴이 조금 늦게 따라온다.', amber: '메아리의 사당. 속삭이면 사당이 한 번 더 속삭인다.',
+  };
+  const EPITAPH = [
+    '「여기 한 사람이 잠들다. 레벨 12. 장부에는 「손실 1」.」', '「세금을 다 내고 떠났다. 남긴 것은 없다. 아이 하나를 빼고.」', '「나는 렙업하지 않았다. 대신 누군가를 업어 주었다.」',
+    '「983년 겨울. 이름 대신 숫자 하나.」 — 그 밑에 누군가 손톱으로 이름을 새겨 두었다.', '「빛을 모두 바치고 색을 잃은 사람. 무덤 둘레에만 꽃이 핀다.」', '「기다리다 잠들었다. 깨우지 말 것. 올 사람이 오면 저절로 깬다.」',
+  ];
+  const RIDDLE = [
+    ['세면 셀수록 줄어드는 것은?', ['남은 날', '별', '빛'], 0], ['나누면 나눌수록 커지는 것은?', ['금화', '빛', '장부'], 1],
+    ['주인보다 먼저 지치는 것은?', ['발', '그림자', '등불'], 1], ['삼키면 두 번째가 되는 것은?', ['흑점', '이슬', '물'], 0],
+    ['다섯 갈래로 쪼갰지만 원래 하나였던 것은?', ['길', '빛', '강'], 1], ['날지 못하지만 매일 아침 지붕에 오르는 것은?', ['닭', '다람쥐', '연기'], 1],
+    ['쓰지 않으면 녹슬고, 쓰면 닳는 것은?', ['검', '약속', '이름'], 0], ['세는 사람이 끝내 세지 못한 것은?', ['빗방울', '예비 그릇 하나', '금화'], 1],
+  ];
+  const LOOT = {
+    lo: [['potion_r', 2], ['arrows10', 1], ['bombs5', 1], ['food_bread', 2]],
+    mid: [['potion_b', 1], ['potion_g', 1], ['potion_r', 3], ['arrows10', 2]],
+    hi: [['potion_max', 1], ['potion_g', 2], ['potion_b', 2]],
+  };
+  const lootFor = (tier, r) => { const tb = tier >= 7 ? LOOT.hi : tier >= 3 ? LOOT.mid : LOOT.lo; const [id, n] = tb[Math.floor(r * tb.length) % tb.length]; return G.data.ITEMS[id] ? [id, n] : ['potion_r', 1]; };
+
+  /* ───────── 모닥불 · 둥지 ───────── */
+  class Campfire extends G.ent.Ent {
+    constructor(o) { super(Object.assign({ kind: 'campfire', solid: true, bw: 12, bh: 6 }, o)); this.glowR = 64; this.glowY = 6; }
+    blockBox() { return { x: this.x - 6, y: this.y - 6, w: 12, h: 6 }; }
+    update(dt, Wd) { this.t += dt; this.glowR = 60 + Math.sin(this.t * 9) * 4; const p = Wd.player; if (!p || Math.abs(p.x - this.x) > 320 || Math.abs(p.y - this.y) > 220) return; if (Math.random() < dt * 14) G.fx.part({ x: this.x + (Math.random() - 0.5) * 6, y: this.y - 2, z: 4, vz: 22, g: 0, life: 0.5, col: Math.random() < 0.5 ? '#ffb040' : '#ff7a2a', size: 1, glow: true }); }
+    draw(g, cx, cy) {
+      const x = Math.round(this.x - cx), y = Math.round(this.y - cy);
+      g.fillStyle = '#6a4a2a'; g.fillRect(x - 7, y - 3, 14, 3); g.fillStyle = '#4a3220'; g.fillRect(x - 5, y - 5, 10, 2);
+      const fl = Math.floor(this.t * 10) % 3;
+      g.fillStyle = '#ff7a2a'; g.fillRect(x - 4, y - 8 - fl, 8, 5 + fl); g.fillStyle = '#ffd84a'; g.fillRect(x - 2, y - 7 - fl, 4, 4 + fl); g.fillStyle = '#ffffff'; g.fillRect(x - 1, y - 5, 2, 2);
+      g.fillStyle = '#8a8a90'; for (const [a, b] of [[-8, -1], [7, -1], [-6, 1], [5, 1]]) g.fillRect(x + a, y + b, 2, 2);
+    }
+  }
+  /** 둥지: 가까이 가면 무리가 일어난다. 다 쓰러뜨리면 상자 */
+  class Nest extends G.ent.Ent {
+    constructor(o) { super(Object.assign({ kind: 'nest', solid: false, hidden: true }, o)); this.foes = null; }
+    update(dt, Wd) {
+      const p = Wd.player; if (!p || f(this.key)) return;
+      const d = U.dist(p.x, p.y, this.x, this.y);
+      if (!this.foes && d < 110) {
+        this.foes = [];
+        const tb = OW.TABLE[this.reg] || OW.TABLE.green;
+        for (let i = 0; i < this.n; i++) { const a = (i / this.n) * Math.PI * 2; const t = tb[Math.floor(U.hash(this.key + i) % tb.length)][0]; const e = G.foes.spawn(t === 'octo' ? 'slime' : t, this.x + Math.cos(a) * 30, this.y + Math.sin(a) * 20, { tier: this.tier, elite: i === 0 ? true : undefined, noElite: i !== 0 }); e.aggro = true; this.foes.push(e); }
+        G.ui.toast('몬스터 둥지다!', 'bad'); if (G.audio) G.audio.sfx('encounter');
+      }
+      if (this.foes && this.foes.length && this.foes.every((e) => e.dead)) {
+        S().flags[this.key] = true; this.dead = true;
+        const [id, n] = lootFor(this.tier, U.hash(this.key) % 97 / 97);
+        const ch = new G.props.Chest({ x: this.x, y: this.y, item: id, n, flagKey: this.key + ':chest', col: '#e8c048' }); ch.appear = 0.8; Wd.add(ch);
+        G.fx.glow(this.x, this.y - 6, '#fff2a8', 18); if (G.audio) G.audio.jingle('secret'); G.ui.toast('둥지를 치웠다 — 상자가 드러났다', 'good');
+      }
+      if (this.foes && d > 420) { for (const e of this.foes) if (!e.dead) e.dead = true; this.foes = null; }   // 멀리 가면 다음에 다시
+    }
+  }
+
+  /* ───────── 자리 고르기 ───────── */
+  const STOPS = [];   // { type, x, y, reg, tier, id }
+  function okArea(m, x0, y0, w, h) {
+    const hh = m.hgt[m.i(x0, y0)];
+    for (let y = y0; y < y0 + h; y++) for (let x = x0; x < x0 + w; x++) {
+      if (!m.inb(x, y)) return false;
+      const i = m.i(x, y), t = m.ter[i];
+      if (m.hgt[i] !== hh || m.solidExtra[i] || OW.roadTiles[i] || OW.sea[i]) return false;
+      if (t === T.CLIFF || t === T.STAIRS || t === T.WATER || t === T.DEEP || t === T.LAVA || t === T.BRIDGE || t === T.CLOUD) return false;
+    }
+    // 이야기 자리 · 문 · 씨앗에서 떨어져
+    for (const w of m.warps || []) if (Math.abs(w.x - x0) < 10 && Math.abs(w.y - y0) < 10) return false;
+    for (const sd of ST.seeds || []) if (sd.map === 'world' && Math.abs(sd.x - x0) < 5 && Math.abs(sd.y - y0) < 5) return false;
+    if (OW.inTown(x0, y0, 12) || OW.inTown(x0 + w, y0 + h, 12)) return false;
+    for (const s of STOPS) if (Math.abs(s.x - x0) < 13 && Math.abs(s.y - y0) < 13) return false;
+    return true;
+  }
+  const TYPES = [['camp', 3], ['sign', 2], ['shrine', 2], ['peddler', 1.3], ['ruin', 1.5], ['cart', 1.2], ['well', 1], ['nest', 1.6], ['riddle', 0.9], ['lookout', 0.7]];
+  function pickType(r, last) { for (let k = 0; k < 4; k++) { let s = TYPES.reduce((a, t) => a + t[1], 0) * ((r * 7919 + k * 0.37) % 1); for (const [t, w] of TYPES) { s -= w; if (s <= 0) { if (t !== last) return t; break; } } } return 'camp'; }
+
+  OW.hooks.push((m) => {
+    const rnd = U.rng(9127);
+    // 1) 길 따라
+    let last = null;
+    for (const poly of OW.roadPaths || []) {
+      let acc = 0, gap = 18 + rnd() * 16;
+      for (let k = 0; k < poly.length - 1; k++) {
+        const [ax, ay] = poly[k], [bx, by] = poly[k + 1];
+        const L = Math.hypot(bx - ax, by - ay); if (!L) continue;
+        for (let s = 0; s < L; s += 1) {
+          acc += 1; if (acc < gap) continue;
+          const t = s / L, x = ax + (bx - ax) * t, y = ay + (by - ay) * t;
+          const nx = -(by - ay) / L, ny = (bx - ax) / L;
+          const type = pickType(rnd(), last);
+          const [w, h] = type === 'camp' || type === 'ruin' || type === 'nest' ? [6, 5] : type === 'lookout' || type === 'well' || type === 'cart' ? [5, 4] : [3, 3];
+          let cx = 0, cy = 0, ok = false;
+          for (const [off, side] of [[4, 1], [4, -1], [6, 1], [6, -1], [8, 1], [8, -1]]) {
+            cx = Math.round(x + nx * off * side); cy = Math.round(y + ny * off * side);
+            if (m.inb(cx, cy) && okArea(m, cx - (w >> 1), cy - (h >> 1), w, h)) { ok = true; break; }
+          }
+          if (!ok) continue;
+          const reg = OW.regName[m.i(cx, cy)];
+          acc = 0; gap = 22 + rnd() * 14; last = type;
+          STOPS.push({ type, x: cx, y: cy, reg, tier: OW.TIERS[reg] || 0, id: type + ':' + cx + ',' + cy, road: true });
+        }
+      }
+    }
+    // 2) 들판
+    const CELLW = 24;
+    for (let gy = 0; gy < m.h / CELLW; gy++) for (let gx = 0; gx < m.w / CELLW; gx++) for (let tries = 0; tries < 4; tries++) {
+      if (tries === 0 && rnd() > 0.8) break;
+      const cx = Math.floor(gx * CELLW + 4 + rnd() * (CELLW - 8)), cy = Math.floor(gy * CELLW + 4 + rnd() * (CELLW - 8));
+      if (!m.inb(cx, cy) || OW.sea[m.i(cx, cy)]) continue;
+      let nearRoad = false; for (let dy = -6; dy <= 6 && !nearRoad; dy += 2) for (let dx = -6; dx <= 6; dx += 2) if (m.inb(cx + dx, cy + dy) && OW.roadTiles[m.i(cx + dx, cy + dy)]) { nearRoad = true; break; }
+      if (nearRoad) continue;
+      const reg = OW.regName[m.i(cx, cy)];
+      const type = U.pick(['grove', 'stones', 'crystal', 'grave', 'nest', 'ruin', 'camp'], rnd());
+      if (!okArea(m, cx - 3, cy - 2, 6, 5)) continue;
+      STOPS.push({ type, x: cx, y: cy, reg, tier: OW.TIERS[reg] || 0, id: type + ':' + cx + ',' + cy });
+      break;
+    }
+    // 3) 땅 고르기 · 사물 놓기
+    for (const s of STOPS) {
+      const { x, y } = s, hh = m.hgt[m.i(x, y)];
+      const put = (dx, dy, o) => { const i = m.i(x + dx, y + dy); if (m.inb(x + dx, y + dy) && !m.solidExtra[i] && !OW.roadTiles[i]) m.obj[i] = o; };
+      const ground = (w, h, t) => OW.clear(m, x - (w >> 1), y - (h >> 1), w, h, hh, t || null);
+      switch (s.type) {
+        case 'camp': ground(6, 5, T.DIRT); G.build.placeBuilding(m, { special: 'tent', tx: x - 3, ty: y - 3, w: 2, h: 2, col: s.reg === 'black' ? '#4a3a6a' : s.reg === 'white' ? '#c8d8e8' : '#b8883a', door: false }); put(2, 1, O.BENCH); put(-2, 2, O.CRATE); break;
+        case 'shrine': ground(3, 3, T.STONE); G.build.placeBuilding(m, { special: 'statue', tx: x - 1, ty: y - 2, w: 1, h: 1, door: false }); put(-1, 1, O.FLOWER); put(1, 1, O.FLOWER); break;
+        case 'peddler': ground(3, 3, null); put(1, -1, O.CART); put(-1, -1, O.BARREL); break;
+        case 'sign': put(0, -1, O.SIGNPOST); break;
+        case 'ruin': ground(6, 5, T.GRAVEL); for (const [dx, dy] of [[-3, -2], [2, -2], [-3, 2], [3, 1]]) put(dx, dy, O.PILLAR); put(-1, -2, O.RUBBLE); put(1, 2, O.RUBBLE); break;
+        case 'cart': ground(5, 4, null); put(-1, -1, O.CART); put(1, -1, O.CRATE); put(2, 0, O.BARREL); put(-2, 1, O.CRATE); break;
+        case 'well': ground(5, 4, T.STONE); G.build.placeBuilding(m, { special: 'well', tx: x, ty: y - 1, w: 1, h: 1, door: false }); put(-2, 1, O.BENCH); put(2, 1, O.PLANTER); break;
+        case 'nest': ground(6, 5, T.DIRT); for (const [dx, dy] of [[-3, -1], [3, -1], [-2, 2], [2, 2], [0, -2]]) put(dx, dy, O.BONES); put(-3, 1, O.ROCK); put(3, 1, O.ROCK); break;
+        case 'riddle': ground(3, 3, null); break;
+        case 'lookout': ground(5, 4, T.GRAVEL); G.build.placeBuilding(m, { special: 'tower', tx: x - 1, ty: y - 2, w: 3, h: 2, col: '#8a7a6a', door: false }); break;
+        case 'grove': ground(6, 5, null); put(0, -2, O.BIGTREE); for (const [dx, dy] of [[-2, 1], [2, 1], [-1, 2], [1, 2], [-3, 0], [3, 0]]) put(dx, dy, O.FLOWER); break;
+        case 'stones': ground(6, 5, null); for (const [dx, dy] of [[-3, 0], [3, 0], [-2, -2], [2, -2], [-2, 2], [2, 2]]) put(dx, dy, O.PILLAR); break;
+        case 'crystal': for (const [dx, dy] of [[-2, -1], [2, -1], [0, -2], [-1, 1], [2, 1]]) put(dx, dy, O.CRYSTAL); put(0, 0, 0); break;
+        case 'grave': put(0, -1, O.GRAVE); put(-1, 0, O.FLOWER); put(1, 0, O.FLOWER); break;
+        default: break;
+      }
+    }
+    OW.stops = STOPS;
+  });
+
+  /* ───────── 들어설 때: 사람 · 불 · 상자 · 글 ───────── */
+  const nearestTowns = (x, y) => Object.entries(OW.towns).map(([n, t]) => [n, t.plaza ? t.plaza.x : t.x, t.plaza ? t.plaza.y : t.y]).map(([n, tx, ty]) => [n, Math.round(Math.hypot(tx - x, ty - y)), tx, ty]).sort((a, b) => a[1] - b[1]).slice(0, 3);
+  const dirWord = (dx, dy) => { const a = Math.atan2(dy, dx) * 180 / Math.PI; return a > -22.5 && a <= 22.5 ? '동' : a > 22.5 && a <= 67.5 ? '남동' : a > 67.5 && a <= 112.5 ? '남' : a > 112.5 && a <= 157.5 ? '남서' : a > 157.5 || a <= -157.5 ? '서' : a > -157.5 && a <= -112.5 ? '북서' : a > -112.5 && a <= -67.5 ? '북' : '북동'; };
+  ST.onMap('world', (m, Wd) => {
+    const P = G.props;
+    for (const s of OW.stops || []) {
+      const X = px(s.x), Y = py(s.y), key = 'poi:' + s.id;
+      const r = (U.hash(s.id) % 1000) / 1000;
+      switch (s.type) {
+        case 'camp': {
+          Wd.add(new Campfire({ x: X, y: Y + 4 }));
+          const [look, nm, line] = (TRAVELER[s.reg] || TRAVELER.green)[Math.floor(r * 2)];
+          Wd.add(new P.NPC({ x: X + 20, y: Y + 2, dir: 'left', look: G.cast.folk(look), name: nm, talk: async (c, n) => {
+            await c.say(n, line, { face: 'normal' });
+            const k = await c.choice('모닥불이 따뜻하다.', ['불가에서 쉰다 (체력 회복 · 기록)', '이야기를 더 듣는다', '그만둔다']);
+            if (k === 0) await c.rest();
+            else if (k === 1) await c.say(n, U.pick(['요즘 길에 정예라는 놈들이 돌아다녀. 이름표가 붙어 있고, 빛이 번쩍여. 이겨 내면 주머니가 두둑해진다더군.', '길가 사당에 빌면 몸이 가벼워진대. 한 사당에 한 번씩만.', '저 앞에 부서진 수레가 있었지. 함부로 열지 마. 도적들이 기다려.', '전망대에 올라가면 먼 데까지 보여. 지도가 밝아지지.', '대륙이 넓어졌어. 아니, 우리가 작아진 건지도.']), { face: 'smile' });
+          } }));
+          break;
+        }
+        case 'shrine':
+          Wd.add(new P.Spot({ x: X, y: Y + 2, verb: f(key) ? '사당을 본다' : '사당에 빈다', sparkle: !f(key), text: async (c) => {
+            await c.narr(SHRINE[s.reg] || SHRINE.green);
+            if (f(key)) { await c.narr('이미 빌었다. 돌이 조용하다.'); return; }
+            c.flag(key); c.sfx('fairy');
+            const k = Math.floor(r * 3);
+            const st = S(); st.buffs = (st.buffs || []).filter((b) => b.until > st.t);
+            if (k === 0) { st.buffs.push({ atk: 1.2, until: st.t + 180, col: '#ff8a5a' }); await c.say(null, '[y]힘의 축복[/] — 3분 동안 공격 +20%', { style: 'sys' }); }
+            else if (k === 1) { st.buffs.push({ def: 0.8, until: st.t + 180, col: '#8ac8ff' }); await c.say(null, '[y]보호의 축복[/] — 3분 동안 받는 피해 -20%', { style: 'sys' }); }
+            else { c.exp(20 + s.tier * 40); c.heal(); await c.say(null, '[y]빛의 축복[/] — 빛 알갱이를 얻고 몸이 가벼워졌다', { style: 'sys' }); }
+            S().shrines = (S().shrines || 0) + 1;
+            if (S().shrines === 10) { S().pts = (S().pts || 0) + 2; await c.say(null, '사당 열 곳에서 빌었다. [y]성장 점수 +2[/]', { style: 'sys' }); }
+          } }));
+          break;
+        case 'peddler': {
+          const shop = G.data.SHOPS[s.reg] ? s.reg : 'green';
+          Wd.add(new P.NPC({ x: X, y: Y + 2, dir: 'down', look: G.cast.folk(r < 0.5 ? 'merchant' : 'merchantw'), name: '떠돌이 행상', talk: async (c, n) => { await c.say(n, U.pick(['길 위의 가게요! 마을보다 조금 비싸고, 마을보다 조금 가까워요.', '어서 와요. 오늘은 ' + NAME(s.reg) + ' 물건이 많아요.', '짐이 무거워서 팔고 싶어요. 도와주는 셈 치고!']), { face: 'smile' }); await c.shop(shop); } }));
+          break;
+        }
+        case 'sign': {
+          const near = nearestTowns(s.x, s.y);
+          const text = '이정표\n' + near.map(([n, d, tx, ty]) => '→ ' + NAME(n) + ' · ' + dirWord(tx - s.x, ty - s.y) + '쪽 ' + d + '칸').join('\n');
+          Wd.add(new P.Sign({ x: X, y: Y, text, anyDir: true }));
+          break;
+        }
+        case 'ruin': {
+          const [id, n] = lootFor(s.tier + 1, r);
+          Wd.add(new P.Chest({ x: X, y: Y, item: id, n, flagKey: key + ':chest' }));
+          if (!f(key + ':chest')) { const tb = OW.TABLE[s.reg] || OW.TABLE.green; const t = tb[Math.floor(r * tb.length)][0]; const e = G.foes.spawn(t === 'octo' || t === 'bug' ? 'golem' : t, X + 24, Y + 10, { tier: s.tier, elite: true }); e.home = { x: e.x, y: e.y }; }
+          Wd.add(new P.Sign({ x: X - 30, y: Y + 14, look: 'stone', anyDir: true, text: U.pick(['무너진 기둥에 새긴 글: 「이 탑은 빛을 모으지 않았다. 사람을 모았다.」', '폐허의 초석. 「천년력 612년 — 은빛 왕국 전초기지」', '반쯤 깨진 명판. 「징수소 제' + (s.x % 90 + 10) + '호. 폐쇄.」']) }));
+          break;
+        }
+        case 'cart': {
+          const [id, n] = lootFor(s.tier + 1, r);
+          const ch = new P.Chest({ x: X + 4, y: Y + 6, item: id, n, flagKey: key + ':chest' });
+          const use0 = ch.use.bind(ch);
+          ch.use = (p) => { use0(p); if (!f(key + ':ambush')) { S().flags[key + ':ambush'] = true; G.ui.toast('매복이다!', 'bad'); if (G.audio) G.audio.sfx('encounter'); const kinds = s.tier >= 6 ? ['assassin', 'berserk', 'lancer'] : s.tier >= 3 ? ['bandit', 'berserk', 'bandit'] : ['bandit', 'bandit', 'spider']; kinds.forEach((t, i) => { const a = i * 2.1; const e = G.foes.spawn(t, X + Math.cos(a) * 60, Y + Math.sin(a) * 40, { tier: s.tier }); e.aggro = true; }); } };
+          Wd.add(ch);
+          break;
+        }
+        case 'well':
+          Wd.add(new P.Spot({ x: X, y: Y + 8, verb: '우물물을 마신다', text: async (c) => { const st = S(), d = G.st.derive(st); st.hp = Math.min(d.hpMax, st.hp + Math.ceil(d.hpMax / 2)); c.sfx('heal'); await c.say(null, '차가운 물. 몸이 반쯤 살아났다.', { style: 'sys' }); } }));
+          if (r < 0.6) { const [look, nm, line] = (TRAVELER[s.reg] || TRAVELER.green)[1 - Math.floor(r * 2)]; Wd.add(new P.NPC({ x: X - 30, y: Y + 14, dir: 'right', look: G.cast.folk(look), name: nm, talk: async (c, n) => { await c.say(n, line, { face: 'normal' }); } })); }
+          break;
+        case 'nest':
+          if (!f(key)) Wd.add(new Nest({ x: X, y: Y, key, n: 4 + Math.floor(r * 3), reg: s.reg, tier: s.tier }));
+          else if (!f(key + ':chest')) { const [id, n] = lootFor(s.tier, U.hash(key) % 97 / 97); Wd.add(new P.Chest({ x: X, y: Y, item: id, n, flagKey: key + ':chest', col: '#e8c048' })); }
+          break;
+        case 'riddle': {
+          const [q, opts, ans] = RIDDLE[Math.floor(r * RIDDLE.length)];
+          Wd.add(new P.Sign({ x: X, y: Y, look: 'stone', anyDir: true, text: async (c) => {
+            if (f(key)) { await c.narr('수수께끼 비석. 네가 새긴 답이 남아 있다: 「' + opts[ans] + '」'); return; }
+            await c.narr('수수께끼 비석.\n「' + q + '」');
+            const k = await c.choice('답을 새긴다.', opts);
+            if (k === ans) { c.flag(key); c.sfx('puzzle'); const gold = 60 + s.tier * 60; c.gold(gold); c.exp(15 + s.tier * 25); await c.say(null, '비석이 빛났다. 밑에서 작은 주머니가 나왔다. [y]' + gold + '골드[/]', { style: 'sys' }); }
+            else { c.sfx('buzz'); await c.narr('비석이 조용하다. 틀린 모양이다. 다음에 다시.'); }
+          } }));
+          break;
+        }
+        case 'lookout':
+          Wd.add(new P.Spot({ x: X, y: Y + 6, verb: '전망대에 오른다', text: async (c) => {
+            const st = S(), W = m.w, H = m.h, FC = 8, cols = Math.ceil(W / FC), rows = Math.ceil(H / FC);
+            let fs = st.flags['fog:world']; if (!fs || fs.length !== cols * rows) fs = '0'.repeat(cols * rows);
+            const arr = fs.split(''); const fx = Math.floor(s.x / FC), fy = Math.floor(s.y / FC);
+            for (let dy = -7; dy <= 7; dy++) for (let dx = -9; dx <= 9; dx++) { const xx = fx + dx, yy = fy + dy; if (xx >= 0 && yy >= 0 && xx < cols && yy < rows && dx * dx / 81 + dy * dy / 49 <= 1) arr[yy * cols + xx] = '1'; }
+            st.flags['fog:world'] = arr.join(''); m.fogDirty = true;
+            c.sfx('wind'); await c.narr('사다리를 올랐다. 바람이 세다. 멀리 ' + nearestTowns(s.x, s.y).map(([n]) => NAME(n)).join(', ') + '의 지붕이 보인다.\n[y]둘레의 지도가 밝아졌다.[/]');
+            if (!f(key)) { c.flag(key); c.exp(10 + s.tier * 15); }
+          } }));
+          break;
+        case 'grove':
+          Wd.add(new P.Spot({ x: X, y: Y + 4, verb: '고목 밑 샘에 손을 담근다', sparkle: !f(key), text: async (c) => { c.heal(); c.sfx('fairy'); G.fx.glow(X, Y, '#ffb0e0', 24); await c.narr('작은 빛이 손가락 사이로 올라왔다. 요정 샘이다. 몸이 가득 찼다.'); if (!f(key)) { c.flag(key); c.exp(10 + s.tier * 20); } } }));
+          break;
+        case 'stones':
+          Wd.add(new P.Spot({ x: X, y: Y + 4, verb: '선돌 가운데 선다', text: async (c) => {
+            await c.narr(U.pick(['선돌 여섯. 가운데 서면 발밑이 따뜻하다. 오래전 누군가 여기서 빛을 나누었다.', '선돌마다 손바닥 자국. 크기가 제각각이다. 아이 것도 있다.', '선돌 사이로 바람이 지나가며 숫자를 센다. 하나, 둘… 그리고 멈춘다.']));
+            if (!f(key)) { c.flag(key); const st = S(); st.mp = G.st.derive(st).mpMax; c.exp(15 + s.tier * 20); await c.say(null, 'MP가 가득 찼다. 빛 알갱이를 조금 얻었다.', { style: 'sys' }); }
+          } }));
+          break;
+        case 'crystal':
+          if (!f(key)) Wd.add(new P.Spot({ x: X, y: Y + 4, verb: '수정 조각을 캔다', sparkle: true, text: async (c) => { c.flag(key); const mat = s.tier >= 6 ? 'm_moon' : s.tier >= 3 ? 'm_ore' : 'm_stone'; const id = G.data.ITEMS[mat] ? mat : 'm_stone'; c.give(id, 2 + Math.floor(r * 3)); c.sfx('crystal'); await c.say(null, '[y]' + (G.data.ITEMS[id] ? G.data.ITEMS[id].name : '광석') + '[/]을 캤다.', { style: 'sys' }); } }));
+          break;
+        case 'grave':
+          Wd.add(new P.Sign({ x: X, y: Y - 2, look: 'stone', anyDir: true, text: async (c) => { await c.narr(EPITAPH[Math.floor(r * EPITAPH.length)]); if (!f(key)) { c.flag(key); c.abyss && Math.random() < 0.15 && c.abyss('grave_' + s.id); } } }));
+          break;
+        default: break;
+      }
+    }
+  });
+  ST.STOPS = STOPS;
+})();
+
+/* js/world/39_townlife.js */
+/* 마을마다 다른 얼굴: 명소 하나(만지면 이야기 · 작은 효과) · 그 마을만의 공기(김 · 반딧불 · 갈매기 · 모래바람 …) · 빈 땅의 잔살림
+   그린 「초록 창 석상」 · 레드 「용광로 굴뚝」 · 블루 「파도 분수」 · 옐로 「황금 분수」(동전 던지기) · 퍼플 「거울 석상」 · 무지개 「일곱 빛 분수」
+   · 화이트 「얼음 성녀상」 · 그레이 「멈춘 시계탑」 · 블랙 「등불 탑」 · 알록달록 「발명품 전시 천막」 · 안개 늪 「소원 우물」 · 단풍 협곡 「메아리 석상」 */
+(function () {
+  'use strict';
+  const G = globalThis.G;
+  const U = G.u, TL = G.tiles, OB = G.objs;
+  const T = TL.T, O = OB.O, TS = TL.TS;
+  const ST = G.story, OW = G.ow;
+  const S = () => G.state;
+  const f = (k) => !!S().flags[k];
+  const px = (tx) => tx * TS + 8, py = (ty) => ty * TS + 12;
+
+  const MARK = {
+    green: { special: 'statue', w: 1, h: 1, name: '초록 창 석상', text: '창을 든 여인의 석상. 창날이 반쯤 부러져 있다. 받침돌: 「초록의 자리 — 983년 겨울, 한 합에 졌으나 시간을 벌었다」.\n누군가 매일 새 잎 한 장을 창끝에 걸어 둔다.', fx: 'vit' },
+    red: { special: 'tower', w: 3, h: 2, col: '#8a3a2a', name: '용광로 굴뚝', text: '레드 대장장이들의 굴뚝. 벽돌마다 이름이 새겨져 있다. 맨 아래 칸에 볼칸, 그 옆에 하루. 둘 사이에 빈 칸 하나.', fx: 'str' },
+    blue: { special: 'fountain', w: 2, h: 2, name: '파도 분수', text: '물줄기가 파도처럼 오르내린다. 바닥에 조개껍질 동전이 가득. 「돌아올 배를 위해」.', fx: 'sta' },
+    yellow: { special: 'fountain', w: 2, h: 2, name: '황금 분수', text: '금화가 가득 잠긴 분수. 옐로 사람들은 여기서 운을 산다.', coin: true },
+    purple: { special: 'statue', w: 1, h: 1, name: '거울 석상', text: '거울을 든 마녀의 석상. 거울에 비친 네가 먼저 웃는다. …아니, 조금 늦게 웃는다.', fx: 'int' },
+    rainbow: { special: 'fountain', w: 2, h: 2, name: '일곱 빛 분수', text: '분수 물줄기가 해를 받아 일곱 빛깔로 갈라진다. 천년 전에도 이 분수는 있었다고 한다.', fx: 'exp' },
+    white: { special: 'statue', w: 1, h: 1, name: '얼음 성녀상', text: '얼음으로 깎은 성녀상. 한 번도 녹은 적이 없다. 발밑에 촛불 대신 작은 눈사람들이 줄지어 있다.', fx: 'vit' },
+    gray: { special: 'tower', w: 3, h: 2, col: '#7a7a86', name: '멈춘 시계탑', text: '612년에 멈춘 시계. 바늘이 셋. 하나는 시, 하나는 분, 하나는 — 거꾸로 돈다. 볼트가 고치겠다고 한 지 40년.', fx: 'dex' },
+    black: { special: 'tower', w: 3, h: 2, col: '#4a3a6a', name: '등불 탑', text: '밤의 도시에서 가장 높은 등불. 16년 동안 꺼진 적이 없다. 등불지기 칸델의 할아버지가 처음 붙였다.', fx: 'int' },
+    colorful: { special: 'tent', w: 3, h: 2, col: '#ff8a3a', name: '발명품 전시 천막', text: '피로스 박사의 실패작 전시장. 「제1안: 날지 않는 로켓」 「제2안: 조금 나는 로켓」 … 「제411안: 거의 나는 로켓」.', fx: 'dex' },
+    mist: { special: 'well', w: 1, h: 1, name: '소원 우물', text: '안개가 고여 있는 우물. 동전 대신 이름을 속삭여 넣는다고 한다. 우물이 대답하면 소원이 이루어진다고.', wish: true },
+    amber: { special: 'statue', w: 1, h: 1, name: '메아리 석상', text: '귀를 기울인 사냥꾼의 석상. 말을 걸면 석상이 한 박자 늦게 따라 한다.', fx: 'sta' },
+  };
+  const AIR = {
+    green: { col: '#fff8a8', kind: 'firefly', n: 8 }, red: { col: '#ffb070', kind: 'ember', n: 12 }, blue: { col: '#ffffff', kind: 'gull', n: 3 },
+    yellow: { col: '#e8c890', kind: 'dust', n: 14 }, purple: { col: '#d8b0ff', kind: 'firefly', n: 10 }, rainbow: { col: '#ffb0e0', kind: 'balloon', n: 5 },
+    white: { col: '#ffffff', kind: 'glint', n: 12 }, gray: { col: '#a8a8b0', kind: 'smoke', n: 10 }, black: { col: '#fff4a8', kind: 'firefly', n: 16 },
+    colorful: { col: '#ff8a3a', kind: 'spark', n: 8 }, mist: { col: '#d8f0e8', kind: 'wisp', n: 8 }, amber: { col: '#e8783a', kind: 'leaf', n: 12 },
+  };
+  const LITTER = {
+    green: [O.FLOWER, O.FLOWER, O.PLANTER, O.HAY, O.BARREL], red: [O.CRATE, O.BARREL, O.POTS, O.PEBBLE], blue: [O.NET, O.BARREL, O.CRATE, O.PEBBLE],
+    yellow: [O.POTS, O.CRATE, O.CACTUS, O.PEBBLE], purple: [O.PLANTER, O.FLOWER, O.SHROOM === undefined ? O.FLOWER : O.FLOWER, O.BENCH], rainbow: [O.PLANTER, O.FLOWER, O.BANNER],
+    white: [O.BARREL, O.CRATE, O.PEBBLE], gray: [O.CRATE, O.RUBBLE, O.BARREL, O.PEBBLE], black: [O.BARREL, O.GRAVE === undefined ? O.PEBBLE : O.PEBBLE, O.BENCH],
+    colorful: [O.CRATE, O.BARREL, O.PLANTER, O.FLOWER], mist: [O.NET, O.BARREL, O.REED], amber: [O.HAY, O.BARREL, O.FLOWER, O.CRATE],
+  };
+
+  /** 명소 자리: 바깥 동네 안, 광장에서 가까운 빈 평지 */
+  function spotFor(m, n, w, h) {
+    const t = OW.towns[n], E = t.outer || { x0: t.x - 6, y0: t.y - 6, x1: t.x + t.w + 6, y1: t.y + t.h + 6 };
+    const cx = t.plaza ? t.plaza.x : t.x + (t.w >> 1), cy = t.plaza ? t.plaza.y : t.y + (t.h >> 1);
+    const cand = [];
+    for (let y = E.y0 + 2; y < E.y1 - h - 2; y++) for (let x = E.x0 + 2; x < E.x1 - w - 2; x++) {
+      if (x >= t.x - 1 && x <= t.x + t.w && y >= t.y - 1 && y <= t.y + t.h) continue;   // 이야기 건물이 있는 한가운데는 비킨다
+      cand.push([x, y, Math.hypot(x - cx, y - cy)]);
+    }
+    cand.sort((a, b) => a[2] - b[2]);
+    for (const [x, y] of cand) {
+      let ok = true; const hh = m.hgt[m.i(x, y)];
+      for (let yy = y - 1; yy <= y + h + 1 && ok; yy++) for (let xx = x - 1; xx <= x + w; xx++) {
+        const i = m.i(xx, yy), tt = m.ter[i];
+        if (m.solidExtra[i] || m.obj[i] && OB.DEF[m.obj[i]] && OB.DEF[m.obj[i]].solid || m.hgt[i] !== hh || tt === T.CLIFF || tt === T.STAIRS || tt === T.WATER || tt === T.DEEP || tt === T.BRIDGE || OW.roadTiles[i]) { ok = false; break; }
+      }
+      // 광장 · 골목 포장은 괜찮지만 문 바로 앞은 피한다
+      for (const w2 of m.warps || []) if (Math.abs(w2.x - x) < 3 && Math.abs(w2.y - y) < 4) ok = false;
+      if (ok) return [x, y];
+    }
+    return null;
+  }
+  OW.hooks.push((m) => {
+    OW.marks = {};
+    for (const [n, M] of Object.entries(MARK)) {
+      const t = OW.towns[n]; if (!t) continue;
+      const at = spotFor(m, n, M.w, M.h);
+      if (!at) continue;
+      const [x, y] = at;
+      G.build.placeBuilding(m, Object.assign({ special: M.special, tx: x, ty: y, w: M.w, h: M.h, door: false, id: 'mark_' + n }, M.col ? { col: M.col } : {}));
+      OW.marks[n] = { x, y, w: M.w, h: M.h };
+    }
+    // 빈 땅의 잔살림: 골목 · 길 · 문 앞이 아닌 자리만, 이웃이 트여 있을 때만
+    const rnd = U.rng(4411);
+    for (const [n, t] of Object.entries(OW.towns)) {
+      const E = t.outer; if (!E) continue;
+      const list = LITTER[n] || LITTER.green;
+      for (let y = E.y0 + 1; y < E.y1; y++) for (let x = E.x0 + 1; x < E.x1; x++) {
+        const i = m.i(x, y);
+        if (m.obj[i] || m.solidExtra[i] || OW.roadTiles[i]) continue;
+        const tt = m.ter[i];
+        if (tt === T.CLIFF || tt === T.STAIRS || tt === T.WATER || tt === T.DEEP || tt === T.BRIDGE || tt === T.COBBLE || tt === T.BRICK || tt === T.PLANK || tt === T.SANDSTONE || tt === T.MARBLE || tt === T.STONE || tt === T.TILE || tt === T.ROAD || tt === T.GRAVEL) continue;
+        let wallNb = 0, pave = 0;
+        for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const j = m.i(x + dx, y + dy); if (m.solidExtra[j]) wallNb++; const t2 = m.ter[j]; if (t2 === T.COBBLE || t2 === T.BRICK || t2 === T.PLANK || t2 === T.SANDSTONE || t2 === T.MARBLE || OW.roadTiles[j]) pave++; if (m.obj[j] && OB.DEF[m.obj[j]] && OB.DEF[m.obj[j]].solid) wallNb += 2; }
+        if (wallNb >= 2 || pave >= 2) continue;
+        const r = rnd();
+        if (r < 0.05) { const o = list[Math.floor(rnd() * list.length)]; const solid = OB.DEF[o] && OB.DEF[o].solid; if (!solid || (wallNb === 1 && pave === 0)) m.obj[i] = o; }
+        else if (r < 0.1) m.obj[i] = O.FLOWER;
+      }
+    }
+  });
+
+  /* ───────── 마을의 공기 ───────── */
+  class Air extends G.ent.Ent {
+    constructor(o) { super(Object.assign({ kind: 'air', solid: false, hidden: false, sortBias: 400 }, o)); this.parts = []; }
+    update(dt, Wd) {
+      this.t += dt;
+      const p = Wd.player; if (!p) return;
+      this.x = p.x; this.y = p.y;   // 늘 화면 안에서 그려지도록
+      const E = this.E, inside = p.x > E.x0 * TS - 80 && p.x < E.x1 * TS + 80 && p.y > E.y0 * TS - 80 && p.y < E.y1 * TS + 80;
+      if (!inside) { this.parts.length = 0; return; }
+      const A = this.A;
+      while (this.parts.length < A.n) this.parts.push({ x: p.x + (Math.random() - 0.5) * 460, y: p.y + (Math.random() - 0.5) * 280, ph: Math.random() * 6, v: 0.5 + Math.random() });
+      const night = G.story.nightFactor ? G.story.nightFactor() : 0;
+      for (const q of this.parts) {
+        q.ph += dt;
+        switch (A.kind) {
+          case 'firefly': q.x += Math.cos(q.ph * 0.9) * 10 * dt; q.y += Math.sin(q.ph * 1.3) * 8 * dt; break;
+          case 'ember': case 'spark': q.y -= 18 * q.v * dt; q.x += Math.sin(q.ph * 3) * 6 * dt; break;
+          case 'gull': q.x += 40 * q.v * dt; q.y += Math.sin(q.ph) * 6 * dt; break;
+          case 'dust': q.x += 50 * q.v * dt; q.y += Math.sin(q.ph * 2) * 4 * dt; break;
+          case 'balloon': q.y -= 10 * q.v * dt; q.x += Math.sin(q.ph * 0.7) * 5 * dt; break;
+          case 'smoke': q.y -= 12 * q.v * dt; q.x += 6 * dt; break;
+          case 'wisp': q.x += Math.cos(q.ph * 0.4) * 12 * dt; q.y += Math.sin(q.ph * 0.3) * 4 * dt; break;
+          case 'leaf': q.y += 16 * q.v * dt; q.x += (10 + Math.sin(q.ph * 2) * 14) * dt; break;
+          default: q.y += Math.sin(q.ph) * 2 * dt; break;
+        }
+        if (Math.abs(q.x - p.x) > 260 || Math.abs(q.y - p.y) > 170) { q.x = p.x + (Math.random() - 0.5) * 460; q.y = p.y + (Math.random() < 0.5 ? -1 : 1) * (80 + Math.random() * 80); }
+      }
+      this.night = night;
+    }
+    draw(g, cx, cy) {
+      const A = this.A;
+      for (const q of this.parts) {
+        const x = Math.round(q.x - cx), y = Math.round(q.y - cy);
+        switch (A.kind) {
+          case 'firefly': { if (A.col === '#fff8a8' && this.night < 0.3) break; const a = 0.4 + Math.sin(q.ph * 4) * 0.4; if (a <= 0) break; g.globalAlpha = a; g.fillStyle = A.col; g.fillRect(x, y, 1, 1); g.globalAlpha = a * 0.3; g.fillRect(x - 1, y - 1, 3, 3); g.globalAlpha = 1; break; }
+          case 'gull': { const w = Math.sin(q.ph * 8) > 0 ? 1 : 0; g.fillStyle = '#f4f4f8'; g.fillRect(x - 3, y - w, 3, 1); g.fillRect(x + 1, y - w, 3, 1); g.fillRect(x, y, 1, 1); break; }
+          case 'balloon': { g.fillStyle = ['#ff7ab8', '#ffd84a', '#6ad8ff', '#8ae07a', '#b87aff'][Math.floor(q.v * 5) % 5]; g.beginPath(); g.ellipse(x, y, 3, 4, 0, 0, Math.PI * 2); g.fill(); g.fillStyle = 'rgba(255,255,255,0.6)'; g.fillRect(x - 1, y - 2, 1, 1); g.fillStyle = '#8a8a96'; g.fillRect(x, y + 4, 1, 5); break; }
+          case 'smoke': { g.globalAlpha = 0.25; g.fillStyle = A.col; g.beginPath(); g.arc(x, y, 3 + q.v * 2, 0, Math.PI * 2); g.fill(); g.globalAlpha = 1; break; }
+          case 'wisp': { g.globalAlpha = 0.08; g.fillStyle = A.col; g.beginPath(); g.ellipse(x, y, 24 * q.v, 6, 0, 0, Math.PI * 2); g.fill(); g.globalAlpha = 1; break; }
+          case 'leaf': { g.fillStyle = q.v > 1 ? '#e8783a' : '#c8582a'; g.fillRect(x, y, 2, 1); break; }
+          case 'glint': { if (Math.sin(q.ph * 5) > 0.7) { g.fillStyle = '#ffffff'; g.fillRect(x, y, 1, 1); g.fillRect(x - 1, y, 3, 0.5); } break; }
+          default: { g.globalAlpha = 0.7; g.fillStyle = A.col; g.fillRect(x, y, 1, 1); g.globalAlpha = 1; }
+        }
+      }
+    }
+  }
+
+  /* ───────── 들어설 때: 명소의 글 · 공기 ───────── */
+  const FXNAME = { str: '힘', vit: '체력', sta: '스태미나', int: '지력', dex: '솜씨', exp: '빛' };
+  ST.onMap('world', (m, Wd) => {
+    for (const [n, M] of Object.entries(MARK)) {
+      const at = OW.marks && OW.marks[n]; if (!at) continue;
+      const key = 'mark:' + n;
+      Wd.add(new G.props.Spot({ x: px(at.x + (M.w >> 1)), y: py(at.y + M.h) + 2, verb: M.name + '을 본다', sparkle: !f(key), text: async (c) => {
+        await c.narr('[y]' + M.name + '[/]\n' + M.text);
+        if (M.coin) {
+          const k = await c.choice('동전을 던질까? (50골드)', ['던진다', '그만둔다']);
+          if (k !== 0) return;
+          if (S().gold < 50) { await c.narr('주머니가 가볍다.'); return; }
+          c.gold(-50); c.sfx('coin');
+          const r = Math.random(), st = S(); st.buffs = (st.buffs || []).filter((b) => b.until > st.t);
+          if (r < 0.2) { c.gold(200); await c.say(null, '동전이 분수 바닥에서 튀어 올랐다! [y]200골드[/]', { style: 'sys' }); }
+          else if (r < 0.6) { st.buffs.push({ atk: 1.15, until: st.t + 240, col: '#ffd84a' }); await c.say(null, '[y]황금의 운[/] — 4분 동안 공격 +15%', { style: 'sys' }); }
+          else await c.narr('퐁당. 동전이 가라앉았다. 옐로 사람들은 이걸 「세금」이라 부른다.');
+          return;
+        }
+        if (M.wish) {
+          if (f(key)) { await c.narr('우물이 조용하다. 이미 대답을 들었다.'); return; }
+          const k = await c.choice('우물에 누구의 이름을 속삭일까?', ['세린', '에벨린', '토리아', '아무 이름도 말하지 않는다']);
+          c.flag(key);
+          await c.narr(k === 3 ? '우물이 한참 뒤에 대답했다. 「…고마워. 이름을 달라는 사람만 왔었거든.」' : '우물이 그 이름을 한 번 되뇌었다. 조금 늦게. 물 위에 작은 빛이 떠올랐다.');
+          c.exp(200); if (k === 3) { S().pts = (S().pts || 0) + 1; await c.say(null, '[y]성장 점수 +1[/]', { style: 'sys' }); }
+          return;
+        }
+        if (!f(key)) {
+          c.flag(key);
+          if (M.fx === 'exp') { c.exp(150); await c.say(null, '물보라에 빛이 섞여 있다. [y]빛 알갱이[/]를 얻었다.', { style: 'sys' }); }
+          else { const st = S(); st.buffs = (st.buffs || []).filter((b) => b.until > st.t); st.buffs.push({ atk: M.fx === 'str' ? 1.1 : 1, def: M.fx === 'vit' ? 0.9 : 1, stamina: M.fx === 'sta' ? 1.3 : 1, until: st.t + 300, col: '#fff4a8' }); await c.say(null, '[y]' + M.name + '의 기운[/] — 5분 동안 ' + FXNAME[M.fx] + '의 가호', { style: 'sys' }); }
+          const seen = Object.keys(MARK).filter((k2) => f('mark:' + k2)).length;
+          if (seen === Object.keys(MARK).length) { S().pts = (S().pts || 0) + 3; await c.say(null, '열두 마을의 명소를 모두 보았다. [y]성장 점수 +3[/]', { style: 'sys' }); }
+        }
+      } }));
+    }
+    for (const [n, t] of Object.entries(OW.towns)) if (t.outer && AIR[n]) Wd.add(new Air({ x: px(t.x), y: py(t.y), E: t.outer, A: AIR[n] }));
+  });
+  ST.MARK = MARK;
 })();
 
 /* js/world/90_dev.js */

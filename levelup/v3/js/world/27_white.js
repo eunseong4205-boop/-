@@ -65,7 +65,7 @@
   };
 
   /* ───────── 넓은 지도 ───────── */
-  const HIDE = { x: 44, y: 36 };           // 새벽단 은신처 (서쪽 설원 동굴)
+  const HIDE = OW.pt(44, 36);           // 새벽단 은신처 (서쪽 설원 동굴)
   const SPRING = { x: X0 + 28, y: Y0 + 20 }; // 온천
   OW.hooks.push((m) => {
     ST.house(m, { id: 'w_cath', region: 'white', special: 'cathedral', tx: X0 + 11, ty: Y0 + 1, w: 11, h: 5, name: '이리스 대성당',

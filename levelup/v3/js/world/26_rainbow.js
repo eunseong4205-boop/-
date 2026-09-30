@@ -12,18 +12,19 @@
   const f = (k) => !!S().flags[k];
   const RT = OW.towns.rainbow, X0 = RT.x, Y0 = RT.y;      // 150, 18
   const px = (tx) => tx * TS + 8, py = (ty) => ty * TS + 12;
-  const TEMPLE = { x: 145, y: 22 };                       // 구름 신전 (섬 북서쪽)
-  const STAGE = { x0: 162, y0: 20, w: 12, h: 4 };         // 봉헌식 무대 (한 칸 높다)
+  const RX = (x) => OW.T('rainbow', x, 0)[0], RY = (y) => OW.T('rainbow', 0, y)[1];   // 옛 좌표 → 넓어진 대륙 (무지개 마을과 함께 옮김)
+  const TEMPLE = { x: RX(145), y: RY(22) };                       // 구름 신전 (섬 북서쪽)
+  const STAGE = { x0: RX(162), y0: RY(20), w: 12, h: 4 };         // 봉헌식 무대 (한 칸 높다)
   const festival = () => f('ch:c6') && !f('c6_done');
   ST.RAINBOW = { X0, Y0, TEMPLE, STAGE };
 
   ST.CH.push({ no: '제6장', id: 'c6', title: '천년제', sub: '천 년에 한 번, 대륙의 모든 색이 한곳에 모인다. 빛도, 그림자도.',
     goal(s) {
-      if (!f('c6_chroma')) return { text: '천년제 위원회의 크로마 위원장을 만나자.', map: 'world', x: 179, y: 23 };
-      if (!f('c6_rolo')) return { text: '축제를 둘러보자. 서커스 천막의 광대가 무언가 알고 있다.', map: 'world', x: 155, y: 23 };
+      if (!f('c6_chroma')) return { text: '천년제 위원회의 크로마 위원장을 만나자.', map: 'world', x: RX(179), y: RY(23) };
+      if (!f('c6_rolo')) return { text: '축제를 둘러보자. 서커스 천막의 광대가 무언가 알고 있다.', map: 'world', x: RX(155), y: RY(23) };
       if (!f('d6:boss')) return { text: '섬 북서쪽 구름 신전에서 「무지개 불씨」를 가져오자.', map: 'world', x: TEMPLE.x + 2, y: TEMPLE.y + 2 };
-      if (!f('c6_ember')) return { text: '불씨를 크로마 위원장에게 가져가자.', map: 'world', x: 179, y: 23 };
-      if (!f('c6_finale')) return { text: '봉헌식이 시작된다. 준비되면 크로마 위원장에게.', map: 'world', x: 179, y: 23 };
+      if (!f('c6_ember')) return { text: '불씨를 크로마 위원장에게 가져가자.', map: 'world', x: RX(179), y: RY(23) };
+      if (!f('c6_finale')) return { text: '봉헌식이 시작된다. 준비되면 크로마 위원장에게.', map: 'world', x: RX(179), y: RY(23) };
       return { text: '북쪽 설산 화이트로. 힘 장갑으로 바위 고개를 연다.', map: 'world', x: OW.towns.white.x + 16, y: OW.towns.white.y + 12 };
     } });
   ST.closedMsg.white = '북쪽 설산 고개는 바위와 눈보라로 막혀 있어. 무거운 바위를 들 힘이 있으면 모를까… 찍.';
@@ -131,9 +132,9 @@
   OW.hooks.push((m) => {
     const road = RT.road || T.TILE;
     // 봉헌식 무대 + 무지개 기둥
-    OW.clear(m, STAGE.x0 - 1, 17, STAGE.w + 2, 9, m.hgt[m.i(STAGE.x0, 26)], road);
-    raise(m, STAGE.x0, STAGE.y0, STAGE.w, STAGE.h, T.WOOD, [167, 168]);
-    G.build.placeBuilding(m, { special: 'pillar', tx: 166, ty: 18, w: 3, h: 2, door: false });
+    OW.clear(m, STAGE.x0 - 1, RY(17), STAGE.w + 2, 9, m.hgt[m.i(STAGE.x0, RY(26))], road);
+    raise(m, STAGE.x0, STAGE.y0, STAGE.w, STAGE.h, T.WOOD, [RX(167), RX(168)]);
+    G.build.placeBuilding(m, { special: 'pillar', tx: RX(166), ty: RY(18), w: 3, h: 2, door: false });
     // 건물
     ST.house(m, { id: 'r_circus', region: 'rainbow', special: 'bigtent', tx: X0 + 1, ty: Y0 + 1, w: 8, h: 4, name: '무지개 서커스',
       room: { w: 20, h: 13, floor: T.RUG, music: 'rainbow', rug: [5, 4, 10, 6], furn: [['bench', 3, 10], ['bench', 7, 10], ['bench', 12, 10], ['bench', 16, 10], ['barrel', 1, 3], ['crate', 18, 3], ['lamp', 4, 3], ['lamp', 15, 3], ['painting', 9, 1, { wall: true, v: '#e8465a', text: '서커스 포스터. 「광대 롤로의 무지개 곡예! 색이 없는 광대가 색을 보여 드립니다」' }]] } });
@@ -150,10 +151,10 @@
     // 구름 신전
     OW.clear(m, TEMPLE.x - 2, TEMPLE.y - 3, 10, 8, m.hgt[m.i(TEMPLE.x + 2, TEMPLE.y + 2)], T.CLOUD);
     G.build.placeBuilding(m, { special: 'temple', tx: TEMPLE.x, ty: TEMPLE.y, w: 5, h: 1, col: '#e8eef8', glyph: '#8ab8ff', to: 'd6', id: 'd6_gate', cond: () => f('c6_chroma'), msg: '신전 문에 무지개 무늬 자물쇠. 천년제 위원회의 허락이 있어야 열린다.' });
-    for (let x = TEMPLE.x + 2; x <= 150; x++) for (const y of [TEMPLE.y + 1, TEMPLE.y + 2]) { const i = m.i(x, y); if (m.ter[i] !== T.CLIFF && m.ter[i] !== T.STAIRS) { m.ter[i] = x < TEMPLE.x + 5 ? T.CLOUD : road; m.obj[i] = 0; } }
-    for (let y = TEMPLE.y + 1; y <= 30; y++) for (const x of [150, 151]) { const i = m.i(x, y); if (m.ter[i] !== T.CLIFF && m.ter[i] !== T.STAIRS) { m.ter[i] = road; m.obj[i] = 0; } }
+    for (let x = TEMPLE.x + 2; x <= RX(150); x++) for (const y of [TEMPLE.y + 1, TEMPLE.y + 2]) { const i = m.i(x, y); if (m.ter[i] !== T.CLIFF && m.ter[i] !== T.STAIRS) { m.ter[i] = x < TEMPLE.x + 5 ? T.CLOUD : road; m.obj[i] = 0; } }
+    for (let y = TEMPLE.y + 1; y <= RY(30); y++) for (const x of [RX(150), RX(151)]) { const i = m.i(x, y); if (m.ter[i] !== T.CLIFF && m.ter[i] !== T.STAIRS) { m.ter[i] = road; m.obj[i] = 0; } }
     // 꾸미기: 가로등 · 벚꽃
-    for (const [x, y] of [[161, 26], [174, 26], [161, 34], [174, 34], [155, 29], [180, 29], [155, 33], [180, 33]]) { m.obj[m.i(x, y)] = O.LAMP; m.lights.push({ x: x * TS + 8, y: y * TS + 2, r: 56, warm: 'rgba(255,200,230,0.22)' }); }
+    for (const [x, y] of [[161, 26], [174, 26], [161, 34], [174, 34], [155, 29], [180, 29], [155, 33], [180, 33]].map(([a, b]) => [RX(a), RY(b)])) { m.obj[m.i(x, y)] = O.LAMP; m.lights.push({ x: x * TS + 8, y: y * TS + 2, r: 56, warm: 'rgba(255,200,230,0.22)' }); }
     for (const [x, y] of [[X0, Y0 + 12], [X0 + 33, Y0 + 12], [X0 + 1, Y0 + 23], [X0 + 32, Y0 + 23], [X0 + 16, Y0 + 23]]) if (m.inb(x, y) && !m.solidExtra[m.i(x, y)]) m.obj[m.i(x, y)] = O.BLOSSOM;
     // 설산으로 가는 길목의 바위 (힘 장갑)
     const W = m.w, H = m.h, reg = OW.regName;
@@ -163,13 +164,13 @@
     }
   });
   const BOOTHS = [
-    { id: 'red', name: '빨강', col: '#e84a4a', tx: 151, ty: 27, who: 'volkan' },
-    { id: 'orange', name: '주황', col: '#ff9a3a', tx: 156, ty: 27, who: 'goldy' },
-    { id: 'yellow', name: '노랑', col: '#f0d040', tx: 175, ty: 27, who: 'yana' },
-    { id: 'green', name: '초록', col: '#4ac860', tx: 180, ty: 27, who: 'marien' },
-    { id: 'blue', name: '파랑', col: '#4a8ae8', tx: 151, ty: 33, who: 'hemia' },
-    { id: 'indigo', name: '남색', col: '#5a4ad8', tx: 156, ty: 33, who: 'lyra' },
-    { id: 'violet', name: '보라', col: '#b86ae8', tx: 175, ty: 33, who: 'viola' },
+    { id: 'red', name: '빨강', col: '#e84a4a', tx: RX(151), ty: RY(27), who: 'volkan' },
+    { id: 'orange', name: '주황', col: '#ff9a3a', tx: RX(156), ty: RY(27), who: 'goldy' },
+    { id: 'yellow', name: '노랑', col: '#f0d040', tx: RX(175), ty: RY(27), who: 'yana' },
+    { id: 'green', name: '초록', col: '#4ac860', tx: RX(180), ty: RY(27), who: 'marien' },
+    { id: 'blue', name: '파랑', col: '#4a8ae8', tx: RX(151), ty: RY(33), who: 'hemia' },
+    { id: 'indigo', name: '남색', col: '#5a4ad8', tx: RX(156), ty: RY(33), who: 'lyra' },
+    { id: 'violet', name: '보라', col: '#b86ae8', tx: RX(175), ty: RY(33), who: 'viola' },
   ];
   const stamps = () => BOOTHS.filter((b) => f('stamp:' + b.id)).length;
   async function stamp(c, bo) {
@@ -183,13 +184,13 @@
     const P = G.props;
     Wd.add(new P.Waystone({ x: px(RT.plaza.x + 3), y: py(RT.plaza.y + 3), wid: 'w_rainbow', name: '하늘섬 무지개' }));
     Wd.add(new P.Waystone({ x: px(TEMPLE.x + 7), y: py(TEMPLE.y + 3), wid: 'w_temple', name: '구름 신전' }));
-    Wd.add(new P.Sign({ x: px(165), y: py(26), text: '천년제 — 제1000회\n「천 년 전 오늘, 흰빛이 전쟁을 끝냈다」\n봉헌식: 축제 마지막 밤, 무지개 기둥 앞' }));
+    Wd.add(new P.Sign({ x: px(RX(165)), y: py(RY(26)), text: '천년제 — 제1000회\n「천 년 전 오늘, 흰빛이 전쟁을 끝냈다」\n봉헌식: 축제 마지막 밤, 무지개 기둥 앞' }));
     Wd.add(new P.Sign({ x: px(TEMPLE.x + 6), y: py(TEMPLE.y + 2), text: '구름 신전\n「바람을 거스르지 마라. 바람에 실려라.」' }));
     for (const bo of BOOTHS) Wd.add(new P.Sign({ x: px(bo.tx + 1), y: py(bo.ty + 1) + 2, text: bo.name + ' 노점 — 천년제 도장 모으기\n「일곱 빛깔 도장을 모두 모으면 위원회에서 상을 드립니다」' }));
     if (!f('c6_done')) {
-      const cols = [[155, 29, 161, 26], [161, 26, 174, 26], [174, 26, 180, 29], [155, 33, 161, 34], [161, 34, 174, 34], [174, 34, 180, 33]];
+      const cols = [[155, 29, 161, 26], [161, 26, 174, 26], [174, 26, 180, 29], [155, 33, 161, 34], [161, 34, 174, 34], [174, 34, 180, 33]].map(([a, b2, c2, d]) => [RX(a), RY(b2), RX(c2), RY(d)]);
       cols.forEach(([a, b2, c2, d], i) => Wd.add(new Bunting({ ax: px(a), ay: py(b2), bx: px(c2), by: py(d), x: px((a + c2) / 2), seed: i })));
-      if (festival()) Wd.add(new Fireworks({ x: px(167), y: py(30), spread: 260 }));
+      if (festival()) Wd.add(new Fireworks({ x: px(RX(167)), y: py(RY(30)), spread: 260 }));
     }
   });
 
@@ -536,24 +537,24 @@
   }
 
   /* ───────── 축제의 다른 얼굴들 ───────── */
-  ST.folk('world', { id: 'cassian', name: '카시안', x: 176, y: 38, dir: 'down', when: () => festival() && !f('c6_arena'), lines: { c6: async (c, n) => { const rt = ST.route(); await c.say(n, rt === 'order' ? '봉헌식 경호를 맡았다. 스승님은 오지 않으신다고 했다. …그 말을 들은 그라우스가 웃었다. 기분 나쁘게.' : rt === 'dawn' ? '새벽단이 섬에 들어왔다는 첩보가 있다. 네가 모른다고 하면, 믿어 주지. 이번만.' : '리라라는 음유시인. 네 친구지? 그 여자 노래를 들으면 경호원들이 졸아. 우연인가?', { face: 'normal' }); await c.say(n, '투기장 시범 경기에 나간다. 네가 나오면… 반가울 거다. 봐주진 않겠지만.', { face: 'smirk' }); } } });
-  ST.folk('world', { id: 'lea', name: '레아', x: 159, y: 38, dir: 'down', when: festival, lines: { c6: async (c, n) => { const rt = ST.route(); if (rt === 'dawn') { await c.say(n, '쉿. 솜사탕 장수야, 지금은. 봉헌식 밤에 기둥 밑에 화약을 심을 거야. 새벽단 스무 명이 섬에 들어와 있어.', { face: 'smirk' }); await c.say(n, '네가 무대 위에 있을 거라며. 신호는 네가 줘. 불씨를 기둥에 넣지 않으면 — 그게 신호야.', { face: 'normal' }); } else { await c.say(n, '솜사탕 하나 사. 무지개맛. …얼굴 기억하는 척하지 마. 오늘은 그냥 장사꾼이야.', { face: 'smirk' }); } const k = await c.choice('무지개 솜사탕 (30골드)', ['산다', '안 산다'], { who: 'lea', name: '레아' }); if (k === 0 && S().gold >= 30) { c.gold(-30); await c.getItem('food_cotton'); } } } });
-  ST.folk('world', { id: 'rud', name: '루드', x: 161, y: 39, dir: 'up', when: festival, lines: { c6: ['천년제 입장객 사만 이천. 봉헌식 참가 예상 삼만. 기둥 효율을 계산해 봤어. …계산하지 말걸.', '누나가 솜사탕을 판다. 솜사탕 원가는 설탕 한 숟갈. 이익률이… 아니, 그 얘기가 아니지.'] } });
-  ST.folk('world', { id: 'pika', name: '피카', x: 170, y: 37, dir: 'down', wander: 30, when: festival, lines: { c6: ['헤헤, 축제는 지갑 축제야! …농담. 참새단 애들 데리고 구경 왔어. 골디 아저씨가 여비 줬어. 공짜로. 세상에.', '봉헌식? 우린 안 가. 참새들은 높은 데 앉아서 봐. 그게 제일 잘 보여.'] } });
-  ST.folk('world', { id: 'luce', name: '루체', x: 183, y: 30, dir: 'left', when: festival, lines: { c6: '구름 위에서 보니까 블루 등대가 보여! 아빠 일지에 그랬어. 「하늘섬에선 모든 등대가 보인다」. 진짜였어.' } });
-  ST.folk('world', { name: '축제 손님', folk: 'kidg', x: 164, y: 31, wander: 40, when: festival, barks: ['솜사탕!', '불꽃 또 터져!'], lines: { c6: ['봉헌식 때 기둥이 일곱 색으로 빛난대! 엄마가 맨 앞에서 보재!', '롤로 아저씨 곡예 봤어? 아저씨는 왜 늘 얼굴에 색칠해?'] } });
-  ST.folk('world', { name: '축제 손님', folk: 'merchant', x: 170, y: 32, wander: 40, when: festival, lines: { c6: ['옐로에서 왔소. 천년제 대목이오. 흰빛 인형이 제일 잘 팔려. 당신 닮았는데?', '작년 예행연습 날 광장 앞줄 사람들이 쓰러졌다는 소문? 에이, 더위 먹은 거겠지.'] } });
-  ST.folk('world', { name: '축제 손님', folk: 'sailor', x: 158, y: 30, wander: 30, when: festival, lines: { c6: '블루에서 배 타고 레드까지, 레드에서 구름고래로. 천년에 한 번인데 와 봐야지!' } });
-  ST.folk('world', { name: '축제 손님', folk: 'oldw', x: 172, y: 29, wander: 20, when: festival, lines: { c6: ['나는 구백구십 회 천년제 때도 왔어. 농담이야. 그땐 없었지. 그래도 세 번은 왔어.', '봉헌식 다음 날은 다들 좀 피곤해해. 축제라서 그런가 봐.'] } });
-  ST.folk('world', { name: '위원회 일꾼', folk: 'farmer', x: 183, y: 24, when: festival, lines: { c6: '기둥 고리 일곱 개에 기름칠하느라 죽겠어. 기름이 아니라 빛을 먹는 기둥인데 왜 기름칠을 하냐고? 나도 몰라.' } });
+  ST.folk('world', { id: 'cassian', name: '카시안', x: RX(176), y: RY(38), dir: 'down', when: () => festival() && !f('c6_arena'), lines: { c6: async (c, n) => { const rt = ST.route(); await c.say(n, rt === 'order' ? '봉헌식 경호를 맡았다. 스승님은 오지 않으신다고 했다. …그 말을 들은 그라우스가 웃었다. 기분 나쁘게.' : rt === 'dawn' ? '새벽단이 섬에 들어왔다는 첩보가 있다. 네가 모른다고 하면, 믿어 주지. 이번만.' : '리라라는 음유시인. 네 친구지? 그 여자 노래를 들으면 경호원들이 졸아. 우연인가?', { face: 'normal' }); await c.say(n, '투기장 시범 경기에 나간다. 네가 나오면… 반가울 거다. 봐주진 않겠지만.', { face: 'smirk' }); } } });
+  ST.folk('world', { id: 'lea', name: '레아', x: RX(159), y: RY(38), dir: 'down', when: festival, lines: { c6: async (c, n) => { const rt = ST.route(); if (rt === 'dawn') { await c.say(n, '쉿. 솜사탕 장수야, 지금은. 봉헌식 밤에 기둥 밑에 화약을 심을 거야. 새벽단 스무 명이 섬에 들어와 있어.', { face: 'smirk' }); await c.say(n, '네가 무대 위에 있을 거라며. 신호는 네가 줘. 불씨를 기둥에 넣지 않으면 — 그게 신호야.', { face: 'normal' }); } else { await c.say(n, '솜사탕 하나 사. 무지개맛. …얼굴 기억하는 척하지 마. 오늘은 그냥 장사꾼이야.', { face: 'smirk' }); } const k = await c.choice('무지개 솜사탕 (30골드)', ['산다', '안 산다'], { who: 'lea', name: '레아' }); if (k === 0 && S().gold >= 30) { c.gold(-30); await c.getItem('food_cotton'); } } } });
+  ST.folk('world', { id: 'rud', name: '루드', x: RX(161), y: RY(39), dir: 'up', when: festival, lines: { c6: ['천년제 입장객 사만 이천. 봉헌식 참가 예상 삼만. 기둥 효율을 계산해 봤어. …계산하지 말걸.', '누나가 솜사탕을 판다. 솜사탕 원가는 설탕 한 숟갈. 이익률이… 아니, 그 얘기가 아니지.'] } });
+  ST.folk('world', { id: 'pika', name: '피카', x: RX(170), y: RY(37), dir: 'down', wander: 30, when: festival, lines: { c6: ['헤헤, 축제는 지갑 축제야! …농담. 참새단 애들 데리고 구경 왔어. 골디 아저씨가 여비 줬어. 공짜로. 세상에.', '봉헌식? 우린 안 가. 참새들은 높은 데 앉아서 봐. 그게 제일 잘 보여.'] } });
+  ST.folk('world', { id: 'luce', name: '루체', x: RX(183), y: RY(30), dir: 'left', when: festival, lines: { c6: '구름 위에서 보니까 블루 등대가 보여! 아빠 일지에 그랬어. 「하늘섬에선 모든 등대가 보인다」. 진짜였어.' } });
+  ST.folk('world', { name: '축제 손님', folk: 'kidg', x: RX(164), y: RY(31), wander: 40, when: festival, barks: ['솜사탕!', '불꽃 또 터져!'], lines: { c6: ['봉헌식 때 기둥이 일곱 색으로 빛난대! 엄마가 맨 앞에서 보재!', '롤로 아저씨 곡예 봤어? 아저씨는 왜 늘 얼굴에 색칠해?'] } });
+  ST.folk('world', { name: '축제 손님', folk: 'merchant', x: RX(170), y: RY(32), wander: 40, when: festival, lines: { c6: ['옐로에서 왔소. 천년제 대목이오. 흰빛 인형이 제일 잘 팔려. 당신 닮았는데?', '작년 예행연습 날 광장 앞줄 사람들이 쓰러졌다는 소문? 에이, 더위 먹은 거겠지.'] } });
+  ST.folk('world', { name: '축제 손님', folk: 'sailor', x: RX(158), y: RY(30), wander: 30, when: festival, lines: { c6: '블루에서 배 타고 레드까지, 레드에서 구름고래로. 천년에 한 번인데 와 봐야지!' } });
+  ST.folk('world', { name: '축제 손님', folk: 'oldw', x: RX(172), y: RY(29), wander: 20, when: festival, lines: { c6: ['나는 구백구십 회 천년제 때도 왔어. 농담이야. 그땐 없었지. 그래도 세 번은 왔어.', '봉헌식 다음 날은 다들 좀 피곤해해. 축제라서 그런가 봐.'] } });
+  ST.folk('world', { name: '위원회 일꾼', folk: 'farmer', x: RX(183), y: RY(24), when: festival, lines: { c6: '기둥 고리 일곱 개에 기름칠하느라 죽겠어. 기름이 아니라 빛을 먹는 기둥인데 왜 기름칠을 하냐고? 나도 몰라.' } });
   ST.folk('r_shop', { name: '구름 잡화 주인', folk: 'clown', x: 5, y: 3, lines: { c6: async (c) => { const k = await c.choice('어서 와요! 솜사탕, 물약, 바람 깃털!', ['물건을 산다', '괜찮아요'], { name: '구름 잡화 주인' }); if (k === 0) await c.shop('rainbow'); } } });
   ST.folk('r_inn', { name: '구름 베개 주인', folk: 'oldw', x: 4, y: 3, lines: { c6: async (c) => { const k = await c.choice('구름으로 속을 채운 베개예요. 꿈을 안 꿔요. (50골드)', ['쉰다', '괜찮아요'], { name: '구름 베개 주인' }); if (k === 0) { if (S().gold >= 50) c.gold(-50); await c.rest(); } } } });
-  ST.person('world', { id: 'nube', x: 167, y: 39, dir: 'left', when: () => f('ch:c6'), talk: async (c) => {
+  ST.person('world', { id: 'nube', x: RX(167), y: RY(39), dir: 'left', when: () => f('ch:c6'), talk: async (c) => {
     const k = await c.choice('우우웅. 어디로 가겠소?', ['퍼플 — 해 질 녘의 숲', '그냥 쓰다듬는다', '아무 데도'], { who: 'nube', name: '누베' });
     if (k === 0) { await c.fade(true, { sec: 0.6 }); G.game.goto('world', px(OW.towns.purple.x + 16), py(OW.towns.purple.y + 5), 'down'); await c.fade(false, { sec: 0.6 }); }
     else if (k === 1) { c.sfx('wind'); await c.say('nube', '우우…웅. 좋소. 구름은 쓰다듬으면 조금 커지오.', { face: 'smile' }); c.bond('nube', 1); }
   } });
-  ST.person('world', { id: 'nube', x: OW.towns.purple.x + 16, y: OW.towns.purple.y + 3, dir: 'down', when: () => f('ch:c6'), talk: async (c) => { if (await c.confirm('하늘섬 무지개로 갈까?', '간다', '아직')) { await c.fade(true, { sec: 0.6 }); G.game.goto('world', px(167), py(38), 'up'); await c.fade(false, { sec: 0.6 }); } } });
+  ST.person('world', { id: 'nube', x: OW.towns.purple.x + 16, y: OW.towns.purple.y + 3, dir: 'down', when: () => f('ch:c6'), talk: async (c) => { if (await c.confirm('하늘섬 무지개로 갈까?', '간다', '아직')) { await c.fade(true, { sec: 0.6 }); G.game.goto('world', px(RX(167)), py(RY(38)), 'up'); await c.fade(false, { sec: 0.6 }); } } });
 
   /* ───────── 바람 길 (구름 신전): 실려 가면 구덩이 위도 떠서 건넌다 ───────── */
   class Gust extends G.ent.Ent {
@@ -648,26 +649,26 @@
     await c.cinema(true);
     await c.fade(true, { sec: 1 });
     ST.toNight();
-    G.game.goto('world', px(167) + 8, py(26), 'up');
+    G.game.goto('world', px(RX(167)) + 8, py(RY(26)), 'up');
     await c.wait(0.2);
     const Wd = G.world, p = Wd.player;
     const crowd = [];
     const add = (spec) => { const n = c.spawn(spec); crowd.push(n); return n; };
     // 무대 위: 크로마 · 리라 · 카시안 / 광장: 사람들
-    const ch = add({ cid: 'chroma', x: px(167) + 8, y: py(21), dir: 'down' });
-    const ly = add({ cid: 'lyra', x: px(164), y: py(22), dir: 'down' });
-    const cs = add({ cid: 'cassian', x: px(171), y: py(22), dir: 'down' });
-    const ro = add({ cid: 'rolo', x: px(163), y: py(28), dir: 'up' });
-    const vi = add({ cid: 'viola', x: px(172), y: py(28), dir: 'up' });
-    const le = add({ cid: 'lea', x: px(160), y: py(30), dir: 'up' });
-    add({ cid: 'rud', x: px(159), y: py(31), dir: 'up' });
-    add({ cid: 'volkan', x: px(175), y: py(30), dir: 'up' });
-    add({ cid: 'goldy', x: px(177), y: py(29), dir: 'up' });
-    add({ cid: 'berna', x: px(165), y: py(30), dir: 'up' }); add({ cid: 'karel', x: px(166), y: py(31), dir: 'up' });
-    add({ cid: 'marien', x: px(164), y: py(32), dir: 'up' }); add({ cid: 'yana', x: px(170), y: py(31), dir: 'up' });
-    add({ cid: 'hemia', x: px(171), y: py(32), dir: 'up' }); add({ cid: 'pika', x: px(158), y: py(27), dir: 'up' });
+    const ch = add({ cid: 'chroma', x: px(RX(167)) + 8, y: py(RY(21)), dir: 'down' });
+    const ly = add({ cid: 'lyra', x: px(RX(164)), y: py(RY(22)), dir: 'down' });
+    const cs = add({ cid: 'cassian', x: px(RX(171)), y: py(RY(22)), dir: 'down' });
+    const ro = add({ cid: 'rolo', x: px(RX(163)), y: py(RY(28)), dir: 'up' });
+    const vi = add({ cid: 'viola', x: px(RX(172)), y: py(RY(28)), dir: 'up' });
+    const le = add({ cid: 'lea', x: px(RX(160)), y: py(RY(30)), dir: 'up' });
+    add({ cid: 'rud', x: px(RX(159)), y: py(RY(31)), dir: 'up' });
+    add({ cid: 'volkan', x: px(RX(175)), y: py(RY(30)), dir: 'up' });
+    add({ cid: 'goldy', x: px(RX(177)), y: py(RY(29)), dir: 'up' });
+    add({ cid: 'berna', x: px(RX(165)), y: py(RY(30)), dir: 'up' }); add({ cid: 'karel', x: px(RX(166)), y: py(RY(31)), dir: 'up' });
+    add({ cid: 'marien', x: px(RX(164)), y: py(RY(32)), dir: 'up' }); add({ cid: 'yana', x: px(RX(170)), y: py(RY(31)), dir: 'up' });
+    add({ cid: 'hemia', x: px(RX(171)), y: py(RY(32)), dir: 'up' }); add({ cid: 'pika', x: px(RX(158)), y: py(RY(27)), dir: 'up' });
     for (let i = 0; i < 14; i++) add({ x: px(158 + (i % 7) * 3), y: py(33 + Math.floor(i / 7)), dir: 'up', look: G.cast.folk(['farmer', 'farmerw', 'kid', 'kidg', 'merchant', 'sailor', 'oldw', 'student'][i % 8]), name: '축제 손님' });
-    const fw = Wd.add(new Fireworks({ x: px(167), y: py(24), spread: 240, always: true, rate: 1.6 }));
+    const fw = Wd.add(new Fireworks({ x: px(RX(167)), y: py(RY(24)), spread: 240, always: true, rate: 1.6 }));
     c.music('rainbow');
     await c.fade(false, { sec: 1.2 });
     await c.narr('천년제 마지막 밤. 광장이 사람으로 가득 찼다. 무지개 기둥의 고리 일곱 개가 차례로 희미하게 빛난다.');
@@ -684,7 +685,7 @@
     c.music('rainbow');
     c.camFree();
     await c.say(n0(ch), '자, 흰빛의 손님! 무대로 올라와 불씨를 기둥에!', { face: 'happy' });
-    await c.walk('hero', 167, 23);
+    await c.walk('hero', RX(167), RY(23));
     c.face('hero', 'up');
     const opts = [{ t: '불씨를 기둥에 넣는다', sub: '천 년의 전통대로. 모두가 기다린다.' }];
     opts.push({ t: '넣지 않는다', sub: f('c6_rolo') ? '롤로의 회색 얼굴이 떠오른다.' : '어쩐지 손이 움직이지 않는다.', tag: 'dawn' });
@@ -705,10 +706,10 @@
     // 그라우스
     c.stopMusic(0.3);
     c.sfx('rumble'); c.shake(3, 1);
-    const gr = add({ cid: 'graus', x: px(167) + 8, y: py(21) + 2, dir: 'down' });
+    const gr = add({ cid: 'graus', x: px(RX(167)) + 8, y: py(RY(21)) + 2, dir: 'down' });
     G.fx.dust(gr.x, gr.y, 10);
     await c.say(gr, '불씨를 넣든 말든 상관없다.', { face: 'smirk' });
-    c.emote(ch, '!'); await c.move(ch, px(164) + 8, py(21), { speed: 90 });
+    c.emote(ch, '!'); await c.move(ch, px(RX(164)) + 8, py(RY(21)), { speed: 90 });
     gr.jz = 120; c.camOn(gr, 3);
     for (let t = 0; t < 1; t += 1 / 30) { gr.jz = 120 * (1 - t) * (1 - t); await c.wait(1 / 30); }
     gr.jz = 0; c.shake(4, 0.4); c.sfx('impact');
@@ -725,9 +726,9 @@
     await c.cutin({ who: 'graus', title: '그라우스', small: '징수 기사단 부단장', sub: '정면은 방패로 막는다 — 돌진 뒤 빈틈을!', col: '#6a1a2a', face: 'angry', sec: 1.8 });
     c.camFree();
     gr.dead = true;
-    const boss = G.bosses.spawn('graus', px(167) + 8, py(26), { hpMul: 1.5 });
-    boss.duel = true; boss.home = { x: px(167) + 8, y: py(28) };
-    const knights = [G.foes.spawn('knight', px(160), py(29), { tier: 5 }), G.foes.spawn('knight', px(175), py(29), { tier: 5 })];
+    const boss = G.bosses.spawn('graus', px(RX(167)) + 8, py(RY(26)), { hpMul: 1.5 });
+    boss.duel = true; boss.home = { x: px(RX(167)) + 8, y: py(RY(28)) };
+    const knights = [G.foes.spawn('knight', px(RX(160)), py(RY(29)), { tier: 5 }), G.foes.spawn('knight', px(RX(175)), py(RY(29)), { tier: 5 })];
     for (const n of crowd) if (n !== gr) n.solid = false;
     s.duel = true;
     await c.cinema(false);
@@ -841,11 +842,11 @@
     for (const n of crowd) n.dead = true;
     ST.toMorning();
     c.stopMusic(0.5);
-    G.game.goto('world', px(179), py(24), 'up');
+    G.game.goto('world', px(RX(179)), py(RY(24)), 'up');
     await c.fade(false, { sec: 1 });
     await c.narr('다음 날 아침. 광장에는 부러진 기둥이 그대로 누워 있었다. 아무도 치우지 않았다. 아무도 치우자고 하지 않았다.');
     c.music('rainbow');
-    const ch2 = c.spawn({ cid: 'chroma', x: px(179), y: py(24) - 30, dir: 'down' });
+    const ch2 = c.spawn({ cid: 'chroma', x: px(RX(179)), y: py(RY(24)) - 30, dir: 'down' });
     await c.say(n0(ch2), '…사십 년. 나는 사십 년 동안 불씨를 지키는 줄 알았어요. 사실은 불쏘시개를 모으고 있었는데.', { face: 'cry' });
     await c.say(n0(ch2), '설산 화이트로 가는 고개는 바위로 막혀 있어요. 그 장갑이면 들 수 있을 거예요. 루미에 성녀님이 계신 곳이에요. 병든 사람들이 모이는 곳.', { face: 'normal' });
     await c.say(n0(ch2), '…흰빛. 당신 머리. 한 가닥이 하얘요. 아프진 않아요?', { face: 'sad' });

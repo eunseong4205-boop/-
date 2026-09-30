@@ -11,7 +11,7 @@
   const f = (k) => !!S().flags[k];
   const PT = OW.towns.purple, X0 = PT.x, Y0 = PT.y;     // 124, 96
   const px = (tx) => tx * TS + 8, py = (ty) => ty * TS + 12;
-  const POND = { x: 138, y: 112 };
+  const POND = OW.pt(138, 112);
   ST.PURPLE = { X0, Y0, POND };
 
   ST.CH.push({ no: '제5장', id: 'c5', title: '해 질 녘의 숲', sub: '해가 지지 않고, 뜨지도 않는 숲. 거울 연못은 보고 싶지 않은 얼굴을 비춘다.',
@@ -214,11 +214,11 @@
   ST.folk('world', { name: '숲지기', folk: 'farmer', x: X0 + 28, y: Y0 + 8, lines: { c5: ['해가 안 지니까 버섯이 미쳐 자라. 좋은 건지 나쁜 건지.', '밤이 없는 숲이 좋아 보여? 여긴 잠드는 법을 잊은 숲이야.'] } });
 
   /* ───────── 빛 씨앗 (퍼플) ───────── */
-  ST.seed('p1', 'world', 116, 128, { under: true });
-  ST.seed('p2', 'world', 160, 100, {});
-  ST.seed('p3', 'world', 150, 134, { under: true });
+  ST.seed('p1', 'world', ...OW.P(116, 128), { under: true });
+  ST.seed('p2', 'world', ...OW.P(160, 100), {});
+  ST.seed('p3', 'world', ...OW.P(150, 134), { under: true });
   ST.seed('p4', 'world', POND.x + 6, POND.y + 2, {});
-  OW.hooks.push((m) => { m.obj[m.i(116, 128)] = O.SHROOM === 0 ? O.BUSH : O.BUSH; m.obj[m.i(150, 134)] = O.BUSH; m.obj[m.i(160, 100)] = 0; });
+  OW.hooks.push((m) => { m.obj[m.i(...OW.P(116, 128))] = O.SHROOM === 0 ? O.BUSH : O.BUSH; m.obj[m.i(...OW.P(150, 134))] = O.BUSH; m.obj[m.i(...OW.P(160, 100))] = 0; });
 
   /* ═════════ 거꾸로 선 탑 (던전 5) ═════════ */
   G.dungeon.def('d5', {

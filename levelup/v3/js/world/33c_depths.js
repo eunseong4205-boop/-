@@ -21,7 +21,7 @@
   BV('forgotking', 'hollowking', { name: '잊힌 왕', title: '잊힌 묘지 · 이름을 잃은 왕', hp: 320, atk: 8, col: '#b08aff', tint: '#8a5ad8', tintA: 0.5, exp: 760, gold: 520 });
 
   /* ───────── 입구 ───────── */
-  const GATE = { d12: { x: 226, y: 270 }, d13: { x: 366, y: 157 }, d14: { x: 350, y: 46 }, d15: { x: 80, y: 280 } };
+  const GATE = { d12: OW.pt(226, 270), d13: OW.pt(366, 157), d14: OW.pt(350, 46), d15: OW.pt(80, 280) };
   OW.hooks.push((m) => {
     ST.cave(m, { x: GATE.d12.x, y: GATE.d12.y, id: 'd12_gate', to: 'd12', col: '#a85a3a', rx: 8, ry: 4, h: 2 });
     OW.clear(m, GATE.d13.x - 1, GATE.d13.y - 1, 9, 5, m.hgt[m.i(GATE.d13.x, GATE.d13.y + 2)], null);
@@ -178,6 +178,7 @@
     { id: 'sec_purple', region: 'purple', x: 110, y: 120, name: '거울 뒤 서재', how: 'mirror', loot: [['ac_combo'], ['heartpiece']], foes: [['mage', 5, 5], ['ghost', 10, 5]], msg: '그냥 바위벽이다. …아닌가? 무언가 비치는 것 같다.' },
   ];
   for (const sc of SECRETS) {
+    [sc.x, sc.y] = OW.P(sc.x, sc.y);   // 넓어진 대륙의 자리
     const cond = () => {
       const s = S();
       if (sc.how === 'heat') return G.st.derive(s).heatOk;

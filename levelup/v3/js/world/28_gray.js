@@ -12,8 +12,8 @@
   const f = (k) => !!S().flags[k];
   const GT = OW.towns.gray, X0 = GT.x, Y0 = GT.y;           // 18, 100
   const px = (tx) => tx * TS + 8, py = (ty) => ty * TS + 12;
-  const RUIN = { x: 20, y: 125 };                            // 은빛 왕국 폐허 (광맥 입구)
-  const FACT = { x: 52, y: 104 };                            // 폐공장
+  const RUIN = OW.pt(20, 125);                            // 은빛 왕국 폐허 (광맥 입구)
+  const FACT = OW.pt(52, 104);                            // 폐공장
   const girl = () => S().gender === 'girl';
   ST.GRAY = { X0, Y0, RUIN, FACT };
 

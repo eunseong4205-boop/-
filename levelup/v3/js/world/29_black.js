@@ -12,9 +12,9 @@
   const f = (k) => !!S().flags[k];
   const BT = OW.towns.black, X0 = BT.x, Y0 = BT.y;          // 250, 44
   const px = (tx) => tx * TS + 8, py = (ty) => ty * TS + 12;
-  const CASTLE = { x: 262, y: 32 };                          // 녹턴의 성 (마을 북쪽 고원)
-  const GRAVE = { x: 279, y: 63 };                           // 남동쪽 묘지 (뒷길)
-  const LAMPS = [[257, 52], [277, 52], [257, 62], [277, 62], [267, 66]];
+  const CASTLE = OW.pt(262, 32);                          // 녹턴의 성 (마을 북쪽 고원)
+  const GRAVE = OW.pt(279, 63);                           // 남동쪽 묘지 (뒷길)
+  const LAMPS = [[257, 52], [277, 52], [257, 62], [277, 62], [267, 66]].map(([a, b]) => OW.P(a, b));
   const buddy = () => ({ dawn: 'rud', order: 'cassian', night: 'lyra' }[S().flags.route_lock || 'order']);
   const girl = () => S().gender === 'girl';
   ST.BLACK = { X0, Y0, CASTLE, GRAVE };
@@ -22,7 +22,7 @@
   ST.CH.push({ no: '제9장', id: 'c9', title: '영원한 밤', sub: '16년 동안 해가 뜨지 않았다. 그림자는 주인보다 먼저 지쳤다.',
     goal(s) {
       const rt = s.flags.route_lock || 'order';
-      if (!f('c9_mid')) return { text: '등불 거리 서쪽, 밤의 정보상 미드나잇을 찾자.', map: 'world', x: 255, y: 50 };
+      if (!f('c9_mid')) return { text: '등불 거리 서쪽, 밤의 정보상 미드나잇을 찾자.', map: 'world', ...OW.pt(255, 50) };
       if (!f('c9_in')) return { text: ({ dawn: '성문 앞. 레아와 루드가 화약을 심고 기다린다.', order: '북쪽 성문. 정문 경비에게 통행증을 보이자.', night: '남동쪽 묘지의 기울어진 비석. 고양이 발자국을 따라.' })[rt], map: 'world', x: rt === 'night' ? GRAVE.x + 1 : CASTLE.x + 6, y: rt === 'night' ? GRAVE.y + 1 : CASTLE.y + 5 };
       if (!f('d9:boss')) return { text: '녹턴의 성 꼭대기로.', map: 'world', x: CASTLE.x + 6, y: CASTLE.y + 5 };
       if (!f('c9_done')) return { text: '성 꼭대기에서 녹턴과 이야기하자.', map: 'world', x: CASTLE.x + 6, y: CASTLE.y + 5 };
@@ -208,13 +208,13 @@
   });
 
   /* ───────── 등불지기 · 눈먼 등대지기 ───────── */
-  ST.person('world', { name: '등불지기 칸델', folk: 'oldm', x: 267, y: 54, dir: 'down', mark: () => (!f('lamps_done') ? '?' : null), talk: async (c, n) => {
+  ST.person('world', { name: '등불지기 칸델', folk: 'oldm', ...OW.pt(267, 54), dir: 'down', mark: () => (!f('lamps_done') ? '?' : null), talk: async (c, n) => {
     const k = LAMPS.filter((_, j) => f('lamp' + j)).length;
     if (f('lamps_done')) { await c.say(n, '16년 만에 퇴근했어. 집에 가니까 마누라가 누구냐고 하더군. 허허.', { face: 'happy' }); return; }
     if (k >= 5) { c.flag('lamps_done'); await c.say(n, '다섯 개 전부! 등불 거리가 이렇게 밝았던 적이 있었나! 이거 받게. 16년 치 야근 수당이야.', { face: 'happy' }); c.gold(3000); await c.getItem('heartpiece'); return; }
     await c.say(n, '등불지기 칸델이다. 해가 안 뜨는 마을이라 퇴근을 못 해. 16년째.||거리의 등불 다섯 개가 꺼졌어. 기름을 부어도 안 켜져. 탑이 불빛까지 먹는 거야. 흰빛이라면 켤 수 있을지도. (' + k + '/5)', { face: 'sad' });
   } });
-  ST.person('world', { name: '눈먼 노인', folk: 'sailor', x: 280, y: 57, dir: 'left', state: 'sit', mark: () => (!f('orhan_done') && (!f('orhan_q') || S().inv.letter_luce) ? '!' : null), talk: async (c, n) => {
+  ST.person('world', { name: '눈먼 노인', folk: 'sailor', ...OW.pt(280, 57), dir: 'left', state: 'sit', mark: () => (!f('orhan_done') && (!f('orhan_q') || S().inv.letter_luce) ? '!' : null), talk: async (c, n) => {
     if (f('orhan_done')) { await c.say(n, '…켜져 있다고. 그럼 됐다. 눈이 안 보여도 집을 찾을 수 있겠구나. 봄이 오면 가겠네. 밤이 끝나면.', { face: 'smile' }); return; }
     if (S().inv.letter_luce) {
       c.take('letter_luce');
@@ -250,8 +250,8 @@
   for (const sp of ST.people.world || []) if (sp.id === 'gordi' && !sp.x0c9) { if (sp.x >= X0 - 20) continue; const old = sp.when; sp.when = (s2) => !ST.after('c9') && (old ? old(s2) : true); }
   ST.folk('bk_shop', { name: '밤의 가게 주인', folk: 'nightm', x: 5, y: 3, lines: { c9: async (c) => { const k = await c.choice('소리 없이 사고, 소리 없이 파오.', ['물건을 산다', '괜찮아요'], { name: '밤의 가게 주인' }); if (k === 0) await c.shop('black'); } } });
   ST.folk('bk_inn', { name: '등불 여관 주인', folk: 'nightw', x: 4, y: 3, lines: { c9: async (c) => { const k = await c.choice('여긴 늘 밤이라 언제 자도 돼요. 대신 아침은 없어요. (60골드)', ['쉰다', '괜찮아요'], { name: '등불 여관 주인' }); if (k === 0) { if (S().gold >= 60) c.gold(-60); await c.rest(); } } } });
-  ST.folk('world', { name: '밤 사람', folk: 'nightw', x: 262, y: 58, wander: 24, lines: { c9: ['쉿. 크게 말하면 밤이 들어요. …농담이에요. 녹턴 님이 들어요.', '해? 그림으로 봤어요. 둥글고 노랗다면서요. 무섭지 않아요?'], c10: '어제 동쪽 하늘이 조금 파랬어요! 16년 만에! 다들 지붕에 올라가서 울었어요.' } });
-  ST.folk('world', { name: '밤 아이', folk: 'kid', x: 272, y: 60, wander: 20, lines: { c9: ['리라 누나 알아? 노래하는 누나. 어릴 때 성에서 살았대. 공주님이래!', '흰빛 형아' + (girl() ? '… 아니 누나' : '') + ' 옆에 있으면 그림자가 생겨! 신기해!'] } });
+  ST.folk('world', { name: '밤 사람', folk: 'nightw', ...OW.pt(262, 58), wander: 24, lines: { c9: ['쉿. 크게 말하면 밤이 들어요. …농담이에요. 녹턴 님이 들어요.', '해? 그림으로 봤어요. 둥글고 노랗다면서요. 무섭지 않아요?'], c10: '어제 동쪽 하늘이 조금 파랬어요! 16년 만에! 다들 지붕에 올라가서 울었어요.' } });
+  ST.folk('world', { name: '밤 아이', folk: 'kid', ...OW.pt(272, 60), wander: 20, lines: { c9: ['리라 누나 알아? 노래하는 누나. 어릴 때 성에서 살았대. 공주님이래!', '흰빛 형아' + (girl() ? '… 아니 누나' : '') + ' 옆에 있으면 그림자가 생겨! 신기해!'] } });
   ST.folk('world', { name: '해골 기사', folk: 'knight', x: CASTLE.x + 3, y: CASTLE.y + 4, dir: 'down', when: () => !f('c9_in'), lines: { c9: '「…밤의 성. 허가 없는 자. 출입. 불가. 교대 시간. 천 년째. 안 옴.」' } });
 
   /* ═════════ 녹턴의 성 (던전 9) ═════════ */

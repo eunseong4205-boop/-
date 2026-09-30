@@ -12,7 +12,7 @@
   const BT = OW.towns.blue, X0 = BT.x, Y0 = BT.y;     // 160, 204
   const px = (tx) => tx * TS + 8, py = (ty) => ty * TS + 12;
   const LH = { x: X0 + 38, y: Y0 + 10 };               // 등대
-  const CAVE = { x: 146, y: 222 };                      // 해저 동굴 입구 (바다 쪽)
+  const CAVE = OW.pt(146, 222);                      // 해저 동굴 입구 (바다 쪽)
   ST.BLUE = { X0, Y0, LH, CAVE };
 
   ST.CH.push({ no: '제3장', id: 'c3', title: '파도와 지혜', sub: '책장이 파도처럼 넘어가는 항구. 엄마가 찾던 것이 금서고 깊은 곳에 잠들어 있다.',
@@ -214,10 +214,10 @@
 
   /* ───────── 빛 씨앗 (블루) ───────── */
   ST.seed('b1', 'world', X0 + 34, Y0 + 3, {});
-  ST.seed('b2', 'world', 188, 190, { under: true });
-  ST.seed('b3', 'world', 150, 200, { under: true });
+  ST.seed('b2', 'world', ...OW.P(188, 190), { under: true });
+  ST.seed('b3', 'world', ...OW.P(150, 200), { under: true });
   ST.seed('b4', 'world', CAVE.x + 4, CAVE.y - 3, {});
-  OW.hooks.push((m) => { m.obj[m.i(188, 190)] = O.BUSH; m.obj[m.i(150, 200)] = O.ROCK; m.obj[m.i(X0 + 34, Y0 + 3)] = 0; });
+  OW.hooks.push((m) => { m.obj[m.i(...OW.P(188, 190))] = O.BUSH; m.obj[m.i(...OW.P(150, 200))] = O.ROCK; m.obj[m.i(X0 + 34, Y0 + 3)] = 0; });
 
   /* ═════════ 해저 동굴 (던전 3) ═════════ */
   G.dungeon.def('d3', {
