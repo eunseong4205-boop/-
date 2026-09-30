@@ -235,6 +235,38 @@
     e.x = best[0]; e.y = best[1]; if (e.home) e.home = { x: e.x, y: e.y };
     return true;
   }
+  /** 문 칸과 다가서는 칸 (픽셀 상자): 들어가는 문은 아래에서, 나가는 문은 위에서 다가선다 */
+  function doorRects(m) {
+    const out = [];
+    for (const w of m.warps || []) {
+      const down = w.exit || w.dir === 'down';
+      out.push({ x: w.x * TS, y: (down ? w.y - 1 : w.y) * TS, w: (w.w || 1) * TS, h: ((w.h || 1) + 1) * TS });
+    }
+    return out;
+  }
+  const hitR = (b, r) => b.x < r.x + r.w && b.x + b.w > r.x && b.y < r.y + r.h && b.y + b.h > r.y;
+  function clearDoors(m, Wd) {
+    const R = doorRects(m); if (!R.length) return;
+    const p = Wd.player;
+    for (const e of Wd.ents) {
+      if (e === p || e.dead || e.fly || e.script || e.follower || e.boss || e.foe || e.hidden) continue;
+      if (e.kind === 'building' || !e.solid || !e.blockBox) continue;
+      let b; try { b = e.blockBox(); } catch (err) { continue; }
+      if (!b || !R.some((r) => hitR(b, r))) continue;
+      const tx = Math.floor(e.x / TS), ty = Math.floor((e.y - 3) / TS), z0 = m.H(tx, ty);
+      const ox = e.x - (tx * TS + 8), oy = e.y - (ty * TS + 12);
+      let best = null, bd = 1e9;
+      for (let dy = -4; dy <= 4; dy++) for (let dx = -4; dx <= 4; dx++) {
+        const x = tx + dx, y = ty + dy; if (!freeTile(m, x, y) || m.H(x, y) !== z0) continue;
+        const nb = { x: b.x + dx * TS, y: b.y + dy * TS, w: b.w, h: b.h };
+        if (R.some((r) => hitR(nb, r))) continue;
+        if (Wd.propBlock(nb.x, nb.y, nb.w, nb.h, e)) continue;
+        const d = dx * dx + dy * dy + (dy < 0 ? 0.3 : 0); if (d < bd) { bd = d; best = [x, y]; }
+      }
+      if (!best) continue;
+      e.x = best[0] * TS + 8 + ox; e.y = best[1] * TS + 12 + oy; if (e.home) e.home = { x: e.x, y: e.y };
+    }
+  }
   function dedupe(Wd) {
     const byCid = new Map();
     for (const e of Wd.ents) {
@@ -257,6 +289,8 @@
       if (e === p || e.dead || e.fly || e.script || e.vision || e.follower) continue;
       if (e.npc || e instanceof Pp.Chest) nudge(m, e, 3);
     }
+    // 문 · 동굴 입구와 그 앞 칸을 막고 선 소품 · 사람은 옆으로 비킨다
+    clearDoors(m, Wd);
     // 앞(남쪽)에서 다가설 수 없는 상자 · 표지판은 옆이나 뒤에서도 열고 읽게
     for (const e of Wd.ents) {
       if (e.dead || e.anyDir || !(e instanceof Pp.Chest || e instanceof Pp.Sign)) continue;

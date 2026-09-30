@@ -54,6 +54,7 @@
     const cx = CAVE.x, cy = CAVE.y;
     for (let y = cy - 6; y <= cy; y++) for (let x = cx - 5; x <= cx + 6; x++) { if (!m.inb(x, y)) continue; const i = m.i(x, y); m.hgt[i] = 1; m.ter[i] = T.GRASS; m.obj[i] = (x + y) % 3 === 0 ? O.PALM : 0; }
     G.gen.caveMouth(m, cx, cy, 2);
+    for (const x of [cx, cx + 1]) m.hgt[m.i(x, cy)] = 0;   // 입구는 물높이에: 언덕 위에 두면 앞 물칸이 절벽 면이 된다
     for (let y = cy + 1; y <= cy + 4; y++) for (let x = cx - 3; x <= cx + 4; x++) { if (!m.inb(x, y)) continue; const i = m.i(x, y); m.hgt[i] = 0; m.ter[i] = y === cy + 1 && (x === cx || x === cx + 1) ? T.WATER : T.DEEP; m.obj[i] = 0; }
     G.build.placeBuilding(m, { special: 'cave', tx: cx, ty: cy, w: 2, h: 1, to: 'd3', id: 'd3_gate', col: '#566a72' });
     // 마을 꾸미기

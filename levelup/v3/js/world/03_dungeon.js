@@ -133,9 +133,20 @@
     // 방 사이 문: 벽에 2칸 구멍 (이웃한 방) · 계단 (떨어진 방)
     m.doorways = []; m.stairLinks = [];
     const stairRes = new Uint8Array(m.w * m.h);
+    // 이웃한 두 방의 문 구멍이 던전 출구 칸과 겹치면(출구 방 바로 아래에 붙은 깊은 구역) 계단으로 잇는다: 그 문으로 걸어가면 밖으로 나가 버렸다
+    const exitCells = new Set();
+    if (D.exit) { const er = m.rooms[D.exit.at[0]]; if (er) for (let dx = 0; dx < 2; dx++) exitCells.add(m.i(er.x0 + D.exit.at[1] + dx, er.y0 + D.exit.at[2])); }
+    const clashExit = (a, b) => {
+      if (!exitCells.size) return false;
+      const [ax, ay] = P[a], [bx, by] = P[b];
+      if (ay === by) return false;
+      const y = Math.max(ay, by) * RH, x = ax * RW + (RW >> 1);
+      for (const [cx, cy] of [[x - 1, y - 1], [x, y - 1], [x - 1, y], [x, y]]) if (exitCells.has(m.i(cx, cy))) return true;
+      return false;
+    };
     for (const d of D.doors || []) {
       const [a, b, kind, extra] = d;
-      if (!adj(a, b)) {
+      if (!adj(a, b) || clashExit(a, b)) {
         // 계단 자리: 정해 두지 않았으면 방 네 귀퉁이 중 빈 곳
         const pick = (k) => {
           const r = m.rooms[k];
@@ -151,6 +162,8 @@
         else if (D.stairAt && D.stairAt[b + '>' + a]) [sb, sa] = D.stairAt[b + '>' + a];
         else { sa = pick(a); sb = pick(b); }
         const ra = m.rooms[a], rb = m.rooms[b];
+        // 계단 칸과 내려서는 칸(바로 아래)은 늘 단단한 바닥: 구덩이 · 물 방에서 빈자리가 없어 아무 데나 고른 계단이 구덩이 위로 내려놓던 것
+        for (const [r2, sp] of [[ra, sa], [rb, sb]]) for (let dy = 0; dy <= 1; dy++) for (let dx = 0; dx <= 1; dx++) { const rx = sp[0] + dx, ry = sp[1] + dy; if (rx < 1 || rx > RW - 2 || ry < 2 || ry > RH - 2) continue; const i = m.i(r2.x0 + rx, r2.y0 + ry); m.ter[i] = r2.R.floor || floor; m.obj[i] = 0; }
         mark(ra.x0 + sa[0], ra.y0 + sa[1], 2); mark(rb.x0 + sb[0], rb.y0 + sb[1], 2);
         for (const [X, Y] of [[ra.x0 + sa[0], ra.y0 + sa[1]], [rb.x0 + sb[0], rb.y0 + sb[1]]]) for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 3; dx++) if (m.inb(X + dx, Y + dy)) stairRes[m.i(X + dx, Y + dy)] = 1;
         m.stairLinks.push({ a, b, kind, extra, pa: [ra.x0 + sa[0], ra.y0 + sa[1]], pb: [rb.x0 + sb[0], rb.y0 + sb[1]] });

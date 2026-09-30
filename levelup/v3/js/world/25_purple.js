@@ -77,7 +77,7 @@
     const P = G.props;
     Wd.add(new P.Waystone({ x: px(PT.plaza.x + 3), y: py(PT.plaza.y - 3), wid: 'w_purple', name: '퍼플 라벤더 학원' }));
     Wd.add(new PondStair({ x: POND.x * TS + 16, y: POND.y * TS + 12 }));
-    Wd.add(new P.Sign({ x: px(POND.x - 1), y: py(POND.y - 7), text: '진실의 거울 연못\n「들여다보는 사람은 들여다보이는 사람이다」 — 시빌' }));
+    Wd.add(new P.Sign({ x: px(POND.x + 2), y: py(POND.y - 5), text: '진실의 거울 연못\n「들여다보는 사람은 들여다보이는 사람이다」 — 시빌' }));
     // 비올라의 마법 과녁
     if (f('c5_vera') && !f('c5_viola')) for (const [i, [dx, dy]] of [[5, 11], [9, 12], [13, 11]].entries()) { const t = G.foes.spawn('dummy', px(X0 + dx), py(Y0 + dy)); t.name = '마법 과녁'; t.targetNo = i; }
   });

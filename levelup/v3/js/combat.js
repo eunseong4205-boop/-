@@ -723,6 +723,20 @@
     p.setState('hook');
     sfx('hook');
   }
+  /** 갈고리로 끌려가 내려설 칸: 걸린 곳 바로 앞(주인공 쪽) 칸 가운데. 구덩이 · 물 · 막힌 칸이면 걸린 곳 둘레의 가장 가까운 안전한 칸.
+      (예전에는 걸린 곳에서 몇 픽셀 앞에서 멈춰, 구덩이 너머 말뚝을 걸면 구덩이 위에 내려서 떨어졌다) */
+  function hookLanding(m, p, ptx, pty, dx, dy) {
+    const safe = (x, y) => {
+      if (!m.inb(x, y) || m.hazardAt(x * TS + 8, y * TS + 10)) return false;
+      const t = m.T(x, y); if (t === TL.T.DEEP && !p.swim) return false;
+      const z = t === TL.T.STAIRS ? p.z : m.H(x, y);
+      return m.boxFree(x * TS + 8 - p.bw / 2, y * TS + 12 - p.bh, p.bw, p.bh, z, p) && !W().propBlock(x * TS + 8 - p.bw / 2, y * TS + 12 - p.bh, p.bw, p.bh, p);
+    };
+    const fx = ptx - dx, fy = pty - dy;   // 주인공 쪽 앞 칸
+    const cand = [[fx, fy], [ptx - dy, pty - dx], [ptx + dy, pty + dx], [fx - dy, fy - dx], [fx + dy, fy + dx], [ptx + dx, pty + dy]];
+    for (const [x, y] of cand) if (safe(x, y)) return [x * TS + 8, y * TS + 12];
+    return null;
+  }
   const hookAct = {
     update(p, dt, m) {
       const h = p.hook;
@@ -738,7 +752,11 @@
         if (post || (o && OB.DEF[o] && OB.DEF[o].big)) {
           // 걸린 곳 바로 앞(주인공 쪽)에 내려선다
           const hx0 = post ? post.x : tx * TS + 8, hy0 = post ? post.y : ty * TS + 14;
-          h.out = false; h.pull = true; h.tx = hx0 - Math.cos(h.a) * 12; h.ty = hy0 - Math.sin(h.a) * 10 + (Math.sin(h.a) < -0.5 ? 12 : 2); sfx('clank'); return;
+          h.out = false; h.pull = true; sfx('clank');
+          const L = hookLanding(m, p, post ? Math.floor(post.x / TS) : tx, post ? Math.floor((post.y - 3) / TS) : ty, Math.round(Math.cos(h.a)), Math.round(Math.sin(h.a)));
+          if (L) { h.tx = L[0]; h.ty = L[1]; h.exact = true; }
+          else { h.tx = hx0 - Math.cos(h.a) * 12; h.ty = hy0 - Math.sin(h.a) * 10 + (Math.sin(h.a) < -0.5 ? 12 : 2); }
+          return;
         }
         const f = foes().find((e) => U.dist(x, y, e.x, e.y - 8) < (e.r || 8) + 3);
         if (f) { h.out = false; h.foe = f; if (!f.boss && (f.weight || 1) < 2) { f.stunT = 1; } damage(f, 1, { src: 'hook', stun: 1.2, kx: 0, ky: 0 }); return; }
@@ -750,7 +768,7 @@
         p.noClip = true; p.inv = Math.max(p.inv, 0.1);
         const [nx, ny] = U.norm(h.tx - p.x, h.ty - p.y);
         const step = 300 * dt;
-        if (U.dist(p.x, p.y, h.tx, h.ty) <= step + 12) { p.noClip = false; p.hook = null; p.setState('idle'); E.settle(m, p); const safe = m.boxFree(p.x - p.bw / 2, p.y - p.bh, p.bw, p.bh, p.z, p); if (!safe) { p.y += 6; E.settle(m, p); } return; }
+        if (U.dist(p.x, p.y, h.tx, h.ty) <= step + (h.exact ? 0 : 12)) { if (h.exact) { p.x = h.tx; p.y = h.ty; } p.noClip = false; p.hook = null; p.setState('idle'); E.settle(m, p); p.safe = { x: p.x, y: p.y, z: p.z }; const safe = m.boxFree(p.x - p.bw / 2, p.y - p.bh, p.bw, p.bh, p.z, p); if (!safe) { p.y += 6; E.settle(m, p); } return; }
         p.x += nx * step; p.y += ny * step;
         h.x = h.tx; h.y = h.ty - 8;
       } else {
@@ -951,6 +969,7 @@
   }
 
   Object.assign(C, { drops, damage, kill, hurtPlayer, addSpecial, cutAt, shoot, Shot, Pickup, spawnPickup, explode, update, drawWeapon, drawBolts, makeIcons, levelUp, freezeWater, foes, after, cutArc, startSpin });
+  C.hookLanding = hookLanding;
   C.actions = { attack: atk, bow, magic, tool, special, hook: hookAct, charge: atk, spin: atk, dash: atk, lift: atk, cast: atk, sp: atk };
   G.combat = C;
 })();

@@ -5381,6 +5381,20 @@ button.stat small.fx { color: var(--paper-dim); }
     p.setState('hook');
     sfx('hook');
   }
+  /** 갈고리로 끌려가 내려설 칸: 걸린 곳 바로 앞(주인공 쪽) 칸 가운데. 구덩이 · 물 · 막힌 칸이면 걸린 곳 둘레의 가장 가까운 안전한 칸.
+      (예전에는 걸린 곳에서 몇 픽셀 앞에서 멈춰, 구덩이 너머 말뚝을 걸면 구덩이 위에 내려서 떨어졌다) */
+  function hookLanding(m, p, ptx, pty, dx, dy) {
+    const safe = (x, y) => {
+      if (!m.inb(x, y) || m.hazardAt(x * TS + 8, y * TS + 10)) return false;
+      const t = m.T(x, y); if (t === TL.T.DEEP && !p.swim) return false;
+      const z = t === TL.T.STAIRS ? p.z : m.H(x, y);
+      return m.boxFree(x * TS + 8 - p.bw / 2, y * TS + 12 - p.bh, p.bw, p.bh, z, p) && !W().propBlock(x * TS + 8 - p.bw / 2, y * TS + 12 - p.bh, p.bw, p.bh, p);
+    };
+    const fx = ptx - dx, fy = pty - dy;   // 주인공 쪽 앞 칸
+    const cand = [[fx, fy], [ptx - dy, pty - dx], [ptx + dy, pty + dx], [fx - dy, fy - dx], [fx + dy, fy + dx], [ptx + dx, pty + dy]];
+    for (const [x, y] of cand) if (safe(x, y)) return [x * TS + 8, y * TS + 12];
+    return null;
+  }
   const hookAct = {
     update(p, dt, m) {
       const h = p.hook;
@@ -5396,7 +5410,11 @@ button.stat small.fx { color: var(--paper-dim); }
         if (post || (o && OB.DEF[o] && OB.DEF[o].big)) {
           // 걸린 곳 바로 앞(주인공 쪽)에 내려선다
           const hx0 = post ? post.x : tx * TS + 8, hy0 = post ? post.y : ty * TS + 14;
-          h.out = false; h.pull = true; h.tx = hx0 - Math.cos(h.a) * 12; h.ty = hy0 - Math.sin(h.a) * 10 + (Math.sin(h.a) < -0.5 ? 12 : 2); sfx('clank'); return;
+          h.out = false; h.pull = true; sfx('clank');
+          const L = hookLanding(m, p, post ? Math.floor(post.x / TS) : tx, post ? Math.floor((post.y - 3) / TS) : ty, Math.round(Math.cos(h.a)), Math.round(Math.sin(h.a)));
+          if (L) { h.tx = L[0]; h.ty = L[1]; h.exact = true; }
+          else { h.tx = hx0 - Math.cos(h.a) * 12; h.ty = hy0 - Math.sin(h.a) * 10 + (Math.sin(h.a) < -0.5 ? 12 : 2); }
+          return;
         }
         const f = foes().find((e) => U.dist(x, y, e.x, e.y - 8) < (e.r || 8) + 3);
         if (f) { h.out = false; h.foe = f; if (!f.boss && (f.weight || 1) < 2) { f.stunT = 1; } damage(f, 1, { src: 'hook', stun: 1.2, kx: 0, ky: 0 }); return; }
@@ -5408,7 +5426,7 @@ button.stat small.fx { color: var(--paper-dim); }
         p.noClip = true; p.inv = Math.max(p.inv, 0.1);
         const [nx, ny] = U.norm(h.tx - p.x, h.ty - p.y);
         const step = 300 * dt;
-        if (U.dist(p.x, p.y, h.tx, h.ty) <= step + 12) { p.noClip = false; p.hook = null; p.setState('idle'); E.settle(m, p); const safe = m.boxFree(p.x - p.bw / 2, p.y - p.bh, p.bw, p.bh, p.z, p); if (!safe) { p.y += 6; E.settle(m, p); } return; }
+        if (U.dist(p.x, p.y, h.tx, h.ty) <= step + (h.exact ? 0 : 12)) { if (h.exact) { p.x = h.tx; p.y = h.ty; } p.noClip = false; p.hook = null; p.setState('idle'); E.settle(m, p); p.safe = { x: p.x, y: p.y, z: p.z }; const safe = m.boxFree(p.x - p.bw / 2, p.y - p.bh, p.bw, p.bh, p.z, p); if (!safe) { p.y += 6; E.settle(m, p); } return; }
         p.x += nx * step; p.y += ny * step;
         h.x = h.tx; h.y = h.ty - 8;
       } else {
@@ -5609,6 +5627,7 @@ button.stat small.fx { color: var(--paper-dim); }
   }
 
   Object.assign(C, { drops, damage, kill, hurtPlayer, addSpecial, cutAt, shoot, Shot, Pickup, spawnPickup, explode, update, drawWeapon, drawBolts, makeIcons, levelUp, freezeWater, foes, after, cutArc, startSpin });
+  C.hookLanding = hookLanding;
   C.actions = { attack: atk, bow, magic, tool, special, hook: hookAct, charge: atk, spin: atk, dash: atk, lift: atk, cast: atk, sp: atk };
   G.combat = C;
 })();
@@ -11810,9 +11829,20 @@ button.stat small.fx { color: var(--paper-dim); }
     // 방 사이 문: 벽에 2칸 구멍 (이웃한 방) · 계단 (떨어진 방)
     m.doorways = []; m.stairLinks = [];
     const stairRes = new Uint8Array(m.w * m.h);
+    // 이웃한 두 방의 문 구멍이 던전 출구 칸과 겹치면(출구 방 바로 아래에 붙은 깊은 구역) 계단으로 잇는다: 그 문으로 걸어가면 밖으로 나가 버렸다
+    const exitCells = new Set();
+    if (D.exit) { const er = m.rooms[D.exit.at[0]]; if (er) for (let dx = 0; dx < 2; dx++) exitCells.add(m.i(er.x0 + D.exit.at[1] + dx, er.y0 + D.exit.at[2])); }
+    const clashExit = (a, b) => {
+      if (!exitCells.size) return false;
+      const [ax, ay] = P[a], [bx, by] = P[b];
+      if (ay === by) return false;
+      const y = Math.max(ay, by) * RH, x = ax * RW + (RW >> 1);
+      for (const [cx, cy] of [[x - 1, y - 1], [x, y - 1], [x - 1, y], [x, y]]) if (exitCells.has(m.i(cx, cy))) return true;
+      return false;
+    };
     for (const d of D.doors || []) {
       const [a, b, kind, extra] = d;
-      if (!adj(a, b)) {
+      if (!adj(a, b) || clashExit(a, b)) {
         // 계단 자리: 정해 두지 않았으면 방 네 귀퉁이 중 빈 곳
         const pick = (k) => {
           const r = m.rooms[k];
@@ -11828,6 +11858,8 @@ button.stat small.fx { color: var(--paper-dim); }
         else if (D.stairAt && D.stairAt[b + '>' + a]) [sb, sa] = D.stairAt[b + '>' + a];
         else { sa = pick(a); sb = pick(b); }
         const ra = m.rooms[a], rb = m.rooms[b];
+        // 계단 칸과 내려서는 칸(바로 아래)은 늘 단단한 바닥: 구덩이 · 물 방에서 빈자리가 없어 아무 데나 고른 계단이 구덩이 위로 내려놓던 것
+        for (const [r2, sp] of [[ra, sa], [rb, sb]]) for (let dy = 0; dy <= 1; dy++) for (let dx = 0; dx <= 1; dx++) { const rx = sp[0] + dx, ry = sp[1] + dy; if (rx < 1 || rx > RW - 2 || ry < 2 || ry > RH - 2) continue; const i = m.i(r2.x0 + rx, r2.y0 + ry); m.ter[i] = r2.R.floor || floor; m.obj[i] = 0; }
         mark(ra.x0 + sa[0], ra.y0 + sa[1], 2); mark(rb.x0 + sb[0], rb.y0 + sb[1], 2);
         for (const [X, Y] of [[ra.x0 + sa[0], ra.y0 + sa[1]], [rb.x0 + sb[0], rb.y0 + sb[1]]]) for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 3; dx++) if (m.inb(X + dx, Y + dy)) stairRes[m.i(X + dx, Y + dy)] = 1;
         m.stairLinks.push({ a, b, kind, extra, pa: [ra.x0 + sa[0], ra.y0 + sa[1]], pb: [rb.x0 + sb[0], rb.y0 + sb[1]] });
@@ -12547,14 +12579,19 @@ button.stat small.fx { color: var(--paper-dim); }
   ST.cave = function (m, o) {
     const x = o.x, y = o.y, base = m.hgt[m.i(x, y + 1)];
     const rx = o.rx || 7, ry = o.ry || 4;
+    // 다른 입구와 그 앞길은 언덕으로 덮지 않는다 (가까이 놓인 두 동굴이 서로를 묻던 것)
+    const near = (xx, yy) => (m.warps || []).some((w) => xx >= w.x - 2 && xx <= w.x + (w.w || 1) + 1 && yy >= w.y - 1 && yy <= w.y + 4);
     for (let yy = y - ry * 2; yy <= y; yy++) for (let xx = x - rx; xx <= x + rx + 1; xx++) {
-      if (!m.inb(xx, yy)) continue;
+      if (!m.inb(xx, yy) || near(xx, yy)) continue;
       const d = Math.hypot((xx - x - 0.5) / rx, (yy - (y - ry)) / (ry + 0.5));
       if (d < 1 && m.hgt[m.i(xx, yy)] <= base) { m.hgt[m.i(xx, yy)] = base + (o.h || 1); const t = m.ter[m.i(xx, yy)]; if (t === T.WATER || t === T.DEEP || t === T.CLIFF || t === T.STAIRS || t === T.BRIDGE) m.ter[m.i(xx, yy)] = o.ground || T.GRASS; m.obj[m.i(xx, yy)] = o.cover && d < 0.8 && G.u.noise2(xx, yy, 7) > 0.4 ? o.cover : 0; }
     }
     G.gen.caveMouth(m, x, y, 2);
+    // 입구는 언덕 발치(아래 땅과 같은 높이)에 판다: 언덕 위에 두면 앞 칸이 절벽 면이 되어 걸어서 닿지 못한다
+    // 언덕이 두 층 이상이면 면이 여러 줄이 되니, 입구 아래 줄들도 절벽 면에서 뺀다
+    for (const xx of [x, x + 1]) { m.hgt[m.i(xx, y)] = base; for (let k = 1; k < (o.h || 1); k++) m.noCliff.add(m.i(xx, y + k)); }
     G.build.placeBuilding(m, { special: 'cave', tx: x, ty: y, w: 2, h: 1, to: o.to, id: o.id, col: o.col || '#6e5640', cond: o.cond, msg: o.msg });
-    for (let yy = y + 1; yy < y + (o.path || 3); yy++) for (const xx of [x, x + 1]) { const i = m.i(xx, yy); if (m.ter[i] === T.CLIFF || m.ter[i] === T.STAIRS) continue; m.ter[i] = m.ter[i] === T.WATER || m.ter[i] === T.DEEP ? T.BRIDGE : (o.road || T.DIRT); m.obj[i] = 0; m.hgt[i] = base; }
+    for (let yy = y + 1; yy < y + (o.path || 3); yy++) for (const xx of [x, x + 1]) { const i = m.i(xx, yy); if (m.ter[i] === T.CLIFF || m.ter[i] === T.STAIRS) { m.ter[i] = T.STAIRS; m.obj[i] = 0; continue; } m.ter[i] = m.ter[i] === T.WATER || m.ter[i] === T.DEEP ? T.BRIDGE : (o.road || T.DIRT); m.obj[i] = 0; m.hgt[i] = base; }
     return { x, y };
   };
   /** 장(章)마다 다른 말: { c1: [...], c3: [...] } → 지금 장 이하에서 가장 늦은 것 */
@@ -14656,6 +14693,7 @@ button.stat small.fx { color: var(--paper-dim); }
     const cx = CAVE.x, cy = CAVE.y;
     for (let y = cy - 6; y <= cy; y++) for (let x = cx - 5; x <= cx + 6; x++) { if (!m.inb(x, y)) continue; const i = m.i(x, y); m.hgt[i] = 1; m.ter[i] = T.GRASS; m.obj[i] = (x + y) % 3 === 0 ? O.PALM : 0; }
     G.gen.caveMouth(m, cx, cy, 2);
+    for (const x of [cx, cx + 1]) m.hgt[m.i(x, cy)] = 0;   // 입구는 물높이에: 언덕 위에 두면 앞 물칸이 절벽 면이 된다
     for (let y = cy + 1; y <= cy + 4; y++) for (let x = cx - 3; x <= cx + 4; x++) { if (!m.inb(x, y)) continue; const i = m.i(x, y); m.hgt[i] = 0; m.ter[i] = y === cy + 1 && (x === cx || x === cx + 1) ? T.WATER : T.DEEP; m.obj[i] = 0; }
     G.build.placeBuilding(m, { special: 'cave', tx: cx, ty: cy, w: 2, h: 1, to: 'd3', id: 'd3_gate', col: '#566a72' });
     // 마을 꾸미기
@@ -15363,7 +15401,7 @@ button.stat small.fx { color: var(--paper-dim); }
     const P = G.props;
     Wd.add(new P.Waystone({ x: px(PT.plaza.x + 3), y: py(PT.plaza.y - 3), wid: 'w_purple', name: '퍼플 라벤더 학원' }));
     Wd.add(new PondStair({ x: POND.x * TS + 16, y: POND.y * TS + 12 }));
-    Wd.add(new P.Sign({ x: px(POND.x - 1), y: py(POND.y - 7), text: '진실의 거울 연못\n「들여다보는 사람은 들여다보이는 사람이다」 — 시빌' }));
+    Wd.add(new P.Sign({ x: px(POND.x + 2), y: py(POND.y - 5), text: '진실의 거울 연못\n「들여다보는 사람은 들여다보이는 사람이다」 — 시빌' }));
     // 비올라의 마법 과녁
     if (f('c5_vera') && !f('c5_viola')) for (const [i, [dx, dy]] of [[5, 11], [9, 12], [13, 11]].entries()) { const t = G.foes.spawn('dummy', px(X0 + dx), py(Y0 + dy)); t.name = '마법 과녁'; t.targetNo = i; }
   });
@@ -18270,7 +18308,7 @@ button.stat small.fx { color: var(--paper-dim); }
       '1,2': { props: [['sign', 9, 9, { text: '「중력 구역. 구덩이는 우주다. 떨어지면 정거장이 붙잡는다 — 입구로.」' }], ['pot', 2, 11], ['pot', 17, 11]], ter: [['pit', 3, 4, 3, 3], ['pit', 14, 4, 3, 3]], foes: [['drone', 5, 8], ['drone', 14, 8], ['turret', 9, 3]] },
       '0,2': { ter: [['pit', 5, 2, 10, 11]], props: [['post', 3, 7], ['post', 16, 7], ['chest', 17, 3, { item: 'key_small' }], ['chest', 17, 11, { item: 'arrows10' }]], foes: [['drone', 10, 5], ['drone', 10, 9]] },
       '2,2': { solve: { type: 'clear' }, props: [['chest', 9, 6, { item: 'compass', hidden: true }], ['crystal', 4, 4], ['cblock', 9, 3], ['cblock', 10, 3], ['cblock', 15, 9, { blue: false }], ['cblock', 16, 9, { blue: false }]], foes: [['golem', 9, 8], ['drone', 5, 10], ['drone', 14, 10]] },
-      '1,1': { ter: [['pit', 1, 6, 18, 2]], props: [['eye', 9, 2, { sets: 'd11:eye' }], ['fn', 9, 10, { fn: (x, y, Wd) => Wd.add(new G.props.Sign({ x, y, text: '「사다리 제어 — 눈을 맞히면 다리가 뜬다」', look: 'stone', anyDir: true })) }], ['chest', 16, 3, { item: 'map_d' }]], foes: [['turret', 3, 3], ['turret', 16, 10], ['drone', 9, 4]] },
+      '1,1': { ter: [['pit', 1, 6, 18, 2]], props: [['post', 4, 4], ['post', 15, 4], ['sign', 3, 11, { text: '「구덩이 너머 말뚝 — 갈고리를 걸어 건너시오. (구르기로 뛰어넘어도 된다)」' }], ['eye', 9, 2, { sets: 'd11:eye' }], ['fn', 9, 10, { fn: (x, y, Wd) => Wd.add(new G.props.Sign({ x, y, text: '「사다리 제어 — 눈을 맞히면 다리가 뜬다」', look: 'stone', anyDir: true })) }], ['chest', 16, 3, { item: 'map_d' }]], foes: [['turret', 3, 3], ['turret', 16, 10], ['drone', 9, 4]] },
       '0,1': { props: [['chest', 9, 6, { item: 'key_big', big: true, hidden: true }], ['spot', 15, 3, { verb: '기록 화면을 본다', text: '「관리자 기록 — 984년. 방문자 1명. 이름: 카이론. 명령 변경: 방위 등급 최대. 사유 입력란: (공란)」\n공란 옆에 누가 손가락으로 쓴 먼지 글씨: 「세린」.' }]], solve: { type: 'clear' }, foes: [['golem', 6, 7], ['golem', 13, 7], ['drone', 9, 10]] },
       '2,1': { props: [['chest', 9, 6, { item: 'heartpiece' }], ['chest', 3, 11, { item: 'bombs5' }]], foes: [['drone', 6, 5], ['drone', 13, 5], ['turret', 9, 10]] },
       '1,0': { boss: true, props: [['boss', 9, 6, { type: 'core' }]] },
@@ -19244,7 +19282,7 @@ button.stat small.fx { color: var(--paper-dim); }
     rooms: {
       '1,3': { props: [['torch', 4, 4], ['torch', 15, 4], ['sign', 9, 9, { text: '묘비들에 이름이 없다. 대신 숫자가 적혀 있다.\n「허용 손실 #4,112」 「허용 손실 #4,113」 …' }]], foes: [['bat', 6, 6], ['bat', 13, 6]] },
       '1,2': { solve: { type: 'torches', flag: 'd15:torch', msg: '등잔이 모두 켜지자 무덤 하나가 열렸다' }, props: [['torch', 3, 3], ['torch', 16, 3], ['torch', 3, 11], ['torch', 16, 11]], foes: [['ghost', 9, 7], ['hollow', 5, 6]] },
-      '0,2': { props: [['veil', 18, 7, { cells: [[18, 6], [18, 7], [18, 8], [19, 6], [19, 7], [19, 8]] }], ['chest', 5, 7, { item: 'key_small' }]], foes: [['ghost', 10, 5], ['ghost', 10, 9]] },
+      '0,2': { props: [['veil', 18, 7, { cells: [[18, 6], [18, 7], [18, 8], [19, 6], [19, 7], [19, 8]] }], ['veil', 9, 1, { cells: [[9, -1], [10, -1], [9, 0], [10, 0], [9, 1], [10, 1]] }], ['chest', 5, 7, { item: 'key_small' }]], foes: [['ghost', 10, 5], ['ghost', 10, 9]] },
       '2,2': { props: [['chest', 9, 7, { item: 'tome_meteor' }], ['spot', 4, 4, { verb: '무덤을 들여다본다', text: '작은 무덤. 숫자 대신 이름이 긁혀 있다. 「유안」. 누군가 몰래 새겨 넣었다.' }]], foes: [['hollow', 6, 9], ['hollow', 13, 9], ['shade', 9, 5]] },
       '1,1': { solve: { type: 'clear' }, props: [['chest', 9, 6, { item: 'key_big', big: true, hidden: true }], ['spot', 15, 4, { verb: '장부를 읽는다', text: async (c) => { await c.narr('불에 그을린 장부. 「허용 손실」 칸이 끝없이 이어진다. 한 장 한 장, 이름을 지우고 숫자를 쓴 흔적.'); await c.narr('맨 마지막 장에만 이름이 남아 있었다. 지우다 만 것처럼. [w]세린[/]. 그 옆에 다른 손글씨: 「이 칸은 내가 지우지 못한다. — K」'); } }]], foes: [['knight', 5, 5], ['knight', 14, 5], ['hollow', 9, 10]] },
       '0,1': { props: [['chest', 9, 6, { item: 'heartpiece' }], ['torch', 4, 4], ['torch', 15, 4]], foes: [['shade', 6, 8], ['shade', 13, 8]] },
@@ -19269,7 +19307,7 @@ button.stat small.fx { color: var(--paper-dim); }
     { id: 'sec_red', region: 'red', x: 60, y: 184, name: '식지 않는 굴', how: 'heat', loot: [['art_triple'], ['heartpiece']], foes: [['wisp', 5, 5], ['wisp', 10, 5], ['golem', 7, 7]], msg: '안에서 뿜어 나오는 열기에 숨이 막힌다. 방열복이 있어야 한다.' },
     { id: 'sec_blue', region: 'blue', x: 206, y: 222, name: '밀물 동굴', how: 'swim', loot: [['bw_dragon'], ['heartpiece']], foes: [['octo', 5, 6], ['crab', 10, 6]], msg: '동굴 입구가 물에 잠겨 있다. 헤엄칠 수 있어야 한다.' },
     { id: 'sec_yellow', region: 'yellow', x: 292, y: 164, name: '모래에 묻힌 방', how: 'bomb', loot: [['sw_moon'], ['heartpiece']], foes: [['worm', 5, 6], ['bandit', 10, 6]], note: '폭탄에 모래 벽이 무너지고, 묻혀 있던 방이 드러났다.' },
-    { id: 'sec_white', region: 'white', x: 44, y: 44, name: '얼어붙은 천문대', how: 'bomb', loot: [['tome_meteor'], ['heartpiece']], foes: [['icewisp', 5, 5], ['icewisp', 10, 5], ['golem', 7, 7]], note: '얼음벽이 깨지자 둥근 천문대가 나타났다. 망원경이 별 하나를 가리킨 채 얼어 있다.' },
+    { id: 'sec_white', region: 'white', x: 30, y: 46, name: '얼어붙은 천문대', how: 'bomb', loot: [['tome_meteor'], ['heartpiece']], foes: [['icewisp', 5, 5], ['icewisp', 10, 5], ['golem', 7, 7]], note: '얼음벽이 깨지자 둥근 천문대가 나타났다. 망원경이 별 하나를 가리킨 채 얼어 있다.' },
     { id: 'sec_gray', region: 'gray', x: 40, y: 124, name: '고철 금고', how: 'bomb', loot: [['ac_vamp'], ['heartpiece']], foes: [['drone', 5, 5], ['drone', 10, 5]], note: '폭탄에 녹슨 철문이 떨어져 나갔다. 은빛 왕국 시대의 금고다.' },
     { id: 'sec_black', region: 'black', x: 292, y: 70, name: '삼킨 자의 무덤', how: 'abyss', loot: [['sw_void']], foes: [['shade', 5, 5], ['shade', 10, 5], ['hollow', 7, 7]], msg: '문이 열리지 않는다. 문에 새겨진 글씨: 「어둠을 셋 이상 들여다본 자만」.' },
     { id: 'sec_purple', region: 'purple', x: 110, y: 120, name: '거울 뒤 서재', how: 'mirror', loot: [['ac_combo'], ['heartpiece']], foes: [['mage', 5, 5], ['ghost', 10, 5]], msg: '그냥 바위벽이다. …아닌가? 무언가 비치는 것 같다.' },
@@ -23402,6 +23440,38 @@ button.stat small.fx { color: var(--paper-dim); }
     e.x = best[0]; e.y = best[1]; if (e.home) e.home = { x: e.x, y: e.y };
     return true;
   }
+  /** 문 칸과 다가서는 칸 (픽셀 상자): 들어가는 문은 아래에서, 나가는 문은 위에서 다가선다 */
+  function doorRects(m) {
+    const out = [];
+    for (const w of m.warps || []) {
+      const down = w.exit || w.dir === 'down';
+      out.push({ x: w.x * TS, y: (down ? w.y - 1 : w.y) * TS, w: (w.w || 1) * TS, h: ((w.h || 1) + 1) * TS });
+    }
+    return out;
+  }
+  const hitR = (b, r) => b.x < r.x + r.w && b.x + b.w > r.x && b.y < r.y + r.h && b.y + b.h > r.y;
+  function clearDoors(m, Wd) {
+    const R = doorRects(m); if (!R.length) return;
+    const p = Wd.player;
+    for (const e of Wd.ents) {
+      if (e === p || e.dead || e.fly || e.script || e.follower || e.boss || e.foe || e.hidden) continue;
+      if (e.kind === 'building' || !e.solid || !e.blockBox) continue;
+      let b; try { b = e.blockBox(); } catch (err) { continue; }
+      if (!b || !R.some((r) => hitR(b, r))) continue;
+      const tx = Math.floor(e.x / TS), ty = Math.floor((e.y - 3) / TS), z0 = m.H(tx, ty);
+      const ox = e.x - (tx * TS + 8), oy = e.y - (ty * TS + 12);
+      let best = null, bd = 1e9;
+      for (let dy = -4; dy <= 4; dy++) for (let dx = -4; dx <= 4; dx++) {
+        const x = tx + dx, y = ty + dy; if (!freeTile(m, x, y) || m.H(x, y) !== z0) continue;
+        const nb = { x: b.x + dx * TS, y: b.y + dy * TS, w: b.w, h: b.h };
+        if (R.some((r) => hitR(nb, r))) continue;
+        if (Wd.propBlock(nb.x, nb.y, nb.w, nb.h, e)) continue;
+        const d = dx * dx + dy * dy + (dy < 0 ? 0.3 : 0); if (d < bd) { bd = d; best = [x, y]; }
+      }
+      if (!best) continue;
+      e.x = best[0] * TS + 8 + ox; e.y = best[1] * TS + 12 + oy; if (e.home) e.home = { x: e.x, y: e.y };
+    }
+  }
   function dedupe(Wd) {
     const byCid = new Map();
     for (const e of Wd.ents) {
@@ -23424,6 +23494,8 @@ button.stat small.fx { color: var(--paper-dim); }
       if (e === p || e.dead || e.fly || e.script || e.vision || e.follower) continue;
       if (e.npc || e instanceof Pp.Chest) nudge(m, e, 3);
     }
+    // 문 · 동굴 입구와 그 앞 칸을 막고 선 소품 · 사람은 옆으로 비킨다
+    clearDoors(m, Wd);
     // 앞(남쪽)에서 다가설 수 없는 상자 · 표지판은 옆이나 뒤에서도 열고 읽게
     for (const e of Wd.ents) {
       if (e.dead || e.anyDir || !(e instanceof Pp.Chest || e instanceof Pp.Sign)) continue;

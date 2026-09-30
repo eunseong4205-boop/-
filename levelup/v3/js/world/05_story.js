@@ -266,14 +266,19 @@
   ST.cave = function (m, o) {
     const x = o.x, y = o.y, base = m.hgt[m.i(x, y + 1)];
     const rx = o.rx || 7, ry = o.ry || 4;
+    // 다른 입구와 그 앞길은 언덕으로 덮지 않는다 (가까이 놓인 두 동굴이 서로를 묻던 것)
+    const near = (xx, yy) => (m.warps || []).some((w) => xx >= w.x - 2 && xx <= w.x + (w.w || 1) + 1 && yy >= w.y - 1 && yy <= w.y + 4);
     for (let yy = y - ry * 2; yy <= y; yy++) for (let xx = x - rx; xx <= x + rx + 1; xx++) {
-      if (!m.inb(xx, yy)) continue;
+      if (!m.inb(xx, yy) || near(xx, yy)) continue;
       const d = Math.hypot((xx - x - 0.5) / rx, (yy - (y - ry)) / (ry + 0.5));
       if (d < 1 && m.hgt[m.i(xx, yy)] <= base) { m.hgt[m.i(xx, yy)] = base + (o.h || 1); const t = m.ter[m.i(xx, yy)]; if (t === T.WATER || t === T.DEEP || t === T.CLIFF || t === T.STAIRS || t === T.BRIDGE) m.ter[m.i(xx, yy)] = o.ground || T.GRASS; m.obj[m.i(xx, yy)] = o.cover && d < 0.8 && G.u.noise2(xx, yy, 7) > 0.4 ? o.cover : 0; }
     }
     G.gen.caveMouth(m, x, y, 2);
+    // 입구는 언덕 발치(아래 땅과 같은 높이)에 판다: 언덕 위에 두면 앞 칸이 절벽 면이 되어 걸어서 닿지 못한다
+    // 언덕이 두 층 이상이면 면이 여러 줄이 되니, 입구 아래 줄들도 절벽 면에서 뺀다
+    for (const xx of [x, x + 1]) { m.hgt[m.i(xx, y)] = base; for (let k = 1; k < (o.h || 1); k++) m.noCliff.add(m.i(xx, y + k)); }
     G.build.placeBuilding(m, { special: 'cave', tx: x, ty: y, w: 2, h: 1, to: o.to, id: o.id, col: o.col || '#6e5640', cond: o.cond, msg: o.msg });
-    for (let yy = y + 1; yy < y + (o.path || 3); yy++) for (const xx of [x, x + 1]) { const i = m.i(xx, yy); if (m.ter[i] === T.CLIFF || m.ter[i] === T.STAIRS) continue; m.ter[i] = m.ter[i] === T.WATER || m.ter[i] === T.DEEP ? T.BRIDGE : (o.road || T.DIRT); m.obj[i] = 0; m.hgt[i] = base; }
+    for (let yy = y + 1; yy < y + (o.path || 3); yy++) for (const xx of [x, x + 1]) { const i = m.i(xx, yy); if (m.ter[i] === T.CLIFF || m.ter[i] === T.STAIRS) { m.ter[i] = T.STAIRS; m.obj[i] = 0; continue; } m.ter[i] = m.ter[i] === T.WATER || m.ter[i] === T.DEEP ? T.BRIDGE : (o.road || T.DIRT); m.obj[i] = 0; m.hgt[i] = base; }
     return { x, y };
   };
   /** 장(章)마다 다른 말: { c1: [...], c3: [...] } → 지금 장 이하에서 가장 늦은 것 */
