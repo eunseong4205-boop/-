@@ -20854,7 +20854,7 @@ html.touch #touch { display: block; position: absolute; inset: 0; pointer-events
         if (m.solidExtra[i] || m.obj[i] && OB.DEF[m.obj[i]] && OB.DEF[m.obj[i]].solid || m.hgt[i] !== hh || tt === T.CLIFF || tt === T.STAIRS || tt === T.WATER || tt === T.DEEP || tt === T.BRIDGE || OW.roadTiles[i]) { ok = false; break; }
       }
       // 광장 · 골목 포장은 괜찮지만 문 바로 앞은 피한다
-      for (const w2 of m.warps || []) if (Math.abs(w2.x - x) < 3 && Math.abs(w2.y - y) < 4) ok = false;
+      for (const w2 of m.warps || []) if (w2.x >= x - 3 && w2.x <= x + w + 2 && w2.y >= y - 3 && w2.y <= y + h + 3) ok = false;   // 문 · 동굴 앞은 비킨다
       if (ok) return [x, y];
     }
     return null;
@@ -20871,6 +20871,9 @@ html.touch #touch { display: block; position: absolute; inset: 0; pointer-events
     }
     // 빈 땅의 잔살림: 골목 · 길 · 문 앞이 아닌 자리만, 이웃이 트여 있을 때만
     const rnd = U.rng(4411);
+    const NATURAL = new Set([T.GRASS, T.DIRT, T.SAND, T.SNOW, T.ASH, T.DARK, T.MEADOW, T.MOSS, T.LEAVES, T.MUD, T.DRY, T.PETALS, T.CRACKED]);
+    const doors = (m.warps || []).map((w) => [w.x, w.y, w.w || 1, w.h || 1]);
+    const nearDoor = (x, y) => doors.some(([wx, wy, ww, wh]) => x >= wx - 3 && x <= wx + ww + 2 && y >= wy - 2 && y <= wy + wh + 3);
     for (const [n, t] of Object.entries(OW.towns)) {
       const E = t.outer; if (!E) continue;
       const list = LITTER[n] || LITTER.green;
@@ -20878,7 +20881,8 @@ html.touch #touch { display: block; position: absolute; inset: 0; pointer-events
         const i = m.i(x, y);
         if (m.obj[i] || m.solidExtra[i] || OW.roadTiles[i]) continue;
         const tt = m.ter[i];
-        if (tt === T.CLIFF || tt === T.STAIRS || tt === T.WATER || tt === T.DEEP || tt === T.BRIDGE || tt === T.COBBLE || tt === T.BRICK || tt === T.PLANK || tt === T.SANDSTONE || tt === T.MARBLE || tt === T.STONE || tt === T.TILE || tt === T.ROAD || tt === T.GRAVEL) continue;
+        if (!NATURAL.has(tt)) continue;                  // 자연 바닥에만 (포장 · 구름 · 물가 · 계단은 비움)
+        if (nearDoor(x, y)) continue;                    // 문 · 동굴 · 계단 둘레는 늘 비워 둔다
         let wallNb = 0, pave = 0;
         for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const j = m.i(x + dx, y + dy); if (m.solidExtra[j]) wallNb++; const t2 = m.ter[j]; if (t2 === T.COBBLE || t2 === T.BRICK || t2 === T.PLANK || t2 === T.SANDSTONE || t2 === T.MARBLE || OW.roadTiles[j]) pave++; if (m.obj[j] && OB.DEF[m.obj[j]] && OB.DEF[m.obj[j]].solid) wallNb += 2; }
         if (wallNb >= 2 || pave >= 2) continue;
