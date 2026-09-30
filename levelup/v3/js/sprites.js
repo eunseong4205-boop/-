@@ -37,6 +37,7 @@
     if (s.cape && dir !== 'up') cape(b, s, dir, L, false);
     backHair(b, s, dir, L, C, pose);
     legs(b, s, dir, L, C, pose);
+    if (dir === 'left' && typeof pose.armR === 'number') backArm(b, s, L, C, pose.armR);
     torso(b, s, dir, L, C, pose);
     if (s.cape && dir === 'up') cape(b, s, dir, L, true);
     arms(b, s, dir, L, C, pose);
@@ -123,6 +124,16 @@
     }
   }
 
+  /** 옆모습의 뒤쪽 팔: 몸 뒤에서 반대로 흔들린다 (몸통이 덮고 끝만 보인다) */
+  function backArm(b, s, L, C, sw) {
+    const long = s.sleeve === 'long' || s.top === 'robe' || s.top === 'coat' || s.top === 'armor';
+    for (let y = L.torso + 1; y <= L.torso + 7; y++) {
+      const hand = y >= L.torso + 6;
+      const K = hand ? C.SK : (long || y < L.torso + 3 ? C.T : C.SK);
+      const xo = Math.round(sw * (y - L.torso) / 6);
+      b.px(12 + xo, y, K[1]); b.px(13 + xo, y, K[0]);
+    }
+  }
   function arms(b, s, dir, L, C, pose) {
     const long = s.sleeve === 'long' || s.top === 'robe' || s.top === 'coat' || s.top === 'armor';
     const sl = (y) => (long || y < L.torso + 3 ? C.T : C.SK);
@@ -141,7 +152,7 @@
         const K = hand ? C.SK : sl(y);
         let xo = 0, yo = 0;
         if (dir === 'left') xo = Math.round(w * (y - L.torso) / 7);
-        else yo = w > 0 ? -1 : w < 0 ? 0 : 0;
+        else yo = w > 0 ? -Math.min(2, w) : w < 0 ? (y >= L.torso + 6 ? 1 : 0) : 0;
         b.px(x + xo, y + yo, K[front ? 2 : 1]); b.px(x + 1 + xo, y + yo, K[front ? 1 : 0]);
       }
     };
@@ -425,8 +436,10 @@
   /* ───────── 동작 → 포즈 ───────── */
   const ANIM = {
     idle: { n: 2, pose: (f) => ({ bob: f === 1 ? 1 : 0 }) },
-    walk: { n: 4, pose: (f) => [{ legL: 2, legR: 0, armL: -1, armR: 1, bob: 0, hairSwing: 0 }, { legL: 0, legR: 0, bob: -1, hairSwing: 1 }, { legL: 0, legR: 2, armL: 1, armR: -1, bob: 0, hairSwing: 0 }, { legL: 0, legR: 0, bob: -1, hairSwing: -1 }][f] },
-    run: { n: 4, pose: (f) => [{ legL: 2, legR: -2, armL: -2, armR: 2, bob: -1, hairSwing: 2 }, { legL: 1, legR: 0, bob: -2, hairSwing: 2 }, { legL: -2, legR: 2, armL: 2, armR: -2, bob: -1, hairSwing: 2 }, { legL: 0, legR: 1, bob: -2, hairSwing: 1 }][f] },
+    // 걷기: 두 다리가 앞뒤로 벌어지고(보폭) 팔은 반대로 흔든다 · 가운데 칸에서 몸이 올라간다
+    walk: { n: 4, pose: (f) => [{ legL: 2, legR: -2, armL: -2, armR: 2, bob: 0, hairSwing: 0 }, { legL: 1, legR: 0, armL: 0, armR: 0, bob: -1, hairSwing: 1 }, { legL: -2, legR: 2, armL: 2, armR: -2, bob: 0, hairSwing: 0 }, { legL: 0, legR: 1, armL: 0, armR: 0, bob: -1, hairSwing: -1 }][f] },
+    // 달리기: 보폭이 크고 무릎이 높다 · 팔을 크게 · 머리카락이 뒤로 날린다
+    run: { n: 4, pose: (f) => [{ legL: 3, legR: -3, armL: -3, armR: 3, bob: 0, hairSwing: 2 }, { legL: 2, legR: -1, armL: -1, armR: 1, bob: -2, hairSwing: 3 }, { legL: -3, legR: 3, armL: 3, armR: -3, bob: 0, hairSwing: 2 }, { legL: -1, legR: 2, armL: 1, armR: -1, bob: -2, hairSwing: 3 }][f] },
     atk: { n: 3, pose: (f) => [{ armL: 'up', armR: 0, legL: 0, legR: 1, bob: 0, brow: 'angry' }, { armL: 'fwd', armR: 'fwd', legL: 1, legR: 0, bob: 1, brow: 'angry', mouth: 'open' }, { armL: 'fwd', armR: 0, legL: 1, legR: 0, bob: 1, brow: 'angry' }][f] },
     bow: { n: 2, pose: (f) => ({ armL: 'fwd', armR: 'fwd', legL: 0, legR: 1, bob: f, brow: 'angry' }) },
     cast: { n: 2, pose: (f) => ({ armL: 'up', armR: 'up', bob: f ? -1 : 0, mouth: 'open', hairSwing: f ? 1 : -1 }) },
@@ -531,26 +544,67 @@
   }
 
   /* ───────── 존재 그리기 ───────── */
+  /** 몸의 늘고 줄기 · 기울기: 숨쉬기 · 걸음 · 휘두르기 전 움츠림 · 뻗기 · 맞아 젖혀지기 · 착지 */
+  function motion(e) {
+    const t = e.t || 0, side = e.dir === 'left' ? -1 : e.dir === 'right' ? 1 : 0;
+    let sx = 1, sy = 1, rot = 0, dx = 0;
+    switch (e.state) {
+      case 'walk': {
+        const sp = U.len(e.vx || 0, e.vy || 0), ph = (e.walkT || 0) * (sp > 60 ? 2.4 : 1.8) * Math.PI * 2;
+        sy = 1 + Math.abs(Math.sin(ph)) * 0.035; sx = 2 - sy;
+        rot = side * Math.min(0.08, sp / 1100);
+        break;
+      }
+      case 'attack': {
+        const f = e.atkFrame || 0;
+        if (f === 0) { sx = 1.08; sy = 0.93; rot = -side * 0.05; }
+        else if (f === 1) { sx = 0.95; sy = 1.06; rot = side * 0.11; dx = side * 1; }
+        else { sx = 1.02; sy = 0.98; rot = side * 0.04; }
+        break;
+      }
+      case 'charge': sx = 1.05; sy = 0.95; if (e.chargeFull) dx = Math.sin(t * 70) * 0.6; break;
+      case 'spin': case 'dash': case 'sp': sx = 0.97; sy = 1.04; rot = side * 0.06; break;
+      case 'hurt': { const k = Math.max(0, 1 - (e.st || 0) / 0.22); sx = 1 + 0.14 * k; sy = 1 - 0.12 * k; rot = -(Math.sign(e.kx || 0) || -side || 1) * 0.16 * k; break; }
+      case 'jump': sx = 0.93; sy = 1.08; break;
+      case 'cast': sy = 1 + Math.sin(t * 22) * 0.035; sx = 2 - sy; break;
+      case 'bow': rot = -side * 0.05; sx = 1.02; sy = 0.98; break;
+      case 'hold': sy = 1.04; sx = 0.97; break;
+      default:
+        if (e.talking) { sy = 1 + Math.abs(Math.sin(t * 9)) * 0.03; sx = 2 - sy; }
+        else if (!e.foe) { sy = 1 + Math.sin(t * 2.6 + (e.blinkSeed || 0)) * 0.016; sx = 2 - sy; }
+    }
+    if (e.landT > 0) { const k = e.landT / 0.14; sx *= 1 + 0.16 * k; sy *= 1 - 0.14 * k; }
+    return { sx, sy, rot, dx };
+  }
   function drawChar(g, e, cx, cy) {
     const sh = e.sheet || (e.sheet = sheet(e.look || {}));
     const { anim, frame } = pickAnim(e);
     const img = sh.get(anim, e.dir, frame);
     const x = Math.round(e.x - cx - img.width / 2), y = Math.round(e.y - cy - img.height + 1 - (e.jz || 0));
     if (e.behindWeapon) e.behindWeapon(g, x, y);
-    if (e.wadeCut) g.drawImage(img, 0, 0, img.width, img.height - e.wadeCut, x, y + e.wadeCut, img.width, img.height - e.wadeCut);
-    else g.drawImage(img, x, y);
-    if (e.flash > 0) { g.globalAlpha = Math.min(1, e.flash * 6); g.drawImage(X.silhouette(img, e.flashCol || '#ffffff'), x, y); g.globalAlpha = 1; }
+    const M = e.state === 'roll' || e.wadeCut ? null : motion(e);
+    if (M && (Math.abs(M.sx - 1) > 0.004 || Math.abs(M.sy - 1) > 0.004 || M.rot || M.dx)) {
+      g.save(); g.translate(x + img.width / 2 + M.dx, y + img.height - 1); g.rotate(M.rot); g.scale(M.sx, M.sy);
+      g.drawImage(img, -img.width / 2, -img.height + 1);
+      if (e.flash > 0) { g.globalAlpha = Math.min(1, e.flash * 6); g.drawImage(X.silhouette(img, e.flashCol || '#ffffff'), -img.width / 2, -img.height + 1); }
+      g.restore(); g.globalAlpha = 1;
+    } else {
+      if (e.wadeCut) g.drawImage(img, 0, 0, img.width, img.height - e.wadeCut, x, y + e.wadeCut, img.width, img.height - e.wadeCut);
+      else g.drawImage(img, x, y);
+      if (e.flash > 0) { g.globalAlpha = Math.min(1, e.flash * 6); g.drawImage(X.silhouette(img, e.flashCol || '#ffffff'), x, y); g.globalAlpha = 1; }
+    }
     if (e.onDraw) e.onDraw(g, x, y, img);
   }
   function pickAnim(e) {
     const t = e.t || 0;
     if (e.forceAnim) return { anim: e.forceAnim, frame: Math.floor(t * (e.forceFps || 4)) };
     switch (e.state) {
-      case 'walk': { const run = U.len(e.vx || 0, e.vy || 0) > 100; return { anim: run ? 'run' : 'walk', frame: Math.floor((e.walkT || 0) * (run ? 2.4 : 1.8)) }; }
+      case 'walk': { const run = U.len(e.vx || 0, e.vy || 0) > 60; return { anim: run ? 'run' : 'walk', frame: Math.floor((e.walkT || 0) * (run ? 2.4 : 1.8)) }; }
       case 'roll': return { anim: 'roll', frame: Math.min(5, Math.floor((e.st || 0) / (e.rollTime || 0.34) * 6)) };
       case 'jump': return { anim: 'jump', frame: 0 };
       case 'hurt': case 'fall': return { anim: 'hurt', frame: 0 };
       case 'attack': case 'spin': case 'dash': return { anim: 'atk', frame: e.atkFrame != null ? e.atkFrame : 1 };
+      case 'sp': return (G.specials && G.specials.anim(e)) || { anim: 'atk', frame: 1 };
       case 'charge': return { anim: 'atk', frame: 0 };
       case 'bow': return { anim: 'bow', frame: (e.st || 0) > 0.2 ? 1 : 0 };
       case 'cast': return { anim: 'cast', frame: Math.floor(t * 6) };
@@ -567,5 +621,5 @@
     }
   }
 
-  G.sprites = { sheet, drawChar, pickAnim, tones, SKIN, FW, FH, ANIM };
+  G.sprites = { sheet, drawChar, pickAnim, motion, tones, SKIN, FW, FH, ANIM };
 })();

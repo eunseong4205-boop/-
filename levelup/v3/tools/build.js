@@ -7,7 +7,7 @@ const fs = require('fs');
 const path = require('path');
 const V3 = path.resolve(__dirname, '..');
 const ROOT = path.resolve(V3, '..');
-const ORDER = ['util', 'input', 'gfx', 'tiles', 'objs', 'map', 'ent', 'fx', 'world', 'player', 'sprites', 'portraits', 'data', 'state', 'light', 'combat', 'enemies', 'bosses', 'props', 'hud', 'ui', 'cine', 'script', 'gen', 'audio', 'music'];
+const ORDER = ['util', 'input', 'gfx', 'tiles', 'objs', 'map', 'ent', 'fx', 'world', 'player', 'sprites', 'portraits', 'data', 'progress', 'state', 'light', 'combat', 'specials', 'enemies', 'bosses', 'props', 'hud', 'ui', 'cine', 'script', 'gen', 'audio', 'music'];
 const TITLE = '무한렙업 대모험';
 const read = (p) => fs.readFileSync(p, 'utf8');
 function fonts() {

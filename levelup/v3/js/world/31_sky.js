@@ -349,8 +349,12 @@
     c.sfx('heartbeat'); c.shake(3, 1);
     c.flag('c12_crystal_open');
     await c.narr('수정에 금이 갔다. 안에서 — 검은 것이 흘러나왔다. 16년 동안 누군가 안고 있던 것이. 이제 안고 있을 힘이 다한 것이.');
-    await c.say('serin', '……미안해. 조금만… 더 안고 있으려고 했는데.', { face: 'sad' });
-    await c.narr('세린의 목소리였다. 수정 안, 흰 옷의 여인이 눈을 떴다. 그리고 웃었다. 조금.');
+    // 세린이 깨진 수정에서 쓰러지듯 나온다 (대사 내내 곁에 보이도록)
+    c.sfx('crystal'); G.fx.shards(px(13), py(4) - 20, 24, '#e8f4ff'); G.fx.glow(px(13), py(4) - 10, '#ffffff', 30, 50);
+    const se = c.spawn({ cid: 'serin', x: px(13), y: py(4) + 16, dir: 'down' }); se.stay = true; se.mood = 'sad';
+    await c.wait(0.5);
+    await c.say(se, '……미안해. 조금만… 더 안고 있으려고 했는데.', { face: 'sad' });
+    await c.narr('세린의 목소리였다. 깨진 수정 앞에 무릎을 꿇은 흰 옷의 여인이 눈을 떴다. 그리고 웃었다. 조금.');
     const kaN = c.spawn({ cid: 'kairon', x: px(10), y: py(10), dir: 'up' });
     await c.say(kaN, '세린!', { face: 'shock' });
     await c.say('serin', '카이론. 여전히 계산하고 있었어? …바보. 애들 앞에서.', { face: 'smile' });

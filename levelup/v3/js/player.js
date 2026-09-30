@@ -22,9 +22,12 @@
       this.t += dt; this.st += dt;
       if (this.inv > 0) this.inv -= dt;
       if (this.flash > 0) this.flash -= dt;
+      if (this.landT > 0) this.landT -= dt;
+      // 달릴 때 발밑 먼지 (흙 · 모래 · 눈)
+      if (this.state === 'walk' && G.fx) { this.stepT = (this.stepT || 0) + dt * U.len(this.vx || 0, this.vy || 0) / 60; if (this.stepT > 0.55) { this.stepT = 0; const gt = m.groundAt(this.x, this.y - 2), T = TL.T; if (gt === T.DIRT || gt === T.SAND || gt === T.SNOW || gt === T.ASH || gt === T.MUD || gt === T.GRAVEL || gt === T.DRY) G.fx.dust(this.x + (Math.random() - 0.5) * 4, this.y, 2); } }
       // 기력 회복
       if (this.stamDelay > 0) this.stamDelay -= dt;
-      else this.stamina = Math.min(this.staminaMax, this.stamina + dt * (this.exhausted ? 22 : 34));
+      else this.stamina = Math.min(this.staminaMax, this.stamina + dt * (this.exhausted ? 22 : 34) * (this.stamRegenMul || 1));
       if (this.exhausted && this.stamina >= this.staminaMax * 0.5) this.exhausted = false;
       // 넉백
       if (this.kx || this.ky) {
@@ -116,7 +119,7 @@
       // 구르는 공 뒤로 옅은 잔상
       this.ghostT = (this.ghostT || 0) - dt;
       if (G.fx && this.sheet && this.ghostT <= 0 && this.st > 0.04) { this.ghostT = 0.05; const pa = G.sprites.pickAnim(this), img = this.sheet.get(pa.anim, this.dir, pa.frame); G.fx.afterimage(img, this.x - img.width / 2, this.y - img.height + 1, 0.3); }
-      if (this.st >= dur) this.setState('idle');
+      if (this.st >= dur) { this.setState('idle'); this.rollEndT = this.t; }
       this.checkGround(m, dt);
     }
 
@@ -134,8 +137,8 @@
       if (k >= 1) {
         this.jz = 0; this.z = J.h; this.jump = null;
         E.settle(m, this);
-        this.setState('idle');
-        if (G.fx) G.fx.dust(this.x, this.y, 6);
+        this.setState('idle'); this.landT = 0.14;
+        if (G.fx) G.fx.dust(this.x, this.y, 8);
         if (G.audio) G.audio.sfx('land');
         G.world.shake(1.5, 0.1);
       }

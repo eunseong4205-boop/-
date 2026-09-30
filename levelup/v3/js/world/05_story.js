@@ -177,7 +177,15 @@
   }
   ST.Follower = Follower;
   ST.join = function (id) { const s = S(); s.party = s.party || []; if (!s.party.includes(id)) s.party.push(id); const p = W().player; if (p && W().map) W().add(new Follower({ cid: id, look: G.cast.get(id).look, name: G.cast.name(id) })); };
-  ST.leave = function (id) { const s = S(); s.party = (s.party || []).filter((x) => x !== id); for (const e of W().ents) if (e.follower && e.cid === id) e.dead = true; };
+  /** 동료가 떠난다. walk면 걸어서 나간다 (대사 중에 도트가 사라지지 않게) */
+  ST.leave = function (id, walk) {
+    const s = S(); s.party = (s.party || []).filter((x) => x !== id);
+    const p = W().player;
+    for (const e of W().ents) if (e.follower && e.cid === id) {
+      if (walk && p) { e.follower = false; const [nx, ny] = U.norm(e.x - p.x || 1, e.y - p.y); e.leaving = { vx: nx * 50, vy: ny * 40, t: 0 }; e.update = function () {}; }
+      else e.dead = true;
+    }
+  };
 
   /* ───────── 빛 씨앗: 대륙 곳곳에 숨은 작은 빛 (모아서 화살통 · 폭탄 가방 · 기력) ───────── */
   class Seed extends E.Ent {

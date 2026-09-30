@@ -296,7 +296,7 @@
       }
       s.respawn = { map: W().map.id, x: this.x, y: this.y + 12 };
       const d = G.st.derive(s);
-      s.hp = d.hpMax; s.mp = d.mpMax; p.stamina = p.staminaMax;
+      s.hp = d.hpMax; s.mp = d.mpMax; p.stamina = p.staminaMax; delete s.flags.revived;
       G.st.save(s);
       sfx('save');
       if (G.ui.waystoneMenu) G.ui.waystoneMenu(this);
@@ -391,7 +391,12 @@
     drawShadow(g, cx, cy) { g.fillStyle = 'rgba(0,0,0,0.26)'; g.beginPath(); g.ellipse(Math.round(this.x - cx), Math.round(this.y - cy - 1), 6, 2.4, 0, 0, Math.PI * 2); g.fill(); }
     draw(g, cx, cy) {
       if (this.drawFn) { this.drawFn(g, cx, cy); return; }
-      G.sprites.drawChar(g, this, cx, cy);
+      if (this.vision) {   // 빛으로 떠오른 모습 (멀리 있는 사람)
+        const a = 0.55 + Math.sin(this.t * 3) * 0.12;
+        g.globalAlpha = 0.28; g.fillStyle = '#fff2a8'; g.beginPath(); g.ellipse(Math.round(this.x - cx), Math.round(this.y - cy - 14), 12, 20, 0, 0, Math.PI * 2); g.fill();
+        g.globalAlpha = a; G.sprites.drawChar(g, this, cx, cy); g.globalAlpha = 1;
+        if (Math.random() < 0.3) G.fx.part({ x: this.x + (Math.random() - 0.5) * 12, y: this.y, z: Math.random() * 28, vz: 16, g: 0, life: 0.6, col: '#fff2a8', size: 1, glow: true });
+      } else G.sprites.drawChar(g, this, cx, cy);
       // 머리 위 표시: 퀘스트 (!) · 중요 (◆)
       const mark = this.mark ? (typeof this.mark === 'function' ? this.mark() : this.mark) : null;
       if (mark) {

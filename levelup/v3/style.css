@@ -237,6 +237,11 @@ html.touch #touch { display: block; position: absolute; inset: 0; pointer-events
 .t-gender button { flex: 1; padding: 9px 0 11px; border-radius: 12px; background: rgba(16, 12, 28, .82); box-shadow: inset 0 0 0 1px var(--line); display: grid; justify-items: center; gap: 5px; font-size: 12px; }
 .t-gender button.on { color: var(--gold); box-shadow: inset 0 0 0 1px var(--gold), 0 0 14px rgba(240, 204, 110, .3); }
 .t-gender canvas { width: 60px; height: 84px; image-rendering: pixelated; }
+.t-diff { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.t-diff button { padding: 8px 0; border-radius: 10px; background: rgba(16, 12, 28, .82); box-shadow: inset 0 0 0 1px var(--line); font-size: 12px; }
+.t-diff button.on { color: var(--gold); box-shadow: inset 0 0 0 1px var(--gold), 0 0 12px rgba(240, 204, 110, .25); }
+.t-diff button[data-d="3"].on { color: #ff8a96; box-shadow: inset 0 0 0 1px #ff6a7a, 0 0 12px rgba(255, 90, 110, .3); }
+.t-diffnote { font-size: 11px; color: var(--paper-dim); min-height: 2.6em; line-height: 1.45; margin-top: 4px; }
 .t-foot { position: absolute; bottom: 12px; left: 0; right: 0; font-size: 10px; color: #6a6088; letter-spacing: .04em; padding: 0 12px; }
 .keys { display: grid; grid-template-columns: auto 1fr; gap: 3px 10px; font-size: 11px; color: var(--paper-dim); text-align: left; }
 .keys kbd { font-family: var(--ui); color: var(--gold); }
@@ -248,3 +253,34 @@ html.touch #touch { display: block; position: absolute; inset: 0; pointer-events
 #bosstag b { font-family: var(--disp), 'Galmuri11', sans-serif; font-weight: normal; font-size: 15px; letter-spacing: .08em; color: #f6d77e; }
 #bosstag.rage b { color: #ff9ab8; }
 #bosstag[hidden] { display: none; }
+
+/* ── 글 꾸미기 (메뉴 · 알림에서도) · 등급 색 ── */
+:is(#modal, #toasts, #choices, #banner) .y { color: var(--gold); }
+:is(#modal, #toasts, #choices, #banner) .r { color: #ff8a96; }
+:is(#modal, #toasts, #choices, #banner) .b { color: #8ac8ff; }
+:is(#modal, #toasts, #choices, #banner) .g { color: #8ae0a0; }
+:is(#modal, #toasts, #choices, #banner) .p { color: #d8b0ff; }
+:is(#modal, #toasts, #choices, #banner) .s { color: var(--muted); font-size: .92em; }
+.g1 { color: #dcdce8; } .g2 { color: #7ee08a; } .g3 { color: #6ab8ff; }
+.g4 { color: #c48aff; text-shadow: 0 0 6px rgba(196, 138, 255, .35); }
+.g5 { color: #ffc84a; text-shadow: 0 0 8px rgba(255, 200, 74, .45); }
+#dlg-text .g1 { color: #dcdce8; } #dlg-text .g2 { color: #7ee08a; } #dlg-text .g3 { color: #6ab8ff; } #dlg-text .g4 { color: #c48aff; } #dlg-text .g5 { color: #ffc84a; }
+/* ── 재능 나무 ── */
+.tree { align-items: stretch; }
+.tcell { display: flex; flex-direction: column; gap: 4px; }
+.tcell .ttl { text-align: center; color: var(--gold); font-size: 11px; letter-spacing: .2em; padding: 2px 0 4px; }
+.tcell .or { text-align: center; font-style: normal; font-size: 10px; color: var(--muted); margin: -2px 0; }
+.skill span { display: block; color: var(--paper-dim); line-height: 1.35; }
+.skill small { display: block; margin-top: 4px; color: var(--muted); font-size: 10px; }
+.skill.g2 b { color: #9ae8a4; } .skill.g3 b { color: #8ac8ff; } .skill.g4 b { color: #d0a0ff; } .skill.g5 b { color: #ffd070; }
+.skill.have { background: rgba(240, 204, 110, .07); }
+.skill.have b { color: var(--gold); }
+.skill.can { box-shadow: inset 0 0 0 1px #8ae0a0, 0 0 8px rgba(138, 224, 160, .18); }
+.skill.shut { opacity: .38; }
+.tree.narrow { grid-template-columns: 1fr; }
+
+/* 원격 목소리 (방송 · 편지 · 통신): 얼굴에 잡음 줄 */
+#dialog.remote #dlg-face { position: relative; filter: saturate(.35) contrast(1.1); }
+#dialog.remote #dlg-face::after { content: ''; position: absolute; inset: 0; background: repeating-linear-gradient(0deg, rgba(0,0,0,.28) 0 1px, transparent 1px 3px); animation: scan 1.2s linear infinite; }
+#dialog.remote #dlg-name::after { content: ' · 멀리서'; color: var(--muted); font-size: 10px; }
+@keyframes scan { to { background-position: 0 6px; } }

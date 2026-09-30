@@ -8,11 +8,12 @@
   const W = () => G.world;
   const S = () => G.state;
   const sfx = (k) => G.audio && G.audio.sfx(k);
-  const SC = { running: false, queue: [], waiters: [] };
+  const SC = { running: false, queue: [], waiters: [], visitors: [] };
 
   /** 다음 프레임들을 기다리는 약속: 게임 시간으로 */
   function frames(fn) { return new Promise((res) => SC.waiters.push({ fn, res })); }
   function update(dt) {
+    if (W() && W().ents) updLeaving(dt);
     const list = SC.waiters; SC.waiters = [];
     for (const w of list) { if (w.fn(dt)) w.res(); else SC.waiters.push(w); }
   }
@@ -26,6 +27,42 @@
     return W().ents.find((e) => e.cid === x && !e.dead) || null;
   }
 
+  /** 대사 속 인물을 곁에 세운다: 빈 자리를 찾아 먼지 한 번과 함께 나타나고, 장면이 끝나면 걸어 나간다 */
+  function arrive(c, cid, opt) {
+    const cc = G.cast && G.cast.get(cid);
+    const Wd = W(), p = Wd.player, m = Wd.map;
+    if (!cc || !cc.look || !p || !m) return null;
+    const offs = [[-22, 2], [22, 2], [0, 20], [-18, 16], [18, 16], [-30, -6], [30, -6], [0, -22], [-40, 8], [40, 8]];
+    let x = p.x - 22, y = p.y + 2;
+    for (const [dx, dy] of offs) { const tx = p.x + dx, ty = p.y + dy; if (m.boxFree(tx - 5, ty - 6, 10, 6, p.z, null)) { x = tx; y = ty; break; } }
+    const e = c.spawn({ cid, x, y, look: cc.look, name: cc.name, dir: U.dir4(p.x - x, p.y - y) });
+    e.visitor = true;
+    if (opt && opt.vision) { e.vision = true; G.fx.glow(x, y - 12, '#fff2a8', 22, 40); if (G.light) G.light.flare(x, y, 90, 3); }
+    else G.fx.dust(x, y, 6);
+    SC.visitors.push(e);
+    return e;
+  }
+  /** 장면이 끝나면 불러 세운 사람들은 걸어 나간다 */
+  function dismiss() {
+    const p = W().player;
+    for (const e of SC.visitors) {
+      if (e.dead || e.stay) continue;
+      if (e.vision) { G.fx.glow(e.x, e.y - 12, '#fff2a8', 18, 30); e.dead = true; continue; }
+      const [nx, ny] = p ? U.norm(e.x - p.x || 1, e.y - p.y) : [1, 0];
+      e.leaving = { vx: nx * 50, vy: ny * 40, t: 0 };
+    }
+    SC.visitors = [];
+  }
+  function updLeaving(dt) {
+    for (const e of W().ents) {
+      if (!e.leaving || e.dead) continue;
+      const L = e.leaving; L.t += dt;
+      G.ent.move(W().map, e, L.vx * dt, L.vy * dt);
+      e.state = 'walk'; e.walkT = (e.walkT || 0) + dt; e.dir = U.dir4(L.vx, L.vy, e.dir);
+      if (L.t > 1.3) { G.fx.dust(e.x, e.y, 4); e.dead = true; }
+    }
+  }
+
   function ctx() {
     const c = {
       wait, frames,
@@ -33,7 +70,11 @@
       /** 말: who = NPC · 인물 id · 'hero' · null(서술). opt: { face, style, shake, name, bubble, auto } */
       async say(w, text, opt) {
         opt = opt || {};
-        const e = who(w);
+        let e = who(w);
+        // 말하는 사람이 지도에 없으면 곁으로 불러 세운다 (방송 · 편지 · 목소리는 opt.remote)
+        const remote = opt.remote || /^\((방송|편지|목소리|통신|기록|녹음)/.test(text || '');
+        if (!e && !remote && typeof w === 'string' && w !== 'hero' && w !== 'me') e = arrive(c, w, opt);
+        if (remote) opt = Object.assign({ style: 'remote' }, opt);
         const cid = typeof w === 'string' ? w : e && e.cid ? e.cid : null;
         if (opt.bubble && e) { G.cine.bubble(e, text, { life: opt.life || 2.4, kind: opt.kind }); return wait(opt.wait || Math.min(3, 0.6 + text.length * 0.05)); }
         if (e && e !== W().player && e.npc && !opt.noTurn) { const p = W().player; e.dir = U.dir4(p.x - e.x, p.y - e.y, e.dir); }
@@ -135,7 +176,7 @@
       abyss(id) { const s = S(); if (s.abyss[id]) return false; s.abyss[id] = s.t; return true; },
       journal(text) { const s = S(); s.log.unshift({ t: s.t, text }); if (s.log.length > 120) s.log.pop(); },
       save() { G.st.save(S(), true); },   // 장면 안에서 일부러 남기는 기록 (장면이 끝나는 자리)
-      heal() { const s = S(), d = G.st.derive(s); s.hp = d.hpMax; s.mp = d.mpMax; },
+      heal() { const s = S(), d = G.st.derive(s); s.hp = d.hpMax; s.mp = d.mpMax; delete s.flags.revived; },
 
       /* ── 물건 ── */
       /** 아이템을 머리 위로 들어 올린다 (젤다식) */
@@ -143,7 +184,7 @@
         o = o || {};
         const s = S(), p = W().player, it = G.data.ITEMS[id] || { name: id, desc: '' };
         G.st.give(s, id, n || 1);
-        const big = it.big || ['sword', 'tool', 'key'].includes(it.type) || id === 'heart_c' || id === 'heartpiece' || id === 'key_big' || it.type === 'tome';
+        const big = it.big || (it.grade || 0) >= 4 || ['sword', 'tool', 'key'].includes(it.type) || id === 'heart_c' || id === 'heartpiece' || id === 'key_big' || it.type === 'tome';
         if (id === 'key_small') { const d = W().map.dungeon; s.keys[d] = (s.keys[d] || 0) + (n || 1) - 0; if (s.inv.key_small) delete s.inv.key_small; }
         if (id === 'key_big') { s.bigkeys[W().map.dungeon] = true; if (s.inv.key_big) delete s.inv.key_big; }
         if (id === 'map_d') { s.flags['dmap:' + W().map.dungeon] = true; if (s.inv.map_d) delete s.inv.map_d; }
@@ -156,6 +197,8 @@
         const obj = U.josa(it.name + qty, '을/를').slice((it.name + qty).length);
         let text = '[y]' + it.name + qty + '[/]' + obj + ' 얻었다!' + (id === 'heartpiece' ? ' (' + (s.pieces || 4) + '/4)' : '');
         if (it.desc && !o.quiet) text += '\n[s]' + it.desc + '[/]';
+        if (it.grade && it.grade >= 2 && G.prog) text = text.replace('[y]' + it.name, '[g' + it.grade + ']' + it.name) + ' [s](' + G.prog.gradeOf(it).name + ')[/]';
+        if (it.req && G.prog && !G.prog.reqOk(s, it.req)) text += '\n[r]아직 다룰 수 없다 — 필요: ' + G.prog.reqText(s, it.req).replace(/\[\/?r\]/g, '') + '[/]';
         await G.ui.say({ text, style: 'sys', item: id });
         if (p) { p.state = 'idle'; p.holdItem = null; }
         if (it.onGet) await it.onGet(c);
@@ -170,7 +213,7 @@
       },
 
       /* ── 존재 ── */
-      spawn(spec) { const n = new G.props.NPC(spec); n.x = spec.x; n.y = spec.y; if (!n.look || !Object.keys(n.look).length) { const cc = spec.cid && G.cast.get(spec.cid); if (cc) n.look = cc.look; } if (n.look && n.look.kind && !spec.drawFn && G.story.beastDraw) n.drawFn = G.story.beastDraw(n, n.look.kind); if (!n.name && spec.cid) n.name = G.cast.name(spec.cid); E.settle(W().map, n); return W().add(n); },
+      spawn(spec) { if (spec.cid) for (const v of SC.visitors) if (v.cid === spec.cid && !v.dead) { v.dead = true; if (spec.x == null) { spec.x = v.x; spec.y = v.y; } } const n = new G.props.NPC(spec); n.x = spec.x; n.y = spec.y; if (!n.look || !Object.keys(n.look).length) { const cc = spec.cid && G.cast.get(spec.cid); if (cc) n.look = cc.look; } if (n.look && n.look.kind && !spec.drawFn && G.story.beastDraw) n.drawFn = G.story.beastDraw(n, n.look.kind); if (!n.name && spec.cid) n.name = G.cast.name(spec.cid); E.settle(W().map, n); return W().add(n); },
       remove(w) { const e = who(w); if (e) e.dead = true; },
       foe(type, x, y, o) { return G.foes.spawn(type, x, y, o); },
       /** 다른 지도로 */
@@ -222,6 +265,7 @@
     catch (err) { console.error(err); }
     finally {
       G.ui.closeDialog();
+      try { dismiss(); } catch (e2) { console.error(e2); }
       if (G.cine.isLetterbox() && !job.o.keepCinema) G.cine.letterbox(false);
       if (!job.o.keepCam) W().cam.lock = null;
       if (p) p.locked = false;

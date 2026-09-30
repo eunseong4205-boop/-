@@ -4,7 +4,7 @@
   const G = globalThis.G;
   const U = G.u, X = G.gfx;
 
-  const F = { parts: [], under: [], floats: [], rings: [], after: [] };
+  const F = { parts: [], under: [], floats: [], rings: [], after: [], slashes: [] };
   const MAXP = 600;
 
   function part(p) { if (F.parts.length > MAXP) F.parts.shift(); F.parts.push(Object.assign({ vx: 0, vy: 0, vz: 0, z: 0, g: 0, life: 0.5, t: 0, size: 1, col: '#fff', drag: 0, fade: true, glow: false }, p)); }
@@ -40,7 +40,12 @@
   /** 잔상: 구르기 · 돌진 */
   function afterimage(img, x, y, alpha) { F.after.push({ img, x, y, a: alpha || 0.5, t: 0, life: 0.18 }); if (F.after.length > 20) F.after.shift(); }
 
+  /** 맞은 자리의 베인 자국: 가늘고 밝은 선이 번쩍였다 사라진다 (타격감) */
+  function slash(x, y, ang, col, len) { F.slashes.push({ x, y, a: ang + (Math.random() - 0.5) * 0.5 + Math.PI / 2, col: col || '#ffffff', len: len || 12, t: 0, life: 0.13 }); if (F.slashes.length > 24) F.slashes.shift(); }
+
   function update(dt) {
+    for (const s2 of F.slashes) s2.t += dt;
+    F.slashes = F.slashes.filter((s2) => s2.t < s2.life);
     for (const p of F.parts) {
       p.t += dt;
       if (p.drag) { p.vx *= 1 - Math.min(1, p.drag * dt); p.vy *= 1 - Math.min(1, p.drag * dt); }
@@ -68,6 +73,16 @@
     g.globalAlpha = 1;
   }
   function drawOver(g, cx, cy) {
+    for (const s2 of F.slashes) {
+      const k = s2.t / s2.life, L = s2.len * (0.6 + k * 0.8), w = Math.max(1, 3 * (1 - k));
+      const x = s2.x - cx, y = s2.y - cy, dx = Math.cos(s2.a) * L, dy = Math.sin(s2.a) * L * 0.8;
+      g.globalAlpha = 1 - k; g.strokeStyle = s2.col; g.lineWidth = w + 2;
+      g.beginPath(); g.moveTo(x - dx, y - dy); g.lineTo(x + dx, y + dy); g.stroke();
+      g.strokeStyle = '#ffffff'; g.lineWidth = Math.max(1, w * 0.6);
+      g.beginPath(); g.moveTo(x - dx * 0.8, y - dy * 0.8); g.lineTo(x + dx * 0.8, y + dy * 0.8); g.stroke();
+      if (k < 0.4) { g.fillStyle = '#ffffff'; g.globalAlpha = (0.4 - k) * 2.5; g.fillRect(Math.round(x) - 2, Math.round(y) - 2, 4, 4); }
+    }
+    g.globalAlpha = 1; g.lineWidth = 1;
     for (const p of F.parts) {
       const k = p.fade ? 1 - p.t / p.life : 1;
       g.globalAlpha = Math.max(0, Math.min(1, k * 1.5));
@@ -94,8 +109,8 @@
     }
     g.globalAlpha = 1;
   }
-  function clear() { F.parts = []; F.floats = []; F.rings = []; F.after = []; }
+  function clear() { F.parts = []; F.floats = []; F.rings = []; F.after = []; F.slashes = []; }
 
-  Object.assign(F, { part, dust, sparks, shards, splash, leaves, glow, float, ring, afterimage, update, drawUnder, drawOver, clear });
+  Object.assign(F, { part, dust, sparks, shards, splash, leaves, glow, float, ring, afterimage, slash, update, drawUnder, drawOver, clear });
   G.fx = F;
 })();

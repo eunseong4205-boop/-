@@ -705,9 +705,10 @@
     // 그라우스
     c.stopMusic(0.3);
     c.sfx('rumble'); c.shake(3, 1);
-    await c.say('graus', '불씨를 넣든 말든 상관없다.', { face: 'smirk' });
-    c.emote(ch, '!'); await c.move(ch, px(164) + 8, py(21), { speed: 90 });
     const gr = add({ cid: 'graus', x: px(167) + 8, y: py(21) + 2, dir: 'down' });
+    G.fx.dust(gr.x, gr.y, 10);
+    await c.say(gr, '불씨를 넣든 말든 상관없다.', { face: 'smirk' });
+    c.emote(ch, '!'); await c.move(ch, px(164) + 8, py(21), { speed: 90 });
     gr.jz = 120; c.camOn(gr, 3);
     for (let t = 0; t < 1; t += 1 / 30) { gr.jz = 120 * (1 - t) * (1 - t); await c.wait(1 / 30); }
     gr.jz = 0; c.shake(4, 0.4); c.sfx('impact');

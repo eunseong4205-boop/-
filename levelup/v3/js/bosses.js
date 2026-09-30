@@ -26,7 +26,7 @@
       super('slime', Object.assign({}, o));
       Object.assign(this, { type, D, name: D.name, title: D.title || D.name, boss: true, ai: 'boss', r: D.r, h: D.h, weight: D.weight, fly: !!D.fly, weak: D.weak, resist: D.resist, undead: D.undead, dark: D.dark, look: D.look ? Object.assign({}, D.look) : null });
       this.dunId = o.did || o.dunId || null; this.did = false;   // did는 공격 판정용으로 쓰인다
-      this.maxHp = this.hp = Math.round(D.hp * (o.hpMul || 1));
+      this.maxHp = this.hp = Math.round(D.hp * (o.hpMul || 1) * (G.prog ? G.prog.diff().hp : 1));
       this.atk = D.atk; this.exp = D.exp; this.gold = D.gold; this.speed = D.speed;
       this.st = 'wait'; this.stT = 0; this.phase2 = false; this.pat = 0; this.parts = [];
       this.phases = [0.5];
@@ -36,6 +36,7 @@
     }
     start() { if (this.st === 'wait') { this.set('idle'); this.aggro = true; } }
     update(dt, Wd) {
+      if (G.prog) dt *= G.prog.diff().spd;
       this.t += dt; this.stT += dt;
       if (this.inv > 0) this.inv -= dt;
       if (this.flash > 0) this.flash -= dt;

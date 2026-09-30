@@ -168,14 +168,15 @@
       await c.fade(false, { sec: 0.22 });
     });
   }
-  function newGame(name, gender) {
+  function newGame(name, gender, diff) {
     const s = G.state = G.st.fresh(name, gender);
+    if (diff != null) s.settings.diff = diff;
     W.player = null;
     if (G.story && G.story.start) G.story.start(s);
     else { const t = G.ow.towns.green; goto('world', (t.x + 17) * 16 + 8, (t.y + 12) * 16 + 12, 'down', { fresh: true }); }
   }
   function continueGame(save) {
-    G.state = save;
+    G.state = G.prog ? G.prog.migrate(Object.assign(G.st.fresh(), save, { settings: Object.assign(G.st.fresh().settings, save.settings || {}) })) : save;
     W.player = null;
     const s = G.state;
     const r = s.map ? s : s.respawn;

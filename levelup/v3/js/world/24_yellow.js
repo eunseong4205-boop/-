@@ -241,10 +241,10 @@
     await c.say('yana', ST.route() === 'night' || k === 2 ? '…고마워. 이건 평생 갚을게. 사막 여우는 빚을 잊지 않아.' : '고마워. 여기서 헤어지자. 나는 모래바다로 돌아가. 필요하면 오아시스로 와.', { face: 'smile' });
     ST.leave('yana');
     const b = buddy();
-    ST.leave(b);
     if (b === 'cassian') await c.say('cassian', '나는 천년성으로 돌아가 보고해야 한다. …감찰 보고서에 「흰빛: 위험 요소 아님」이라고 적겠다. 아직은.', { face: 'smile' });
     else if (b === 'rud') await c.say('rud', '나는 누나한테 돌아갈게. 옐로 장부, 누나가 좋아할 거야. 또 보자, 흰빛.', { face: 'smile' });
     else await c.say('lyra', '저는 여기서 잠깐 노래하고 갈게요. 퍼플에서 봐요. 거긴… 제 노래를 싫어하는 사람이 있어요.', { face: 'smirk' });
+    ST.leave(b, true);
   }
 
   /* 주사위 도박 (황금궁) */

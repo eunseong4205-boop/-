@@ -30,6 +30,11 @@
       case 'coin': P(['   yyyy     ', '  yYYyyy    ', ' yYyyyyoy   ', ' yYyyyyoy   ', ' yyyyyyoy   ', '  yyyooy    ', '   yyyy     '], { y: '#e8b83a', Y: '#fff0a8', o: '#a87a1a' }); break;
       case 'key': P(['  yyy       ', ' y   y      ', ' y   y      ', '  yyy       ', '   y        ', '   y        ', '   yy       ', '   y        ', '   yy       '], { y: '#e8c850' }); break;
       case 'bigkey': P([' yyyyy      ', 'y rrr y     ', 'y r r y     ', 'y rrr y     ', ' yyyyy      ', '   y        ', '   yyy      ', '   y        ', '   yyy      ', '   y        '], { y: '#e8c850', r: '#d83a5a' }); break;
+      case 'wind': P(['            ', '  ggggg     ', ' g     g    ', '      gg    ', ' ggggg      ', '        g   ', '  gggggg    ', '         g  ', '   ggggg    '], { g: '#b8ffd8' }); break;
+      case 'quake': P(['     b      ', '    bb      ', '   bbb  b   ', '  bbbbbbb   ', ' bbBbbBbbb  ', 'bbbbbbbbbbb ', ' d d  d d  ', 'd  d d  d d '], { b: '#c8985a', B: '#e8c890', d: '#8a6a3a' }); break;
+      case 'meteor': P(['          o ', '        oo  ', '      ooo   ', '    rrr     ', '  rrYYr     ', ' rYYYYr     ', ' rYYYr      ', '  rrr       '], { o: '#ffb07a', r: '#ff5a3a', Y: '#fff0a8' }); break;
+      case 'special': P(['     y      ', '    yWy     ', ' y  yWy  y  ', '  yyWWWyy   ', 'yyWWWWWWWyy ', '  yyWWWyy   ', ' y  yWy  y  ', '    yWy     ', '     y      '], { y: '#ffc84a', W: '#fff8d0' }); break;
+      case 'art': P(['  pppppp    ', ' pWWWWWWp   ', ' pWyyyyWp   ', ' pWWWWWWp   ', ' pWyyyWWp   ', ' pWWWWWWp   ', '  pppppp    '], { p: '#a86ad8', W: '#f4ecd8', y: '#c8a050' }); break;
       case 'none': P(['            ', '   ssssss   ', '  s      s  ', '  s      s  ', '   ssssss   '], { s: '#4a4058' }); break;
       default: b.rect(2, 2, 8, 8, '#8a8098'); break;
     }
@@ -91,7 +96,7 @@
     X.digits(g, s.lv, 16, y + 1, '#ffffff');
     const lx = 20 + X.digitsWidth(String(s.lv)) + 2;
     bar(g, lx, y + 2, Math.max(20, barW + 7 - lx), 2, s.exp / need, '#e8e0ff', '#ffffff', '#201a30');
-    if (s.sp > 0) { g.fillStyle = Math.floor(W.t * 3) % 2 ? '#ffe066' : '#fff'; g.fillRect(barW + 10, y + 1, 3, 3); }
+    if (s.pts > 0) { g.fillStyle = Math.floor(W.t * 3) % 2 ? '#ffe066' : '#fff'; g.fillRect(barW + 10, y + 1, 3, 3); }
     y += 9;
     // ── 버프 ──
     const now = s.t;

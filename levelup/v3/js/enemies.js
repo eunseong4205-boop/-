@@ -313,7 +313,7 @@
       super(Object.assign({ kind: 'foe', bw: Math.min(12, D.r + 3), bh: 6, solid: false }, o));
       Object.assign(this, { foe: true, type, D, name: D.name, tier, ai: D.ai, speed: D.speed * (1 + tier * 0.03), r: D.r, h: D.h, weight: D.weight, fly: D.fly || false,
         undead: D.undead, dark: D.dark, weak: D.weak, resist: D.resist, el: D.el, mat: D.mat, big: D.big });
-      this.maxHp = this.hp = Math.round(D.hp * TIER_HP[Math.min(11, tier)] * (o && o.hpMul || 1));
+      this.maxHp = this.hp = Math.max(1, Math.round(D.hp * TIER_HP[Math.min(11, tier)] * (o && o.hpMul || 1) * (G.prog ? G.prog.diff().hp : 1)));
       this.atk = D.atk + Math.floor(tier * 0.8);
       this.exp = Math.round(D.exp * (1 + tier * 0.9));
       this.gold = Math.round(D.gold * (1 + tier * 0.5));
@@ -382,6 +382,7 @@
     telegraph(sec) { this.tele = sec; sfx('telegraph'); }
     update(dt, Wd) {
       const p = Wd.player;
+      if (G.prog) dt *= G.prog.diff().spd;   // 난이도: 적이 조금 더 빠르다
       // 멀리 있으면 쉰다
       if (p && U.dist(this.x, this.y, p.x, p.y) > 420 && !this.boss) { this.dormantFar = true; return; }
       this.dormantFar = false;
@@ -392,6 +393,8 @@
       if (this.hurtT > 0) { this.hurtT -= dt; this.hpShow = 2.5; this.aggro = true; }
       if (this.tele > 0) this.tele -= dt;
       // 불 · 얼음
+      if (this.squash > 0) this.squash -= dt;
+      if (this.poisonT > 0) { this.poisonT -= dt; this.poisonTick = (this.poisonTick || 0) + dt; if (this.poisonTick > 0.5) { this.poisonTick = 0; this.hp -= 0.3 + this.maxHp * 0.015; this.flash = 0.04; this.flashCol = '#9ae86a'; if (this.hp <= 0) C().kill(this, { el: 'poison' }); } if (Math.random() < dt * 10) G.fx.part({ x: this.x + (Math.random() - 0.5) * 10, y: this.y, z: Math.random() * this.h, vz: 18, g: 0, life: 0.5, col: '#8ad84a', size: 1 }); }
       if (this.burnT > 0) { this.burnT -= dt; this.burnTick = (this.burnTick || 0) + dt; if (this.burnTick > 0.5) { this.burnTick = 0; this.hp -= 0.5 + this.maxHp * 0.02; this.flash = 0.05; if (this.hp <= 0) C().kill(this, { el: 'fire' }); } if (Math.random() < dt * 20) G.fx.part({ x: this.x + (Math.random() - 0.5) * 10, y: this.y, z: Math.random() * this.h, vz: 30, g: 0, life: 0.35, col: Math.random() < 0.5 ? '#ffb040' : '#ff5a2a', size: 1, glow: true }); }
       // 넉백
       if (this.kx || this.ky) {
@@ -470,9 +473,16 @@
         const fl = this.fly ? Math.sin(this.t * 5) * 2 + 6 + (this.zfly || 0) : 0;
         x = Math.round(this.x - cx - img.width / 2); y = Math.round(this.y - cy - img.height + 1 - fl - (this.jz || 0));
         const im = this.dirX < 0 && FLIP[this.ai] ? X.flipX(img) : img;
-        if (this.freezeT > 0) g.drawImage(X.tint(im, '#bfe8ff', 0.6), x, y);
-        else g.drawImage(im, x, y);
-        if (this.flash > 0) { g.globalAlpha = Math.min(1, this.flash * 8); g.drawImage(X.silhouette(im, '#ffffff'), x, y); }
+        // 늘고 줄기: 맞으면 납작, 공격 예고 중에는 움츠렸다 부푼다, 뛰는 것은 늘어난다
+        let sx = 1, sy = 1;
+        if (this.squash > 0) { const k = this.squash / 0.18; sx = 1 + 0.22 * k; sy = 1 - 0.2 * k; }
+        else if (this.tele > 0) { const k = Math.sin(this.t * 26) * 0.5 + 0.5; sx = 1.06 + k * 0.05; sy = 0.94 - k * 0.04; }
+        else if (this.jz > 1) { sx = 0.9; sy = 1.1; }
+        else if (!this.fly && (this.ai === 'hop' || this.ai === 'swarm')) { const b = Math.sin(this.t * 6 + (this.blinkSeed || 0)); sx = 1 + b * 0.04; sy = 1 - b * 0.04; }
+        const drawIm = (src) => { if (sx === 1 && sy === 1) g.drawImage(src, x, y); else { g.save(); g.translate(x + src.width / 2, y + src.height); g.scale(sx, sy); g.drawImage(src, -src.width / 2, -src.height); g.restore(); } };
+        if (this.freezeT > 0) drawIm(X.tint(im, '#bfe8ff', 0.6));
+        else drawIm(im);
+        if (this.flash > 0) { g.globalAlpha = Math.min(1, this.flash * 8); drawIm(X.silhouette(im, this.flashCol || '#ffffff')); this.flashCol = null; }
       }
       g.globalAlpha = 1;
       const top = Math.round(this.y - cy - this.h - 6 - (this.fly ? 6 : 0));

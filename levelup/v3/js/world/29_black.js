@@ -364,7 +364,7 @@
     c.sfx('white');
     await c.narr('방 안의 공기가 무거워졌다. 창밖, 영원한 밤의 하늘 한가운데 금빛 빛줄기가 떨어져 성 꼭대기를 비췄다. 빛 속에 형체가 떠올랐다. 멀리 있는 사람의 그림자.');
     c.music('kairon');
-    await c.say('kairon', '녹턴. …졌군. 16년 만에.', { face: 'closed' });
+    await c.say('kairon', '녹턴. …졌군. 16년 만에.', { face: 'closed', vision: true });
     await c.say(nc, '……카이론.', { face: 'sad' });
     await c.say('kairon', '세린의 아이. …장부를 봤군. 틀린 숫자는 없다. 흑점까지 남은 날은 아흔 일. 아스트라에서 기다리겠다. 오지 않으면 내가 끝낸다.', { face: 'normal' });
     if (f('lyra_sister')) { await c.say('kairon', '…그 옆의 아이는 누구지. 장부에 없는 얼굴이군.', { face: 'shock' }); await c.say(Ly, '…장부에 없는 사람이에요. 그러니까 계산하지 마요.', { face: 'angry' }); await c.say('kairon', '……', { face: 'sad' }); }

@@ -273,9 +273,9 @@
     await c.say('toria', '찍? 탑이… 울려. 여기 없는 탑들까지. 대륙 전체가.', { face: 'shock' });
     c.music('kairon');
     await c.narr('대륙의 모든 징수탑에서 같은 목소리가 흘러나왔다. 낮고, 지쳐 있고, 한 치의 흔들림도 없는 목소리.');
-    await c.say('kairon', '이리스 대륙의 모든 이에게 고한다. 나는 챔피언 카이론이다.', { face: 'closed' });
-    await c.say('kairon', '흑점이 예상보다 빠르게 다가오고 있다. 천년 방위령을 개정한다. 징수율을 두 배로 올린다. 천년제가 끝나는 날까지.', { face: 'normal' });
-    await c.say('kairon', '그리고 — 흰빛을 가진 자는 천년성에 출두하라. 거부하면, 계산에 넣지 않겠다.', { face: 'normal' });
+    await c.say('kairon', '이리스 대륙의 모든 이에게 고한다. 나는 챔피언 카이론이다.', { face: 'closed', remote: true });
+    await c.say('kairon', '흑점이 예상보다 빠르게 다가오고 있다. 천년 방위령을 개정한다. 징수율을 두 배로 올린다. 천년제가 끝나는 날까지.', { face: 'normal', remote: true });
+    await c.say('kairon', '그리고 — 흰빛을 가진 자는 천년성에 출두하라. 거부하면, 계산에 넣지 않겠다.', { face: 'normal', remote: true });
     await c.say('viola', '…계산에 안 넣는다는 게 무슨 뜻이야?', { face: 'shock' });
     await c.say('toria', '찍… 없는 사람 취급한다는 거야.', { face: 'sad' });
     c.stopMusic(1);
