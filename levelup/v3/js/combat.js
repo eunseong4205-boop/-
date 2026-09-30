@@ -253,7 +253,7 @@
         const p = Wd.player;
         if (p && !p.dead && U.dist(this.x, this.y, p.x, p.y - 8) < 7 + this.r) {
           const was = p.inv;
-          hurtPlayer(p, this.dmg, this, {});
+          if (hurtPlayer(p, this.dmg, this, {}) && this.onHitPlayer) this.onHitPlayer(p);
           if (!this.dead && !(this.owner === 'player')) { if (was <= 0 || p.state !== 'roll') this.die(); }
           return true;
         }

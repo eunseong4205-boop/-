@@ -50,7 +50,7 @@
     return c;
   }
   function dungeonCanvas(m) {
-    const s = S(), did = m.dungeon, RW = G.dungeon.RW, RH = G.dungeon.RH;
+    const s = S(), did = m.dungeon, RW = m.RW || G.dungeon.RW, RH = m.RH || G.dungeon.RH;
     const keys = Object.keys(m.rooms);
     const RP = (k) => [m.rooms[k].gx, m.rooms[k].gy];
     const gx = Math.max(...keys.map((k) => RP(k)[0])) + 1, gy = Math.max(...keys.map((k) => RP(k)[1])) + 1;

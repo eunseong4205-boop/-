@@ -11,21 +11,79 @@
   const sfx = (k) => G.audio && G.audio.sfx(k);
 
   const DUN = {};
-  const RW = 20, RH = 14;            // 방 크기 (벽 포함)
+  const RW0 = 20, RH0 = 14;          // 방 크기 기본값 (벽 포함) — 던전마다 D.rw · D.rh 로 키울 수 있다
 
   /* 던전 모양 (방마다 또는 던전 전체): rect(네모) · cave(굽은 자연 벽) · round(둥근 방) · open(벽 없이 허공 위의 섬) · hall(기둥이 늘어선 큰 방)
      D.pos: 방 이름 → 격자 자리 (이름은 이야기와 깃발에 쓰이니 그대로, 자리만 옮긴다)
      D.merge: [[방, 방], …] 둘 사이 벽을 허물어 큰 방으로
      이웃하지 않은 방 사이의 문은 계단이 된다: D.stairAt['가>나'] = [[x, y], [x, y]] (각 방 안 자리)
      D.floors: 방 → 층 이름 (지도 · 계단에서 보인다) · D.decor: 벽가에 흩을 사물 · D.ambient: 떠다니는 것 · D.sconce: 벽 횃불 색 */
+  /** 미로: 칸(cell) 크기 = 통로 폭 + 벽 1. 막힌 칸(res)은 늘 길. 몇 군데 벽을 더 허물어 고리(loops)를 만든다 */
+  function carveMaze(m, x0, y0, RW, RH, res, fl, rnd, cell, loops) {
+    const ix0 = 1, iy0 = 2, iw = RW - 2, ih = RH - 3;
+    const cw = Math.floor((iw + 1) / cell), chh = Math.floor((ih + 1) / cell);
+    if (cw < 2 || chh < 2) return;
+    const open = new Uint8Array(iw * ih);
+    const setOpen = (x, y) => { if (x >= 0 && y >= 0 && x < iw && y < ih) open[y * iw + x] = 1; };
+    const cellFill = (cx, cy) => { for (let y = 0; y < cell - 1; y++) for (let x = 0; x < cell - 1; x++) setOpen(cx * cell + x, cy * cell + y); };
+    const seen = new Uint8Array(cw * chh);
+    const stack = [[Math.floor(rnd() * cw), Math.floor(rnd() * chh)]];
+    seen[stack[0][1] * cw + stack[0][0]] = 1; cellFill(stack[0][0], stack[0][1]);
+    const knock = (ax, ay, bx, by) => {   // 두 칸 사이 벽 허물기
+      if (ax === bx) { const y = Math.max(ay, by) * cell - 1; for (let x = 0; x < cell - 1; x++) setOpen(ax * cell + x, y); }
+      else { const x = Math.max(ax, bx) * cell - 1; for (let y = 0; y < cell - 1; y++) setOpen(x, ay * cell + y); }
+    };
+    while (stack.length) {
+      const [cx, cy] = stack[stack.length - 1];
+      const nb = [[1, 0], [-1, 0], [0, 1], [0, -1]].map(([dx, dy]) => [cx + dx, cy + dy]).filter(([nx, ny]) => nx >= 0 && ny >= 0 && nx < cw && ny < chh && !seen[ny * cw + nx]);
+      if (!nb.length) { stack.pop(); continue; }
+      const [nx, ny] = nb[Math.floor(rnd() * nb.length)];
+      seen[ny * cw + nx] = 1; cellFill(nx, ny); knock(cx, cy, nx, ny); stack.push([nx, ny]);
+    }
+    for (let cy = 0; cy < chh; cy++) for (let cx = 0; cx < cw; cx++) {
+      if (cx + 1 < cw && rnd() < loops) knock(cx, cy, cx + 1, cy);
+      if (cy + 1 < chh && rnd() < loops) knock(cx, cy, cx, cy + 1);
+    }
+    for (let y = 0; y < ih; y++) for (let x = 0; x < iw; x++) {
+      const i = m.i(x0 + ix0 + x, y0 + iy0 + y);
+      if (res[i]) { if (m.ter[i] === T.WALL) m.ter[i] = fl; continue; }
+      if (m.ter[i] !== fl) continue;
+      if (!open[y * iw + x]) m.ter[i] = T.WALL;
+    }
+  }
+  /** 넓은 굴: 바위섬이 흩어진 동굴. 비워 둔 칸끼리는 반드시 이어 준다 */
+  function carveCavern(m, x0, y0, RW, RH, res, fl, seed, rock) {
+    const inside = (x, y) => x >= 1 && y >= 2 && x < RW - 1 && y < RH - 1;
+    for (let y = 2; y < RH - 1; y++) for (let x = 1; x < RW - 1; x++) {
+      const i = m.i(x0 + x, y0 + y); if (res[i] || m.ter[i] !== fl) continue;
+      const d = Math.min(x - 1, RW - 2 - x, y - 2, RH - 2 - y);
+      const n = U.vnoise((x0 + x) / 3.1, (y0 + y) / 3.1, seed) * 0.75 + U.noise2(x0 + x, y0 + y, seed + 3) * 0.25;
+      if (n > 1 - rock * 0.55 || (d < 2 && n > 0.55 - d * 0.1)) m.ter[i] = T.WALL;
+    }
+    // 이어 주기: 방 가운데에서 퍼져 나가 닿지 않는 비워 둔 칸은 곧은 굴로 잇는다
+    const cx = RW >> 1, cy = RH >> 1;
+    for (let y = cy - 1; y <= cy + 1; y++) for (let x = cx - 1; x <= cx + 1; x++) m.ter[m.i(x0 + x, y0 + y)] = fl;
+    const reach = () => { const seen = new Uint8Array(RW * RH); const q = [[cx, cy]]; seen[cy * RW + cx] = 1; while (q.length) { const [x, y] = q.pop(); for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const nx = x + dx, ny = y + dy; if (!inside(nx, ny) || seen[ny * RW + nx]) continue; if (m.ter[m.i(x0 + nx, y0 + ny)] === T.WALL) continue; seen[ny * RW + nx] = 1; q.push([nx, ny]); } } return seen; };
+    let seen = reach();
+    for (let y = 2; y < RH - 1; y++) for (let x = 1; x < RW - 1; x++) {
+      const i = m.i(x0 + x, y0 + y);
+      if (!res[i] || seen[y * RW + x] || m.ter[i] === T.WALL) continue;
+      let px = x, py = y;
+      while (px !== cx || py !== cy) { if (Math.abs(px - cx) > Math.abs(py - cy)) px += Math.sign(cx - px); else py += Math.sign(cy - py); for (const [dx, dy] of [[0, 0], [1, 0], [0, 1]]) if (inside(px + dx, py + dy) && m.ter[m.i(x0 + px + dx, y0 + py + dy)] === T.WALL) m.ter[m.i(x0 + px + dx, y0 + py + dy)] = fl; }
+      seen = reach();
+    }
+    // 닿지 않는 빈 칸은 메운다 (갇힌 적 · 상자 방지)
+    for (let y = 2; y < RH - 1; y++) for (let x = 1; x < RW - 1; x++) { const i = m.i(x0 + x, y0 + y); if (m.ter[i] === fl && !seen[y * RW + x] && !res[i]) m.ter[i] = T.WALL; }
+  }
   function roomPos(D, k) { const p = D.pos && D.pos[k]; return p || k.split(',').map(Number); }
   function build(id, D) {
+    const RW = D.rw || RW0, RH = D.rh || RH0;
     const keys = Object.keys(D.rooms);
     const P = {}; for (const k of keys) P[k] = roomPos(D, k);
     const gw = Math.max(...keys.map((k) => P[k][0])) + 1, gh = Math.max(...keys.map((k) => P[k][1])) + 1;
     const m = new G.GameMap({ id, name: D.name, w: gw * RW, h: gh * RH, region: TL.REGIONS.indexOf(D.pal || 'dungeon'), edge: T.VOID, music: D.music || 'cave' });
     m.palName = D.pal || 'dungeon';
-    m.dungeon = id; m.dark = D.dark || 0; m.darkCol = D.darkCol; m.sub = D.sub || '';
+    m.dungeon = id; m.dark = D.dark || 0; m.RW = RW; m.RH = RH; m.baseDark = D.dark || 0; m.darkCol = D.darkCol; m.sub = D.sub || '';
     m.wallStyle = D.wall || { green: 'root', red: 'mine', blue: 'rock', yellow: 'sand', purple: 'mirror', rainbow: 'marble', white: 'ice', gray: 'vein', black: 'castle', space: 'tech' }[D.pal] || 'brick';
     m.weather = D.ambient || null;
     m.ter.fill(T.VOID);
@@ -65,9 +123,10 @@
       for (const t of R.ter || []) for (let y = t[2] - 1; y <= t[2] + t[4]; y++) for (let x = t[1] - 1; x <= t[1] + t[3]; x++) mark(x0 + x, y0 + y, 0);
       for (const st of R.stairs || []) mark(x0 + st[0], y0 + st[1], 2);
       for (const [, ox, oy] of R.objs || []) mark(x0 + ox, y0 + oy, 1);
-      // 방 가운데 십자는 늘 트여 있게
-      for (let x = 1; x < RW - 1; x++) for (const y of [(RH >> 1), (RH >> 1) + 1]) res[m.i(x0 + x, y0 + y)] = 1;
-      for (let y = 2; y < RH - 1; y++) for (const x of [(RW >> 1) - 1, RW >> 1]) res[m.i(x0 + x, y0 + y)] = 1;
+      // 방 가운데 십자는 늘 트여 있게 (미로 · 동굴은 제 길을 판다)
+      const sh0 = R.shape || D.shape || 'rect';
+      if (sh0 !== 'maze' && sh0 !== 'cavern') for (let x = 1; x < RW - 1; x++) for (const y of [(RH >> 1), (RH >> 1) + 1]) res[m.i(x0 + x, y0 + y)] = 1;
+      if (sh0 !== 'maze' && sh0 !== 'cavern') for (let y = 2; y < RH - 1; y++) for (const x of [(RW >> 1) - 1, RW >> 1]) res[m.i(x0 + x, y0 + y)] = 1;
     }
     if (D.start) { const r = m.rooms[D.start[0]]; mark(r.x0 + D.start[1], r.y0 + D.start[2], 2); }
     if (D.exit) { const r = m.rooms[D.exit.at[0]]; mark(r.x0 + D.exit.at[1], r.y0 + D.exit.at[2], 2); }
@@ -150,6 +209,10 @@
           const d = Math.min(x - 1, RW - 2 - x, y - 2, RH - 2 - y);
           if (d === 0 && U.vnoise((x0 + x) / 2, (y0 + y) / 2, seed) > 0.62) m.ter[i] = T.PIT;
         }
+      } else if (shape === 'maze') {
+        carveMaze(m, x0, y0, RW, RH, res, R.floor || floor, U.rng(seed + 7), R.cell || D.cell || 3, R.loops != null ? R.loops : D.loops != null ? D.loops : 0.08);
+      } else if (shape === 'cavern') {
+        carveCavern(m, x0, y0, RW, RH, res, R.floor || floor, seed, R.rock != null ? R.rock : D.rock != null ? D.rock : 0.5);
       } else if (shape === 'hall') {
         for (let y = 4; y < RH - 2; y += 3) for (const x of [3, RW - 4]) { const i = m.i(x0 + x, y0 + y); if (!res[i] && baseFloor(m.ter[i]) && !m.obj[i]) m.obj[i] = G.objs.O.PILLAR; }
       }
@@ -236,30 +299,44 @@
   class RoomCtl extends E.Ent {
     constructor(o) { super(Object.assign({ kind: 'roomctl', solid: false, hidden: true }, o)); this.active = false; this.foes = []; }
     get flagClear() { return this.did + ':' + this.k + ':clear'; }
-    inside(p) { return p.x > (this.x0 + 1) * TS && p.x < (this.x0 + RW - 1) * TS && p.y > (this.y0 + 2) * TS && p.y < (this.y0 + RH - 1) * TS + 4; }
+    spawnList(list, Wd) {
+      const s = S();
+      const hpK = G.dungeon.HP_MUL;
+      for (const f of list || []) {
+        const [type, fx, fy, fo] = f;
+        if (fo && fo.once && s.flags[this.did + ':' + this.k + ':f' + fx + fy]) continue;
+        const e = G.foes.spawn(type, (this.x0 + fx) * TS + 8, (this.y0 + fy) * TS + 12, Object.assign({ tier: this.tier, hpMul: hpK, inDungeon: true }, fo || {}));
+        e.room = this.k; e.home = { x: e.x, y: e.y }; e.aggro = !(fo && fo.sleep);
+        G.fx.glow(e.x, e.y - 8, '#b8a8ff', 6);
+        this.foes.push(e);
+      }
+    }
+    get RW() { return G.world.map.RW || RW0; } get RH() { return G.world.map.RH || RH0; }
+    inside(p) { return p.x > (this.x0 + 1) * TS && p.x < (this.x0 + this.RW - 1) * TS && p.y > (this.y0 + 2) * TS && p.y < (this.y0 + this.RH - 1) * TS + 4; }
     update(dt, Wd) {
       const p = Wd.player; if (!p) return;
       const s = S();
       const inside = this.inside(p);
       if (inside && !this.seen) { this.seen = true; s.flags['room:' + this.did + ':' + this.k] = true; }
       if (inside && this.floorName && Wd.map.curFloor !== this.floorName) { const first = Wd.map.curFloor == null; Wd.map.curFloor = this.floorName; if (!first) G.cine.area(this.floorName, Wd.map.name); }
+      if (inside) { const want = this.R.dark != null ? this.R.dark : Wd.map.baseDark; if (want != null && Wd.map.dark !== want) Wd.map.dark = U.approach(Wd.map.dark || 0, want, dt * 1.5); }
       if (inside && !this.active) {
         this.active = true;
         const R = this.R;
         if (R.onEnter && !this.enteredOnce) { this.enteredOnce = true; R.onEnter(this, Wd); }
-        if (!(R.solve && R.solve.type === 'clear' && s.flags[this.flagClear] && !R.respawn)) for (const f of R.foes || []) {
-          const [type, fx, fy, fo] = f;
-          if (fo && fo.once && s.flags[this.did + ':' + this.k + ':f' + fx + fy]) continue;
-          const e = G.foes.spawn(type, (this.x0 + fx) * TS + 8, (this.y0 + fy) * TS + 12, Object.assign({ tier: this.tier }, fo || {}));
-          e.room = this.k; e.home = { x: e.x, y: e.y }; e.aggro = true;
-          G.fx.glow(e.x, e.y - 8, '#b8a8ff', 6);
-          this.foes.push(e);
-        }
-        if (R.solve && R.solve.type === 'clear' && !s.flags[this.flagClear] && this.foes.length) { this.trap = true; sfx('door'); }
+        const solvedClear = R.solve && (R.solve.type === 'clear' || R.solve.type === 'waves') && s.flags[this.flagClear] && !R.respawn;
+        if (!solvedClear) this.spawnList(R.waves ? R.waves[0] : R.foes, Wd);
+        this.wave = 0;
+        if (R.solve && (R.solve.type === 'clear' || R.solve.type === 'waves') && !s.flags[this.flagClear] && this.foes.length) { this.trap = true; sfx('door'); if (R.waves) G.ui.toast('시련의 방 — 파도 1 / ' + R.waves.length, 'bad'); }
+      }
+      // 파도: 다 쓰러뜨리면 다음 무리
+      if (this.active && this.R.waves && !s.flags[this.flagClear] && this.foes.length && this.foes.every((e) => e.dead) && this.wave < this.R.waves.length - 1) {
+        this.waveT = (this.waveT || 0) + dt;
+        if (this.waveT > 1.1) { this.waveT = 0; this.wave++; this.foes = []; this.spawnList(this.R.waves[this.wave], Wd); sfx('encounter'); Wd.shake(2, 0.3); G.ui.toast('파도 ' + (this.wave + 1) + ' / ' + this.R.waves.length + (this.wave === this.R.waves.length - 1 ? ' — 마지막!' : ''), 'bad'); }
       }
       if (!inside && this.active && !this.trap) {
         // 방을 나가면 적은 사라진다 (다시 들어오면 새로)
-        if (U.dist(p.x, p.y, (this.x0 + RW / 2) * TS, (this.y0 + RH / 2) * TS) > RW * TS) { for (const e of this.foes) if (!e.dead) e.dead = true; this.foes = []; this.active = false; }
+        if (U.dist(p.x, p.y, (this.x0 + this.RW / 2) * TS, (this.y0 + this.RH / 2) * TS) > Math.max(this.RW, this.RH) * TS) { for (const e of this.foes) if (!e.dead) e.dead = true; this.foes = []; this.active = false; }
       }
       // 퍼즐 · 청소
       const R = this.R;
@@ -267,6 +344,8 @@
         const sv = R.solve;
         let ok = false;
         if (sv.type === 'clear') ok = this.active && this.foes.length > 0 && this.foes.every((e) => e.dead);
+        else if (sv.type === 'waves') ok = this.active && this.foes.length > 0 && this.foes.every((e) => e.dead) && this.wave >= (this.R.waves || [0]).length - 1;
+        else if (sv.type === 'order') ok = !!this.seqDone;
         else if (sv.type === 'torches') ok = Wd.ents.filter((e) => e.room === this.k && e instanceof P().Torch).every((t) => t.lit);
         else if (sv.type === 'plates') ok = Wd.ents.filter((e) => e.room === this.k && e instanceof P().Plate).every((pl) => pl.down);
         else if (sv.type === 'flag') ok = !!s.flags[sv.flag];
@@ -349,6 +428,90 @@
     draw(g, cx, cy) { if (this.done) return; if (Math.sin(this.t * 2) > 0.8) { for (const [x, y] of this.cells) { g.globalAlpha = 0.15; g.fillStyle = '#d8b0ff'; g.fillRect(x * TS - cx, y * TS - cy, 16, 16); } g.globalAlpha = 1; } }
   }
 
+  /** 순서 발판: 적힌 순서대로 밟아야 한다. 틀리면 모두 되돌아간다 (R.punish: 틀릴 때 튀어나오는 적) */
+  const GLYPH = ['해', '달', '별', '눈', '물', '불', '잎', '종'];
+  class SeqPlate extends E.Ent {
+    constructor(o) { super(Object.assign({ kind: 'seqplate', solid: false, bw: 12, bh: 12 }, o)); this.down = false; }
+    ctl() { const r = G.world.map.rooms[this.room]; return r && r.ctl; }
+    update(dt) {
+      this.t += dt;
+      const c = this.ctl(); if (!c) return;
+      if (S().flags[c.flagClear]) { this.down = true; return; }
+      const p = G.world.player;
+      const on = (p && !p.jz && Math.abs(p.x - this.x) < 7 && Math.abs(p.y - 6 - (this.y - 8)) < 7) || G.world.ents.some((e) => e.pushable && Math.abs(e.x - this.x) < 6 && Math.abs(e.y - this.y) < 6);
+      if (on && !this.down && !this.cool) {
+        c.seqNext = c.seqNext || 0;
+        if (this.n === c.seqNext) {
+          this.down = true; c.seqNext++; sfx('switch'); G.fx.glow(this.x, this.y - 6, '#ffe066', 10);
+          const all = G.world.ents.filter((e) => e instanceof SeqPlate && e.room === this.room);
+          if (c.seqNext >= all.length) c.seqDone = true;
+        } else {
+          sfx('buzz'); G.world.shake(2, 0.2); G.ui.toast('순서가 틀렸다 — 발판이 되돌아갔다', 'bad');
+          for (const e of G.world.ents) if (e instanceof SeqPlate && e.room === this.room) { e.down = false; e.cool = true; }
+          c.seqNext = 0;
+          const R = c.R;
+          if (R.punish && !(c.punished > 2)) { c.punished = (c.punished || 0) + 1; c.spawnList(R.punish, G.world); }
+        }
+      }
+      if (!on && this.cool) this.cool = false;
+    }
+    draw() {}
+    drawShadow(g, cx, cy) {
+      const im = P().ART.plate(this.down); const x = Math.round(this.x - cx - 9), y = Math.round(this.y - cy - 17);
+      g.drawImage(im, x, y);
+      g.fillStyle = this.down ? '#ffe066' : 'rgba(255,255,255,0.75)'; g.font = '8px Galmuri11, sans-serif'; g.textAlign = 'center'; g.fillText(this.glyph || GLYPH[this.n % 8], x + 9, y + 12); g.textAlign = 'left';
+    }
+  }
+  /** 무너지는 바닥: 밟으면 금이 가다가 꺼진다. 한참 뒤 다시 메워진다 */
+  class Crumble extends E.Ent {
+    constructor(o) { super(Object.assign({ kind: 'crumble', solid: false, hidden: false, sortBias: -60 }, o)); this.cells = []; for (let y = 0; y < o.h; y++) for (let x = 0; x < o.w; x++) this.cells.push({ x: o.tx + x, y: o.ty + y, k: 0, gone: 0 }); }
+    update(dt, Wd) {
+      this.t += dt;
+      const p = Wd.player, m = Wd.map;
+      const ptx = p ? Math.floor(p.x / TS) : -9, pty = p ? Math.floor((p.y - 2) / TS) : -9;
+      for (const c of this.cells) {
+        if (c.gone > 0) { c.gone -= dt; if (c.gone <= 0) { m.setT(c.x, c.y, this.floor); c.k = 0; } continue; }
+        if (p && !p.jz && p.state !== 'fall' && c.x === ptx && c.y === pty) c.k += dt;
+        else if (c.k > 0 && c.k < 0.1) c.k = 0;
+        if (c.k > 0) c.k += dt * 0.5;
+        if (c.k > 0.6) { m.setT(c.x, c.y, T.PIT); c.gone = 6; c.k = 0; sfx('rock'); G.fx.dust(c.x * TS + 8, c.y * TS + 12, 5); G.fx.shards(c.x * TS + 8, c.y * TS + 10, 4, '#8a7a6a'); }
+      }
+    }
+    drawShadow(g, cx, cy) {
+      for (const c of this.cells) {
+        if (c.gone > 0) continue;
+        const x = c.x * TS - cx, y = c.y * TS - cy;
+        g.strokeStyle = c.k > 0 ? 'rgba(20,10,10,' + (0.4 + c.k) + ')' : 'rgba(20,10,10,0.28)'; g.lineWidth = 1;
+        g.beginPath(); g.moveTo(x + 3, y + 4); g.lineTo(x + 8, y + 8); g.lineTo(x + 6, y + 13); g.moveTo(x + 8, y + 8); g.lineTo(x + 13, y + 6); g.stroke();
+        if (c.k > 0) { const j = Math.sin(this.t * 60) * c.k * 2; g.fillStyle = 'rgba(0,0,0,' + (c.k * 0.6) + ')'; g.fillRect(x + 1 + j, y + 1, 14, 14); }
+      }
+    }
+    draw() {}
+  }
+  /** 가시 함정: 일정한 박자로 솟는다 */
+  class Spikes extends E.Ent {
+    constructor(o) { super(Object.assign({ kind: 'spikes', solid: false, sortBias: -50 }, o)); this.period = o.period || 1.6; this.phase = o.phase || 0; }
+    get up() { const k = ((G.world.t + this.phase) % this.period) / this.period; return k > 0.55; }
+    get warn() { const k = ((G.world.t + this.phase) % this.period) / this.period; return k > 0.4 && k <= 0.55; }
+    update(dt, Wd) {
+      const p = Wd.player; if (!p || p.jz || !this.up) return;
+      const ptx = Math.floor(p.x / TS), pty = Math.floor((p.y - 2) / TS);
+      if (ptx >= this.tx && ptx < this.tx + this.w && pty >= this.ty && pty < this.ty + this.h) G.combat.hurtPlayer(p, this.dmg || 3, { x: p.x, y: p.y + 4 }, { noKnock: false });
+    }
+    drawShadow(g, cx, cy) {
+      const up = this.up, warn = this.warn;
+      for (let y = 0; y < this.h; y++) for (let x = 0; x < this.w; x++) {
+        const X0 = (this.tx + x) * TS - cx, Y0 = (this.ty + y) * TS - cy;
+        g.fillStyle = 'rgba(20,14,24,0.55)'; g.fillRect(X0 + 1, Y0 + 1, 14, 14);
+        for (const [a, b] of [[4, 4], [11, 4], [4, 11], [11, 11], [7.5, 7.5]]) {
+          if (up) { g.fillStyle = '#d8d8e8'; g.beginPath(); g.moveTo(X0 + a - 2, Y0 + b + 2); g.lineTo(X0 + a, Y0 + b - 5); g.lineTo(X0 + a + 2, Y0 + b + 2); g.fill(); }
+          else { g.fillStyle = warn ? '#ff8a5a' : '#4a4458'; g.fillRect(X0 + a - 1, Y0 + b - 1, 2, 2); }
+        }
+      }
+    }
+    draw() {}
+  }
+
   /** 던전 등록 */
   function def(id, D) {
     DUN[id] = D;
@@ -359,7 +522,7 @@
         const tier = D.tier || 0;
         for (const k of Object.keys(m.rooms)) {
           const { x0, y0, R } = m.rooms[k];
-          const ctl = Wd.add(new RoomCtl({ did: id, k, x0, y0, R, tier, floorName: m.rooms[k].floor, x: (x0 + RW / 2) * TS, y: (y0 + RH / 2) * TS }));
+          const ctl = Wd.add(new RoomCtl({ did: id, k, x0, y0, R, tier, floorName: m.rooms[k].floor, x: (x0 + m.RW / 2) * TS, y: (y0 + m.RH / 2) * TS }));
           m.rooms[k].ctl = ctl;
           for (const pr of R.props || []) addProp(m, Wd, id, k, x0, y0, pr);
         }
@@ -428,9 +591,12 @@
       case 'veil': { const cells = (o.cells || [[px, py]]).map(([cx2, cy2]) => [x0 + cx2, y0 + cy2]); const v = new Veil({ x, y, cells, floor: G.dungeon.DUN[did].floor || T.FLOOR, flagKey: did + ':veil:' + k + ':' + px + ',' + py }); if (!v.done) for (const [cx2, cy2] of cells) m.setT(cx2, cy2, T.WALL); return tag(v); }
       case 'boss': { const b = G.bosses.spawn(o.type, x, y, Object.assign({ did, room: k }, o)); return b; }
       case 'fn': return o.fn(x, y, Wd, m);
+      case 'seq': return tag(new SeqPlate({ x, y: y + 4, n: o.n, glyph: o.glyph }));
+      case 'crumble': return tag(new Crumble({ x, y, tx: x0 + px, ty: y0 + py, w: o.w || 1, h: o.h || 1, floor: m.T(x0 + px, y0 + py) }));
+      case 'spikes': return tag(new Spikes({ x, y, tx: x0 + px, ty: y0 + py, w: o.w || 1, h: o.h || 1, period: o.period, phase: o.phase, dmg: o.dmg || (3 + (DUN[did].tier || 0)) }));
       default: return null;
     }
   }
 
-  G.dungeon = { def, DUN, RW, RH, RoomCtl, Gate, Eye, build, StairLink };
+  G.dungeon = { HP_MUL: 1.25, def, DUN, RW: RW0, RH: RH0, SeqPlate, Crumble, Spikes, RoomCtl, Gate, Eye, build, StairLink, addProp, carveMaze };
 })();

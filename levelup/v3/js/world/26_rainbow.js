@@ -592,7 +592,7 @@
     }
     draw() {}
   }
-  const gust = (x0, y0, w, h, dir, power) => ({ fn: (x, y, Wd, m) => { const rk = Object.values(m.rooms).find((rr) => x >= rr.x0 * TS && x < (rr.x0 + G.dungeon.RW) * TS && y >= rr.y0 * TS && y < (rr.y0 + G.dungeon.RH) * TS); return Wd.add(new Gust({ x, y, x0: rk.x0 + x0, y0: rk.y0 + y0, w, h, dir, power })); } });
+  const gust = (x0, y0, w, h, dir, power) => ({ fn: (x, y, Wd, m) => { const rk = Object.values(m.rooms).find((rr) => x >= rr.x0 * TS && x < (rr.x0 + (m.RW || G.dungeon.RW)) * TS && y >= rr.y0 * TS && y < (rr.y0 + (m.RH || G.dungeon.RH)) * TS); return Wd.add(new Gust({ x, y, x0: rk.x0 + x0, y0: rk.y0 + y0, w, h, dir, power })); } });
 
   /* ═════════ 구름 신전 (던전 6) ═════════ */
   G.dungeon.def('d6', {

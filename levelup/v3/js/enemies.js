@@ -443,7 +443,7 @@
     onDie() { if (this.onDieFn) this.onDieFn(this); }
     /** 빈 기사는 흰빛 · 불이 아니면 한 번 무너졌다 다시 일어난다 */
     preKill(info) {
-      if (this.ai !== 'hollow' || this.revived || info.el === 'light' || info.el === 'fire' || info.fell) return false;
+      if ((this.ai !== 'hollow' && this.ai !== 'skel') || this.revived || info.el === 'light' || info.el === 'fire' || info.fell) return false;
       this.revived = true; this.hp = 1; this.set('heap'); this.inv = 0.4;
       G.fx.shards(this.x, this.y - 8, 8, '#9aa0b0'); sfx('rock');
       return true;
@@ -922,5 +922,5 @@
     return W().add(e);
   }
 
-  G.foes = { T, Foe, spawn, art, tierOf, FoeBomb, AI, TIER_HP };
+  G.foes = { T, Foe, spawn, art, tierOf, FoeBomb, AI, TIER_HP, ART, FRAME, INIT, FLIP };
 })();

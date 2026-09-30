@@ -109,7 +109,7 @@
   const aim = (e, p, oy) => U.angle(p.x - e.x, p.y - 8 - (e.y - (oy || e.h / 2)));
   function ring(e, n, sp, o) { for (let i = 0; i < n; i++) { const a = (i / n) * Math.PI * 2 + (o && o.off || 0); shoot(Object.assign({ kind: 'orb', x: e.x, y: e.y - e.h / 2, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, dmg: e.atk, col: e.col }, o || {})); } }
   function minion(e, type, x, y) { const m = G.foes.spawn(type, x, y, { tier: e.tier || 0 }); m.minion = true; m.aggro = true; m.room = e.room; G.fx.glow(x, y - 6, '#b8a8ff', 8); return m; }
-  function roomRect(e) { const RW = G.dungeon.RW, RH = G.dungeon.RH; const m = W().map; const r = e.room && m.rooms ? m.rooms[e.room] : null; if (!r) return { x0: e.home.x - 140, y0: e.home.y - 90, x1: e.home.x + 140, y1: e.home.y + 70 }; return { x0: (r.x0 + 1.5) * TS, y0: (r.y0 + 2.5) * TS, x1: (r.x0 + RW - 1.5) * TS, y1: (r.y0 + RH - 1.5) * TS }; }
+  function roomRect(e) { const m = W().map; const RW = m.RW || G.dungeon.RW, RH = m.RH || G.dungeon.RH; const r = e.room && m.rooms ? m.rooms[e.room] : null; if (!r) return { x0: e.home.x - 140, y0: e.home.y - 90, x1: e.home.x + 140, y1: e.home.y + 70 }; return { x0: (r.x0 + 1.5) * TS, y0: (r.y0 + 2.5) * TS, x1: (r.x0 + RW - 1.5) * TS, y1: (r.y0 + RH - 1.5) * TS }; }
   const clampRoom = (e) => { const r = roomRect(e); e.x = U.clamp(e.x, r.x0, r.x1); e.y = U.clamp(e.y, r.y0, r.y1); };
   /** 선형 공격 경고: 바닥에 붉은 띠 */
   class Warn extends E.Ent {
