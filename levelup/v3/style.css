@@ -90,6 +90,17 @@ html.touch #touch { display: block; position: absolute; inset: 0; pointer-events
 #cutin .txt small { display: block; font-size: 12px; letter-spacing: .4em; color: var(--gold); }
 #cutin .txt b { display: block; font-family: var(--disp); font-weight: normal; font-size: clamp(22px, 5vw, 40px); color: #fff; text-shadow: 0 0 18px rgba(255, 90, 110, .5), 0 3px 0 #000; }
 #cutin .txt span { display: block; margin-top: 4px; font-size: 13px; color: var(--paper-dim); }
+/* 필살기 컷인: 화면 위쪽 얇은 띠 (가운데 싸움을 가리지 않는다) */
+#cutin.mini { align-items: flex-start; }
+#cutin.mini .band { top: 4%; height: clamp(34px, 10%, 58px); left: 27%; right: 21%; transform: none; animation: miniBand 1.1s ease forwards;
+  background: linear-gradient(90deg, transparent, rgba(10, 6, 20, .72) 12%, rgba(10, 6, 20, .72) 80%, transparent); box-shadow: inset 0 1px 0 var(--cut, #ffe066), inset 0 -1px 0 var(--cut, #ffe066); }
+#cutin.mini .face { left: 31%; top: 4%; width: clamp(34px, 10vh, 58px); height: clamp(34px, 10%, 58px); max-width: none; transform: none; animation: miniFace 1.1s ease forwards; filter: drop-shadow(0 0 6px var(--cut, #ffe066)); }
+#cutin.mini .txt { left: calc(31% + clamp(40px, 11vh, 66px)); top: 4%; height: clamp(34px, 10%, 58px); transform: none; display: flex; flex-direction: column; justify-content: center; animation: miniTxt 1.1s ease forwards; }
+#cutin.mini .txt b { font-size: clamp(15px, 3.2vw, 24px); text-shadow: 0 0 10px var(--cut, #ffe066), 0 2px 0 #000; }
+#cutin.mini .txt span { font-size: 10px; margin-top: 1px; color: var(--cut, #ffe066); letter-spacing: .2em; }
+@keyframes miniBand { 0% { opacity: 0; transform: translateX(-30%); } 15% { opacity: 1; transform: none; } 80% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes miniFace { 0% { opacity: 0; transform: translateX(-40px); } 18% { opacity: 1; transform: none; } 80% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes miniTxt { 0% { opacity: 0; transform: translateX(40px); } 22% { opacity: 1; transform: none; } 80% { opacity: 1; } 100% { opacity: 0; } }
 @keyframes cutBand { from { transform: translateY(-50%) skewY(-6deg) scaleY(0); } }
 @keyframes cutFace { from { transform: translate(-60%, -50%); opacity: 0; } }
 @keyframes cutTxt { from { transform: translate(40%, -50%); opacity: 0; } }
@@ -284,3 +295,53 @@ html.touch #touch { display: block; position: absolute; inset: 0; pointer-events
 #dialog.remote #dlg-face::after { content: ''; position: absolute; inset: 0; background: repeating-linear-gradient(0deg, rgba(0,0,0,.28) 0 1px, transparent 1px 3px); animation: scan 1.2s linear infinite; }
 #dialog.remote #dlg-name::after { content: ' · 멀리서'; color: var(--muted); font-size: 10px; }
 @keyframes scan { to { background-position: 0 6px; } }
+
+/* ───────── 성장: 안내 카드 · 능력치 막대 · 재능 갈래 탭 ───────── */
+.guide { display: flex; gap: 14px; align-items: stretch; }
+.guide .pts { flex: none; width: 84px; display: grid; place-content: center; text-align: center; border-radius: 10px; background: rgba(240, 204, 110, .07); box-shadow: inset 0 0 0 1px var(--line); }
+.guide .pts b { font-family: var(--disp); font-weight: normal; font-size: 30px; color: var(--gold); line-height: 1; }
+.guide .pts small { display: block; margin-top: 4px; font-size: 10px; color: var(--muted); }
+.guide .why { flex: 1; min-width: 0; }
+.guide .why > small { font-size: 10px; color: var(--muted); letter-spacing: .12em; }
+.guide .why > b { display: block; font-weight: normal; font-size: 15px; margin: 1px 0 3px; }
+.guide .why p { margin: 2px 0; font-size: 11.5px; line-height: 1.55; color: var(--paper-dim); word-break: keep-all; }
+.guide .why p.rec { color: var(--paper); } .guide .why p.dim { color: var(--muted); }
+.tag { font-style: normal; font-size: 9.5px; padding: 1px 5px; border-radius: 6px; background: rgba(110, 231, 176, .14); color: var(--exp); box-shadow: inset 0 0 0 1px rgba(110, 231, 176, .4); white-space: nowrap; }
+button.stat { display: block; width: 100%; text-align: left; padding: 8px 10px; margin: 0 0 6px; border-radius: 10px; background: rgba(255, 255, 255, .02); box-shadow: inset 0 0 0 1px var(--line); color: inherit; font: inherit; }
+button.stat.rec { box-shadow: inset 0 0 0 1px rgba(110, 231, 176, .45); }
+button.stat .st-h { display: flex; align-items: center; gap: 8px; }
+button.stat .st-h b { font-weight: normal; font-size: 14px; min-width: 2.6em; }
+button.stat .st-h .n { font-variant-numeric: tabular-nums; font-size: 14px; } button.stat .st-h .n em { font-style: normal; color: #7ee08a; font-size: 11px; }
+button.stat .st-h .plus { margin-left: auto; font-size: 13px; color: var(--gold); padding: 1px 9px; border-radius: 7px; }
+button.stat.can .st-h .plus { background: rgba(240, 204, 110, .12); box-shadow: inset 0 0 0 1px var(--hair); }
+button.stat .bar { position: relative; height: 5px; margin: 6px 0 5px; border-radius: 3px; background: rgba(0, 0, 0, .45); overflow: hidden; }
+button.stat .bar i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 3px; opacity: .85; }
+button.stat .bar u { position: absolute; top: -1px; bottom: -1px; width: 1px; background: rgba(255, 255, 255, .5); }
+button.stat small { display: block; font-size: 11px; line-height: 1.5; color: var(--muted); word-break: keep-all; }
+button.stat small.fx { color: var(--paper-dim); }
+.ttabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin: 8px 0 10px; }
+.ttab { position: relative; padding: 7px 4px; border-radius: 9px; text-align: center; background: rgba(255, 255, 255, .02); box-shadow: inset 0 0 0 1px var(--line); color: var(--paper-dim); font: inherit; }
+.ttab b { display: block; font-weight: normal; font-size: 13px; } .ttab small { display: block; font-size: 10px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.ttab.can small { color: var(--exp); }
+.ttab.on { background: rgba(240, 204, 110, .12); box-shadow: inset 0 0 0 1px var(--hair); color: var(--gold); }
+.ttab .tag { position: absolute; top: -7px; right: 4px; }
+.trow { display: grid; grid-template-columns: 58px 1fr; gap: 8px; align-items: stretch; margin-bottom: 8px; }
+.trow .trh { display: grid; place-content: center; text-align: center; border-radius: 9px; background: rgba(0, 0, 0, .25); box-shadow: inset 0 0 0 1px var(--line); }
+.trow .trh b { font-weight: normal; font-size: 13px; color: var(--gold); } .trow .trh small { font-size: 10px; color: var(--muted); }
+.trow.locked .trh b { color: var(--muted); }
+.topts { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 6px; }
+.skill2 { display: flex; flex-direction: column; gap: 3px; padding: 8px 9px; border-radius: 10px; text-align: left; background: rgba(255, 255, 255, .02); box-shadow: inset 0 0 0 1px var(--line); color: inherit; font: inherit; }
+.skill2 .sk-h { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.skill2 .sk-h b { font-weight: normal; font-size: 12.5px; }
+.skill2.g2 .sk-h b { color: #9ae8a4; } .skill2.g3 .sk-h b { color: #8ac8ff; } .skill2.g4 .sk-h b { color: #d0a0ff; } .skill2.g5 .sk-h b { color: #ffd070; }
+.skill2 .gate { font-style: normal; font-size: 9.5px; padding: 0 5px; border-radius: 6px; color: #d8b0ff; box-shadow: inset 0 0 0 1px rgba(216, 176, 255, .45); }
+.skill2 > span { font-size: 11px; line-height: 1.5; color: var(--paper-dim); word-break: keep-all; }
+.skill2 .st { align-self: flex-start; font-style: normal; font-size: 10.5px; margin-top: 2px; padding: 1px 7px; border-radius: 7px; }
+.skill2 .st.ok { color: var(--gold); background: rgba(240, 204, 110, .12); }
+.skill2 .st.go { color: #0b0914; background: var(--exp); }
+.skill2 .st.no { color: var(--muted); }
+.skill2 .st.lk { color: #ff9aa8; background: rgba(255, 90, 110, .08); }
+.skill2.have { background: rgba(240, 204, 110, .07); box-shadow: inset 0 0 0 1px var(--hair); }
+.skill2.can { box-shadow: inset 0 0 0 1px rgba(110, 231, 176, .7), 0 0 10px rgba(110, 231, 176, .15); }
+.skill2.shut { opacity: .42; } .skill2.lock { opacity: .72; }
+@media (max-width: 560px) { .trow { grid-template-columns: 1fr; } .trow .trh { display: flex; gap: 8px; justify-content: flex-start; padding: 3px 8px; } .guide { flex-direction: column; } .guide .pts { width: 100%; } }

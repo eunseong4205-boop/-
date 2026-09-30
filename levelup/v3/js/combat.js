@@ -33,7 +33,9 @@
     if (e.stunT > 0) mult *= 1.5;
     const sk = S().skills;
     const melee = info.src === 'sword' || info.src === 'spin' || info.src === 'special' || info.src === 'dash';
-    let crit = info.crit || Math.random() < d.crit;
+    let crit = info.crit || Math.random() < d.crit + (info.src === 'arrow' ? d.bowCrit : 0);
+    if (e.markUntil && W().t < e.markUntil) mult *= 1.25;                       // 표식
+    if (info.src === 'spell' && d.elBoost && d.elBoost[info.el]) mult *= d.elBoost[info.el];   // 마도구의 원소 강화
     if (!crit && sk.sw_execute && melee && e.hp <= e.maxHp * 0.25) crit = true;
     if (crit) mult *= 1.6;
     if (info.src === 'arrow' && sk.bw_snipe && info.travel) mult *= 1 + Math.min(0.6, info.travel / 260);
@@ -49,7 +51,8 @@
     if (info.el === 'fire' && !(e.resist || []).includes('fire')) e.burnT = 3 * deep;
     if (info.el === 'ice' && !(e.resist || []).includes('ice')) e.freezeT = Math.max(e.freezeT || 0, (info.src === 'spell' ? 2.5 : 0.8) * deep);
     if (info.el === 'poison') e.poisonT = Math.max(e.poisonT || 0, 4 * deep);
-    if (info.el === 'bolt' && melee && !info.chain) {
+    if (info.src === 'arrow' && info.charged && sk.bw_mark) e.markUntil = W().t + 5;
+    if (info.el === 'bolt' && (melee || info.src === 'arrow') && !info.chain) {
       // 번개 검: 가까운 다른 적에게 옮는다
       const n2 = foes().filter((f) => f !== e && U.dist(f.x, f.y, e.x, e.y) < 56).sort((a2, b2) => U.dist(a2.x, a2.y, e.x, e.y) - U.dist(b2.x, b2.y, e.x, e.y))[0];
       if (n2) { C.bolts.push({ x0: e.x, y0: e.y - 8, x1: n2.x, y1: n2.y - 8, t: 0 }); setTimeout(() => damage(n2, amt * 0.45, { src: 'spell', el: 'bolt', stun: 0.5 * deep, chain: true, kx: 0, ky: 0 }), 60); }
@@ -71,6 +74,7 @@
     if (crit || heavyHit) W().shake(crit ? 2.2 : 1.5, 0.12);
     e.squash = 0.18;
     addSpecial((info.src === 'spell' ? (sk.mg_master ? 8 : 4) : 7) * (crit ? 1.5 : 1));
+    if (C.onDamage) C.onDamage(e, info, dmg, crit);
     if (e.onHurt) e.onHurt(dmg, info);
     if (e.hp <= 0) kill(e, info);
     return true;
@@ -129,6 +133,12 @@
       }
       return false;
     }
+    // 빛의 방벽: 남은 막음 수만큼 받아낸다
+    if (p.barrier > 0 && !opt.force) {
+      p.barrier--; p.inv = 0.5; sfx('clank'); G.fx.ring(p.x, p.y - 10, '#fff4c8', 18, 0.3, 2); G.fx.sparks(p.x, p.y - 10, 8, '#fff4c8', 80);
+      if (p.barrier <= 0) { G.fx.float(p.x, p.y - 30, '방벽이 깨졌다', '#fff4c8'); p.barrierT = 0; }
+      return false;
+    }
     const s = S(), d = G.st.derive(s);
     // 튕겨내기: 베기를 막 시작한 순간 맞으면 쳐낸다
     if (s.skills.sw_parry && p.state === 'attack' && p.swing && p.swing.t < 0.13 && src && !opt.force) {
@@ -146,6 +156,7 @@
       const lv = G.data.ITEMS[s.equip.shield].lv || 1;
       if (Math.abs(U.angDiff(a, f)) < 1.0 && (src.blockLv || 1) <= lv) {
         sfx('shield'); G.fx.sparks(p.x + Math.cos(f) * 8, p.y - 10 + Math.sin(f) * 6, 6, '#ffffff', 70);
+        if (s.skills.sw_guard) { addSpecial(15); p.critNext = true; p.counterT = 0.9; }      // 철벽 자세
         if (src.reflectable && lv >= 3) { src.vx *= -1.3; src.vy *= -1.3; src.owner = 'player'; src.reflected = true; src.hit = new Set(); return false; }
         src.dead = true; return false;
       }
@@ -242,7 +253,7 @@
           if (U.dist(this.x, this.y, e.x, e.y - (e.h || 16) / 2) < (e.r || 8) + this.r) {
             this.hit.add(e);
             const [nx, ny] = U.norm(this.vx, this.vy);
-            damage(e, this.reflected ? this.dmg * 2 : this.dmg, { src: this.src || 'shot', kx: nx, ky: ny, el: this.el, stun: this.stun, power: this.power || 0.6, refl: this.reflected, travel: this.ox != null ? U.dist(this.ox, this.oy, this.x, this.y) : 0 });
+            damage(e, this.reflected ? this.dmg * 2 : this.dmg, { src: this.src || 'shot', kx: nx, ky: ny, el: this.el, stun: this.stun, power: this.power || 0.6, refl: this.reflected, travel: this.ox != null ? U.dist(this.ox, this.oy, this.x, this.y) : 0, charged: this.charged, crit: this.crit, shot: this });
             if (this.onHitFoe) this.onHitFoe(e);
             if (this.pierce-- <= 0) { this.die(); return true; }
           }
@@ -476,8 +487,13 @@
         if (!within) continue;
         p.hitSet.add(e);
         const [nx, ny] = U.norm(ex - p.x, ey - p.y + 9);
-        const hit = damage(e, d.atk * dmgMul, { src: 'sword', kx: nx, ky: ny, el: d.el, crit: p.critNext, power: sw.stage === 2 ? 1.6 : 1, from: p });
+        // 찌르기(셋째 베기): 레이피어 · 찌르기 달인은 더 깊다
+        const thrustMul = sw.stage === 2 ? (1 + d.thrust) * (s.skills.sw_thrust ? 1.4 : 1) : 1;
+        const hit = damage(e, d.atk * dmgMul * thrustMul, { src: 'sword', kx: nx, ky: ny, el: d.el, crit: p.critNext, power: sw.stage === 2 ? 1.6 : 1, from: p });
         if (hit && e.hp > 0 && !e.boss) e.stunT = Math.max(e.stunT || 0, 0.15);
+        // 쌍검: 한 박자 뒤 두 번째 날
+        if (hit && d.twin) after(0.07, () => { if (!e.dead) damage(e, d.atk * dmgMul * d.twin, { src: 'sword', kx: nx * 0.3, ky: ny * 0.3, el: d.el, power: 0.4, chain: true }); });
+        if (hit && (d.bleed || s.skills.sw_rend) && !e.dead) { e.poisonT = Math.max(e.poisonT || 0, d.bleed ? 3.5 : 2.5); e.bleed = true; }
       }
       // 등급 3 이상: 칼끝에서 빛 가루
       if (d.grade >= 3 && Math.random() < 0.7) { const GC = G.prog.GRADES[d.grade]; G.fx.part({ x: cxp + Math.cos(a) * sw.reach, y: cyp + 2 + Math.sin(a) * sw.reach * 0.8, z: 2, vz: 20, g: 40, life: 0.3, col: d.grade >= 5 ? '#ffe066' : GC.glow, size: d.grade >= 4 ? 2 : 1, glow: true }); }
@@ -576,18 +592,22 @@
       if (s.ammo.arrows <= 0) { sfx('buzz'); G.ui.toast('화살이 없다', 'bad'); p.setState('idle'); return; }
       if (p.bowT < 0.12) { p.bowT = 0.12; }
       s.ammo.arrows--;
-      const charged = p.bowFull;
+      const charged = p.bowFull || !!(s.skills.bw_step && p.t - (p.rollEndT || -9) < 0.5);   // 뒷걸음 사격: 구른 직후는 다 모은 화살
+      // 추적자의 활: 겨눈 쪽에서 가장 가까운 적을 쫓는다
+      let tgt = null;
+      if (d.bowHoming) { let bd = 1e9; for (const e of foes()) { const dd = U.dist(p.x, p.y, e.x, e.y); if (dd > 220) continue; const da = Math.abs(U.angDiff(p.aim, U.angle(e.x - p.x, e.y - p.y))); if (da > 0.9) continue; const sc = dd + da * 80; if (sc < bd) { bd = sc; tgt = e; } } }
       const heavy = charged && s.skills.bw_heavy && p.bowT > d.draw + 1.2;
       let el = d.bowEl;
       if (charged && !el && s.mp >= 4 && ((s.skills.bw_fire && s.spells.fire) || s.skills.bw_ice)) { el = s.skills.bw_fire ? 'fire' : 'ice'; s.mp -= 4; }
       const sp = heavy ? 420 : charged ? 340 : 260;
       const GC = G.prog ? G.prog.GRADES[d.bowGrade] : null;
       const trailCol = el === 'fire' ? '#ffb040' : el === 'ice' ? '#bfe8ff' : el === 'light' ? '#fff0a8' : heavy ? '#fff8c0' : charged ? '#fff4c0' : d.bowGrade >= 3 && GC ? GC.glow : null;
-      const mk = (off, extra) => shoot(Object.assign({ kind: 'arrow', x: p.x + Math.cos(p.aim + off) * 8, y: p.y - 2 + Math.sin(p.aim + off) * 6, ox: p.x, oy: p.y, vx: Math.cos(p.aim + off) * sp, vy: Math.sin(p.aim + off) * sp, dmg: d.bowAtk * (heavy ? 3 : charged ? 2 : 1), src: 'arrow', pierce: heavy ? 99 : (charged && s.skills.bw_pierce ? 3 : 0) + d.bowPierce, charged, heavy, el, trail: trailCol, r: heavy ? 6 : 3, life: heavy ? 1.2 : 0.9, z: p.z, stun: heavy ? 0.8 : charged ? 0.3 : 0, power: heavy ? 2 : charged ? 1 : 0.5, grade: d.bowGrade, ret: s.skills.bw_master && Math.random() < 0.3 }, extra || {}));
+      const mk = (off, extra) => shoot(Object.assign({ kind: 'arrow', x: p.x + Math.cos(p.aim + off) * 8, y: p.y - 2 + Math.sin(p.aim + off) * 6, ox: p.x, oy: p.y, vx: Math.cos(p.aim + off) * sp, vy: Math.sin(p.aim + off) * sp, dmg: d.bowAtk * (heavy ? 3 : charged ? 2 : 1), src: 'arrow', pierce: heavy ? 99 : (charged && s.skills.bw_pierce ? 3 : 0) + d.bowPierce, charged, heavy, el, trail: trailCol, r: heavy ? 6 : 3, life: heavy ? 1.2 : 0.9, z: p.z, stun: heavy ? 0.8 : charged ? 0.3 : 0, power: heavy ? 2 : charged ? 1 : 0.5, grade: d.bowGrade, ret: (s.skills.bw_master && Math.random() < 0.3) || d.bowRet }, tgt ? { homing: d.bowHoming, target: tgt } : {}, extra || {}));
       mk(0);
       const n = charged ? Math.max(d.bowMulti, s.skills.bw_multi ? 3 : 1) : 1;
       for (let i = 1; i < n; i++) { const k = Math.ceil(i / 2) * (i % 2 ? 1 : -1); mk(k * 0.2); }
-      if (!charged && s.skills.bw_rapid && s.ammo.arrows > 0) { s.ammo.arrows--; after(0.08, () => mk((Math.random() - 0.5) * 0.08)); }
+      if (!charged && (s.skills.bw_rapid || d.bowRapid) && s.ammo.arrows > 0) { if (!d.bowRapid) s.ammo.arrows--; after(0.08, () => mk((Math.random() - 0.5) * 0.08)); }
+      if (!charged && s.skills.bw_rapid && d.bowRapid && s.ammo.arrows > 0) { s.ammo.arrows--; after(0.16, () => mk((Math.random() - 0.5) * 0.12)); }
       if (heavy) { W().shake(3, 0.2); G.fx.ring(p.x + Math.cos(p.aim) * 12, p.y - 8 + Math.sin(p.aim) * 8, '#fff8c0', 14, 0.3, 2); }
       sfx(charged ? 'shootc' : 'shoot');
       p.setState('idle');
@@ -603,6 +623,10 @@
       const sp = G.data.SPELLS[s.spell];
       if (G.prog && !G.prog.reqOk(s, sp.req)) { sfx('buzz'); G.fx.float(p.x, p.y - 30, '아직 못 다룬다', '#8ab8ff'); G.ui.toast(sp.name + ' — 필요: ' + G.prog.reqText(s, sp.req).replace(/\[\/?r\]/g, ''), 'bad'); return true; }
       const cost = Math.round(sp.mp * G.st.derive(s).mpCost);
+      if (s.mp < cost && s.skills.mg_blood && s.hp > Math.ceil((cost - s.mp) / 10) + 1) {
+        // 피의 영창: 모자란 MP 10마다 하트 ¼칸
+        const q = Math.ceil((cost - s.mp) / 10); s.hp -= q; s.mp = cost; G.fx.float(p.x, p.y - 30, '피의 영창 -' + (q / 4) + '칸', '#ff6a8a'); sfx('hurt');
+      }
       if (s.mp < cost) { sfx('buzz'); G.fx.float(p.x, p.y - 30, 'MP 부족', '#8ab8ff'); return true; }
       s.mp -= cost;
       p.setState('cast'); p.castSpell = s.spell; p.castDone = false;
@@ -612,21 +636,21 @@
   };
   function updCast(p, dt, m) {
     const s = S(), d = G.st.derive(s);
-    const q = s.skills.mg_quick ? 0.5 : 1;
+    const q = (s.skills.mg_quick ? 0.5 : 1) * (d.castMul || 1);
     if (!p.castDone && p.st > 0.14 * q) {
       p.castDone = true;
       castSpell(p, p.castSpell, d);
-      if (s.skills.mg_echo && Math.random() < 0.25) after(0.18, () => castSpell(p, p.castSpell, G.st.derive(S())));
+      if (d.echo && Math.random() < d.echo) after(0.18, () => castSpell(p, p.castSpell, G.st.derive(S())));
     }
     if (p.st > 0.32 * q) p.setState('idle');
   }
   function castSpell(p, id, d) {
     const a = U.angle(p.face[0], p.face[1]);
     const mm = d.magMul;
-    if (id === 'fire') { shoot({ kind: 'fire', x: p.x + Math.cos(a) * 10, y: p.y - 2 + Math.sin(a) * 8, vx: Math.cos(a) * 210, vy: Math.sin(a) * 210, dmg: (4 + S().lv * 0.25) * mm, src: 'spell', el: 'fire', r: 4, life: 0.8, trail: '#ffb04a', explode: 0.6 }); sfx('fire'); }
-    else if (id === 'ice') { shoot({ kind: 'ice', x: p.x + Math.cos(a) * 10, y: p.y - 2 + Math.sin(a) * 8, vx: Math.cos(a) * 240, vy: Math.sin(a) * 240, dmg: (3 + S().lv * 0.2) * mm, src: 'spell', el: 'ice', r: 4, life: 0.7, trail: '#e8f8ff', pierce: 2, ghost: false }); sfx('ice'); }
+    if (id === 'fire') { shoot({ kind: 'fire', x: p.x + Math.cos(a) * 10, y: p.y - 2 + Math.sin(a) * 8, vx: Math.cos(a) * 210, vy: Math.sin(a) * 210, dmg: (4 + S().lv * 0.25) * mm, src: 'spell', el: 'fire', r: 4, life: 0.8, trail: '#ffb04a', explode: d.fireBlast || 0.6 }); sfx('fire'); }
+    else if (id === 'ice') { shoot({ kind: 'ice', x: p.x + Math.cos(a) * 10, y: p.y - 2 + Math.sin(a) * 8, vx: Math.cos(a) * 240, vy: Math.sin(a) * 240, dmg: (3 + S().lv * 0.2) * mm, src: 'spell', el: 'ice', r: 4, life: 0.7, trail: '#e8f8ff', pierce: d.icePierce || 2, ghost: false }); sfx('ice'); }
     else if (id === 'bolt') {
-      const list = foes().filter((e) => U.dist(p.x, p.y, e.x, e.y) < 110).sort((a2, b2) => U.dist(p.x, p.y, a2.x, a2.y) - U.dist(p.x, p.y, b2.x, b2.y)).slice(0, 3);
+      const list = foes().filter((e) => U.dist(p.x, p.y, e.x, e.y) < 110 + (d.boltChain - 3) * 20).sort((a2, b2) => U.dist(p.x, p.y, a2.x, a2.y) - U.dist(p.x, p.y, b2.x, b2.y)).slice(0, d.boltChain || 3);
       let fx = p.x, fy = p.y - 10;
       for (const e of list) { C.bolts.push({ x0: fx, y0: fy, x1: e.x, y1: e.y - 8, t: 0 }); fx = e.x; fy = e.y - 8; damage(e, (5 + S().lv * 0.22) * mm, { src: 'spell', el: 'bolt', stun: 1.2, kx: 0, ky: 0 }); }
       if (!list.length) C.bolts.push({ x0: p.x, y0: p.y - 40, x1: p.x + Math.cos(a) * 40, y1: p.y + Math.sin(a) * 30, t: 0 });
@@ -648,6 +672,7 @@
         C.marks.push({ x: tx, y: ty, t: 0, life: dly, r: 16, col: '#ff7a4a' });
         after(dly, () => { explode(tx, ty - 4, 'player', 1.3); for (const e of foes()) if (U.dist(tx, ty, e.x, e.y) < 30) damage(e, (12 + S().lv * 0.35) * mm, { src: 'spell', el: 'fire', kx: 0, ky: 0, power: 1.5, stun: 0.6 }); W().shake(4, 0.2); G.fx.shards(tx, ty - 8, 14, '#ff9a5a'); });
       }
+    } else if (C.spellFx && C.spellFx[id]) { C.spellFx[id](p, d, a, mm);
     } else if (id === 'heal') {
       G.fx.glow(p.x, p.y - 8, '#8ae0a0', 24, 40); sfx('heal');
       p.healLeft = 8;

@@ -312,7 +312,7 @@
   function hurt() { H.hurtT = 0.35; }
   function specialReady() { H.readyT = 1; if (G.ui && G.ui.toast) G.ui.toast('필살기 준비 — [O] 빛의 일섬', 'gold'); }
   function setBoss(b) { H.boss = b; H.bossShow = 2; H.bossLag = 1; }
-  function cutin(text, sub) { if (G.cine && G.cine.cutin) G.cine.cutin({ who: 'hero', title: text, sub: sub || '', short: true }); }
+  function cutin(text, sub, col) { if (G.cine && G.cine.cutin) G.cine.cutin({ who: 'hero', title: text, sub: sub || '', short: true, col, face: 'angry', sfx: 'skill' }); }
 
   Object.assign(H, { draw, update, hurt, specialReady, setBoss, cutin, icon, heartImg, buildMini, syncButtons });
   G.hud = H;

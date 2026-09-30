@@ -22,9 +22,9 @@
     $('stage').classList.toggle('blackout', !!out);
     return G.script.wait((o.sec == null ? 0.35 : o.sec) + 0.02);
   }
-  function flash(col, sec) {
+  function flash(col, sec, a) {
     const f = $('fade');
-    f.style.transition = 'none'; f.classList.toggle('white', col === '#fff' || col === 'white'); f.style.background = col === '#fff' || col === 'white' ? '' : col; f.style.opacity = '0.85';
+    f.style.transition = 'none'; f.classList.toggle('white', col === '#fff' || col === 'white'); f.style.background = col === '#fff' || col === 'white' ? '' : col; f.style.opacity = String(a == null ? 0.85 : a);
     requestAnimationFrame(() => { f.style.transition = 'opacity ' + (sec || 0.3) + 's'; f.style.opacity = '0'; setTimeout(() => { f.style.background = ''; }, (sec || 0.3) * 1000 + 50); });
   }
   /** 장 제목 카드 */
@@ -88,8 +88,9 @@
   function cutin(o) {
     const el = $('cutin');
     el.innerHTML = '';
+    el.classList.toggle('mini', !!o.short);
     const band = document.createElement('div'); band.className = 'band';
-    if (o.col) band.style.setProperty('--cut', o.col);
+    if (o.col) { band.style.setProperty('--cut', o.col); el.style.setProperty('--cut', o.col); } else el.style.removeProperty('--cut');
     el.appendChild(band);
     const face = document.createElement('canvas'); face.className = 'face'; face.width = 64; face.height = 64;
     if (G.portraits) G.portraits.draw(face, o.who === 'hero' ? 'hero' : o.who, o.face || 'angry');
@@ -99,7 +100,7 @@
     el.appendChild(t);
     el.hidden = false;
     if (G.audio) G.audio.sfx(o.sfx || 'skill');
-    const dur = o.short ? 0.9 : o.sec || 1.8;
+    const dur = o.short ? 1.1 : o.sec || 1.8;
     return G.script.wait(dur).then(() => { el.hidden = true; el.innerHTML = ''; });
   }
 

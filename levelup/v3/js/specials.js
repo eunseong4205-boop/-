@@ -19,9 +19,10 @@
     p.inv = Math.max(p.inv, 0.6);
     sfx('special');
     G.fx.ring(p.x, p.y - 8, GC.glow || '#fff8c0', 26 + gr * 4, 0.4, 2 + (gr >= 4 ? 1 : 0));
-    if (gr >= 3 && G.hud && G.hud.cutin) G.hud.cutin(sp.name, GC.name + ' 필살기');
-    if (gr >= 4) W().slowmo(0.3, 0.22 + gr * 0.04);
-    if (gr >= 5) { G.cine.flash('#fff', 0.35); W().shake(5, 0.4); if (G.light) G.light.flare(p.x, p.y, 160, 5); }
+    // 컷인은 화면 위쪽 얇은 띠 — 가운데 싸움은 그대로 보인다. 섬광도 옅게
+    if (gr >= 2 && G.hud && G.hud.cutin) G.hud.cutin(sp.name, GC.name + ' 필살기', GC.glow || GC.col);
+    if (gr >= 4) W().slowmo(0.35, 0.18 + gr * 0.03);
+    if (gr >= 5) { G.cine.flash('#fff', 0.3, 0.35); W().shake(5, 0.4); if (G.light) G.light.flare(p.x, p.y, 160, 5); }
     else W().shake(2 + gr * 0.6, 0.25);
   }
 
@@ -204,7 +205,7 @@
         }
         if (X.t >= 0.95 && !X.burst) {
           X.burst = true;
-          G.cine.flash('#fff', 0.25); G.fx.ring(p.x, p.y - 8, '#ffe066', 96, 0.5, 4); if (G.light) G.light.flare(p.x, p.y, 150, 5);
+          G.cine.flash('#fff', 0.25, 0.35); G.fx.ring(p.x, p.y - 8, '#ffe066', 96, 0.5, 4); if (G.light) G.light.flare(p.x, p.y, 150, 5);
           for (const e of near(p, 96)) { const [nx, ny] = U.norm(e.x - p.x, e.y - p.y); C.damage(e, d.atk * 4, { src: 'special', kx: nx, ky: ny, el: 'light', power: 2, crit: true, unblockable: true }); }
           W().shake(6, 0.35); sfx('white');
         }
@@ -219,7 +220,7 @@
         const list = foes().filter(onScreen);
         for (const e of list) C.marks.push({ x: e.x, y: e.y, t: 0, life: 0.6, r: 14, col: '#ffffff' });
         C.after(0.6, () => {
-          G.cine.flash('#fff', 0.4); W().shake(6, 0.4); sfx('white');
+          G.cine.flash('#fff', 0.3, 0.4); W().shake(6, 0.4); sfx('white');
           for (const e of list) {
             if (e.dead) continue;
             for (let k = 0; k < 16; k++) G.fx.part({ x: e.x + (Math.random() - 0.5) * 10, y: e.y, z: k * 8, vz: 0, g: 0, life: 0.45, col: '#fffbe8', size: 2, glow: true });

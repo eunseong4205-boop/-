@@ -253,6 +253,7 @@
     if (it.type === 'use') return H.icon(it.heal ? 'heart' : 'light');
     if (it.type === 'sword') return swordIcon(it.col);
     if (it.type === 'bow') return H.icon('bow');
+    if (it.type === 'focus') return H.icon('focus');
     if (it.type === 'ammo') return H.icon(it.ammo === 'arrows' ? 'arrows' : 'bomb');
     if (it.type === 'tome') return H.icon(it.spell);
     if (it.type === 'art') return H.icon('art');
@@ -323,7 +324,7 @@
     closeModal();
     G.script.run(async (c) => { await c.narr(it.read); });
   }
-  const SLOTS = [['sword', '검'], ['shield', '방패'], ['armor', '옷'], ['bow', '활'], ['acc1', '장신구 1'], ['acc2', '장신구 2']];
+  const SLOTS = [['sword', '검'], ['shield', '방패'], ['armor', '옷'], ['bow', '활'], ['focus', '마도구'], ['acc1', '장신구 1'], ['acc2', '장신구 2']];
   const GRADE_TAG = (it) => '[g' + ((it && it.grade) || 1) + ']';
   /** 등급 색을 입힌 이름 */
   function gname(it) { return it ? GRADE_TAG(it) + it.name + '[/]' : ''; }
@@ -337,6 +338,19 @@
     if (it.speed && it.speed !== 1) p.push(it.speed < 1 ? '빠름' : '느림');
     if (it.el) p.push({ fire: '불', ice: '얼음', light: '빛', bolt: '번개', poison: '독', dark: '어둠' }[it.el] + ' 속성');
     if (it.multi) p.push(it.multi + '갈래');
+    if (it.thrust) p.push('찌르기 +' + Math.round(it.thrust * 100) + '%');
+    if (it.twin) p.push('두 번째 날 ' + Math.round(it.twin * 100) + '%');
+    if (it.bleed) p.push('출혈');
+    if (it.drain) p.push('흡혈');
+    if (it.rapid) p.push('연사');
+    if (it.homing) p.push('추적');
+    if (it.crit) p.push('치명타 +' + Math.round(it.crit * 100) + '%');
+    if (it.mag) p.push('마법 ×' + it.mag);
+    if (it.cost && it.cost < 1) p.push('MP -' + Math.round((1 - it.cost) * 100) + '%');
+    if (it.cast && it.cast < 1) p.push('영창 -' + Math.round((1 - it.cast) * 100) + '%');
+    if (it.chain) p.push('번개 +' + it.chain);
+    if (it.echo) p.push('한 번 더 ' + Math.round(it.echo * 100) + '%');
+    if (it.elb) for (const k in it.elb) p.push({ fire: '불', ice: '얼음', light: '빛', bolt: '번개', poison: '독', dark: '어둠' }[k] + ' 마법 +' + Math.round((it.elb[k] - 1) * 100) + '%');
     if (it.type === 'shield' && it.lv) p.push('막기 ' + it.lv + '단계');
     if (it.def && it.def < 1) p.push('피해 -' + Math.round((1 - it.def) * 100) + '%');
     if (it.resist) p.push({ heat: '더위', cold: '추위', all: '더위 · 추위' }[it.resist] + ' 막음');
@@ -348,10 +362,14 @@
   function tabGear(body, M) {
     const s = S(), I2 = G.data.ITEMS, d = G.st.derive(s);
     if (M.sub === 'special') {
-      sec(body, '필살기 고르기 — 게이지가 가득 차면 필살 버튼');
-      for (const k of Object.keys(G.data.SPECIALS)) {
+      note(body, markup('게이지가 가득 차면 필살 버튼. 필살기는 [y]검 · 활 · 마법[/] 갈래가 있고, 갈래에 맞는 능력치가 세기를 정한다.'));
+      const TYPES = [['sword', '검 필살기 — 힘'], ['bow', '활 필살기 — 솜씨'], ['magic', '마법 필살기 — 지력']];
+      const keys = Object.keys(G.data.SPECIALS).sort((a, b) => TYPES.findIndex((t) => t[0] === (G.data.SPECIALS[a].type || 'sword')) - TYPES.findIndex((t) => t[0] === (G.data.SPECIALS[b].type || 'sword')) || (G.data.SPECIALS[a].grade || 1) - (G.data.SPECIALS[b].grade || 1));
+      let lastT = null;
+      for (const k of keys) {
         const sp = G.data.SPECIALS[k], have = !!s.specials[k], ok = G.prog.reqOk(s, sp.req), on = s.specialMove === k;
-        if (!have) { body.appendChild(row({ name: '[s]??? — ' + G.prog.gradeOf(sp).name + '[/]', desc: '아직 익히지 못한 필살기. 비기 두루마리를 사거나 찾거나 받아서 익힌다.', dim: true })); continue; }
+        const ty = sp.type || 'sword'; if (ty !== lastT) { lastT = ty; sec(body, TYPES.find((t) => t[0] === ty)[1]); }
+        if (!have) { body.appendChild(row({ name: '[s]??? — ' + G.prog.gradeOf(sp).name + '[/]', desc: '아직 익히지 못한 필살기. 비기 두루마리를 사거나 찾거나 받아서 익힌다.' + (sp.req ? ' (필요 ' + G.prog.reqText(s, sp.req).replace(/\[\/?r\]/g, '') + ')' : ''), dim: true })); continue; }
         body.appendChild(row({ icon: G.hud.icon('special'), name: (on ? '[y]◆[/] ' : '') + gname(sp), desc: gradeLabel(sp) + ' — ' + sp.desc + (sp.req ? ' · 필요 ' + G.prog.reqText(s, sp.req) : ''), dim: !ok, onClick: () => {
           if (!ok) { toast('아직 다룰 수 없다: ' + G.prog.reqText(s, sp.req).replace(/\[\/?r\]/g, ''), 'bad'); sfx('buzz'); return; }
           s.specialMove = k; M.sub = null; sfx('equip'); toast('필살기: ' + sp.name, 'gold'); refresh();
@@ -365,7 +383,7 @@
       const own = Object.keys(s.inv).filter((k) => I2[k] && I2[k].type === type && s.inv[k] > 0);
       if (type === 'armor' && !own.includes('ar_tunic')) own.unshift('ar_tunic');
       own.sort((a, b) => (I2[b].grade || 1) - (I2[a].grade || 1));
-      if (type === 'acc') body.appendChild(row({ name: '(비우기)', onClick: () => { s.equip[slot] = null; M.sub = null; sfx('equip'); refresh(); } }));
+      if (type === 'acc' || type === 'focus') body.appendChild(row({ name: '(비우기)', onClick: () => { s.equip[slot] = null; M.sub = null; sfx('equip'); refresh(); } }));
       if (!own.length) note(body, '가진 것이 없다.');
       for (const k of own) {
         const on = s.equip[slot] === k, other = type === 'acc' && (slot === 'acc1' ? s.equip.acc2 : s.equip.acc1) === k, ok = canEquip(I2[k]);
@@ -389,15 +407,50 @@
     dl.innerHTML = kv.map(([a, b]) => '<dt>' + a + '</dt><dd>' + b + '</dd>').join('');
     body.appendChild(dl);
   }
-  /* ── 능력: 성장 점수를 능력치에 ── */
+  /* ── 성장: 안내 카드 · 능력치 · 재능 나무 (갈래 탭) ── */
+  const STYLE = {
+    sword: { name: '검', stat: 'str', tree: '검술', col: '#ff8a6a', why: '힘을 올리면 검 피해가 커지고 무거운 검을 든다. 체력을 곁들이면 앞에 서서 버틴다.', side: 'vit' },
+    bow: { name: '활', stat: 'dex', tree: '궁술', col: '#ffe066', why: '솜씨를 올리면 활 피해 · 치명타 · 시위 속도가 오른다. 기력을 곁들이면 구르며 쏜다.', side: 'sta' },
+    magic: { name: '마법', stat: 'int', tree: '마법', col: '#8ab8ff', why: '지력을 올리면 마법 피해 · MP · 필살 게이지가 오른다. 체력을 곁들이면 덜 쓰러진다.', side: 'vit' },
+  };
+  /** 지금 무엇으로 싸우는가: 능력치에 가장 많이 쓴 쪽, 비기면 든 무기 */
+  function styleOf(s) {
+    const st = s.stats || {};
+    const sc = { sword: (st.str || 0) + (s.equip.sword ? 0.5 : 0), bow: (st.dex || 0) + (s.equip.bow && s.tools.bow ? 0.4 : 0), magic: (st.int || 0) + (Object.keys(s.spells || {}).length ? 0.3 : 0) + (s.equip.focus ? 0.6 : 0) };
+    return Object.keys(sc).sort((a, b) => sc[b] - sc[a])[0];
+  }
   function tabStats(body) {
     const s = S(), d = G.st.derive(s), P = G.prog;
-    note(body, markup('렙업할 때마다 [y]성장 점수 ' + P.PTS_PER_LV + '점[/]. 능력치 한 칸에 1점, 재능(기술 탭)은 한 칸에 2~5점. 어디에 쓸지가 곧 싸우는 방식이다.\n[s]망각의 차를 마시면 쓴 점수를 모두 돌려받는다. 20을 넘긴 능력치는 한 점의 효과가 반으로 준다.[/]'));
-    sec(body, '남은 성장 점수 ' + (s.pts || 0));
-    const effect = { str: () => '검 피해 ×' + (1 + P.soft(d.stats.str, 0.04)).toFixed(2), vit: () => '하트 +' + (Math.floor(d.stats.vit / 3) / 4) + '칸 · 피해 -' + (Math.min(20, d.stats.vit * 0.4)).toFixed(1) + '%', sta: () => '기력 ' + Math.round(d.stamMax) + ' · 회복 ×' + d.stamRegen.toFixed(2), int: () => '마법 ×' + d.magMul.toFixed(2) + ' · MP ' + d.mpMax, dex: () => '활 ' + d.bowAtk.toFixed(1) + ' · 치명타 ' + Math.round(d.crit * 100) + '%' };
+    const sty = styleOf(s), SY = STYLE[sty];
+    // 안내 카드
+    const card = document.createElement('div'); card.className = 'guide card';
+    const learnable = G.data.SKILLS.filter((k) => !P.skillBlock(s, k));
+    const recSk = learnable.filter((k) => k.tree === SY.tree).sort((a, b) => a.cost - b.cost)[0] || learnable.sort((a, b) => a.cost - b.cost)[0];
+    card.innerHTML = '<div class="pts"><b>' + (s.pts || 0) + '</b><small>남은 성장 점수</small></div>' +
+      '<div class="why"><small>지금 싸우는 방식</small><b style="color:' + SY.col + '">' + SY.name + ' 위주</b>' +
+      '<p>' + esc(SY.why) + '</p>' +
+      (s.pts > 0 ? '<p class="rec">추천: <span class="y">' + P.STAT_NAME[SY.stat] + '</span>' + (recSk ? ' · 재능 <span class="y">「' + esc(recSk.name) + '」</span>(' + recSk.cost + '점)' : '') + '</p>' : '<p class="rec dim">렙업하면 ' + P.PTS_PER_LV + '점을 얻는다. 능력치 한 칸 1점 · 재능 2~5점.</p>') +
+      '</div>';
+    body.appendChild(card);
+    sec(body, '능력치 — 한 칸에 1점 (20을 넘기면 효과가 반)');
+    const next = (id) => { const s2 = JSON.parse(JSON.stringify(s)); s2.stats[id] = (s2.stats[id] || 0) + 1; return G.st.derive(s2); };
+    const effect = {
+      str: (a, b) => ['검 피해 ×' + (1 + P.soft(a.stats.str, 0.04)).toFixed(2), '×' + (1 + P.soft(b.stats.str, 0.04)).toFixed(2)],
+      vit: (a, b) => ['하트 ' + a.hpMax / 4 + '칸 · 받는 피해 ' + (Math.round(a.def * 1000) / 10) + '%', (b.hpMax > a.hpMax ? '하트 +¼칸 · ' : '') + '피해 ' + (Math.round(b.def * 1000) / 10) + '%'],
+      sta: (a, b) => ['기력 ' + Math.round(a.stamMax) + ' · 회복 ×' + a.stamRegen.toFixed(2), '기력 ' + Math.round(b.stamMax)],
+      int: (a, b) => ['마법 ×' + a.magMul.toFixed(2) + ' · MP ' + a.mpMax, '×' + b.magMul.toFixed(2) + ' · MP ' + b.mpMax],
+      dex: (a, b) => ['활 ' + a.bowAtk.toFixed(1) + ' · 치명타 ' + Math.round(a.crit * 100) + '%', '활 ' + b.bowAtk.toFixed(1) + ' · ' + Math.round(b.crit * 100) + '%'],
+    };
     for (const st of P.STATS) {
-      const base = s.stats[st.id] || 0, bonus = d.stats[st.id] - base;
-      const r = row({ name: '<b style="color:' + st.col + '">' + st.name + '</b>  ' + base + (bonus ? ' <span class="g">+' + bonus + '</span>' : ''), desc: st.desc + ' — 지금: ' + effect[st.id](), v: s.pts > 0 ? '＋ 1점' : '', onClick: () => {
+      const base = s.stats[st.id] || 0, bonus = d.stats[st.id] - base, rec = st.id === SY.stat || st.id === SY.side;
+      const [now, then] = effect[st.id](d, next(st.id));
+      const b = document.createElement('button');
+      b.className = 'stat nav' + (s.pts > 0 ? ' can' : '') + (rec ? ' rec' : '');
+      const w = Math.min(100, base / 30 * 100), cap = 20 / 30 * 100;
+      b.innerHTML = '<div class="st-h"><b style="color:' + st.col + '">' + st.name + '</b><span class="n">' + base + (bonus ? ' <em>+' + bonus + '</em>' : '') + '</span>' + (rec ? '<i class="tag">추천</i>' : '') + '<span class="plus">' + (s.pts > 0 ? '+1' : '') + '</span></div>' +
+        '<div class="bar"><i style="width:' + w + '%;background:' + st.col + '"></i><u style="left:' + cap + '%"></u></div>' +
+        '<small>' + esc(st.desc) + '</small><small class="fx">지금 ' + esc(now) + (s.pts > 0 ? ' <span class="y">→ 1점 더: ' + esc(then) + '</span>' : '') + '</small>';
+      b.addEventListener('click', () => {
         if (!(s.pts > 0)) { toast('성장 점수가 없다 — 렙업하면 ' + P.PTS_PER_LV + '점', 'bad'); sfx('buzz'); return; }
         const couldBefore = new Set(Object.keys(s.inv).filter((k) => G.data.ITEMS[k] && G.data.ITEMS[k].req && P.reqOk(s, G.data.ITEMS[k].req)));
         s.pts--; s.stats[st.id] = base + 1; sfx('skill');
@@ -405,65 +458,78 @@
         if (st.id === 'vit') { const d2 = G.st.derive(s); if (Math.floor((base + 1) / 3) > Math.floor(base / 3)) s.hp = Math.min(d2.hpMax, s.hp + 1); }
         if (st.id === 'int') s.mp = Math.min(G.st.derive(s).mpMax, s.mp + 3);
         refresh();
-      } });
-      r.querySelector('.nm b').innerHTML = '<span style="color:' + st.col + '">' + st.name + '</span>  ' + base + (bonus ? ' <span style="color:#7ee08a">(+' + bonus + ')</span>' : '');
-      body.appendChild(r);
+      });
+      body.appendChild(b);
     }
   }
   function tabArts(body) {
     const s = S(), D = G.data, P = G.prog;
-    sec(body, '도구 (도구 버튼)');
+    sec(body, '도구 — 도구 버튼으로 쓴다');
     const tools = Object.keys(s.tools).filter((k) => k !== 'bow');
     if (!tools.length) note(body, '아직 도구가 없다. 던전 깊은 곳 큰 상자에 잠들어 있다.');
     for (const k of tools) body.appendChild(row({ icon: G.hud.icon(D.ITEMS[k].icon || k), name: (s.tool === k ? '[y]◆ ' : '') + D.ITEMS[k].name + (s.tool === k ? '[/]' : ''), desc: D.ITEMS[k].desc, onClick: () => { s.tool = k; sfx('equip'); refresh(); } }));
-    sec(body, '마법 (마법 버튼)');
+    sec(body, '마법 — 고른 하나를 마법 버튼으로 건다');
     const sp = Object.keys(s.spells);
-    if (!sp.length) note(body, '아직 마법을 모른다.');
+    if (!sp.length) note(body, '아직 마법을 모른다. 마도서를 읽으면 배운다.');
+    const d = G.st.derive(s);
     for (const k of sp) {
-      const S2 = D.SPELLS[k], ok = P.reqOk(s, S2.req);
-      body.appendChild(row({ icon: G.hud.icon(S2.icon), name: (s.spell === k ? '[y]◆[/] ' : '') + gname(S2), v: 'MP ' + Math.round(S2.mp * G.st.derive(s).mpCost), desc: gradeLabel(S2) + ' — ' + S2.desc + (S2.req ? ' · 필요 ' + P.reqText(s, S2.req) : ''), dim: !ok, onClick: () => {
+      const S2 = D.SPELLS[k]; if (!S2) continue; const ok = P.reqOk(s, S2.req);
+      body.appendChild(row({ icon: G.hud.icon(S2.icon), name: (s.spell === k ? '[y]◆[/] ' : '') + gname(S2), v: 'MP ' + Math.round(S2.mp * d.mpCost), desc: gradeLabel(S2) + ' — ' + S2.desc + (S2.req ? ' · 필요 ' + P.reqText(s, S2.req) : ''), dim: !ok, onClick: () => {
         if (!ok) { toast('아직 다룰 수 없다: ' + P.reqText(s, S2.req).replace(/\[\/?r\]/g, ''), 'bad'); sfx('buzz'); return; }
         s.spell = k; sfx('equip'); refresh();
       } }));
     }
+    const unknown = Object.keys(D.SPELLS).filter((k) => !s.spells[k]).length;
+    if (unknown) note(body, markup('[s]아직 모르는 마법 ' + unknown + '가지 — 마도구점 · 던전에서 마도서를 찾자.[/]'));
   }
+  let treeSel = null;
   function tabTree(body) {
     const s = S(), D = G.data, P = G.prog;
-    sec(body, '재능 나무 — 남은 성장 점수 ' + (s.pts || 0));
-    note(body, '줄마다 요구 레벨이 있다. [y]⇄[/] 표시는 갈림길 — 둘 중 하나만 고를 수 있다. 망각의 차로 다시 고를 수 있다.'.replace('[y]', '<span class="y">').replace('[/]', '</span>'));
-    const narrow = (innerWidth || 800) < 600;
-    const grid = document.createElement('div'); grid.className = 'tree' + (narrow ? ' narrow' : ''); grid.dataset.cols = narrow ? 1 : 4;
-    const cols = D.TREES.map((tr) => D.SKILLS.filter((x) => x.tree === tr));
-    // 넓은 화면: 줄 × 갈래 격자 · 좁은 화면: 갈래마다 차례로
-    const order = [];
-    if (narrow) { for (const col of cols) for (let r = 1; r <= 6; r++) order.push([r, col]); }
-    else for (let r = 1; r <= 6; r++) for (const col of cols) order.push([r, col]);
-    for (const [r, col] of order) {
-      {
-        const cell = document.createElement('div'); cell.className = 'tcell';
-        const list = col.filter((x) => x.row === r);
-        if (r === 1) cell.insertAdjacentHTML('beforeend', '<small class="ttl">' + col[0].tree + '</small>');
-        list.forEach((sk, idx) => {
-          const block = P.skillBlock(s, sk), have = !!s.skills[sk.id], can = !block;
-          const b = document.createElement('button');
-          b.className = 'skill nav g' + sk.grade + (have ? ' have' : can ? ' can' : block && block.startsWith('갈림길') ? ' shut' : '');
-          b.innerHTML = '<b>' + (sk.gate ? '⇄ ' : '') + esc(sk.name) + '</b><span>' + esc(sk.desc) + '</span><small>' + (have ? '배움' : esc(block || (sk.cost + '점 — 배울 수 있다'))) + '</small>';
-          b.addEventListener('click', () => {
-            const blk = P.skillBlock(s, sk);   // 누르는 순간 다시 확인 (빠르게 두 번 눌러 갈림길 둘을 다 배우지 않게)
-            if (s.skills[sk.id]) return;
-            if (blk) { toast(blk, 'bad'); sfx('buzz'); return; }
-            s.pts -= sk.cost; s.skills[sk.id] = true; sfx('skill'); toast('재능: ' + sk.name + ' (' + P.gradeOf(sk).name + ')', 'gold');
-            if (sk.id === 'sv_heart') s.hp = G.st.derive(s).hpMax;
-            if (sk.id === 'bw_quiver') { s.ammo.arrowsMax += 30; }
-            refresh();
-          });
-          cell.appendChild(b);
-          if (sk.gate && idx === 0 && list.length > 1) cell.insertAdjacentHTML('beforeend', '<i class="or">또는</i>');
-        });
-        grid.appendChild(cell);
-      }
+    const trees = D.TREES, sty = STYLE[styleOf(s)];
+    if (!treeSel || !trees.includes(treeSel)) treeSel = sty.tree;
+    sec(body, '재능 나무 — 한 칸에 2~5점');
+    note(body, markup('위 줄부터 차례로 연다. 줄마다 [y]요구 레벨[/]이 있다. [p]택1[/] 표시가 붙은 칸들은 그중 하나만 고를 수 있다(갈림길). 망각의 차로 다시 고를 수 있다.'));
+    // 갈래 탭
+    const tabs = document.createElement('div'); tabs.className = 'ttabs';
+    for (const tr of trees) {
+      const list = D.SKILLS.filter((x) => x.tree === tr), have = list.filter((x) => s.skills[x.id]).length, can = list.some((x) => !P.skillBlock(s, x));
+      const b = document.createElement('button'); b.className = 'nav ttab' + (tr === treeSel ? ' on' : '') + (can ? ' can' : '');
+      b.innerHTML = '<b>' + tr + '</b><small>' + have + ' / ' + list.length + (can ? ' ●' : '') + '</small>' + (tr === sty.tree ? '<i class="tag">추천</i>' : '');
+      b.addEventListener('click', () => { treeSel = tr; sfx('page'); refresh(); });
+      tabs.appendChild(b);
     }
-    body.appendChild(grid);
+    body.appendChild(tabs);
+    const cols = D.SKILLS.filter((x) => x.tree === treeSel);
+    const ROWLV = [0, 1, 6, 12, 18, 26, 36];
+    for (let r = 1; r <= 6; r++) {
+      const list = cols.filter((x) => x.row === r); if (!list.length) continue;
+      const lvOk = s.lv >= ROWLV[r];
+      const wrap = document.createElement('div'); wrap.className = 'trow' + (lvOk ? '' : ' locked');
+      wrap.innerHTML = '<div class="trh"><b>' + r + '줄</b><small>' + (lvOk ? 'Lv ' + ROWLV[r] : '🔒Lv' + ROWLV[r]) + '</small></div>';
+      const opts = document.createElement('div'); opts.className = 'topts';
+      const gates = {};
+      for (const sk of list) if (sk.gate) (gates[sk.gate] = gates[sk.gate] || []).push(sk);
+      for (const sk of list) {
+        const block = P.skillBlock(s, sk), have = !!s.skills[sk.id], can = !block;
+        const shut = block && block.startsWith('갈림길');
+        const b = document.createElement('button');
+        b.className = 'skill2 nav g' + sk.grade + (have ? ' have' : can ? ' can' : shut ? ' shut' : ' lock');
+        const chip = have ? '<i class="st ok">✓ 배움</i>' : can ? '<i class="st go">배우기 · ' + sk.cost + '점</i>' : shut ? '<i class="st no">✕ 다른 쪽을 골랐다</i>' : '<i class="st lk">🔒 ' + esc(block.replace('필요: ', '')) + '</i>';
+        b.innerHTML = '<div class="sk-h"><b>' + esc(sk.name) + '</b>' + (sk.gate ? '<i class="gate">택1</i>' : '') + '</div><span>' + esc(sk.desc) + '</span>' + chip;
+        b.addEventListener('click', () => {
+          const blk = P.skillBlock(s, sk);   // 누르는 순간 다시 확인 (빠르게 두 번 눌러 갈림길 둘을 다 배우지 않게)
+          if (s.skills[sk.id]) return;
+          if (blk) { toast(blk, 'bad'); sfx('buzz'); return; }
+          s.pts -= sk.cost; s.skills[sk.id] = true; sfx('skill'); toast('재능: ' + sk.name + ' (' + P.gradeOf(sk).name + ')', 'gold');
+          if (sk.id === 'sv_heart') s.hp = G.st.derive(s).hpMax;
+          if (sk.id === 'bw_quiver') { s.ammo.arrowsMax += 30; }
+          refresh();
+        });
+        opts.appendChild(b);
+      }
+      wrap.appendChild(opts);
+      body.appendChild(wrap);
+    }
   }
   function tabQuest(body) {
     const s = S(), Q = G.data.QUESTS || {};
