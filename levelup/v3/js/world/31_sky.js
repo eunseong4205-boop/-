@@ -363,6 +363,8 @@
     c.music('final');
     await c.narr('흑점이 수정 위로 솟았다. 천장이 사라지고 보랏빛 하늘이 열렸다. 하늘의 구멍이 내려오고 있었다. 가장 밝은 것을 향해 — 너를 향해.');
     await c.say(kaN, '…내가 옆에 서겠다. 이번엔 계산 없이.', { face: 'normal' });
+    if (f('cassian_duel')) await c.say(kaN, '……카시안이 사과 값을 아직 못 갚았다고? 그 녀석. …그럼 살아야겠군.', { face: 'smile' });
+    if (ST.rally) await ST.rally(c);
     await c.cutin({ who: 'toria', title: '흑점', small: '채워지지 못한 그릇들의 배고픔', sub: '빛 구슬을 깨면 속이 열린다 — 흰빛을!', col: '#3a1a5a', face: 'shock', sec: 2 });
     kaN.dead = true;
     await c.cinema(false);

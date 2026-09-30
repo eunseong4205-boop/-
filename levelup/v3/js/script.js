@@ -208,6 +208,7 @@
         c.heal(); c.save();
         if (G.audio) G.audio.jingle('rest');
         await wait(1.2);
+        if (G.story && G.story.onRest) await G.story.onRest(c);   // 가끔 꿈
         await c.fade(false, { sec: 0.6 });
         G.ui.toast('푹 쉬었다. (기록함)', 'good');
       },

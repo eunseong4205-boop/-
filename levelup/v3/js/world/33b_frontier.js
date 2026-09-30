@@ -429,6 +429,7 @@
     { id: 'l_noah2', from: '노아', when: (s) => ST.after('c8') && s.flags.noah_herb, text: '「형/누나, 이번엔 진짜야. 두 올. 엄마가 울었어. 나도 울었어. 기뻐서 우는 건 처음이야.」' },
     { id: 'l_morgan', from: '모르간', when: (s) => s.flags.morgan_done && ST.after('c10'), text: '「안개가 걷혔다. 16년 만이다. 물에 비친 얼굴이 제때 따라온다. …고맙다는 말은 서툴다. 노를 한 번 더 저었다고만 해 두마.」' },
   ];
+  ST.LETTERS = LETTERS;   // 뒤 파일에서 편지를 더 넣는다
   ST.person('world', { id: 'fin', at: (s) => { const t = OW.towns[FIN_AT[s.ch || 'c1']] || OW.towns.green; return [t.plaza ? t.plaza.x - 5 : t.x + 4, t.plaza ? t.plaza.y + 2 : t.y + 4]; }, dir: 'down',
     mark: () => ((s) => (LETTERS.some((L) => !s.flags[L.id] && L.when(s)) ? '!' : null))(S()),
     talk: async (c, n) => {
