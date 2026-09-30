@@ -49,6 +49,10 @@
     mid: [['potion_b', 1], ['potion_g', 1], ['potion_r', 3], ['arrows10', 2]],
     hi: [['potion_max', 1], ['potion_g', 2], ['potion_b', 2]],
   };
+  // 하루(게임 속 12분)마다 다시 차오르는 것들: 사당 축복 · 둥지 · 수정 · 행상 물건 · 수수께끼 · 밤의 폐허
+  const DAYLEN = 720, today = () => Math.floor(((S().t || 0) + DAYLEN * 0.3) / DAYLEN);
+  const isNight = () => (G.story.nightFactor ? G.story.nightFactor() : 0) > 0.5;
+  const RARE = { lo: ['potion_g', 'art_moonslash', 'fc_coral', 'bw_bone', 'art_nova', 'tome_poison', 'ac_roll'], mid: ['sw_twin', 'bw_venom', 'fc_orb', 'art_quakeblade', 'tome_barrier', 'tome_blink', 'bw_thunder', 'sw_frost'], hi: ['bw_moon', 'fc_moon', 'art_blackhole', 'tome_gravity', 'potion_forget', 'potion_max', 'ac_berserk', 'sw_moon'] };
   const lootFor = (tier, r) => { const tb = tier >= 7 ? LOOT.hi : tier >= 3 ? LOOT.mid : LOOT.lo; const [id, n] = tb[Math.floor(r * tb.length) % tb.length]; return G.data.ITEMS[id] ? [id, n] : ['potion_r', 1]; };
 
   /* ───────── 모닥불 · 둥지 ───────── */
@@ -196,20 +200,24 @@
         case 'shrine':
           Wd.add(new P.Spot({ x: X, y: Y + 2, verb: f(key) ? '사당을 본다' : '사당에 빈다', sparkle: !f(key), text: async (c) => {
             await c.narr(SHRINE[s.reg] || SHRINE.green);
-            if (f(key)) { await c.narr('이미 빌었다. 돌이 조용하다.'); return; }
-            c.flag(key); c.sfx('fairy');
-            const k = Math.floor(r * 3);
+            const dk = key + ':day';
+            if (S().flags[dk] === today()) { await c.narr('오늘은 이미 빌었다. 돌이 조용하다.\n[s]하루가 지나면 다시 들어 준다. 날마다 다른 축복이다.[/]'); return; }
+            const firstTime = !f(key); c.flag(key); S().flags[dk] = today(); c.sfx('fairy');
+            const k = (Math.floor(r * 3) + today()) % 3;
             const st = S(); st.buffs = (st.buffs || []).filter((b) => b.until > st.t);
             if (k === 0) { st.buffs.push({ atk: 1.2, until: st.t + 180, col: '#ff8a5a' }); await c.say(null, '[y]힘의 축복[/] — 3분 동안 공격 +20%', { style: 'sys' }); }
             else if (k === 1) { st.buffs.push({ def: 0.8, until: st.t + 180, col: '#8ac8ff' }); await c.say(null, '[y]보호의 축복[/] — 3분 동안 받는 피해 -20%', { style: 'sys' }); }
             else { c.exp(20 + s.tier * 40); c.heal(); await c.say(null, '[y]빛의 축복[/] — 빛 알갱이를 얻고 몸이 가벼워졌다', { style: 'sys' }); }
-            S().shrines = (S().shrines || 0) + 1;
-            if (S().shrines === 10) { S().pts = (S().pts || 0) + 2; await c.say(null, '사당 열 곳에서 빌었다. [y]성장 점수 +2[/]', { style: 'sys' }); }
+            if (firstTime) {
+              S().shrines = (S().shrines || 0) + 1;
+              if (S().shrines === 10) { S().pts = (S().pts || 0) + 2; await c.say(null, '사당 열 곳에서 빌었다. [y]성장 점수 +2[/]', { style: 'sys' }); }
+              if (S().shrines === 25) { S().pts = (S().pts || 0) + 3; await c.say(null, '사당 스물다섯 곳. 돌들이 너를 안다. [y]성장 점수 +3[/]', { style: 'sys' }); }
+            }
           } }));
           break;
         case 'peddler': {
           const shop = G.data.SHOPS[s.reg] ? s.reg : 'green';
-          Wd.add(new P.NPC({ x: X, y: Y + 2, dir: 'down', look: G.cast.folk(r < 0.5 ? 'merchant' : 'merchantw'), name: '떠돌이 행상', talk: async (c, n) => { await c.say(n, U.pick(['길 위의 가게요! 마을보다 조금 비싸고, 마을보다 조금 가까워요.', '어서 와요. 오늘은 ' + NAME(s.reg) + ' 물건이 많아요.', '짐이 무거워서 팔고 싶어요. 도와주는 셈 치고!']), { face: 'smile' }); await c.shop(shop); } }));
+          Wd.add(new P.NPC({ x: X, y: Y + 2, dir: 'down', look: G.cast.folk(r < 0.5 ? 'merchant' : 'merchantw'), name: '떠돌이 행상', talk: async (c, n) => { await c.say(n, U.pick(['길 위의 가게요! 마을보다 조금 비싸고, 마을보다 조금 가까워요.', '어서 와요. 오늘은 ' + NAME(s.reg) + ' 물건이 많아요.', '짐이 무거워서 팔고 싶어요. 도와주는 셈 치고!']), { face: 'smile' }); const sid = 'ped:' + s.id, pool = s.tier >= 6 ? RARE.hi : s.tier >= 3 ? RARE.mid : RARE.lo, d0 = today() + Math.floor(r * 7), rare = [pool[d0 % pool.length], pool[(d0 + 3) % pool.length]].filter((k2, i, a) => G.data.ITEMS[k2] && a.indexOf(k2) === i); G.data.SHOPS[sid] = { name: '떠돌이 행상 — 오늘의 물건', items: rare.concat((G.data.SHOPS[shop].items || []).slice(0, 5)) }; if (rare.length) await c.say(n, '오늘은 귀한 게 있어요: [y]' + rare.map((k2) => G.data.ITEMS[k2].name).join(', ') + '[/]. 내일은 또 다른 걸 가져올게요.', { face: 'happy' }); await c.shop(sid); } }));
           break;
         }
         case 'sign': {
@@ -222,6 +230,8 @@
           const [id, n] = lootFor(s.tier + 1, r);
           Wd.add(new P.Chest({ x: X, y: Y, item: id, n, flagKey: key + ':chest' }));
           if (!f(key + ':chest')) { const tb = OW.TABLE[s.reg] || OW.TABLE.green; const t = tb[Math.floor(r * tb.length)][0]; const e = G.foes.spawn(t === 'octo' || t === 'bug' ? 'golem' : t, X + 24, Y + 10, { tier: s.tier, elite: true }); e.home = { x: e.x, y: e.y }; }
+          // 밤의 폐허: 망령 기사가 선다 (밤마다 한 번, 이기면 골드 · 재료)
+          if (isNight() && S().flags[key + ':night'] !== today()) { const gk = G.foes.spawn('knight', X - 24, Y + 18, { tier: Math.min(11, s.tier + 1), elite: true }); gk.name = '폐허의 망령 기사'; gk.home = { x: gk.x, y: gk.y }; const od = gk.onDie; gk.onDie = function () { if (od) od.apply(this, arguments); S().flags[key + ':night'] = today(); G.combat.spawnPickup(this.x, this.y, 'gold', 60 + s.tier * 40); if (G.data.ITEMS.m_moon) G.combat.spawnPickup(this.x, this.y, 'item', 1, s.tier >= 5 ? 'm_moon' : 'm_ore'); }; }
           Wd.add(new P.Sign({ x: X - 30, y: Y + 14, look: 'stone', anyDir: true, text: U.pick(['무너진 기둥에 새긴 글: 「이 탑은 빛을 모으지 않았다. 사람을 모았다.」', '폐허의 초석. 「천년력 612년 — 은빛 왕국 전초기지」', '반쯤 깨진 명판. 「징수소 제' + (s.x % 90 + 10) + '호. 폐쇄.」']) }));
           break;
         }
@@ -238,16 +248,20 @@
           if (r < 0.6) { const [look, nm, line] = (TRAVELER[s.reg] || TRAVELER.green)[1 - Math.floor(r * 2)]; Wd.add(new P.NPC({ x: X - 30, y: Y + 14, dir: 'right', look: G.cast.folk(look), name: nm, talk: async (c, n) => { await c.say(n, line, { face: 'normal' }); } })); }
           break;
         case 'nest':
-          if (!f(key)) Wd.add(new Nest({ x: X, y: Y, key, n: 4 + Math.floor(r * 3), reg: s.reg, tier: s.tier }));
+          // 둥지는 이틀이 지나면 다시 찬다 (사냥터)
+          if (f(key) && f(key + ':chest') && today() - (S().flags[key + ':day'] || 0) >= 2) { delete S().flags[key]; delete S().flags[key + ':chest']; delete S().flags[key + ':day']; S().flags[key + ':round'] = (S().flags[key + ':round'] || 0) + 1; }
+          if (f(key) && S().flags[key + ':day'] == null) S().flags[key + ':day'] = today();
+          if (!f(key)) Wd.add(new Nest({ x: X, y: Y, key, n: 4 + Math.floor(r * 3) + Math.min(4, Math.floor((S().flags[key + ':round'] || 0) / 2)), reg: s.reg, tier: s.tier + Math.min(2, Math.floor((S().flags[key + ':round'] || 0) / 2)) }));
           else if (!f(key + ':chest')) { const [id, n] = lootFor(s.tier, U.hash(key) % 97 / 97); Wd.add(new P.Chest({ x: X, y: Y, item: id, n, flagKey: key + ':chest', col: '#e8c048' })); }
           break;
         case 'riddle': {
-          const [q, opts, ans] = RIDDLE[Math.floor(r * RIDDLE.length)];
           Wd.add(new P.Sign({ x: X, y: Y, look: 'stone', anyDir: true, text: async (c) => {
-            if (f(key)) { await c.narr('수수께끼 비석. 네가 새긴 답이 남아 있다: 「' + opts[ans] + '」'); return; }
+            // 날마다 비석의 글이 바뀐다
+            const [q, opts, ans] = RIDDLE[(Math.floor(r * RIDDLE.length) + today()) % RIDDLE.length];
+            if (S().flags[key + ':day'] === today()) { await c.narr('수수께끼 비석. 오늘 네가 새긴 답이 남아 있다: 「' + opts[ans] + '」\n[s]내일이면 글이 바뀐다.[/]'); return; }
             await c.narr('수수께끼 비석.\n「' + q + '」');
             const k = await c.choice('답을 새긴다.', opts);
-            if (k === ans) { c.flag(key); c.sfx('puzzle'); const gold = 60 + s.tier * 60; c.gold(gold); c.exp(15 + s.tier * 25); await c.say(null, '비석이 빛났다. 밑에서 작은 주머니가 나왔다. [y]' + gold + '골드[/]', { style: 'sys' }); }
+            if (k === ans) { const first = !f(key); c.flag(key); S().flags[key + ':day'] = today(); c.sfx('puzzle'); const gold = first ? 60 + s.tier * 60 : 20 + s.tier * 15; c.gold(gold); c.exp((15 + s.tier * 25) * (first ? 1 : 0.4)); S().riddles = (S().riddles || 0) + 1; await c.say(null, '비석이 빛났다. 밑에서 작은 주머니가 나왔다. [y]' + gold + '골드[/]' + (S().riddles === 20 ? '\n수수께끼 스무 개! [y]현자의 돌[/]이 굴러 나왔다.' : ''), { style: 'sys' }); if (S().riddles === 20) c.give('ac_int', 1); }
             else { c.sfx('buzz'); await c.narr('비석이 조용하다. 틀린 모양이다. 다음에 다시.'); }
           } }));
           break;
@@ -259,6 +273,7 @@
             const arr = fs.split(''); const fx = Math.floor(s.x / FC), fy = Math.floor(s.y / FC);
             for (let dy = -7; dy <= 7; dy++) for (let dx = -9; dx <= 9; dx++) { const xx = fx + dx, yy = fy + dy; if (xx >= 0 && yy >= 0 && xx < cols && yy < rows && dx * dx / 81 + dy * dy / 49 <= 1) arr[yy * cols + xx] = '1'; }
             st.flags['fog:world'] = arr.join(''); m.fogDirty = true;
+            if (isNight() && !f('secret:crater')) { c.flag('secret:crater'); c.sfx('white'); await c.narr('사다리 꼭대기에서 — 동쪽 하늘을 가로질러 별똥별 하나가 사막으로 떨어졌다. 쿵, 땅이 울렸다.\n[y]사막 동쪽 구덩이에 무언가 열렸다.[/]'); }
             c.sfx('wind'); await c.narr('사다리를 올랐다. 바람이 세다. 멀리 ' + nearestTowns(s.x, s.y).map(([n]) => NAME(n)).join(', ') + '의 지붕이 보인다.\n[y]둘레의 지도가 밝아졌다.[/]');
             if (!f(key)) { c.flag(key); c.exp(10 + s.tier * 15); }
           } }));
@@ -273,7 +288,8 @@
           } }));
           break;
         case 'crystal':
-          if (!f(key)) Wd.add(new P.Spot({ x: X, y: Y + 4, verb: '수정 조각을 캔다', sparkle: true, text: async (c) => { c.flag(key); const mat = s.tier >= 6 ? 'm_moon' : s.tier >= 3 ? 'm_ore' : 'm_stone'; const id = G.data.ITEMS[mat] ? mat : 'm_stone'; c.give(id, 2 + Math.floor(r * 3)); c.sfx('crystal'); await c.say(null, '[y]' + (G.data.ITEMS[id] ? G.data.ITEMS[id].name : '광석') + '[/]을 캤다.', { style: 'sys' }); } }));
+          if (f(key) && today() - (S().flags[key + ':day'] || 0) >= 3) delete S().flags[key];   // 사흘이면 다시 자란다
+          if (!f(key)) Wd.add(new P.Spot({ x: X, y: Y + 4, verb: '수정 조각을 캔다', sparkle: true, text: async (c) => { c.flag(key); S().flags[key + ':day'] = today(); const mat = s.tier >= 6 ? 'm_moon' : s.tier >= 3 ? 'm_ore' : 'm_stone'; const id = G.data.ITEMS[mat] ? mat : 'm_stone'; c.give(id, 2 + Math.floor(r * 3)); c.sfx('crystal'); await c.say(null, '[y]' + (G.data.ITEMS[id] ? G.data.ITEMS[id].name : '광석') + '[/]을 캤다.', { style: 'sys' }); } }));
           break;
         case 'grave':
           Wd.add(new P.Sign({ x: X, y: Y - 2, look: 'stone', anyDir: true, text: async (c) => { await c.narr(EPITAPH[Math.floor(r * EPITAPH.length)]); if (!f(key)) { c.flag(key); c.abyss && Math.random() < 0.15 && c.abyss('grave_' + s.id); } } }));

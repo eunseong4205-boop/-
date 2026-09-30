@@ -608,5 +608,5 @@
 
   /** 변종: 몸과 행동은 base, 이름 · 체력 · 빛깔은 새로 */
   function variant(id, base, o) { B[id] = Object.assign({}, B[base], o, { id }); }
-  G.bosses = { B, Boss, spawn, def, variant, warnRect, warnCircle, hitRect, hitCircle, minion, ring, Tentacle, MirrorClone };
+  G.bosses = { B, Boss, spawn, def, variant, warnRect, warnCircle, hitRect, hitCircle, minion, ring, Tentacle, MirrorClone, art, poly, R, aim, shoot, roomRect, clampRoom };
 })();
