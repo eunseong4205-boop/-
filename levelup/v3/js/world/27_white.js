@@ -23,7 +23,9 @@
       if (!f('c7_lumie')) return { text: '화이트 한가운데 이리스 대성당. 성녀 루미에를 만나자.', map: 'world', x: X0 + 16, y: Y0 + 7 };
       if (!f('c7_iska')) return { text: '동쪽 얼음 예배당의 눈먼 사제, 이스카를 찾아가자.', map: 'world', x: X0 + 26, y: Y0 + 15 };
       if (!f('c7_plan')) return { text: ({ dawn: '서쪽 설원, 새벽단 은신처로. 레아가 기다린다.', order: '카시안과 함께 성녀에게 지하 감찰을 청하자.', night: '묘지에서 리라와 만나자. 밤이 되면.' })[s.flags.route_lock || 'order'], map: 'world', x: s.flags.route_lock === 'dawn' ? HIDE.x : s.flags.route_lock === 'night' ? GRAVE.x : X0 + 16, y: s.flags.route_lock === 'dawn' ? HIDE.y + 1 : s.flags.route_lock === 'night' ? GRAVE.y + 1 : Y0 + 7 };
-      if (!f('d7:boss')) return { text: '대성당 지하, 서리 무덤 가장 깊은 곳으로.', map: 'world', x: X0 + 16, y: Y0 + 7 };
+      if (!f('d7:boss')) return f('c7_under_ok') || s.flags.route_lock === 'order'
+        ? { text: '대성당 제단 뒤 계단으로 내려가, 서리 무덤 가장 깊은 곳으로.', map: 'world', x: X0 + 16, y: Y0 + 7 }
+        : { text: '묘지의 눈 덮인 쇠 뚜껑문으로 대성당 지하에 숨어든다. 서리 무덤 가장 깊은 곳으로.', map: 'world', x: GRAVE.x + 1, y: GRAVE.y + 2 };
       if (!f('c7_noah')) return { text: '병동으로. 노아가 위험하다.', map: 'world', x: X0 + 26, y: Y0 + 6 };
       if (!f('c7_edel')) return { text: '대성당을 나서려는데, 에델이 문을 막는다.', map: 'world', x: X0 + 16, y: Y0 + 7 };
       if (!f('c7_done')) return { text: '루미에와 이야기하자.', map: 'world', x: X0 + 16, y: Y0 + 7 };

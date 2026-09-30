@@ -2382,7 +2382,7 @@ html.touch #touch { display: block; position: absolute; inset: 0; pointer-events
     if (!p || !m) return;
     const tx = Math.floor(p.x / TS), ty = Math.floor((p.y - 2) / TS);
     if (tx === W.lastTx && ty === W.lastTy) return;
-    if (G.script.running || p.state === 'jump' || p.state === 'dead' || p.state === 'fall') return;
+    if (G.script.running || G.script.busy || p.state === 'jump' || p.state === 'dead' || p.state === 'fall') return;
     // 맞아서 밀려난 걸음으로는 문을 지나지 않는다 (다시 걸어 들어가면 된다)
     if (p.state === 'hurt' || Math.abs(p.kx || 0) + Math.abs(p.ky || 0) > 30) return;
     W.lastTx = tx; W.lastTy = ty;
@@ -3979,7 +3979,8 @@ html.touch #touch { display: block; position: absolute; inset: 0; pointer-events
   }
 
   function serialize(s) { return JSON.stringify(s); }
-  function save(s) { try { s.saved = Date.now(); localStorage.setItem(KEY, serialize(s)); return true; } catch (_) { return false; } }
+  /** 기록: 이야기 장면이 도는 중(싸움 · 놀이로 잠깐 조작을 돌려준 때 포함)에는 남기지 않는다 — 반쯤 끝난 장면이 기록되면 다시 불러왔을 때 이야기가 멈춘다 */
+  function save(s, force) { if (!force && G.script && (G.script.busy || G.script.running)) return false; try { s.saved = Date.now(); localStorage.setItem(KEY, serialize(s)); return true; } catch (_) { return false; } }
   function load() { try { const raw = localStorage.getItem(KEY); if (!raw) return null; const s = JSON.parse(raw); if (!s || s.v !== VERSION) return null; return Object.assign(fresh(), s); } catch (_) { return null; } }
   function clear() { try { localStorage.removeItem(KEY); } catch (_) { /* 무시 */ } }
 
@@ -7639,7 +7640,7 @@ html.touch #touch { display: block; position: absolute; inset: 0; pointer-events
     body.appendChild(row({ name: '음량', v: Math.round((st.vol == null ? 0.7 : st.vol) * 10) + ' / 10', onClick: () => { st.vol = ((Math.round((st.vol == null ? 0.7 : st.vol) * 10) % 10) + 1) / 10; if (G.audio) G.audio.applySettings(); refresh(); } }));
     body.appendChild(row({ name: '글자 속도', v: ['', '느리게', '보통', '빠르게'][st.textSpeed || 2], onClick: () => { st.textSpeed = ((st.textSpeed || 2) % 3) + 1; refresh(); } }));
     sec(body, '기록');
-    body.appendChild(row({ name: '지금 기록하기', desc: '빛의 이정표와 침대에서 쉬어도 기록된다.', onClick: () => { if (G.script.running) return; G.st.save(s); toast('기록했다', 'good'); sfx('save'); } }));
+    body.appendChild(row({ name: '지금 기록하기', desc: '빛의 이정표와 침대에서 쉬어도 기록된다.', onClick: () => { if (G.script.running || G.script.busy || !G.st.save(s)) { toast('지금은 기록할 수 없다 — 벌어지고 있는 일을 먼저 끝내자', 'bad'); return; } toast('기록했다', 'good'); sfx('save'); } }));
     body.appendChild(row({ name: '타이틀로', desc: '기록하지 않은 것은 사라진다.', onClick: () => { closeModal(); G.game.toTitle(); } }));
     sec(body, '조작');
     const k = document.createElement('div'); k.className = 'keys card';
@@ -8116,7 +8117,7 @@ html.touch #touch { display: block; position: absolute; inset: 0; pointer-events
       book(id) { const s = S(); if (s.books[id]) return false; s.books[id] = s.t; return true; },
       abyss(id) { const s = S(); if (s.abyss[id]) return false; s.abyss[id] = s.t; return true; },
       journal(text) { const s = S(); s.log.unshift({ t: s.t, text }); if (s.log.length > 120) s.log.pop(); },
-      save() { G.st.save(S()); },
+      save() { G.st.save(S(), true); },   // 장면 안에서 일부러 남기는 기록 (장면이 끝나는 자리)
       heal() { const s = S(), d = G.st.derive(s); s.hp = d.hpMax; s.mp = d.mpMax; },
 
       /* ── 물건 ── */
@@ -12074,13 +12075,18 @@ html.touch #touch { display: block; position: absolute; inset: 0; pointer-events
     Wd.add(new P.Sign({ x: px(X0 + 17), y: py(Y0 + 19), text: '블루 항구 부두\n「고등어호」 — 옐로 연안 · 알록달록 곶 (운항 중단)' }));
     Wd.add(new P.Sign({ x: px(LH.x - 3), y: py(LH.y + 3), text: '블루 등대\n「불이 꺼진 지 16년. 루체가 지킨다.」' }));
     // 배 세 척 (결투 뒤)
-    if (f('c3_duel') && !f('c3_boat')) {
-      const boat = (x, y, col, name, route, cid) => { const n = new P.NPC({ x: px(x), y: py(y), look: cid ? G.cast.get(cid).look : G.cast.folk('sailor'), name, cid, dir: 'up', talk: (c) => boatChoice(c, route) }); Wd.add(n); Wd.add(new G.build.Decor({ decor: 'crate', x: px(x), y: py(y + 2) + 4 })); };
+    spawnBoats(Wd);
+  });
+  /** 부두의 배 세 척: 결투가 끝난 바로 그 자리에서도, 다시 들어와도 */
+  function spawnBoats(Wd) {
+    const P = G.props;
+    if (f('c3_duel') && !f('c3_boat') && !Wd.ents.some((e) => e.boatRoute && !e.dead)) {
+      const boat = (x, y, col, name, route, cid) => { const n = new P.NPC({ x: px(x), y: py(y), look: cid ? G.cast.get(cid).look : G.cast.folk('sailor'), name, cid, dir: 'up', talk: (c) => boatChoice(c, route), mark: () => '!' }); n.boatRoute = route; Wd.add(n); Wd.add(new G.build.Decor({ decor: 'crate', x: px(x), y: py(y + 2) + 4 })); };
       boat(X0 + 14, Y0 + 26, '#ff7a4a', '레아', 'dawn', 'lea');
       boat(X0 + 18, Y0 + 28, '#9ab8e8', '가브 선장', 'order', 'gab');
       boat(X0 + 22, Y0 + 26, '#b87aff', '리라', 'night', 'lyra');
     }
-  });
+  }
 
   /* ───────── 제3장 시작 ───────── */
   ST.onTick.push(() => {
@@ -12311,6 +12317,7 @@ html.touch #touch { display: block; position: absolute; inset: 0; pointer-events
     await c.say('cassian', '옐로로 간다면 배를 고르게 될 거다. 부두에 세 척이 있더군. 어느 배를 타든, 네가 누구 편인지 대륙이 알게 될 거다.', { face: 'normal' });
     await c.move(cs2, bx + 120, by); cs2.dead = true;
     c.flag('c3_duel'); c.exp(50);
+    if (G.world.map && G.world.map.overworld) spawnBoats(G.world);
     c.heal();
     await c.cinema(false);
     c.lock(false);
@@ -12319,6 +12326,7 @@ html.touch #touch { display: block; position: absolute; inset: 0; pointer-events
 
   /* ───────── 세 척의 배 — 첫 번째 길이 굳는다 ───────── */
   async function boatChoice(c, route) {
+    if (f('c3_boat')) return;
     const txt = {
       dawn: ['레아의 밀수선. 선체에 주황 줄. 「새벽은 온다」', '레아: 타. 옐로 금화왕의 금고도 탑이랑 다를 거 없어. 거기서도 부술 게 많아.'],
       order: ['정기선 「고등어호」. 기사단 문장 깃발.', '가브 선장: 등급 후보라면 태워 주지. 옐로의 금화왕한테 가는 감찰관도 같이 타. 카시안 공이야.'],
@@ -12330,6 +12338,7 @@ html.touch #touch { display: block; position: absolute; inset: 0; pointer-events
     if (k !== 0) return;
     c.lock(true);
     S().flags.route_lock1 = route; S().flags.c3_boat = true;
+    for (const e of G.world.ents) if (e.boatRoute) e.dead = true;
     c.route(route, 3);
     await c.fade(true, { sec: 1 });
     c.music('blue');
@@ -13275,6 +13284,8 @@ html.touch #touch { display: block; position: absolute; inset: 0; pointer-events
   /* ───────── 광대 롤로 · 무지개 서커스 ───────── */
   ST.person('r_circus', { id: 'rolo', x: 9, y: 4, dir: 'down', when: () => !f('c6_finale') || f('c6_done'), mark: () => (f('c6_chroma') && !f('c6_rolo') ? '!' : null), talk: async (c, n) => {
     c.flag('met:rolo');
+    // 이야기가 먼저: 크로마를 만난 뒤라면 곡예보다 분장 뒤 이야기부터 (풍선 사냥은 언제든 다시)
+    if (!f('c6_rolo') && f('c6_chroma')) { await roloSecret(c, n); return; }
     if (!f('c6_rolo_show')) {
       await c.say(n, '어서 오세요, 어서 오세요! 색이 없는 광대, 롤로의 무지개 곡예! 오늘의 손님은… 오, 흰빛이시군!', { face: 'happy' });
       await c.say(n, '오늘의 순서는 [y]풍선 사냥[/]! 천막 안에 풍선 여덟 개가 춤을 춰요. 스무 초 안에 여섯 개를 활로 터뜨리면 박수 갈채!', { face: 'happy' });
@@ -13285,7 +13296,6 @@ html.touch #touch { display: block; position: absolute; inset: 0; pointer-events
       await c.say(n, '브라보! 브라보! …이런 박수, 오랜만이네.', { face: 'happy' });
       await c.getItem('heartpiece');
     }
-    if (!f('c6_rolo') && f('c6_chroma')) { await roloSecret(c, n); return; }
     await c.say(n, ST.lines({ c6: f('c6_rolo') ? '불씨를 넣을지 말지는 당신 몫이에요. 광대는 웃기만 해요. 울어야 할 때도.' : '크로마 위원장님은 좋은 분이에요. 좋은 사람도 나쁜 계산을 해요.', c7: '거울을 봤어요. 얼굴에 색이 있어요. 칠하지 않은 색이. 아침마다 봐요. 매일 봐요.' }), { face: 'smile' });
   } });
   class Balloon extends G.ent.Ent {
@@ -13893,7 +13903,9 @@ html.touch #touch { display: block; position: absolute; inset: 0; pointer-events
       if (!f('c7_lumie')) return { text: '화이트 한가운데 이리스 대성당. 성녀 루미에를 만나자.', map: 'world', x: X0 + 16, y: Y0 + 7 };
       if (!f('c7_iska')) return { text: '동쪽 얼음 예배당의 눈먼 사제, 이스카를 찾아가자.', map: 'world', x: X0 + 26, y: Y0 + 15 };
       if (!f('c7_plan')) return { text: ({ dawn: '서쪽 설원, 새벽단 은신처로. 레아가 기다린다.', order: '카시안과 함께 성녀에게 지하 감찰을 청하자.', night: '묘지에서 리라와 만나자. 밤이 되면.' })[s.flags.route_lock || 'order'], map: 'world', x: s.flags.route_lock === 'dawn' ? HIDE.x : s.flags.route_lock === 'night' ? GRAVE.x : X0 + 16, y: s.flags.route_lock === 'dawn' ? HIDE.y + 1 : s.flags.route_lock === 'night' ? GRAVE.y + 1 : Y0 + 7 };
-      if (!f('d7:boss')) return { text: '대성당 지하, 서리 무덤 가장 깊은 곳으로.', map: 'world', x: X0 + 16, y: Y0 + 7 };
+      if (!f('d7:boss')) return f('c7_under_ok') || s.flags.route_lock === 'order'
+        ? { text: '대성당 제단 뒤 계단으로 내려가, 서리 무덤 가장 깊은 곳으로.', map: 'world', x: X0 + 16, y: Y0 + 7 }
+        : { text: '묘지의 눈 덮인 쇠 뚜껑문으로 대성당 지하에 숨어든다. 서리 무덤 가장 깊은 곳으로.', map: 'world', x: GRAVE.x + 1, y: GRAVE.y + 2 };
       if (!f('c7_noah')) return { text: '병동으로. 노아가 위험하다.', map: 'world', x: X0 + 26, y: Y0 + 6 };
       if (!f('c7_edel')) return { text: '대성당을 나서려는데, 에델이 문을 막는다.', map: 'world', x: X0 + 16, y: Y0 + 7 };
       if (!f('c7_done')) return { text: '루미에와 이야기하자.', map: 'world', x: X0 + 16, y: Y0 + 7 };
@@ -15242,7 +15254,12 @@ html.touch #touch { display: block; position: absolute; inset: 0; pointer-events
   ST.CH.push({ no: '제10장', id: 'c10', title: '무한호', sub: '40년 동안 한 번도 날지 못한 로켓. 하늘로 가는 부품은 대륙 곳곳, 네가 만난 사람들 손에 있다.',
     goal(s) {
       if (!f('c10_pyros')) return { text: '곶의 발명 공방, 피로스 박사를 찾자.', map: 'world', x: 289, y: 211 };
-      if (got() < 6) { const n = PARTS.find((p) => !f('part:' + p.id)); return { text: '부품 모으기 (' + got() + '/6) — 다음: ' + n.name + ' (' + n.where + ')', map: 'world', x: 289, y: 211 }; }
+      if (got() < 6) {
+        const n = PARTS.find((p) => !f('part:' + p.id));
+        // 표시는 그 부품을 가진 사람이 있는 집 문 앞
+        const wm = G.build.get('world'), b = wm.buildings.find((bb) => bb.id === n.map);
+        return { text: '부품 모으기 (' + got() + '/6) — 다음: ' + n.name + ' (' + n.where + ')', map: 'world', x: b ? b.doorX : 289, y: b ? b.doorY : 211 };
+      }
       if (!f('c10_launch')) return { text: '부품이 다 모였다. 피로스 박사에게!', map: 'world', x: 289, y: 211 };
       return { text: '하늘 정거장으로.', map: 'world', x: PAD.x + 2, y: PAD.y + 6 };
     } });
@@ -17068,7 +17085,7 @@ html.touch #touch { display: block; position: absolute; inset: 0; pointer-events
     await show('<div style="font-size:12px;letter-spacing:.4em;color:#8a82a0;margin-bottom:10px">찾은 결말 ' + Object.keys(got).filter((k2) => ENDINGS[k2]).length + ' / 8</div><div style="max-width:36ch">' + list + '</div><div style="font-size:12px;color:#8a82a0;margin-top:18px">다른 선택은 다른 결말로 이어진다.<br>새벽 · 질서 · 밤 — 그리고 나눈 만큼, 삼킨 만큼.</div>', 2, 20);
     await show('<div style="font-size:26px;color:#fff">끝</div><div style="font-size:13px;color:#b8b0c8;margin-top:12px">오늘도 렙업.</div>', 2, 8);
     S().flags['ended:' + id] = true; S().cleared = (S().cleared || 0) + 1;
-    try { G.st.save(S()); } catch (e) { /* 저장 실패는 넘어간다 */ }
+    try { G.st.save(S(), true); } catch (e) { /* 저장 실패는 넘어간다 */ }
     ov.style.opacity = '0';
     await new Promise((r) => setTimeout(r, 1200));
     ov.remove();
@@ -17244,7 +17261,7 @@ html.touch #touch { display: block; position: absolute; inset: 0; pointer-events
       const target = G.build.MAPS[w.to];
       if (tx == null && target) { const m2 = G.build.get(w.to); if (m2.entry) { tx = (m2.entry.x - 8) / TS; ty = (m2.entry.y - 12) / TS; } }
       goto(w.to, tx * TS + 8, ty * TS + 12, w.dir || (w.exit ? 'down' : 'up'));
-      if (G.state.settings.autosave !== false) G.st.save(G.state);
+      if (G.state.settings.autosave !== false) G.st.save(G.state, true);   // 문을 지날 때 (다른 장면은 돌고 있지 않다)
       await c.fade(false, { sec: 0.22 });
     });
   }

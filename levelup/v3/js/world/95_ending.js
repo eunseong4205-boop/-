@@ -149,7 +149,7 @@
     await show('<div style="font-size:12px;letter-spacing:.4em;color:#8a82a0;margin-bottom:10px">찾은 결말 ' + Object.keys(got).filter((k2) => ENDINGS[k2]).length + ' / 8</div><div style="max-width:36ch">' + list + '</div><div style="font-size:12px;color:#8a82a0;margin-top:18px">다른 선택은 다른 결말로 이어진다.<br>새벽 · 질서 · 밤 — 그리고 나눈 만큼, 삼킨 만큼.</div>', 2, 20);
     await show('<div style="font-size:26px;color:#fff">끝</div><div style="font-size:13px;color:#b8b0c8;margin-top:12px">오늘도 렙업.</div>', 2, 8);
     S().flags['ended:' + id] = true; S().cleared = (S().cleared || 0) + 1;
-    try { G.st.save(S()); } catch (e) { /* 저장 실패는 넘어간다 */ }
+    try { G.st.save(S(), true); } catch (e) { /* 저장 실패는 넘어간다 */ }
     ov.style.opacity = '0';
     await new Promise((r) => setTimeout(r, 1200));
     ov.remove();

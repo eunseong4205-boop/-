@@ -134,7 +134,7 @@
       book(id) { const s = S(); if (s.books[id]) return false; s.books[id] = s.t; return true; },
       abyss(id) { const s = S(); if (s.abyss[id]) return false; s.abyss[id] = s.t; return true; },
       journal(text) { const s = S(); s.log.unshift({ t: s.t, text }); if (s.log.length > 120) s.log.pop(); },
-      save() { G.st.save(S()); },
+      save() { G.st.save(S(), true); },   // 장면 안에서 일부러 남기는 기록 (장면이 끝나는 자리)
       heal() { const s = S(), d = G.st.derive(s); s.hp = d.hpMax; s.mp = d.mpMax; },
 
       /* ── 물건 ── */

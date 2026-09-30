@@ -87,7 +87,7 @@
     if (!p || !m) return;
     const tx = Math.floor(p.x / TS), ty = Math.floor((p.y - 2) / TS);
     if (tx === W.lastTx && ty === W.lastTy) return;
-    if (G.script.running || p.state === 'jump' || p.state === 'dead' || p.state === 'fall') return;
+    if (G.script.running || G.script.busy || p.state === 'jump' || p.state === 'dead' || p.state === 'fall') return;
     // 맞아서 밀려난 걸음으로는 문을 지나지 않는다 (다시 걸어 들어가면 된다)
     if (p.state === 'hurt' || Math.abs(p.kx || 0) + Math.abs(p.ky || 0) > 30) return;
     W.lastTx = tx; W.lastTy = ty;

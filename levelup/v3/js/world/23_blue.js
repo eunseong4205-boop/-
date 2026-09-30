@@ -65,13 +65,18 @@
     Wd.add(new P.Sign({ x: px(X0 + 17), y: py(Y0 + 19), text: '블루 항구 부두\n「고등어호」 — 옐로 연안 · 알록달록 곶 (운항 중단)' }));
     Wd.add(new P.Sign({ x: px(LH.x - 3), y: py(LH.y + 3), text: '블루 등대\n「불이 꺼진 지 16년. 루체가 지킨다.」' }));
     // 배 세 척 (결투 뒤)
-    if (f('c3_duel') && !f('c3_boat')) {
-      const boat = (x, y, col, name, route, cid) => { const n = new P.NPC({ x: px(x), y: py(y), look: cid ? G.cast.get(cid).look : G.cast.folk('sailor'), name, cid, dir: 'up', talk: (c) => boatChoice(c, route) }); Wd.add(n); Wd.add(new G.build.Decor({ decor: 'crate', x: px(x), y: py(y + 2) + 4 })); };
+    spawnBoats(Wd);
+  });
+  /** 부두의 배 세 척: 결투가 끝난 바로 그 자리에서도, 다시 들어와도 */
+  function spawnBoats(Wd) {
+    const P = G.props;
+    if (f('c3_duel') && !f('c3_boat') && !Wd.ents.some((e) => e.boatRoute && !e.dead)) {
+      const boat = (x, y, col, name, route, cid) => { const n = new P.NPC({ x: px(x), y: py(y), look: cid ? G.cast.get(cid).look : G.cast.folk('sailor'), name, cid, dir: 'up', talk: (c) => boatChoice(c, route), mark: () => '!' }); n.boatRoute = route; Wd.add(n); Wd.add(new G.build.Decor({ decor: 'crate', x: px(x), y: py(y + 2) + 4 })); };
       boat(X0 + 14, Y0 + 26, '#ff7a4a', '레아', 'dawn', 'lea');
       boat(X0 + 18, Y0 + 28, '#9ab8e8', '가브 선장', 'order', 'gab');
       boat(X0 + 22, Y0 + 26, '#b87aff', '리라', 'night', 'lyra');
     }
-  });
+  }
 
   /* ───────── 제3장 시작 ───────── */
   ST.onTick.push(() => {
@@ -302,6 +307,7 @@
     await c.say('cassian', '옐로로 간다면 배를 고르게 될 거다. 부두에 세 척이 있더군. 어느 배를 타든, 네가 누구 편인지 대륙이 알게 될 거다.', { face: 'normal' });
     await c.move(cs2, bx + 120, by); cs2.dead = true;
     c.flag('c3_duel'); c.exp(50);
+    if (G.world.map && G.world.map.overworld) spawnBoats(G.world);
     c.heal();
     await c.cinema(false);
     c.lock(false);
@@ -310,6 +316,7 @@
 
   /* ───────── 세 척의 배 — 첫 번째 길이 굳는다 ───────── */
   async function boatChoice(c, route) {
+    if (f('c3_boat')) return;
     const txt = {
       dawn: ['레아의 밀수선. 선체에 주황 줄. 「새벽은 온다」', '레아: 타. 옐로 금화왕의 금고도 탑이랑 다를 거 없어. 거기서도 부술 게 많아.'],
       order: ['정기선 「고등어호」. 기사단 문장 깃발.', '가브 선장: 등급 후보라면 태워 주지. 옐로의 금화왕한테 가는 감찰관도 같이 타. 카시안 공이야.'],
@@ -321,6 +328,7 @@
     if (k !== 0) return;
     c.lock(true);
     S().flags.route_lock1 = route; S().flags.c3_boat = true;
+    for (const e of G.world.ents) if (e.boatRoute) e.dead = true;
     c.route(route, 3);
     await c.fade(true, { sec: 1 });
     c.music('blue');

@@ -164,7 +164,7 @@
       const target = G.build.MAPS[w.to];
       if (tx == null && target) { const m2 = G.build.get(w.to); if (m2.entry) { tx = (m2.entry.x - 8) / TS; ty = (m2.entry.y - 12) / TS; } }
       goto(w.to, tx * TS + 8, ty * TS + 12, w.dir || (w.exit ? 'down' : 'up'));
-      if (G.state.settings.autosave !== false) G.st.save(G.state);
+      if (G.state.settings.autosave !== false) G.st.save(G.state, true);   // 문을 지날 때 (다른 장면은 돌고 있지 않다)
       await c.fade(false, { sec: 0.22 });
     });
   }

@@ -28,7 +28,12 @@
   ST.CH.push({ no: '제10장', id: 'c10', title: '무한호', sub: '40년 동안 한 번도 날지 못한 로켓. 하늘로 가는 부품은 대륙 곳곳, 네가 만난 사람들 손에 있다.',
     goal(s) {
       if (!f('c10_pyros')) return { text: '곶의 발명 공방, 피로스 박사를 찾자.', map: 'world', x: 289, y: 211 };
-      if (got() < 6) { const n = PARTS.find((p) => !f('part:' + p.id)); return { text: '부품 모으기 (' + got() + '/6) — 다음: ' + n.name + ' (' + n.where + ')', map: 'world', x: 289, y: 211 }; }
+      if (got() < 6) {
+        const n = PARTS.find((p) => !f('part:' + p.id));
+        // 표시는 그 부품을 가진 사람이 있는 집 문 앞
+        const wm = G.build.get('world'), b = wm.buildings.find((bb) => bb.id === n.map);
+        return { text: '부품 모으기 (' + got() + '/6) — 다음: ' + n.name + ' (' + n.where + ')', map: 'world', x: b ? b.doorX : 289, y: b ? b.doorY : 211 };
+      }
       if (!f('c10_launch')) return { text: '부품이 다 모였다. 피로스 박사에게!', map: 'world', x: 289, y: 211 };
       return { text: '하늘 정거장으로.', map: 'world', x: PAD.x + 2, y: PAD.y + 6 };
     } });

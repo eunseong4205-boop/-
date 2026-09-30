@@ -92,7 +92,8 @@
   }
 
   function serialize(s) { return JSON.stringify(s); }
-  function save(s) { try { s.saved = Date.now(); localStorage.setItem(KEY, serialize(s)); return true; } catch (_) { return false; } }
+  /** 기록: 이야기 장면이 도는 중(싸움 · 놀이로 잠깐 조작을 돌려준 때 포함)에는 남기지 않는다 — 반쯤 끝난 장면이 기록되면 다시 불러왔을 때 이야기가 멈춘다 */
+  function save(s, force) { if (!force && G.script && (G.script.busy || G.script.running)) return false; try { s.saved = Date.now(); localStorage.setItem(KEY, serialize(s)); return true; } catch (_) { return false; } }
   function load() { try { const raw = localStorage.getItem(KEY); if (!raw) return null; const s = JSON.parse(raw); if (!s || s.v !== VERSION) return null; return Object.assign(fresh(), s); } catch (_) { return null; } }
   function clear() { try { localStorage.removeItem(KEY); } catch (_) { /* 무시 */ } }
 

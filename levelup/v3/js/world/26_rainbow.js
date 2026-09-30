@@ -273,6 +273,8 @@
   /* ───────── 광대 롤로 · 무지개 서커스 ───────── */
   ST.person('r_circus', { id: 'rolo', x: 9, y: 4, dir: 'down', when: () => !f('c6_finale') || f('c6_done'), mark: () => (f('c6_chroma') && !f('c6_rolo') ? '!' : null), talk: async (c, n) => {
     c.flag('met:rolo');
+    // 이야기가 먼저: 크로마를 만난 뒤라면 곡예보다 분장 뒤 이야기부터 (풍선 사냥은 언제든 다시)
+    if (!f('c6_rolo') && f('c6_chroma')) { await roloSecret(c, n); return; }
     if (!f('c6_rolo_show')) {
       await c.say(n, '어서 오세요, 어서 오세요! 색이 없는 광대, 롤로의 무지개 곡예! 오늘의 손님은… 오, 흰빛이시군!', { face: 'happy' });
       await c.say(n, '오늘의 순서는 [y]풍선 사냥[/]! 천막 안에 풍선 여덟 개가 춤을 춰요. 스무 초 안에 여섯 개를 활로 터뜨리면 박수 갈채!', { face: 'happy' });
@@ -283,7 +285,6 @@
       await c.say(n, '브라보! 브라보! …이런 박수, 오랜만이네.', { face: 'happy' });
       await c.getItem('heartpiece');
     }
-    if (!f('c6_rolo') && f('c6_chroma')) { await roloSecret(c, n); return; }
     await c.say(n, ST.lines({ c6: f('c6_rolo') ? '불씨를 넣을지 말지는 당신 몫이에요. 광대는 웃기만 해요. 울어야 할 때도.' : '크로마 위원장님은 좋은 분이에요. 좋은 사람도 나쁜 계산을 해요.', c7: '거울을 봤어요. 얼굴에 색이 있어요. 칠하지 않은 색이. 아침마다 봐요. 매일 봐요.' }), { face: 'smile' });
   } });
   class Balloon extends G.ent.Ent {

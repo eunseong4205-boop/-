@@ -429,7 +429,7 @@
     body.appendChild(row({ name: '음량', v: Math.round((st.vol == null ? 0.7 : st.vol) * 10) + ' / 10', onClick: () => { st.vol = ((Math.round((st.vol == null ? 0.7 : st.vol) * 10) % 10) + 1) / 10; if (G.audio) G.audio.applySettings(); refresh(); } }));
     body.appendChild(row({ name: '글자 속도', v: ['', '느리게', '보통', '빠르게'][st.textSpeed || 2], onClick: () => { st.textSpeed = ((st.textSpeed || 2) % 3) + 1; refresh(); } }));
     sec(body, '기록');
-    body.appendChild(row({ name: '지금 기록하기', desc: '빛의 이정표와 침대에서 쉬어도 기록된다.', onClick: () => { if (G.script.running) return; G.st.save(s); toast('기록했다', 'good'); sfx('save'); } }));
+    body.appendChild(row({ name: '지금 기록하기', desc: '빛의 이정표와 침대에서 쉬어도 기록된다.', onClick: () => { if (G.script.running || G.script.busy || !G.st.save(s)) { toast('지금은 기록할 수 없다 — 벌어지고 있는 일을 먼저 끝내자', 'bad'); return; } toast('기록했다', 'good'); sfx('save'); } }));
     body.appendChild(row({ name: '타이틀로', desc: '기록하지 않은 것은 사라진다.', onClick: () => { closeModal(); G.game.toTitle(); } }));
     sec(body, '조작');
     const k = document.createElement('div'); k.className = 'keys card';
