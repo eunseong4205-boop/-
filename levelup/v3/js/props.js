@@ -359,7 +359,7 @@
       this.blinkSeed = Math.random() * 3;
       this.baseDir = this.dir;
     }
-    blockBox() { return { x: this.x - 5, y: this.y - 6, w: 10, h: 6 }; }
+    blockBox() { return this.hidden ? null : { x: this.x - 5, y: this.y - 6, w: 10, h: 6 }; }   // 숨은 사람은 길을 막지 않는다
     update(dt, Wd) {
       this.t += dt; this.st += dt;
       if (this.hideIf && this.hideIf()) { this.hidden = true; return; }
