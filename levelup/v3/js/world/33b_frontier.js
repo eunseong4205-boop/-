@@ -77,7 +77,7 @@
     ST.house(m, { id: 'm_ferry', region: 'mist', style: 'mist', tx: MX + 20, ty: MY + 14, w: 5, h: 4, path: 3, name: '모르간의 오두막',
       room: { w: 11, h: 8, floor: T.PLANK, music: 'calm', furn: [['bed2', 8, 2, { v: '#5a6a5a' }], ['table', 3, 4], ['chair', 2, 5], ['barrel', 8, 5]] } });
     // 가라앉은 징수탑: 늪 호수에 반쯤 잠겼다
-    G.build.placeBuilding(m, { special: 'tower', tx: 364, ty: 143, w: 3, h: 2, col: '#5a6a6e', door: false, id: 'sunk_tower' });
+    G.build.placeBuilding(m, { special: 'tower', tx: OW.PX(364, 143), ty: OW.PY(364, 143), w: 3, h: 2, col: '#5a6a6e', door: false, id: 'sunk_tower' });
     // 단풍 마을: 붉은 기와 · 대장간 굴뚝
     ST.house(m, { id: 'a_forge', region: 'amber', style: 'amber', tx: AX + 2, ty: AY + 2, w: 7, h: 5, path: 4, name: '하루의 대장간', sign: 'forge',
       room: { w: 16, h: 10, floor: T.STONE, music: 'red', furn: [['anvil', 4, 4], ['stove', 2, 2], ['barrel', 13, 2], ['crate', 13, 6], ['counter', 7, 3, { v: 3, bw: 44, bh: 10 }]] } });
@@ -102,7 +102,7 @@
     Wd.add(new P.Waystone({ x: px(cx(AT) + 3), y: py(cy(AT) + 3), wid: 'w_amber', name: '단풍 마을' }));
     Wd.add(new P.Sign({ x: px(cx(MT) - 2), y: py(MT.y + MT.h + 1), text: '물안개 마을 — 안개 늪\n「물에 비친 얼굴이 늦게 따라오면, 오늘은 일찍 자라」 — 늪지기의 말' }));
     Wd.add(new P.Sign({ x: px(cx(AT) - 2), y: py(AT.y - 2), text: '단풍 마을 — 단풍 협곡\n「여기서 한 말은 협곡이 오래 기억한다. 좋은 말만 하자」' }));
-    Wd.add(new P.Sign({ x: px(362), y: py(140), text: '가라앉은 징수탑\n983년 봄에 가라앉았다. 밤이면 물 아래서 탑이 운다.\n「다가가지 마시오」 — 누군가 긁어 쓴 글씨' }));
+    Wd.add(new P.Sign({ x: px(OW.PX(362, 140)), y: py(OW.PY(362, 140)), text: '가라앉은 징수탑\n983년 봄에 가라앉았다. 밤이면 물 아래서 탑이 운다.\n「다가가지 마시오」 — 누군가 긁어 쓴 글씨' }));
   });
   // 굴뚝 연기 · 대장간 불씨 (보이는 건물만)
   let smokeT = 0;
@@ -176,11 +176,11 @@
   // 가라앉은 탑 앞: 밤에 거울을 비추면 유안
   ST.onMap('world', (m, Wd) => {
     const P = G.props;
-    Wd.add(new P.Spot({ x: px(365), y: py(141), verb: '물 아래를 들여다본다', text: async (c) => {
+    Wd.add(new P.Spot({ x: px(OW.PX(365, 141)), y: py(OW.PY(365, 141)), verb: '물 아래를 들여다본다', text: async (c) => {
       if (!night() || !S().tools.mirror || f('yuan_seen') || !f('met:yuna')) { await c.narr(night() ? '물 아래 가라앉은 탑이 희미하게 빛난다. 누군가 울고 있는 것 같다.' : '물 아래 가라앉은 탑의 꼭대기가 보인다. 이끼가 끼어 있다. 가만히 있으면… 탑이 숨 쉬는 소리가 들린다.'); if (night() && f('met:yuna') && !S().tools.mirror) await c.say('toria', '찍… 거울이 있으면 뭔가 보일 것 같아.', { face: 'shock' }); return; }
       c.lock(true); await c.cinema(true); c.music('dream'); c.filter('memory');
       await c.narr('진실의 거울을 비췄다. 안개가 물러나며, 물 위에 한 소년이 서 있었다. 유나와 똑같은 얼굴. 발끝이 물에 닿지 않았다.');
-      const yu = c.spawn({ cid: 'yuan', x: px(366), y: py(139), dir: 'down' }); yu.vision = true;
+      const yu = c.spawn({ cid: 'yuan', x: px(OW.PX(366, 139)), y: py(OW.PY(366, 139)), dir: 'down' }); yu.vision = true;
       await c.say(yu, '…누나가 보냈어? 누나는 아직도 열한 살이지.', { face: 'sad' });
       await c.say(yu, '나, 그날 빛을 다 냈어. 탑이 모자란다고 해서. 다 내니까 가벼워졌어. 가벼워지니까… 이렇게 됐어.', { face: 'normal' });
       await c.say(yu, '누나한테 전해 줘. 기다리지 말라고. 기다리는 동안 누나도 멈춰 있잖아. 누나는 커야 해. 내 몫까지.', { face: 'smile' });

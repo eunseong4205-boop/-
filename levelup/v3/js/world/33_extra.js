@@ -7,14 +7,14 @@
   const ST = G.story, OW = G.ow;
   const S = () => G.state;
   const f = (k) => !!S().flags[k];
-  const VX = 46, VY = 170;
+  const [VX, VY] = OW.P(46, 170);   // 화산 (넓어진 대륙의 자리)
   const item = (id, o) => { G.data.ITEMS[id] = Object.assign({ id, price: 0, desc: '' }, o); };
   item('scale_sala', { type: 'key', name: '불도롱뇽의 비늘', desc: '아직 뜨겁다. 볼칸 아저씨라면 이걸 검에 녹여 넣을 수 있을 것이다.' });
 
   // 분화구로 오르는 돌계단 (남쪽 비탈): 면(절벽)마다 계단을 놓는다
   OW.hooks.push((m) => {
     const T = G.tiles.T, O = G.objs.O;
-    for (let y = VY + 2; y <= VY + 16; y++) for (const x of [VX, VX + 1]) {
+    for (let y = VY + 2; y <= VY + Math.round(16 * OW.SC); y++) for (const x of [VX, VX + 1]) {
       if (!m.inb(x, y)) continue;
       const i = m.i(x, y);
       if (m.ter[i] === T.CLIFF) { m.ter[i] = T.STAIRS; m.obj[i] = 0; continue; }
@@ -27,8 +27,8 @@
   ST.onTick.push((dt) => {
     const Wd = G.world, m = Wd.map, p = Wd.player; if (!m || !m.overworld || !p || G.script.running) return;
     const d = U.dist(p.x / TS, p.y / TS, VX, VY);
-    if (d > 9 || G.st.derive(S()).heatOk) { heatT = Math.max(0, heatT - dt * 2); return; }
-    heatT += dt * (d < 5 ? 1.6 : 1);
+    if (d > 9 * OW.SC || G.st.derive(S()).heatOk) { heatT = Math.max(0, heatT - dt * 2); return; }
+    heatT += dt * (d < 5 * OW.SC ? 1.6 : 1);
     if (heatT > 4) {
       heatT = 1.5; G.combat.hurtPlayer(p, 1, null, { noKnock: true, why: 'heat', inv: 0.2 });
       G.fx.sparks(p.x, p.y - 10, 4, '#ff9a4a', 40);
