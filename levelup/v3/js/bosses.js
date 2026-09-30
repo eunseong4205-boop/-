@@ -13,6 +13,7 @@
   const OUT = '#140c1c';
 
   const B = {};
+  const TINT = new WeakMap();
   const def = (id, o) => { B[id] = Object.assign({ id, hp: 60, atk: 4, r: 16, h: 32, speed: 40, weight: 99, exp: 120, gold: 60 }, o); };
 
   /* ───────── 그림 도우미 ───────── */
@@ -84,7 +85,9 @@
         this.onDraw = (gg, xx, yy) => { if (this.D.gear) this.D.gear(this, gg, xx, yy); };
         G.sprites.drawChar(g, this, cx, cy);
       } else {
-        const im = this.img();
+        let im = this.img();
+        // 변종 보스: 같은 몸에 다른 빛깔 (그림마다 한 번만 물들여 둔다)
+        if (this.D.tint) { let tc = TINT.get(im); if (!tc) { tc = X.tint(im, this.D.tint, this.D.tintA || 0.42); TINT.set(im, tc); } im = tc; }
         const x = Math.round(this.x - cx - im.width / 2), y = Math.round(this.y - cy - im.height + 1 - (this.jz || 0) - (this.fly ? 8 + Math.sin(this.t * 3) * 3 : 0));
         const flip = this.D.flip && this.dirX < 0 ? X.flipX(im) : im;
         if (this.freezeT > 0) g.drawImage(X.tint(flip, '#bfe8ff', 0.6), x, y); else g.drawImage(flip, x, y);
@@ -603,5 +606,7 @@
     return W().add(b);
   }
 
-  G.bosses = { B, Boss, spawn, def, warnRect, warnCircle, hitRect, hitCircle, minion, ring, Tentacle, MirrorClone };
+  /** 변종: 몸과 행동은 base, 이름 · 체력 · 빛깔은 새로 */
+  function variant(id, base, o) { B[id] = Object.assign({}, B[base], o, { id }); }
+  G.bosses = { B, Boss, spawn, def, variant, warnRect, warnCircle, hitRect, hitCircle, minion, ring, Tentacle, MirrorClone };
 })();

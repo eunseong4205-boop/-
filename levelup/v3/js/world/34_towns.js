@@ -22,6 +22,8 @@
     gray: { m: [6, 10, 14, 6], lane: T.GRAVEL, pave: T.COBBLE, wall: 'stone', tree: O.DEAD, houses: [4, 6], extras: ['crates', 'cart'], plaza: '#8a8a96' },
     black: { m: [11, 5, 12, 11], lane: T.COBBLE, pave: T.COBBLE, wall: 'stone', tree: O.DEAD, houses: [4, 5], extras: ['graves', 'banners'], plaza: '#6a4ab8' },
     colorful: { m: [16, 12, 2, 2], lane: T.BRICK, pave: T.BRICK, wall: 'fence', tree: O.BLOSSOM, houses: [4, 5], extras: ['crates', 'planters', 'cart'], plaza: '#ff8a3a' },
+    mist: { m: [10, 8, 8, 10], lane: T.PLANK, pave: T.PLANK, wall: 'fence', tree: O.DEAD, houses: [4, 5], extras: ['nets', 'barrels'], plaza: '#3e7468' },
+    amber: { m: [12, 6, 12, 8], lane: T.COBBLE, pave: T.COBBLE, wall: 'fence', tree: O.TREE, houses: [4, 6], extras: ['hay', 'orchard', 'cart'], plaza: '#c8582a' },
   };
   OW.PLAN = PLAN;
   OW.homes = {};

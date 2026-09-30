@@ -7,27 +7,31 @@
   const G = globalThis.G;
   const U = G.u, TL = G.tiles, OB = G.objs, GN = G.gen, E = G.ent;
   const T = TL.T, O = OB.O, TS = TL.TS;
-  const W = 320, H = 240;
+  const W = 400, H = 300;          // 넓어진 대륙 (옛 땅 320×240은 그대로, 동쪽 안개 늪 · 남쪽 단풍 협곡이 붙었다)
+  const W0 = 320, H0 = 240;
   const RG = (n) => TL.REGIONS.indexOf(n);
   const VX = 46, VY = 170;   // 화산
 
   const OW = {
     W, H, hooks: [], towns: {}, poi: {}, ready: false,
-    NAMES: { green: '그린 — 새싹의 골짜기', red: '레드 — 불꽃과 쇠', blue: '블루 — 파도와 지혜', yellow: '옐로 — 황금과 모래', purple: '퍼플 — 해 질 녘의 숲', rainbow: '무지개 — 하늘섬', white: '화이트 — 눈과 기도', gray: '그레이 — 색을 잃은 땅', black: '블랙 — 영원한 밤', colorful: '알록달록 곶' },
-    SHORT: { green: '그린', red: '레드', blue: '블루', yellow: '옐로', purple: '퍼플', rainbow: '무지개', white: '화이트', gray: '그레이', black: '블랙', colorful: '알록달록' },
-    MUSIC: { green: 'field', red: 'red', blue: 'blue', yellow: 'yellow', purple: 'forest', rainbow: 'rainbow', white: 'white', gray: 'gray', black: 'black', colorful: 'colorful' },
+    NAMES: { green: '그린 — 새싹의 골짜기', mist: '안개 늪 — 가라앉은 것들의 물가', amber: '단풍 협곡 — 메아리가 사는 골짜기', red: '레드 — 불꽃과 쇠', blue: '블루 — 파도와 지혜', yellow: '옐로 — 황금과 모래', purple: '퍼플 — 해 질 녘의 숲', rainbow: '무지개 — 하늘섬', white: '화이트 — 눈과 기도', gray: '그레이 — 색을 잃은 땅', black: '블랙 — 영원한 밤', colorful: '알록달록 곶' },
+    SHORT: { green: '그린', mist: '안개 늪', amber: '단풍 협곡', red: '레드', blue: '블루', yellow: '옐로', purple: '퍼플', rainbow: '무지개', white: '화이트', gray: '그레이', black: '블랙', colorful: '알록달록' },
+    MUSIC: { green: 'field', mist: 'dread', amber: 'field', red: 'red', blue: 'blue', yellow: 'yellow', purple: 'forest', rainbow: 'rainbow', white: 'white', gray: 'gray', black: 'black', colorful: 'colorful' },
   };
   // 지역 중심 (칸)
-  const SEEDS = [['green', 96, 182, 1], ['red', 42, 190, 1.05], ['blue', 172, 202, 1], ['yellow', 264, 150, 1.05], ['purple', 150, 120, 1], ['rainbow', 162, 30, 0.8], ['white', 66, 40, 1.05], ['gray', 30, 110, 0.95], ['black', 262, 54, 1], ['colorful', 298, 214, 0.75]];
-  const BASEH = { green: 0, red: 0, blue: 0, yellow: 0, purple: 1, rainbow: 4, white: 2, gray: 0, black: 1, colorful: 0 };
+  const SEEDS = [['green', 96, 182, 1], ['red', 42, 190, 1.05], ['blue', 172, 202, 1], ['yellow', 264, 150, 1.05], ['purple', 150, 120, 1], ['rainbow', 162, 30, 0.8], ['white', 66, 40, 1.05], ['gray', 30, 110, 0.95], ['black', 262, 54, 1], ['colorful', 298, 214, 0.75], ['mist', 358, 112, 1.0], ['amber', 150, 280, 0.8]];
+  const BASEH = { mist: 0, amber: 1, green: 0, red: 0, blue: 0, yellow: 0, purple: 1, rainbow: 4, white: 2, gray: 0, black: 1, colorful: 0 };
   // 마을 자리 (칸): 이야기 파일이 건물을 채운다
   const TOWNS = {
     green: { x: 82, y: 170, w: 34, h: 24 }, red: { x: 36, y: 200, w: 30, h: 22 }, blue: { x: 160, y: 204, w: 36, h: 24 }, yellow: { x: 252, y: 142, w: 38, h: 26 },
     purple: { x: 124, y: 96, w: 32, h: 24 }, rainbow: { x: 150, y: 18, w: 34, h: 24 }, white: { x: 56, y: 28, w: 32, h: 22 }, gray: { x: 18, y: 100, w: 30, h: 22 },
     black: { x: 250, y: 44, w: 34, h: 24 }, colorful: { x: 284, y: 204, w: 28, h: 22 },
+    mist: { x: 342, y: 100, w: 30, h: 22 }, amber: { x: 132, y: 262, w: 32, h: 22 },
   };
   OW.towns = TOWNS;
 
+  /** 점과 선분 사이 거리 */
+  function segD(px, py, ax, ay, bx, by) { const vx = bx - ax, vy = by - ay, t = U.clamp(((px - ax) * vx + (py - ay) * vy) / (vx * vx + vy * vy), 0, 1); return Math.hypot(px - ax - vx * t, py - ay - vy * t); }
   function regionAt(x, y) {
     const wx = x + (U.fbm(x / 38, y / 38, 11, 3) - 0.5) * 46, wy = y + (U.fbm(x / 38, y / 38, 23, 3) - 0.5) * 46;
     let best = 0, bd = 1e9;
@@ -51,7 +55,8 @@
     for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
       const i = y * W + x;
       const n = U.fbm(x / 22, y / 22, 31, 3), big = U.fbm(x / 48, y / 48, 37, 2);
-      let edge = Math.min(x, W - 1 - x, y * 1.2, (H - 1 - y) * 0.9);
+      const oldLand = x < W0 && y < H0;
+      let edge = oldLand ? Math.min(x, W0 - 1 - x, y * 1.2, (H0 - 1 - y) * 0.9) : -99;
       let coast = 2 + n * 12 + Math.max(0, big - 0.42) * 70;
       // 마을 근처는 땅으로 남긴다
       let nearTown = 99;
@@ -67,6 +72,16 @@
       // 무지개(하늘섬): 둘레가 구름바다
       if (RN(x, y) === 'rainbow') { const d = U.dist(x, y, 164, 32); if (d > 26 + n * 10) sea[i] = 2; }
       if (edge < coast) sea[i] = sea[i] || 1;
+      // 새 땅: 동쪽 안개 늪(섬 같은 큰 땅) · 남쪽 단풍 협곡, 좁은 목(지협)으로 옛 땅과 잇는다
+      const nb = (U.vnoise(x / 9, y / 9, 131) - 0.5) * 0.28 + (U.vnoise(x / 3, y / 3, 133) - 0.5) * 0.08;
+      const mistD = Math.hypot((x - 360) / 40, (y - 114) / 78) + nb;
+      const amberD = Math.hypot((x - 152) / 108, (y - 274) / 24) + nb;
+      const neckM = segD(x, y, 290, 104, 330, 110) < 5 + nb * 8;        // 블랙 · 옐로 사이 → 안개 늪
+      const neckA = segD(x, y, 140, 208, 146, 256) < 4.5 + nb * 8;      // 그린 · 블루 사이 → 단풍 협곡
+      const neckA2 = segD(x, y, 54, 216, 70, 262) < 4 + nb * 6;          // 레드 남쪽 → 단풍 협곡 서쪽
+      if (mistD < 1 || amberD < 1 || neckM || neckA || neckA2) { if (sea[i] === 1) sea[i] = 0; if (!oldLand || neckM || neckA || neckA2) sea[i] = sea[i] === 2 ? 2 : 0; }
+      else if (!oldLand) sea[i] = 1;
+      if (x < 2 || y < 2 || x > W - 3 || y > H - 3) sea[i] = 1;
     }
     for (let i = 0; i < N; i++) { ter[i] = sea[i] === 1 ? T.DEEP : sea[i] === 2 ? T.CLOUD : T.GRASS; }
     // 3) 높이
@@ -85,6 +100,8 @@
         case 'gray': if (f > 0.64) h = 1; break;
         case 'black': if (f > 0.66) h = 2; break;
         case 'colorful': if (f > 0.7) h = 1; break;
+        case 'mist': h = f > 0.72 ? 1 : 0; break;
+        case 'amber': { const ridge = Math.abs(U.fbm(x / 26, y / 26, 141, 3) - 0.5); h = ridge < 0.05 ? 0 : f > 0.62 ? 3 : f > 0.5 ? 2 : 1; break; }   // 협곡: 등성이 사이로 깊은 골
         default: break;
       }
       hgt[i] = h;
@@ -129,12 +146,23 @@
     lake(104, 196, 3, 2, 63);    // 그린 연못
     lake(274, 132, 3, 2, 65);    // 사막 오아시스
     lake(82, 22, 5, 3, 67);      // 얼어붙은 호수 (화이트)
+    river([[360, 40], [352, 70], [366, 96], [376, 140], [370, 176], [384, 196]], 1.4, 135);   // 안개 늪을 가르는 검은 물줄기
+    lake(370, 150, 6, 4, 137);   // 가라앉은 사원 호수
+    lake(336, 60, 4, 3, 139);    // 안개 웅덩이
+    river([[96, 262], [112, 276], [126, 292]], 1.1, 143);                    // 협곡 개울
     // 물가 높이: 물은 주변 낮은 쪽 높이로
     for (let i = 0; i < N; i++) if (sea[i] === 3) { const x = i % W, y = (i / W) | 0; let mn = 9; for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) { const j = (y + dy) * W + x + dx; if (j >= 0 && j < N && !sea[j]) mn = Math.min(mn, hgt[j]); } hgt[i] = mn === 9 ? 0 : mn; }
+    // 강 폭 전체를 같은 높이로: 이웃한 물 칸 중 낮은 쪽을 몇 번 옮긴다 (강 한가운데 절벽 조각이 생기지 않게)
+    for (let pass = 0; pass < 4; pass++) {
+      const nh = hgt.slice();
+      for (let i = W; i < N - W; i++) if (sea[i] === 3) for (const j of [i - 1, i + 1, i - W, i + W]) if (sea[j] === 3 && hgt[j] < nh[i]) nh[i] = hgt[j];
+      hgt.set(nh);
+    }
     // 5) 마을 자리: 평평하게, 사물 없이
     for (const [n, t] of Object.entries(TOWNS)) {
       const th = BASEH[n] + (n === 'white' ? 0 : 0);
-      for (let y = t.y - 2; y < t.y + t.h + 2; y++) for (let x = t.x - 2; x < t.x + t.w + 2; x++) {
+      const mg = n === 'amber' ? 13 : 2;   // 협곡 마을은 둘레를 넓게 고른다 (바깥 동네가 들어설 자리)
+      for (let y = t.y - mg; y < t.y + t.h + mg; y++) for (let x = t.x - mg; x < t.x + t.w + mg; x++) {
         if (!m.inb(x, y)) continue; const i = y * W + x;
         if (sea[i] === 1 || sea[i] === 2) continue;
         hgt[i] = th; if (sea[i] === 3) { ter[i] = T.WATER; } else ter[i] = T.GRASS;
@@ -170,6 +198,8 @@
         case 'gray': t = f > 0.42 ? (rock > 0.66 ? T.CRACKED : T.ASH) : f2 > 0.76 ? T.GRAVEL : T.DIRT; break;
         case 'black': t = forest > 0.62 ? T.MOSS : rock > 0.74 ? T.GRAVEL : T.DARK; break;
         case 'colorful': t = forest > 0.64 ? T.LEAVES : mead > 0.58 ? T.MEADOW : f2 > 0.76 ? T.DIRT : T.GRASS; break;
+        case 'mist': t = f2 > 0.7 ? T.SWAMP : forest > 0.56 ? T.MOSS : mead > 0.62 ? T.MUD : rock > 0.78 ? T.GRAVEL : T.GRASS; break;
+        case 'amber': t = hh >= 2 ? (rock > 0.55 ? T.ROCKY : f2 > 0.6 ? T.CRACKED : T.DRY) : forest > 0.5 ? T.LEAVES : mead > 0.66 ? T.MEADOW : f2 > 0.74 ? T.DIRT : T.GRASS; break;
         default: break;
       }
       ter[i] = t;
@@ -177,7 +207,7 @@
     // 강 · 호숫가 진흙 (같은 높이, 잡음으로 드문드문)
     for (let y = 2; y < H - 2; y++) for (let x = 2; x < W - 2; x++) {
       const i = y * W + x; if (sea[i]) continue;
-      const n = regName[i]; if (!['green', 'blue', 'purple', 'colorful'].includes(n)) continue;
+      const n = regName[i]; if (!['green', 'blue', 'purple', 'colorful', 'mist', 'amber'].includes(n)) continue;
       let nearR = false; for (let dy = -2; dy <= 2 && !nearR; dy++) for (let dx = -2; dx <= 2; dx++) { const j = i + dy * W + dx; if (sea[j] === 3 && hgt[j] === hgt[i]) { nearR = true; break; } }
       if (nearR && U.fbm(x / 5, y / 5, 89, 2) > 0.56) ter[i] = T.MUD;
     }
@@ -211,6 +241,7 @@
   const LINKS = [
     ['green', 'red'], ['green', 'blue'], ['green', 'purple'], ['blue', 'colorful'], ['blue', 'yellow'], ['yellow', 'black'], ['purple', 'yellow'], ['purple', 'white'],
     ['gray', 'red'], ['gray', 'white'], ['gray', 'purple'], ['black', 'white'], ['purple', 'rainbow'], ['yellow', 'colorful'],
+    ['yellow', 'mist'], ['black', 'mist'], ['green', 'amber'], ['blue', 'amber'],
   ];
   function townCenter(n) { const t = TOWNS[n]; return [t.x + (t.w >> 1), t.y + (t.h >> 1)]; }
   function roads(m, sea) {
@@ -250,6 +281,9 @@
           // 대각선: 세 칸이 모두 같은 높이, 절벽 없음
           const a = y * W + nx, b = ny * W + x;
           if (bad(a) || bad(b) || tj === T.CLIFF || ti === T.CLIFF || tr[a] === T.CLIFF || tr[b] === T.CLIFF) continue;
+          // 물은 대각선으로 건너지 않는다 (다리가 체크무늬로 끊기지 않게)
+          const wet = (k) => tr[k] === T.WATER || tr[k] === T.DEEP;
+          if (wet(i) || wet(j) || wet(a) || wet(b)) continue;
           if (hg[j] !== hg[i] || hg[a] !== hg[i] || hg[b] !== hg[i]) continue;
           c = 1.414;
         } else if (tj === T.CLIFF || ti === T.CLIFF || hg[j] !== hg[i]) { if (dx !== 0) continue; c += 7; }
@@ -286,7 +320,7 @@
     // 마을 가까이는 돌길, 멀어지면 지역의 흙길
     let near = 99;
     for (const t of Object.values(TOWNS)) near = Math.min(near, Math.max(t.x - x, x - (t.x + t.w), t.y - y, y - (t.y + t.h)));
-    if (near < 9) return n === 'yellow' ? T.ROAD : T.COBBLE;
+    if (near < 9) return n === 'yellow' ? T.ROAD : n === 'mist' ? T.PLANK : T.COBBLE;
     return { yellow: T.ROAD, white: T.ROAD, black: T.COBBLE, gray: T.GRAVEL, red: T.DIRT }[n] || T.DIRT;
   }
   function carve(m, sea, path, a, b) {
@@ -365,12 +399,20 @@
           const r = 1.0 + U.vnoise(fx / 7, fy / 7, 95) * 0.35;
           for (let y = Math.floor(fy - r); y <= Math.floor(fy + r); y++) for (let x = Math.floor(fx - r); x <= Math.floor(fx + r); x++) {
             const d = Math.hypot(x + 0.5 - fx, y + 0.5 - fy);
-            if (d <= r) paint(x, y, h, d < 0.8);
+            if (d <= r) paint(x, y, h, false);   // 붓은 땅만 — 다리는 원래 경로를 따라 곧게 놓는다
           }
         }
       }
-      // 원래 칸도 길로 (끊기지 않게)
-      for (const [x, y] of P) paint(x, y, h, true);
+      // 원래 칸도 길로 (끊기지 않게) · 물 위는 건너는 방향에 직각으로 세 칸 폭 다리
+      for (let k = 0; k < P.length; k++) {
+        const [x, y] = P[k];
+        paint(x, y, h, true);
+        const wet = (xx, yy) => m.inb(xx, yy) && (tr[yy * W + xx] === T.WATER || tr[yy * W + xx] === T.DEEP || tr[yy * W + xx] === T.BRIDGE);
+        if (!wet(x, y)) continue;
+        const q = P[Math.min(P.length - 1, k + 1)], o = P[Math.max(0, k - 1)];
+        const horiz = Math.abs(q[0] - o[0]) >= Math.abs(q[1] - o[1]);
+        for (const d of [-1, 1]) { const xx = horiz ? x : x + d, yy = horiz ? y + d : y; if (wet(xx, yy) && hg[yy * W + xx] === h) paint(xx, yy, h, true); }
+      }
     }
     // 고원 북쪽 가장자리(면이 없는 쪽)를 오르는 곳: 낮은 칸을 계단으로
     for (let k = 1; k < path.length; k++) {
@@ -476,8 +518,10 @@
     gray: [['drone', 3], ['hollow', 2], ['golem', 1.5], ['bomber', 1.5], ['turret', 1]],
     black: [['ghost', 3], ['hollow', 2.5], ['shade', 1.5], ['bat', 1.5], ['knight', 1]],
     colorful: [['bomber', 2], ['drone', 2], ['crab', 1.5], ['slime', 1]],
+    mist: [['plant', 2.5], ['ghost', 1.5], ['octo', 1.5], ['bug', 2], ['wisp', 1], ['bigslime', 1.2]],
+    amber: [['wolf', 2], ['boar', 2], ['bandit', 1.5], ['bat', 1], ['golem', 0.6], ['worm', 0.8]],
   };
-  const TIERS = { green: 0, red: 1, blue: 2, yellow: 3, purple: 4, rainbow: 5, white: 6, gray: 7, black: 8, colorful: 9 };
+  const TIERS = { green: 0, red: 1, blue: 2, yellow: 3, purple: 4, rainbow: 5, white: 6, gray: 7, black: 8, colorful: 9, mist: 6, amber: 3 };
   function pickFoe(n, r) { const tb = TABLE[n] || TABLE.green; let s = tb.reduce((a, x) => a + x[1], 0) * r; for (const [t, w] of tb) { s -= w; if (s <= 0) return t; } return tb[0][0]; }
   /** 칸 묶음마다 고정된 적 무리 (지도를 지을 때 한 번 계산) */
   function planSpawns(m) {
@@ -552,6 +596,8 @@
     if (n === 'blue') return k === 3 ? 'rain' : null;
     if (n === 'green') return k === 1 ? 'leaves' : null;
     if (n === 'black') return 'stars';
+    if (n === 'mist') return k === 4 ? 'rain' : 'spores';
+    if (n === 'amber') return 'leaves';
     return null;
   };
   let lastReg = null, regT = 0;

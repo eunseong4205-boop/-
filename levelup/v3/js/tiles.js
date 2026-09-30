@@ -55,7 +55,10 @@
     planet: { g: ['#8a6a2a', '#b08a3a', '#d8b050', '#fff0a8'], d: ['#6a4a2a', '#8a643a', '#a8804e'], s: ['#c8a050', '#e0bc68', '#f4d888'], c: ['#4a2e14', '#6e4820', '#946430'], w: ['#2a1a4a', '#3a2a6a', '#5a44a0', '#e8d8ff'], snow: ['#e8d8a8', '#f4e8c0', '#fff8e0'] },
     dungeon: { g: ['#3a4a3a', '#4a5a48', '#5e705a', '#a0c090'], d: ['#4a3e34', '#5e5044', '#746454'], s: ['#6a6258', '#7e766a', '#948a7c'], c: ['#1e1a26', '#2e2838', '#423a4e'], w: ['#1a2a4a', '#243a62', '#34507e', '#a8c8ff'], snow: ['#a8b0c0', '#c4cad6', '#e0e4ec'] },
   };
-  const REGIONS = ['green', 'red', 'blue', 'yellow', 'purple', 'rainbow', 'white', 'gray', 'black', 'colorful', 'space', 'planet', 'dungeon'];
+  // 안개 늪: 청록 이끼 · 검푸른 물 · 흰 안개 / 단풍 협곡: 붉고 노란 잎 · 주홍 바위
+  PAL.mist = { g: ['#2e5a52', '#3e7468', '#5a9484', '#c8f0e0'], d: ['#3e3a30', '#54503e', '#6e6a52'], s: ['#8a9a8a', '#a4b4a2', '#c0ccbc'], c: ['#1e2a2a', '#2e403e', '#465c58'], w: ['#12303a', '#1c4450', '#2e626e', '#c8e8e0'], snow: ['#b8c8c8', '#d4e0e0', '#f0f8f8'] };
+  PAL.amber = { g: ['#8a6a2a', '#b08838', '#d4a848', '#ff6a3a'], d: ['#7a4a2a', '#9a6036', '#b87c4c'], s: ['#d8a870', '#e8c088', '#f4d8a8'], c: ['#5a2a1e', '#84402a', '#a85a3a'], w: ['#2a4a6a', '#3a628a', '#5a86ae', '#e8f4ff'], snow: ['#e8d8c8', '#f4e8dc', '#fff8f0'] };
+  const REGIONS = ['green', 'red', 'blue', 'yellow', 'purple', 'rainbow', 'white', 'gray', 'black', 'colorful', 'space', 'planet', 'dungeon', 'mist', 'amber'];
 
   /* ───────── 색 계산 도우미 ───────── */
   const RGB = {};

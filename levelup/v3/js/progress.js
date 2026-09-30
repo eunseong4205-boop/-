@@ -217,10 +217,10 @@
 
   /* ───────── 난이도 ───────── */
   const DIFF = [
-    { id: 0, name: '쉬움', desc: '이야기를 따라가고 싶을 때. 받는 피해 -40%, 적 체력 -20%.', hurt: 0.6, hp: 0.8, spd: 0.92, heal: 1.4, exp: 1.2, tele: 1.25 },
-    { id: 1, name: '보통', desc: '처음이라면. 적도 방심하지 않는다.', hurt: 1.15, hp: 1, spd: 1, heal: 1, exp: 1, tele: 1 },
-    { id: 2, name: '어려움', desc: '구르기와 방패를 제대로 써야 한다. 받는 피해 +50%, 적 체력 +25%.', hurt: 1.5, hp: 1.25, spd: 1.07, heal: 0.75, exp: 1.1, tele: 0.85 },
-    { id: 3, name: '악몽', desc: '한 번의 실수가 무겁다. 받는 피해 ×2, 적 체력 +50%, 회복이 드물다.', hurt: 2.0, hp: 1.5, spd: 1.13, heal: 0.5, exp: 1.2, tele: 0.72 },
+    { id: 0, name: '쉬움', desc: '이야기를 따라가고 싶을 때. 받는 피해가 적고 적이 무르다.', hurt: 0.65, hp: 0.85, spd: 0.92, heal: 1.4, exp: 1.2, tele: 1.25 },
+    { id: 1, name: '보통', desc: '처음이라면. 적도 방심하지 않는다 — 구르기와 방패를 쓰게 된다.', hurt: 1.25, hp: 1.15, spd: 1, heal: 1, exp: 1, tele: 1 },
+    { id: 2, name: '어려움', desc: '한 번 한 번이 싸움이다. 받는 피해 +30%, 적 체력 +20%, 회복이 드물다.', hurt: 1.65, hp: 1.4, spd: 1.07, heal: 0.75, exp: 1.1, tele: 0.85 },
+    { id: 3, name: '악몽', desc: '한 번의 실수가 무겁다. 받는 피해 거의 두 배, 적 체력 +50%, 회복이 아주 드물다.', hurt: 2.3, hp: 1.75, spd: 1.13, heal: 0.5, exp: 1.2, tele: 0.72 },
   ];
   const diff = () => DIFF[(G.state && G.state.settings && G.state.settings.diff != null) ? G.state.settings.diff : 1] || DIFF[1];
 

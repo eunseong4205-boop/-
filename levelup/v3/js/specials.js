@@ -96,7 +96,7 @@
           const x = p.x + Math.cos(a) * r, y = p.y + Math.sin(a) * r * 0.75;
           C.after(0.1 + ring * 0.25 + i * 0.02, () => {
             for (let k = 0; k < 10; k++) G.fx.part({ x: x + (Math.random() - 0.5) * 6, y, z: Math.random() * 6, vz: 70 + Math.random() * 60, g: 0, life: 0.45, col: Math.random() < 0.5 ? '#ffb040' : '#ff5a2a', size: 2, glow: true });
-            for (const e of foes()) if (U.dist(x, y, e.x, e.y) < 18) C.damage(e, 5 * d.magMul + d.atk * 0.5, { src: 'spell', el: 'fire', kx: 0, ky: 0, power: 0.8 });
+            for (const e of foes()) if (U.dist(x, y, e.x, e.y) < 18) C.damage(e, (5 + S().lv * 0.2) * d.magMul + d.atk * 0.3, { src: 'spell', el: 'fire', kx: 0, ky: 0, power: 0.8 });
             C.cutAt(W().map, Math.floor(x / 16), Math.floor(y / 16), 'burn');
           });
         }
@@ -109,7 +109,7 @@
       start(p) {
         const d = G.st.derive(S());
         G.fx.ring(p.x, p.y - 4, '#bfe8ff', 120, 0.6, 3); if (G.light) G.light.flare(p.x, p.y, 130, 3, '#bfe8ff');
-        for (const e of near(p, 125)) { C.damage(e, 4 * d.magMul, { src: 'spell', el: 'ice', kx: 0, ky: 0, power: 0 }); e.freezeT = Math.max(e.freezeT || 0, e.boss ? 1.2 : 3.5); G.fx.shards(e.x, e.y - 10, 10, '#e8f8ff'); }
+        for (const e of near(p, 125)) { C.damage(e, (4 + S().lv * 0.15) * d.magMul, { src: 'spell', el: 'ice', kx: 0, ky: 0, power: 0 }); e.freezeT = Math.max(e.freezeT || 0, e.boss ? 1.2 : 3.5); G.fx.shards(e.x, e.y - 10, 10, '#e8f8ff'); }
         sfx('ice'); p.spx.dur = 0.4;
       },
       update(p) { return p.spx.t >= p.spx.dur; }, draw: 'cast',
@@ -156,7 +156,7 @@
         list.forEach((e, i) => C.after(0.2 + i * 0.09, () => {
           if (e.dead) return;
           C.bolts.push({ x0: e.x + (Math.random() - 0.5) * 20, y0: e.y - 120, x1: e.x, y1: e.y - 6, t: 0 });
-          C.damage(e, 9 * d.magMul, { src: 'spell', el: 'bolt', stun: 2, kx: 0, ky: 0 }); G.fx.sparks(e.x, e.y - 6, 12, '#fff08a', 90); W().shake(3, 0.1); sfx('bolt');
+          C.damage(e, (9 + S().lv * 0.3) * d.magMul, { src: 'spell', el: 'bolt', stun: 2, kx: 0, ky: 0 }); G.fx.sparks(e.x, e.y - 6, 12, '#fff08a', 90); W().shake(3, 0.1); sfx('bolt');
         }));
         if (!list.length) C.bolts.push({ x0: p.x, y0: p.y - 120, x1: p.x + p.face[0] * 40, y1: p.y + p.face[1] * 30, t: 0 });
         p.spx.dur = 0.5;
@@ -223,7 +223,7 @@
           for (const e of list) {
             if (e.dead) continue;
             for (let k = 0; k < 16; k++) G.fx.part({ x: e.x + (Math.random() - 0.5) * 10, y: e.y, z: k * 8, vz: 0, g: 0, life: 0.45, col: '#fffbe8', size: 2, glow: true });
-            C.damage(e, (14 * d.magMul + 10) * (e.undead || e.dark ? 2 : 1), { src: 'spell', el: 'light', stun: 2.5, kx: 0, ky: 0, crit: true });
+            C.damage(e, ((14 + S().lv * 0.35) * d.magMul + 10) * (e.undead || e.dark ? 2 : 1), { src: 'spell', el: 'light', stun: 2.5, kx: 0, ky: 0, crit: true });
           }
         });
         p.spx.dur = 0.8;

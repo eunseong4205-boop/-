@@ -222,7 +222,7 @@
     const id = o.id;
     const w = o.w || 5, h = o.h || 4;
     G.ow.clear(m, o.tx - 1, o.ty - 1, w + 2, h + 3, m.hgt[m.i(o.tx + (w >> 1), o.ty + h)], null);
-    const door = G.build.placeBuilding(m, Object.assign({ style: o.style, tx: o.tx, ty: o.ty, w, h, to: o.room ? id : null, sign: o.sign, id: id, cond: o.cond, msg: o.msg }, o.special ? { special: o.special } : {}));
+    const door = G.build.placeBuilding(m, Object.assign({ style: o.style, tx: o.tx, ty: o.ty, w, h, to: o.room ? id : null, sign: o.sign, use: o.use, colors: o.colors, win: o.win, id: id, cond: o.cond, msg: o.msg }, o.special ? { special: o.special } : {}));
     // 문 앞 길
     const road = G.ow.towns[o.region] ? G.ow.towns[o.region].road : T.DIRT;
     for (let y = o.ty + h; y < o.ty + h + (o.path || 2); y++) { const i = m.i(door.dx, y); if (m.ter[i] !== T.STAIRS && m.ter[i] !== T.CLIFF) { m.ter[i] = o.pave || road || T.DIRT; m.obj[i] = 0; } }
@@ -241,7 +241,11 @@
 
   /* ───────── 아직 갈 수 없는 지역: 부드럽게 되돌린다 ───────── */
   ST.closedMsg = {};   // 지역 → 문구
-  ST.regionOpen = function (n) { return n === 'green' || !!S().flags['open:' + n]; };
+  ST.regionOpen = function (n) {
+    if (n === 'amber') return !!S().flags['open:blue'];      // 단풍 협곡: 레드를 지나면
+    if (n === 'mist') return !!S().flags['open:purple'];     // 안개 늪: 옐로를 지나면
+    return n === 'green' || !!S().flags['open:' + n];
+  };
   let lastOk = null, pushT = 0;
   ST.onTick = ST.onTick || [];
   function checkRegion(dt) {

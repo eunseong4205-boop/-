@@ -10,7 +10,7 @@
   const C = () => G.combat;
 
   const TIER_HP = [1, 1.8, 2.6, 3.4, 4.3, 5.2, 6.2, 7.2, 8.4, 9.6, 11, 12.5];
-  const tierOf = (reg) => ({ green: 0, red: 1, blue: 2, yellow: 3, purple: 4, rainbow: 5, white: 6, gray: 7, black: 8, colorful: 9, space: 10, planet: 11, dungeon: 0 })[reg] || 0;
+  const tierOf = (reg) => ({ green: 0, red: 1, blue: 2, yellow: 3, purple: 4, rainbow: 5, white: 6, gray: 7, black: 8, colorful: 9, mist: 6, amber: 3, space: 10, planet: 11, dungeon: 0 })[reg] || 0;
 
   /* ───────── 종류 ───────── */
   // hp: 기본 체력, atk: 하트 ¼칸, r: 맞는 반지름, h: 키, ai: 행동
@@ -314,7 +314,7 @@
       Object.assign(this, { foe: true, type, D, name: D.name, tier, ai: D.ai, speed: D.speed * (1 + tier * 0.03), r: D.r, h: D.h, weight: D.weight, fly: D.fly || false,
         undead: D.undead, dark: D.dark, weak: D.weak, resist: D.resist, el: D.el, mat: D.mat, big: D.big });
       this.maxHp = this.hp = Math.max(1, Math.round(D.hp * TIER_HP[Math.min(11, tier)] * (o && o.hpMul || 1) * (G.prog ? G.prog.diff().hp : 1)));
-      this.atk = D.atk + Math.floor(tier * 0.8);
+      this.atk = Math.round(D.atk * (1 + tier * 0.25));   // 지역 등급만큼 세게 (더하기가 아니라 곱하기)
       this.exp = Math.round(D.exp * (1 + tier * 0.9));
       this.gold = Math.round(D.gold * (1 + tier * 0.5));
       this.col = (o && o.col) || D.col;

@@ -24,15 +24,22 @@
     black: { wall: '#3a3448', wood: '#1a1626', roof: '#2a2440', roofK: 'gothic', trim: '#1a1626', door: '#2a1a2a', lamps: true },
     colorful: { wall: '#ffe8c8', wood: '#4a8ad8', roof: '#e85a4a', roofK: 'tile', trim: '#3ab86a', door: '#e8a040', chimney: true },
     space: { wall: '#8a98b0', wood: '#4a5468', roof: '#6a7890', roofK: 'metal', trim: '#3a4458', door: '#4ad8ff' },
+    mist: { wall: '#7a8a7e', wood: '#3a4a40', roof: '#4a6a4e', roofK: 'thatch', trim: '#2a3a32', door: '#4a3a2e', lamps: true },
+    amber: { wall: '#f0dcc0', wood: '#7a3a22', roof: '#c8582a', roofK: 'tile', trim: '#5a2a18', door: '#8a4a2a', chimney: true },
   };
   const cache = {};
   /** w, h: 바닥 칸 수. 그림은 폭 w*16, 높이 h*16 + 지붕 높이 */
   function building(style, w, h, o) {
     o = o || {};
-    const key = [style, w, h, o.sign || '', o.door === false ? 0 : 1, o.kind || '', o.win || '', o.colors ? JSON.stringify(o.colors) : ''].join('|');
+    const use = o.use || o.sign || null;
+    const vr = o.var == null ? 0 : o.var | 0;
+    const key = [style, w, h, o.sign || '', use || '', vr, o.door === false ? 0 : 1, o.kind || '', o.win || '', o.colors ? JSON.stringify(o.colors) : ''].join('|');
     if (cache[key]) return cache[key];
     const S = Object.assign({}, STYLE[style] || STYLE.green, o.colors || {});
-    const W = w * TS, wallH = S.tall ? 34 : 28, roofH = h * TS - wallH + (S.tall ? 26 : 14);
+    // 용도에 따라 겉모습이 다르다: 여관은 이층, 신전 · 도서관은 높고, 대장간은 굴뚝이 늘 있다
+    if (use === 'forge' || use === 'lab') S.chimney = true;
+    const two = use === 'inn' || use === 'church' || use === 'book';
+    const W = w * TS, wallH = (S.tall ? 34 : 28) + (two ? 14 : 0), roofH = Math.max(12, h * TS - wallH + (S.tall ? 26 : 14) + (two ? 10 : 0));
     const H = roofH + wallH;
     const b = X.brush(W, H + 2);
     const WL = R(S.wall), RF = R(S.roof), WD = R(S.wood);
@@ -61,10 +68,11 @@
       if (style === 'black' || style === 'purple') { b.rect(dx, H - dh, 12, 3, R(S.door)[1]); b.px(dx + 5, H - dh + 1, '#ffd86a'); }
     }
     // ── 창문 ──
-    const winY = wy + 8;
+    const winY = wy + 8 + (two ? 16 : 0);
     const wins = [];
     if (W >= 64) { wins.push(10, W - 20); if (W >= 96) wins.push(W / 2 - 30, W / 2 + 20); }
     else if (W >= 48) wins.push(6, W - 16);
+    if (two) for (const x0 of [10, W - 20, W / 2 - 5]) { if (W < 48 && x0 === W / 2 - 5) continue; const y2 = wy + 5; b.rect(x0 - 1, y2 - 1, 12, 10, S.trim); b.rect(x0, y2, 10, 8, use === 'church' ? '#a8c8ff' : '#ffe8a0'); b.rect(x0, y2, 10, 3, use === 'church' ? '#d8e8ff' : '#fff4c8'); b.vline(x0 + 4, y2, y2 + 7, S.trim); }
     for (const x0 of wins) {
       if (Math.abs(x0 + 5 - W / 2) < 12) continue;
       b.rect(x0 - 1, winY - 1, 12, 11, S.trim);
@@ -78,11 +86,13 @@
     roof(b, S, W, roofH + 2, wy, RF, WD, style);
     // ── 굴뚝 ──
     if (S.chimney && o.kind !== 'tent') { const cx = W - 22; b.rect(cx, 2, 8, roofH * 0.5, '#6a4a3a'); b.rect(cx - 1, 0, 10, 4, '#4a3a2a'); b.hline(cx, cx + 7, 4, '#8a6a5a'); }
+    // ── 용도별 겉모습 ──
+    facade(b, use, S, W, H, wy, wallH, roofH, dx, vr, style);
     // ── 가게 간판 ──
     if (o.sign) sign(b, o.sign, W, wy);
     if (S.lamps) { for (const x of [dx - 6, dx + 17]) { b.rect(x, H - 22, 3, 5, '#1a1626'); b.rect(x, H - 21, 3, 3, '#ffd86a'); } }
     const c = X.outline(b.put(), OUT);
-    cache[key] = { c, W, H, footH: h * TS, doorX: W >> 1 };
+    cache[key] = { c, W, H, footH: h * TS, doorX: W >> 1, chimney: !!(S.chimney && o.kind !== 'tent'), forge: use === 'forge' };
     return cache[key];
   }
   function roof(b, S, W, rh, wy, RF, WD, style) {
@@ -127,6 +137,58 @@
     b.hline(-2, W + 1, bottom, RF[0]); b.hline(-2, W + 1, bottom - 1, RF[1]);
     if (k === 'snow') for (let x = 2; x < W - 2; x += 7) b.vline(x, bottom + 1, bottom + 2 + (x % 3), '#e8f4ff');
     if (k === 'thatch') for (let x = 0; x < W; x += 3) b.px(x, bottom + 1, RF[1]);
+  }
+  /** 용도마다 멀리서도 알아보게: 차양 · 진열대 · 화덕 불 · 모루 · 종탑 · 기둥 · 첨탑 · 술통 · 톱니 · 꽃 상자 · 빨래줄 */
+  function facade(b, use, S, W, H, wy, wallH, roofH, dx, vr, style) {
+    const dr = H - 21;   // 문 윗줄 근처
+    if (use === 'shop') {
+      // 줄무늬 차양 (가게 색)
+      const aw = ['#d84a4a', '#fff4e8'], y0 = dr - 8;
+      for (let x = 3; x < W - 3; x++) { const c = aw[Math.floor(x / 6) % 2]; for (let y = y0; y < y0 + 6; y++) b.px(x, y, c); if (Math.floor(x / 3) % 2 === 0) b.px(x, y0 + 6, c); }
+      b.hline(3, W - 4, y0, '#8a2a2a');
+      // 진열대: 사과 · 빵 · 병
+      for (const sx of [5, W - 19]) { if (Math.abs(sx + 7 - W / 2) < 12) continue; b.rect(sx, H - 9, 14, 6, '#8a5a32'); b.hline(sx, sx + 13, H - 9, '#c8985a'); for (let k = 0; k < 4; k++) { const cx = sx + 2 + k * 3; b.px(cx, H - 11, ['#e84a4a', '#e8c048', '#6ad86a', '#e8904a'][k]); b.px(cx + 1, H - 11, ['#ff8a8a', '#fff0a8', '#a8f0a8', '#ffc08a'][k]); b.px(cx, H - 10, ['#b83a3a', '#c8a038', '#4aa84a', '#c8703a'][k]); } }
+    } else if (use === 'inn') {
+      // 이층 난간 · 문 옆 등불 · 문 위 작은 차양
+      b.hline(3, W - 4, wy + 15, S.trim); for (let x = 4; x < W - 4; x += 3) b.vline(x, wy + 15, wy + 18, S.trim); b.hline(3, W - 4, wy + 18, R(S.wood)[1]);
+      for (const lx of [dx - 5, dx + 15]) { b.vline(lx + 1, dr - 2, dr + 1, '#3a2a1a'); b.rect(lx, dr + 1, 3, 4, '#ffd86a'); b.px(lx + 1, dr + 2, '#fff8c8'); }
+      for (let x = dx - 2; x < dx + 14; x++) { b.px(x, dr - 4, R(S.roof)[2]); b.px(x, dr - 3, R(S.roof)[1]); }
+    } else if (use === 'forge') {
+      // 돌 아랫벽 · 화덕 불빛 창 · 모루
+      for (let y = H - 14; y < H - 3; y++) for (let x = 2; x < W - 2; x++) if (Math.abs(x - W / 2) > 7) { const r = Math.floor((y - H) / 4), off = r & 1 ? 3 : 0; b.px(x, y, (y % 4 === 0 || (x + off) % 6 === 0) ? '#4a4048' : '#7a7078'); }
+      const fx = W - 18; if (fx > dx + 14) { b.rect(fx, H - 20, 12, 10, '#2a1a14'); b.rect(fx + 1, H - 19, 10, 8, '#ff7a2a'); b.rect(fx + 2, H - 16, 8, 4, '#ffd06a'); b.hline(fx + 3, fx + 8, H - 13, '#fff4c8'); }
+      const ax = 4; b.rect(ax, H - 8, 10, 3, '#3a3a44'); b.rect(ax + 3, H - 5, 4, 3, '#2a2a34'); b.hline(ax - 1, ax + 10, H - 8, '#8a8a9a');
+      b.rect(W - 23, 0, 10, 3, '#ff9a4a');   // 굴뚝 불씨
+    } else if (use === 'magic') {
+      // 지붕 위 첨탑과 별 · 보랏빛 창
+      const tx = W / 2, top = 0; for (let y = top; y < 18; y++) { const half = Math.max(1, Math.floor(y / 3)); for (let x = tx - half; x <= tx + half; x++) b.px(x, y + 2, x < tx ? '#8a5ad8' : '#5a3a9a'); }
+      b.px(tx, 0, '#fff0a8'); b.px(tx - 1, 1, '#ffd84a'); b.px(tx + 1, 1, '#ffd84a'); b.px(tx, 1, '#ffffff'); b.px(tx, 2, '#ffd84a');
+      for (let k = 0; k < 6; k++) b.px(4 + ((k * 13) % (W - 8)), wy + 3 + (k % 3), '#d8b0ff');
+    } else if (use === 'bar') {
+      // 술통 둘 · 처마 줄전구
+      for (const bx of [3, W - 13]) { if (Math.abs(bx + 5 - W / 2) < 10) continue; b.ellipse(bx + 5, H - 8, 5, 5, '#8a5a32'); b.hline(bx, bx + 10, H - 10, '#4a4a5a'); b.hline(bx, bx + 10, H - 6, '#4a4a5a'); b.ellipse(bx + 5, H - 12, 4, 1.5, '#a8784a'); }
+      for (let x = 3; x < W - 3; x += 5) b.px(x, wy + 3 + (Math.floor(x / 5) % 2), ['#ffd84a', '#ff8a6a', '#8ad8ff', '#a8f08a'][Math.floor(x / 5) % 4]);
+    } else if (use === 'church') {
+      // 종탑 · 둥근 장미창
+      const tw = 16, tx = Math.round(W / 2 - tw / 2);
+      b.rect(tx, 0, tw, 26, R(S.wall)[2]); b.rect(tx, 0, tw, 3, R(S.roof)[1]); b.rect(tx + 4, 7, 8, 10, '#2a2238'); b.ellipse(tx + 8, 12, 3, 3, '#e8c048'); b.px(tx + 8, 15, '#a8802a');
+      b.vline(tx + 8, -2, 1, '#e8e0c8'); b.hline(tx + 6, tx + 10, -1, '#e8e0c8');
+      b.ellipse(W / 2, wy + 7, 5, 5, '#6a8ac8'); b.ellipse(W / 2, wy + 7, 3, 3, '#e8c8ff'); b.px(W / 2, wy + 7, '#ffffff');
+    } else if (use === 'book') {
+      // 기둥 넷 · 삼각 박공
+      for (const cx of [4, W / 4 + 2, W * 3 / 4 - 4, W - 8]) { if (Math.abs(cx + 2 - W / 2) < 9) continue; b.rect(cx, wy + 2, 4, wallH - 5, '#f0ece0'); b.vline(cx, wy + 2, H - 4, '#c8c0b0'); b.rect(cx - 1, wy + 2, 6, 2, '#d8d0c0'); b.rect(cx - 1, H - 5, 6, 2, '#d8d0c0'); }
+      for (let y = 0; y < 8; y++) b.hline(Math.round(W / 2 - y * 2.5), Math.round(W / 2 + y * 2.5), wy - 8 + y, y === 7 ? '#c8c0b0' : '#e8e0d0');
+    } else if (use === 'lab') {
+      // 톱니 · 관
+      b.ellipse(W - 12, wy + 7, 5, 5, '#8a8a9a'); b.ellipse(W - 12, wy + 7, 2, 2, '#4a4a5a'); for (let k = 0; k < 8; k++) { const a = k * Math.PI / 4; b.px(Math.round(W - 12 + Math.cos(a) * 6), Math.round(wy + 7 + Math.sin(a) * 6), '#6a6a7a'); }
+      b.hline(3, W - 4, wy + 16, '#6a8a9a'); b.vline(5, wy + 16, H - 4, '#6a8a9a');
+    } else if (!use) {
+      // 여느 집: 칸마다 조금씩 다르게 — 꽃 상자 · 빨래줄 · 장작 · 덧창
+      const k = vr % 4;
+      if (k === 1 && W >= 64) { const y = wy + 4; b.line(4, y, W - 5, y + 2, '#c8b890'); for (const [x, c] of [[12, '#e8e8f0'], [20, '#ff8aa8'], [W - 22, '#8ac8ff'], [W - 14, '#f4e0a0']]) b.rect(x, y + 1 + Math.round((x / W) * 2), 5, 6, c); }
+      else if (k === 2) { const sx = W - 14; for (let r = 0; r < 3; r++) b.rect(sx, H - 6 - r * 3, 10 - r * 2 + (r & 1), 3, r % 2 ? '#a8784a' : '#8a5a32'); }
+      else if (k === 3) { for (const x0 of [6, W - 16]) { if (Math.abs(x0 + 5 - W / 2) < 12) continue; b.rect(x0 - 3, wy + 7, 2, 11, R(S.wood)[1]); b.rect(x0 + 11, wy + 7, 2, 11, R(S.wood)[1]); } }
+    }
   }
   function sign(b, kind, W, wy) {
     const x = W - 20, y = wy - 3;
@@ -237,6 +299,7 @@
   }
   /** 발자리 막기 + 문 칸 뚫기 + 창문 불빛 */
   function placeBuilding(m, o) {
+    if (o.var == null) o.var = (o.tx * 7 + o.ty * 13) & 255;
     const art = o.special ? SPECIAL[o.special](o) : building(o.style, o.w, o.h, o);
     const w = o.w || Math.ceil(art.W / TS), h = o.h || 1;
     if (o.solid !== false && !(art.solid === false)) for (let y = o.ty; y < o.ty + h; y++) for (let x = o.tx; x < o.tx + w; x++) if (m.inb(x, y)) { m.solidExtra[m.i(x, y)] = 1; m.obj[m.i(x, y)] = 0; }
@@ -249,7 +312,7 @@
       if (wide) for (let x = o.tx; x < o.tx + w; x++) if (Math.abs(x - dx) <= 1) m.solidExtra[m.i(x, dy)] = 0;
       if (o.to) m.warps.push({ x: wide ? Math.max(o.tx, dx - 1) : dx, y: dy, w: wide ? Math.min(3, w) : 1, h: 1, to: o.to, tx: o.toX, ty: o.toY, dir: 'up', id: o.id, cond: o.cond, msg: o.msg });
     }
-    m.buildings.push(Object.assign({ x: o.tx, y: o.ty, w, h, doorX: dx, doorY: dy + 1 }, o));
+    m.buildings.push(Object.assign({ x: o.tx, y: o.ty, w, h, doorX: dx, doorY: dy + 1, artW: art.W, artH: art.H, chimney: !!art.chimney, forge: !!art.forge }, o));
     if (o.style && !o.special && o.lit !== false) { m.lights.push({ x: o.tx * TS + art.W / 2, y: (o.ty + h) * TS - 10, r: 34, warm: 'rgba(255,190,110,0.16)' }); }
     return { dx, dy };
   }

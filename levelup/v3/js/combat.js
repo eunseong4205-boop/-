@@ -611,21 +611,21 @@
   function castSpell(p, id, d) {
     const a = U.angle(p.face[0], p.face[1]);
     const mm = d.magMul;
-    if (id === 'fire') { shoot({ kind: 'fire', x: p.x + Math.cos(a) * 10, y: p.y - 2 + Math.sin(a) * 8, vx: Math.cos(a) * 210, vy: Math.sin(a) * 210, dmg: 4 * mm + S().lv * 0.1, src: 'spell', el: 'fire', r: 4, life: 0.8, trail: '#ffb04a', explode: 0.6 }); sfx('fire'); }
-    else if (id === 'ice') { shoot({ kind: 'ice', x: p.x + Math.cos(a) * 10, y: p.y - 2 + Math.sin(a) * 8, vx: Math.cos(a) * 240, vy: Math.sin(a) * 240, dmg: 3 * mm, src: 'spell', el: 'ice', r: 4, life: 0.7, trail: '#e8f8ff', pierce: 2, ghost: false }); sfx('ice'); }
+    if (id === 'fire') { shoot({ kind: 'fire', x: p.x + Math.cos(a) * 10, y: p.y - 2 + Math.sin(a) * 8, vx: Math.cos(a) * 210, vy: Math.sin(a) * 210, dmg: (4 + S().lv * 0.25) * mm, src: 'spell', el: 'fire', r: 4, life: 0.8, trail: '#ffb04a', explode: 0.6 }); sfx('fire'); }
+    else if (id === 'ice') { shoot({ kind: 'ice', x: p.x + Math.cos(a) * 10, y: p.y - 2 + Math.sin(a) * 8, vx: Math.cos(a) * 240, vy: Math.sin(a) * 240, dmg: (3 + S().lv * 0.2) * mm, src: 'spell', el: 'ice', r: 4, life: 0.7, trail: '#e8f8ff', pierce: 2, ghost: false }); sfx('ice'); }
     else if (id === 'bolt') {
       const list = foes().filter((e) => U.dist(p.x, p.y, e.x, e.y) < 110).sort((a2, b2) => U.dist(p.x, p.y, a2.x, a2.y) - U.dist(p.x, p.y, b2.x, b2.y)).slice(0, 3);
       let fx = p.x, fy = p.y - 10;
-      for (const e of list) { C.bolts.push({ x0: fx, y0: fy, x1: e.x, y1: e.y - 8, t: 0 }); fx = e.x; fy = e.y - 8; damage(e, 5 * mm, { src: 'spell', el: 'bolt', stun: 1.2, kx: 0, ky: 0 }); }
+      for (const e of list) { C.bolts.push({ x0: fx, y0: fy, x1: e.x, y1: e.y - 8, t: 0 }); fx = e.x; fy = e.y - 8; damage(e, (5 + S().lv * 0.22) * mm, { src: 'spell', el: 'bolt', stun: 1.2, kx: 0, ky: 0 }); }
       if (!list.length) C.bolts.push({ x0: p.x, y0: p.y - 40, x1: p.x + Math.cos(a) * 40, y1: p.y + Math.sin(a) * 30, t: 0 });
       W().shake(3, 0.2); sfx('bolt'); G.fx.float(p.x, p.y - 30, '번개!', '#ffe066');
     } else if (id === 'wind') {
-      for (const off of [-0.35, 0, 0.35]) shoot({ kind: 'wind', x: p.x + Math.cos(a + off) * 10, y: p.y - 2 + Math.sin(a + off) * 8, vx: Math.cos(a + off) * 250, vy: Math.sin(a + off) * 250, dmg: 2.5 * mm + S().lv * 0.06, src: 'spell', el: 'wind', r: 5, life: 0.5, pierce: 3, power: 2.4, trail: '#b8ffd8', ghost: true, drawFn(g, x, y) { const an = Math.atan2(this.vy, this.vx); g.save(); g.translate(x, y); g.rotate(an); g.strokeStyle = 'rgba(200,255,220,0.9)'; g.lineWidth = 2; g.beginPath(); g.arc(-3, 0, 6, -1.2, 1.2); g.stroke(); g.strokeStyle = 'rgba(255,255,255,0.7)'; g.lineWidth = 1; g.beginPath(); g.arc(-5, 0, 6, -1, 1); g.stroke(); g.restore(); } });
+      for (const off of [-0.35, 0, 0.35]) shoot({ kind: 'wind', x: p.x + Math.cos(a + off) * 10, y: p.y - 2 + Math.sin(a + off) * 8, vx: Math.cos(a + off) * 250, vy: Math.sin(a + off) * 250, dmg: (2.5 + S().lv * 0.15) * mm, src: 'spell', el: 'wind', r: 5, life: 0.5, pierce: 3, power: 2.4, trail: '#b8ffd8', ghost: true, drawFn(g, x, y) { const an = Math.atan2(this.vy, this.vx); g.save(); g.translate(x, y); g.rotate(an); g.strokeStyle = 'rgba(200,255,220,0.9)'; g.lineWidth = 2; g.beginPath(); g.arc(-3, 0, 6, -1.2, 1.2); g.stroke(); g.strokeStyle = 'rgba(255,255,255,0.7)'; g.lineWidth = 1; g.beginPath(); g.arc(-5, 0, 6, -1, 1); g.stroke(); g.restore(); } });
       sfx('swing'); G.fx.leaves && G.fx.leaves(p.x, p.y - 6, 4);
     } else if (id === 'quake') {
       W().shake(5, 0.4); sfx('rumble'); G.fx.ring(p.x, p.y - 2, '#d8a868', 70, 0.45, 3); G.fx.dust(p.x, p.y, 18);
       for (let i = 0; i < 14; i++) { const a2 = Math.random() * Math.PI * 2, r2 = 10 + Math.random() * 60; G.fx.part({ x: p.x + Math.cos(a2) * r2, y: p.y + Math.sin(a2) * r2 * 0.7, z: 0, vz: 60 + Math.random() * 60, g: 260, life: 0.6, col: Math.random() < 0.5 ? '#a8784a' : '#d8b080', size: 2 }); }
-      for (const e of foes()) { const dd = U.dist(p.x, p.y, e.x, e.y); if (dd < 72 && !e.fly) { const [nx, ny] = U.norm(e.x - p.x, e.y - p.y); damage(e, 6 * mm + S().lv * 0.1, { src: 'spell', el: 'earth', stun: 1.6, kx: nx, ky: ny, power: 1.4 }); } }
+      for (const e of foes()) { const dd = U.dist(p.x, p.y, e.x, e.y); if (dd < 72 && !e.fly) { const [nx, ny] = U.norm(e.x - p.x, e.y - p.y); damage(e, (6 + S().lv * 0.25) * mm, { src: 'spell', el: 'earth', stun: 1.6, kx: nx, ky: ny, power: 1.4 }); } }
     } else if (id === 'meteor') {
       sfx('cast'); W().shake(2, 0.3);
       const targets = foes().filter((e) => U.dist(p.x, p.y, e.x, e.y) < 160).sort((a2, b2) => U.dist(p.x, p.y, a2.x, a2.y) - U.dist(p.x, p.y, b2.x, b2.y)).slice(0, 5);
@@ -634,7 +634,7 @@
         const tx = t ? t.x + (Math.random() - 0.5) * 12 : p.x + Math.cos(a) * (40 + i * 18) + (Math.random() - 0.5) * 30, ty = t ? t.y : p.y + Math.sin(a) * (40 + i * 18) + (Math.random() - 0.5) * 30;
         const dly = 0.35 + i * 0.16;
         C.marks.push({ x: tx, y: ty, t: 0, life: dly, r: 16, col: '#ff7a4a' });
-        after(dly, () => { explode(tx, ty - 4, 'player', 1.3); for (const e of foes()) if (U.dist(tx, ty, e.x, e.y) < 30) damage(e, 12 * mm, { src: 'spell', el: 'fire', kx: 0, ky: 0, power: 1.5, stun: 0.6 }); W().shake(4, 0.2); G.fx.shards(tx, ty - 8, 14, '#ff9a5a'); });
+        after(dly, () => { explode(tx, ty - 4, 'player', 1.3); for (const e of foes()) if (U.dist(tx, ty, e.x, e.y) < 30) damage(e, (12 + S().lv * 0.35) * mm, { src: 'spell', el: 'fire', kx: 0, ky: 0, power: 1.5, stun: 0.6 }); W().shake(4, 0.2); G.fx.shards(tx, ty - 8, 14, '#ff9a5a'); });
       }
     } else if (id === 'heal') {
       G.fx.glow(p.x, p.y - 8, '#8ae0a0', 24, 40); sfx('heal');
@@ -642,7 +642,7 @@
     } else if (id === 'light') {
       G.fx.ring(p.x, p.y - 8, '#ffffff', 90, 0.6, 3); G.fx.glow(p.x, p.y - 8, '#ffffff', 40, 60); sfx('white');
       if (G.light) G.light.flare(p.x, p.y, 140, 6);
-      for (const e of foes()) if (U.dist(p.x, p.y, e.x, e.y) < 110) { if (e.undead || e.dark) damage(e, 6 * mm, { src: 'spell', el: 'light', stun: 2.5, kx: 0, ky: 0 }); else e.stunT = Math.max(e.stunT || 0, 0.8); }
+      for (const e of foes()) if (U.dist(p.x, p.y, e.x, e.y) < 110) { if (e.undead || e.dark) damage(e, (6 + S().lv * 0.2) * mm, { src: 'spell', el: 'light', stun: 2.5, kx: 0, ky: 0 }); else e.stunT = Math.max(e.stunT || 0, 0.8); }
       for (const e of W().ents) if (e.reveal && U.dist(p.x, p.y, e.x, e.y) < 120) e.reveal();
     }
   }
