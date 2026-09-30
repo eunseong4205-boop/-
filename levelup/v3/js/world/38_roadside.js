@@ -165,8 +165,8 @@
         case 'lookout': ground(5, 4, T.GRAVEL); G.build.placeBuilding(m, { special: 'tower', tx: x - 1, ty: y - 2, w: 3, h: 2, col: '#8a7a6a', door: false }); break;
         case 'grove': ground(6, 5, null); put(0, -2, O.BIGTREE); for (const [dx, dy] of [[-2, 1], [2, 1], [-1, 2], [1, 2], [-3, 0], [3, 0]]) put(dx, dy, O.FLOWER); break;
         case 'stones': ground(6, 5, null); for (const [dx, dy] of [[-3, 0], [3, 0], [-2, -2], [2, -2], [-2, 2], [2, 2]]) put(dx, dy, O.PILLAR); break;
-        case 'crystal': for (const [dx, dy] of [[-2, -1], [2, -1], [0, -2], [-1, 1], [2, 1]]) put(dx, dy, O.CRYSTAL); put(0, 0, 0); break;
-        case 'grave': put(0, -1, O.GRAVE); put(-1, 0, O.FLOWER); put(1, 0, O.FLOWER); break;
+        case 'crystal': ground(5, 5, null); for (const [dx, dy] of [[-2, -1], [2, -1], [0, -2], [-2, 1], [2, 1]]) put(dx, dy, O.CRYSTAL); put(0, 0, 0); break;
+        case 'grave': ground(3, 3, null); put(0, -1, O.GRAVE); put(-1, 0, O.FLOWER); put(1, 0, O.FLOWER); break;
         default: break;
       }
     }

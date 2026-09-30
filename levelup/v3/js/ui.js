@@ -513,6 +513,10 @@
     body.appendChild(row({ name: '글자 속도', v: ['', '느리게', '보통', '빠르게'][st.textSpeed || 2], onClick: () => { st.textSpeed = ((st.textSpeed || 2) % 3) + 1; refresh(); } }));
     sec(body, '기록');
     body.appendChild(row({ name: '지금 기록하기', desc: '빛의 이정표와 침대에서 쉬어도 기록된다.', onClick: () => { if (G.script.running || G.script.busy || !G.st.save(s)) { toast('지금은 기록할 수 없다 — 벌어지고 있는 일을 먼저 끝내자', 'bad'); return; } toast('기록했다', 'good'); sfx('save'); } }));
+    body.appendChild(row({ name: '빠져나오기', desc: '어딘가에 끼었거나 갇혔을 때: 가까운 트인 곳으로 — 멀쩡한 자리면 이 지역에 들어온 곳으로 돌아간다.', onClick: () => {
+      if (G.script.running || G.script.busy || !G.sanity) { toast('지금은 할 수 없다 — 벌어지고 있는 일을 먼저 끝내자', 'bad'); return; }
+      closeModal(); G.script.run(async (c) => { const ok = await G.sanity.escape(c); c.toast(ok ? '몸을 빼냈다' : '움직일 곳을 찾지 못했다', ok ? 'good' : 'bad'); });
+    } }));
     body.appendChild(row({ name: '타이틀로', desc: '기록하지 않은 것은 사라진다.', onClick: () => { closeModal(); G.game.toTitle(); } }));
     sec(body, '조작');
     const k = document.createElement('div'); k.className = 'keys card';

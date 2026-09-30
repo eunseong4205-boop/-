@@ -40,9 +40,9 @@
   OW.hooks.push((m) => {
     ST.house(m, { id: 'g_work', region: 'gray', style: 'gray', tx: X0 + 20, ty: Y0 + 2, w: 8, h: 5, name: '볼트의 공방', sign: 'shop', colors: { roof: '#4a5058' },
       room: { w: 22, h: 13, floor: T.METAL, music: 'gray', furn: [['desk', 4, 3, { text: '설계대. 징수탑 단면도 위에 새 도면이 겹쳐 있다. 제목: 「천년포」. 여백에 작은 글씨로 계산식이 빼곡하다.' }], ['gears', 9, 2], ['gears', 12, 2], ['anvil', 16, 4], ['console', 19, 3, { text: '제어판. 녹색 불 하나가 느리게 깜빡인다. 「N-07 : 정상」.' }], ['crate', 2, 9], ['crate', 3, 9], ['barrel', 19, 9], ['shelf', 1, 2], ['clock', 14, 1, { wall: true, text: '벽시계. 9년 전 가을 세 시 십 분에 멈춰 있다. 태엽은 멀쩡하다.' }], ['desk', 7, 8, { verb: '서랍을 연다', text: async (c) => drawer(c) }]] } });
-    ST.house(m, { id: 'g_inn', region: 'gray', style: 'gray', tx: X0 + 3, ty: Y0 + 3, w: 6, h: 4, name: '잿빛 모루 여관', sign: 'inn',
+    ST.house(m, { id: 'gy_inn', region: 'gray', style: 'gray', tx: X0 + 3, ty: Y0 + 3, w: 6, h: 4, name: '잿빛 모루 여관', sign: 'inn',
       room: { w: 14, h: 10, floor: T.WOOD, music: 'calm', furn: [['counter', 2, 3, { v: 3, bw: 44, bh: 10 }], ['stove', 8, 2], ['table', 8, 6], ['chair', 7, 7], ['chair', 10, 7], ['bed2', 12, 3, { v: '#7a7a82' }], ['bed2', 12, 6, { v: '#8a8a92' }]] } });
-    ST.house(m, { id: 'g_shop', region: 'gray', style: 'gray', tx: X0 + 3, ty: Y0 + 14, w: 5, h: 4, name: '고철 시장', sign: 'shop',
+    ST.house(m, { id: 'gy_shop', region: 'gray', style: 'gray', tx: X0 + 3, ty: Y0 + 14, w: 5, h: 4, name: '고철 시장', sign: 'shop',
       room: { w: 12, h: 9, floor: T.METAL, music: 'gray', furn: [['counter', 4, 3, { v: 3, bw: 44, bh: 10 }], ['gears', 1, 2], ['gears', 10, 2], ['crate', 2, 6], ['barrel', 9, 6]] } });
     ST.house(m, { id: 'g_fact', region: 'gray', style: 'gray', tx: FACT.x, ty: FACT.y, w: 9, h: 5, name: '폐공장', colors: { roof: '#3a3e44', wall: '#6a6a70' }, win: 'dark',
       room: { w: 24, h: 16, floor: T.METAL, music: 'dread', furn: [['gears', 3, 2], ['gears', 20, 2], ['console', 11, 2, { text: '「MK-7 시험 운전 기록 — 990년 가을 이후 중단」' }], ['crate', 2, 13], ['crate', 21, 13], ['barrel', 3, 13], ['barrel', 20, 13]] } });
@@ -384,8 +384,8 @@
   }
 
   /* ───────── 주민 · 가게 · 부탁 ───────── */
-  ST.folk('g_shop', { name: '고철 시장 주인', folk: 'mech', x: 5, y: 3, lines: { c8: async (c) => { const k = await c.choice('쇳덩이면 뭐든 판다. 톱니 빼고. 톱니는 러스크한테.', ['물건을 산다', '괜찮아'], { name: '고철 시장 주인' }); if (k === 0) await c.shop('gray'); } } });
-  ST.folk('g_inn', { name: '모루 여관 주인', folk: 'smith', x: 4, y: 3, lines: { c8: async (c) => { const k = await c.choice('회색 빵, 회색 수프, 회색 침대. 색은 없어도 따뜻하다. (40골드)', ['쉰다', '괜찮아요'], { name: '모루 여관 주인' }); if (k === 0) { if (S().gold >= 40) c.gold(-40); await c.rest(); } } } });
+  ST.folk('gy_shop', { name: '고철 시장 주인', folk: 'mech', x: 5, y: 3, lines: { c8: async (c) => { const k = await c.choice('쇳덩이면 뭐든 판다. 톱니 빼고. 톱니는 러스크한테.', ['물건을 산다', '괜찮아'], { name: '고철 시장 주인' }); if (k === 0) await c.shop('gray'); } } });
+  ST.folk('gy_inn', { name: '모루 여관 주인', folk: 'smith', x: 4, y: 3, lines: { c8: async (c) => { const k = await c.choice('회색 빵, 회색 수프, 회색 침대. 색은 없어도 따뜻하다. (40골드)', ['쉰다', '괜찮아요'], { name: '모루 여관 주인' }); if (k === 0) { if (S().gold >= 40) c.gold(-40); await c.rest(); } } } });
   ST.person('world', { name: '고철상 러스크', folk: 'mech', x: X0 + 24, y: Y0 + 14, dir: 'down', mark: () => (!f('rusk_done') ? '?' : null), talk: async (c, n) => {
     const got = S().gears || 0;
     if (f('rusk_done')) { await c.say(n, '고철 의자 여덟 개. 이제 여관에 손님이 앉을 데가 있어. 색은 없지만 튼튼해.', { face: 'happy' }); return; }

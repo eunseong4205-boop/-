@@ -727,6 +727,7 @@
       if ((s.worldVer || 2) < OW.VER) {
         const mv = (o) => { if (o && o.map === 'world' && o.x != null) { const [X, Y] = fwd((o.x - 8) / TS, (o.y - 12) / TS); o.x = Math.round(X) * TS + 8; o.y = Math.round(Y) * TS + 12; } };
         mv(s); mv(s.respawn);
+        if (s.lastWorld && s.lastWorld.x != null) { const [X, Y] = fwd(s.lastWorld.x, s.lastWorld.y); s.lastWorld.x = X; s.lastWorld.y = Y; }
         if (s.flags) delete s.flags['fog:world'];
         s.worldVer = OW.VER;
       }

@@ -403,7 +403,7 @@
   const MAPS = {};
   const built = {};
   /** 지도 정의: build()는 GameMap을 돌려준다. ents(m)는 들어설 때마다 존재를 만든다 */
-  function def(id, o) { MAPS[id] = Object.assign({ id }, o); }
+  function def(id, o) { if (MAPS[id] && !o.replace) console.warn('지도 id가 겹친다:', id); MAPS[id] = Object.assign({ id }, o); }
   function get(id) {
     if (built[id]) return built[id];
     let D = MAPS[id];

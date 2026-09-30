@@ -140,7 +140,7 @@
       room: { w: 20, h: 13, floor: T.RUG, music: 'rainbow', rug: [5, 4, 10, 6], furn: [['bench', 3, 10], ['bench', 7, 10], ['bench', 12, 10], ['bench', 16, 10], ['barrel', 1, 3], ['crate', 18, 3], ['lamp', 4, 3], ['lamp', 15, 3], ['painting', 9, 1, { wall: true, v: '#e8465a', text: '서커스 포스터. 「광대 롤로의 무지개 곡예! 색이 없는 광대가 색을 보여 드립니다」' }]] } });
     ST.house(m, { id: 'r_hall', region: 'rainbow', style: 'rainbow', tx: X0 + 26, ty: Y0 + 1, w: 7, h: 4, name: '천년제 위원회', sign: 'bar',
       room: { w: 16, h: 11, floor: T.CARPET, music: 'rainbow', rug: [5, 4, 6, 4], furn: [['desk', 7, 3, { text: '크로마 위원장의 책상. 봉헌식 순서표. 맨 아래 줄: 「흰빛의 손님 — 불씨 점화」.' }], ['shelf', 1, 2], ['shelf', 14, 2], ['table', 3, 7], ['chair', 2, 8], ['chair', 5, 8], ['plant', 1, 9], ['plant', 14, 9], ['painting', 11, 1, { wall: true, v: '#ffb84a', text: '천 년 전 아우룸의 초상. 금빛 머리 소년이 불씨를 들고 있다. 소년의 눈이 이상하게 슬프다.' }]] } });
-    ST.house(m, { id: 'r_inn', region: 'rainbow', style: 'rainbow', tx: X0 + 2, ty: Y0 + 16, w: 6, h: 4, name: '구름 베개 여관', sign: 'inn',
+    ST.house(m, { id: 'rb_inn', region: 'rainbow', style: 'rainbow', tx: X0 + 2, ty: Y0 + 16, w: 6, h: 4, name: '구름 베개 여관', sign: 'inn',
       room: { w: 14, h: 10, floor: T.WOOD, music: 'calm', rug: [4, 5, 6, 3], furn: [['counter', 2, 3, { v: 3, bw: 44, bh: 10 }], ['table', 8, 5], ['chair', 7, 6], ['chair', 10, 6], ['bed2', 12, 3, { v: '#ff8ab0' }], ['bed2', 12, 6, { v: '#8ab8ff' }], ['plant', 1, 8]] } });
     ST.house(m, { id: 'r_shop', region: 'rainbow', style: 'rainbow', tx: X0 + 10, ty: Y0 + 17, w: 5, h: 4, name: '구름 잡화', sign: 'shop',
       room: { w: 12, h: 9, floor: T.WOOD, music: 'rainbow', furn: [['counter', 4, 3, { v: 3, bw: 44, bh: 10 }], ['shelf', 1, 2], ['shelf', 10, 2], ['crate', 2, 6], ['barrel', 9, 6]] } });
@@ -186,7 +186,9 @@
     Wd.add(new P.Waystone({ x: px(TEMPLE.x + 7), y: py(TEMPLE.y + 3), wid: 'w_temple', name: '구름 신전' }));
     Wd.add(new P.Sign({ x: px(RX(165)), y: py(RY(26)), text: '천년제 — 제1000회\n「천 년 전 오늘, 흰빛이 전쟁을 끝냈다」\n봉헌식: 축제 마지막 밤, 무지개 기둥 앞' }));
     Wd.add(new P.Sign({ x: px(TEMPLE.x + 6), y: py(TEMPLE.y + 2), text: '구름 신전\n「바람을 거스르지 마라. 바람에 실려라.」' }));
-    for (const bo of BOOTHS) Wd.add(new P.Sign({ x: px(bo.tx + 1), y: py(bo.ty + 1) + 2, text: bo.name + ' 노점 — 천년제 도장 모으기\n「일곱 빛깔 도장을 모두 모으면 위원회에서 상을 드립니다」' }));
+    // 노점 팻말: 노점 앞이 막혔으면(투기장 담 · 집) 위나 옆 빈칸에
+    const signAt = (bo) => [[bo.tx + 1, bo.ty + 1, 2], [bo.tx + 1, bo.ty - 1, 0], [bo.tx - 1, bo.ty, 0], [bo.tx + 3, bo.ty + 1, 2]].find(([x, y]) => m.inb(x, y) && !m.blocked(x, y)) || [bo.tx + 1, bo.ty + 1, 2];
+    for (const bo of BOOTHS) Wd.add(new P.Sign({ x: px(signAt(bo)[0]), y: py(signAt(bo)[1]) + signAt(bo)[2], text: bo.name + ' 노점 — 천년제 도장 모으기\n「일곱 빛깔 도장을 모두 모으면 위원회에서 상을 드립니다」' }));
     if (!f('c6_done')) {
       const cols = [[155, 29, 161, 26], [161, 26, 174, 26], [174, 26, 180, 29], [155, 33, 161, 34], [161, 34, 174, 34], [174, 34, 180, 33]].map(([a, b2, c2, d]) => [RX(a), RY(b2), RX(c2), RY(d)]);
       cols.forEach(([a, b2, c2, d], i) => Wd.add(new Bunting({ ax: px(a), ay: py(b2), bx: px(c2), by: py(d), x: px((a + c2) / 2), seed: i })));
@@ -548,7 +550,7 @@
   ST.folk('world', { name: '축제 손님', folk: 'oldw', x: RX(172), y: RY(29), wander: 20, when: festival, lines: { c6: ['나는 구백구십 회 천년제 때도 왔어. 농담이야. 그땐 없었지. 그래도 세 번은 왔어.', '봉헌식 다음 날은 다들 좀 피곤해해. 축제라서 그런가 봐.'] } });
   ST.folk('world', { name: '위원회 일꾼', folk: 'farmer', x: RX(183), y: RY(24), when: festival, lines: { c6: '기둥 고리 일곱 개에 기름칠하느라 죽겠어. 기름이 아니라 빛을 먹는 기둥인데 왜 기름칠을 하냐고? 나도 몰라.' } });
   ST.folk('r_shop', { name: '구름 잡화 주인', folk: 'clown', x: 5, y: 3, lines: { c6: async (c) => { const k = await c.choice('어서 와요! 솜사탕, 물약, 바람 깃털!', ['물건을 산다', '괜찮아요'], { name: '구름 잡화 주인' }); if (k === 0) await c.shop('rainbow'); } } });
-  ST.folk('r_inn', { name: '구름 베개 주인', folk: 'oldw', x: 4, y: 3, lines: { c6: async (c) => { const k = await c.choice('구름으로 속을 채운 베개예요. 꿈을 안 꿔요. (50골드)', ['쉰다', '괜찮아요'], { name: '구름 베개 주인' }); if (k === 0) { if (S().gold >= 50) c.gold(-50); await c.rest(); } } } });
+  ST.folk('rb_inn', { name: '구름 베개 주인', folk: 'oldw', x: 4, y: 3, lines: { c6: async (c) => { const k = await c.choice('구름으로 속을 채운 베개예요. 꿈을 안 꿔요. (50골드)', ['쉰다', '괜찮아요'], { name: '구름 베개 주인' }); if (k === 0) { if (S().gold >= 50) c.gold(-50); await c.rest(); } } } });
   ST.person('world', { id: 'nube', x: RX(167), y: RY(39), dir: 'left', when: () => f('ch:c6'), talk: async (c) => {
     const k = await c.choice('우우웅. 어디로 가겠소?', ['퍼플 — 해 질 녘의 숲', '그냥 쓰다듬는다', '아무 데도'], { who: 'nube', name: '누베' });
     if (k === 0) { await c.fade(true, { sec: 0.6 }); G.game.goto('world', px(OW.towns.purple.x + 16), py(OW.towns.purple.y + 5), 'down'); await c.fade(false, { sec: 0.6 }); }

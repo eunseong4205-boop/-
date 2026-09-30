@@ -48,6 +48,8 @@
     // 부두: 만(灣) 쪽으로 다리를 낸다
     for (let y = Y0 + 20; y < Y0 + 30; y++) for (const x of [X0 + 17, X0 + 18]) { const i = m.i(x, y); if (m.inb(x, y) && (m.ter[i] === T.DEEP || m.ter[i] === T.WATER || m.ter[i] === T.SAND)) { m.ter[i] = T.BRIDGE; m.obj[i] = 0; } }
     for (let x = X0 + 12; x < X0 + 24; x++) { const i = m.i(x, Y0 + 26); if (m.ter[i] === T.DEEP || m.ter[i] === T.WATER) m.ter[i] = T.BRIDGE; }
+    // 넓어진 대륙에서 물가가 부두 머리보다 위로 올라왔다: 뭍에 닿을 때까지 다리를 잇는다
+    for (let y = Y0 + 19; y > Y0 + 8; y--) { let any = false; for (const x of [X0 + 17, X0 + 18]) { const i = m.i(x, y); if (m.ter[i] === T.DEEP || m.ter[i] === T.WATER) { m.ter[i] = T.BRIDGE; m.obj[i] = 0; m.hgt[i] = 0; any = true; } } if (!any) break; }
     // 해저 동굴: 서쪽 해안 절벽, 입구 앞은 깊은 물
     const cx = CAVE.x, cy = CAVE.y;
     for (let y = cy - 6; y <= cy; y++) for (let x = cx - 5; x <= cx + 6; x++) { if (!m.inb(x, y)) continue; const i = m.i(x, y); m.hgt[i] = 1; m.ter[i] = T.GRASS; m.obj[i] = (x + y) % 3 === 0 ? O.PALM : 0; }

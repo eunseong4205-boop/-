@@ -303,7 +303,19 @@
       } else if (this.drawFn) this.drawFn(g, x, y);
     }
   }
-  function shoot(o) { return W().add(new Shot(o)); }
+  function shoot(o) {
+    // 높이를 안 준 탄: 쏜 이의 높이에서 난다 (높은 마을 · 고원에서 마법 · 적 탄이 바로 벽에 부딪혀 사라지던 것)
+    if (o.z == null) {
+      const Wd = W(), m = Wd.map, p = Wd.player;
+      if (o.owner !== 'foe' && p) o.z = p.z || 0;
+      else {
+        let best = null, bd = 30;
+        for (const e of Wd.ents) if ((e.kind === 'foe' || e.boss) && !e.dead) { const d = U.dist(e.x, e.y, o.x, o.y + 8); if (d < bd) { bd = d; best = e; } }
+        o.z = best ? best.z || 0 : m ? m.H(Math.floor(o.x / TS), Math.floor((o.y + 10) / TS)) : 0;
+      }
+    }
+    return W().add(new Shot(o));
+  }
 
   function freezeWater(m, tx, ty) {
     const cells = [];

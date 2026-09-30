@@ -56,6 +56,8 @@
   };
   function spawnPeople(m, Wd) {
     const s = S();
+    // 두 번 세우지 않는다 (들어서는 장면이 먼저 사람들을 다시 세운 경우)
+    for (const e of Wd.ents) if (e.fromPeople) e.dead = true;
     for (const sp of ST.people[m.id] || []) {
       if (sp.when && !sp.when(s)) continue;
       const cast = sp.id && G.cast.get(sp.id);
