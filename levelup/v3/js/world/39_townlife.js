@@ -160,20 +160,29 @@
           else await c.narr('퐁당. 동전이 가라앉았다. 옐로 사람들은 이걸 「세금」이라 부른다.');
           return;
         }
+        const today = Math.floor(((S().t || 0) + 216) / 720);
         if (M.wish) {
-          if (f(key)) { await c.narr('우물이 조용하다. 이미 대답을 들었다.'); return; }
+          if (f(key)) {
+            // 날마다 우물이 한 가지씩 속삭인다 (숨은 것들의 실마리)
+            if (S().flags[key + ':day'] === today) { await c.narr('우물이 조용하다. 오늘 몫의 대답은 들었다.'); return; }
+            S().flags[key + ':day'] = today;
+            const HINT = ['「사막 동쪽 구덩이… 별이 떨어지는 밤에 전망대에 올라 봐.」', '「그린 북동쪽 탑은 끝이 없어. 다섯 층마다 문지기가 있지.」', '「옛 오락기에서 Lv.40을 넘기면… 작은 열쇠가 굴러 나와.」', '「쓰러뜨린 보스의 방에 거울이 남아. 들여다보면 더 강해진 그들이 있어.」', '「길가 둥지는 이틀이면 다시 차. 사당은 하루면 다시 들어 주고.」', '「떠돌이 행상은 날마다 짐을 바꿔. 귀한 건 오래 안 있어.」', '「폐허는 밤에 가 봐. 망령 기사가 지키는 게 있어.」', '「수수께끼 비석은 날마다 문제를 바꿔. 스무 개를 풀면…」'];
+            await c.narr('우물 속에서 누군가 속삭였다.\n' + HINT[today % HINT.length]);
+            return;
+          }
           const k = await c.choice('우물에 누구의 이름을 속삭일까?', ['세린', '에벨린', '토리아', '아무 이름도 말하지 않는다']);
           c.flag(key);
           await c.narr(k === 3 ? '우물이 한참 뒤에 대답했다. 「…고마워. 이름을 달라는 사람만 왔었거든.」' : '우물이 그 이름을 한 번 되뇌었다. 조금 늦게. 물 위에 작은 빛이 떠올랐다.');
           c.exp(200); if (k === 3) { S().pts = (S().pts || 0) + 1; await c.say(null, '[y]성장 점수 +1[/]', { style: 'sys' }); }
           return;
         }
-        if (!f(key)) {
-          c.flag(key);
+        if (S().flags[key + ':day'] === today) { await c.narr('[s]오늘은 이미 기운을 받았다. 내일 다시 오면 또 받을 수 있다.[/]'); return; }
+        {
+          const first = !f(key); c.flag(key); S().flags[key + ':day'] = today;
           if (M.fx === 'exp') { c.exp(150); await c.say(null, '물보라에 빛이 섞여 있다. [y]빛 알갱이[/]를 얻었다.', { style: 'sys' }); }
           else { const st = S(); st.buffs = (st.buffs || []).filter((b) => b.until > st.t); st.buffs.push({ atk: M.fx === 'str' ? 1.1 : 1, def: M.fx === 'vit' ? 0.9 : 1, stamina: M.fx === 'sta' ? 1.3 : 1, until: st.t + 300, col: '#fff4a8' }); await c.say(null, '[y]' + M.name + '의 기운[/] — 5분 동안 ' + FXNAME[M.fx] + '의 가호', { style: 'sys' }); }
           const seen = Object.keys(MARK).filter((k2) => f('mark:' + k2)).length;
-          if (seen === Object.keys(MARK).length) { S().pts = (S().pts || 0) + 3; await c.say(null, '열두 마을의 명소를 모두 보았다. [y]성장 점수 +3[/]', { style: 'sys' }); }
+          if (first && seen === Object.keys(MARK).length) { S().pts = (S().pts || 0) + 3; await c.say(null, '열두 마을의 명소를 모두 보았다. [y]성장 점수 +3[/]', { style: 'sys' }); }
         }
       } }));
     }

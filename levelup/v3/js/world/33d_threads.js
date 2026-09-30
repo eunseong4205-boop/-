@@ -799,6 +799,7 @@
       ['sepia', () => f('met:sepia'), '(목소리) 색 표본 병, 마지막 칸 비워 뒀어. 네가 돌아올 때 하늘 색 가져와.'],
       ['graus', () => f('graus_noah'), '(목소리) ……노아. 노아에게… 돌아가라.'],
     ];
+    for (const x of ST.rallyExtra || []) V.push(x);   // 군상: 길 위에서 이어진 사람들
     const on = V.filter((v) => v[1]());
     if (on.length < 2) return;
     await c.narr('흑점이 입을 벌리는 순간— 멀리서, 아주 멀리서 목소리들이 들렸다. 대륙 곳곳의 등불이 하나씩 켜지는 소리.');

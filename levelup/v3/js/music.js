@@ -110,6 +110,63 @@
     lead: 'o5 l8 d4. e f4 a4 b-4. a g4 f4 e4. f g4 c4 f2. r4 g4. a b-4 >d4 c4< b- a g4 d4 a4. g f4 e4 c+2 e2',
     harm: 'o5 l8 <a4. >c d4 f4 g4. f e4 d4 c4. d e4 <a4 >c2. r4 e4. f g4 b-4 a4 g f e4 <b-4> f4. e d4 c+4 <a2 >c+2', harmWave: 'sq25', harmVol: 0.06 };
 
+  /* ───────── 상황마다 다른 음악 (밤 · 비 · 들판 싸움 · 정예 · 던전 꼴 · 격노 · 탑 · 오락기 · 숨은 곳 · 새 지역) ───────── */
+  // 밤의 들판 — 걸음을 늦추는 종소리
+  T.field_night = { bpm: 88, chords: 'D Bm G A D Bm G A', bass: 'long', arp: 'bell', arpVol: 0.045, drums: 'none', leadWave: 'sine', leadVol: 0.13,
+    lead: 'o5 l4 f+2 a2 | o5 d2. e4 | o5 d2 o4 b2 | o5 c+1 | o5 f+2 a2 | o6 d2. c+4 | o5 b2 g2 | o5 a1' };
+  // 밤의 마을 — 창문 불빛 자장가
+  T.town_night = { bpm: 80, chords: 'F Dm Bb C F Dm Bb C', bass: 'long', arp: 'broken8', arpVol: 0.035, drums: 'none', leadWave: 'sq12', leadVol: 0.1,
+    lead: 'o5 l4 a2 g4 f4 | o5 d2. r4 | o5 f2 e4 d4 | o5 c2. r4 | o5 a2 o6 c4 o5 a4 | o5 f2. d4 | o5 f2 e4 g4 | o5 f1' };
+  // 비 오는 들판 — 젖은 풀 냄새
+  T.rain = { bpm: 84, chords: 'Am Em F G Am Em Dm E', bass: 'long', arp: 'pad', arpWave: 'sine', arpVol: 0.04, drumMML: 'l8 [h r h h r h r h]', drumVol: 0.4, leadWave: 'sine', leadVol: 0.1,
+    lead: 'o5 l4 e2 d4 c4 | o4 b2. r4 | o5 c2 o4 a4 o5 c4 | o5 d2. r4 | o5 e2 g4 e4 | o5 d2 c4 o4 a4 | o4 b1 | r1' };
+  // 들판 싸움 — 몰려올 때
+  T.skirmish = { bpm: 156, chords: 'Em C D Em Em C D B', bass: 'oct', arp: 'up16', arpVol: 0.045, drums: 'battle', leadWave: 'sq25', leadVol: 0.1,
+    lead: 'o5 l8 e4 g a b4 a g | o5 e4 d e g4 e d | o5 f+4 a b o6 d4 o5 b a | o5 b2 r4 e4 | o5 e4 g a b4 o6 d e | o6 c4 o5 b a g4 e c | o5 d4 f+ a o6 d4 c o5 b | o5 b2 d+2' };
+  // 정예 — 이름표가 번쩍이는 적
+  T.elite = { bpm: 150, chords: 'Cm Ab Bb G Cm Ab Fm G', bass: 'gallop', arp: 'up16', arpVol: 0.045, drums: 'battle', leadWave: 'sq50', leadVol: 0.1,
+    lead: 'o5 l8 c4 e- g o6 c4 o5 b- g | o5 a-4 e- c a-4 o6 c o5 a- | o5 b-4 f d b-4 o6 d o5 b- | o5 b2 g2 | o6 c4 o5 g e- c4 e- g | o5 a-4 o6 c e- d4 c o5 a- | o5 f4 a- o6 c o5 b-4 a- g | o5 g2 b2' };
+  // 퍼즐 방 — 발판과 블록의 셈
+  T.dungeon_puzzle = { bpm: 104, chords: 'C Am F G C Am Dm G', bass: 'walk', arp: 'off8', arpVol: 0.04, drums: 'soft', drumVol: 0.6, leadWave: 'sq25', leadVol: 0.1,
+    lead: 'o5 l8 e g e c d f d o4 b | o5 c e c o4 a b o5 d c o4 b | o4 a o5 c f a g f e d | o5 e4 d4 o4 b4 g4 | o5 e g e c d f d o4 b | o5 c e c o4 a b o5 d c o4 b | o4 a o5 d f a g f d o4 b | o5 c2 r2' };
+  // 미로 — 같은 모퉁이를 또 도는 기분
+  T.dungeon_maze = { bpm: 112, chords: 'Am Am Bb Bb Am Am E E', bass: 'pulse', arp: 'up16', arpVol: 0.035, drumMML: 'l8 [k r h r k h r h]', drumVol: 0.6, leadWave: 'sq12', leadVol: 0.1,
+    lead: 'o5 l8 a b- a e a b- a e | o5 a b- a e a b- a e | o5 b- o6 c o5 b- f b- o6 c o5 b- f | o5 b- o6 c o5 b- f b- o6 d c o5 b- | o5 a b- a e a o6 c o5 b- a | o5 a b- a e a b- a e | o5 g+ a g+ e g+ b g+ e | o5 g+2 e2' };
+  // 어둠 — 횃불 밖은 심장 소리뿐
+  T.dungeon_dark = { bpm: 64, chords: 'Dm Dm Dm C Dm Dm Bb A', bass: 'long', bassVol: 0.2, drumMML: 'l4 [k r r r]', drumVol: 0.5, leadWave: 'sine', leadVol: 0.08,
+    lead: 'o5 l2 r1 | a2 r2 | r1 | g2 f2 | r1 | d2 r2 | f2 e2 | c+1', harm: 'o3 l1 d d d c d d <b- a', harmWave: 'sawtooth', harmVol: 0.025 };
+  // 깊은 구역 — 지도에 없는 층
+  T.dungeon_deep = { bpm: 92, chords: 'Em Em C C Am Am B B', bass: 'sparse', arp: 'pad', arpVol: 0.05, drumMML: 'l4 [k r s r]', drumVol: 0.5, leadWave: 'sq12', leadVol: 0.11,
+    lead: 'o4 l4 e2 g4 b4 | o4 a2 g4 f+4 | o4 e2. r4 | o4 g2 e2 | o4 a2 o5 c4 e4 | o5 d2 c4 o4 b4 | o4 b2 o5 d+4 f+4 | o5 b1' };
+  // 격노 — 보스가 절반을 넘겼을 때
+  T.boss_rage = { bpm: 184, chords: 'Em Em C D Em Em Am B', bass: 'gallop', arp: 'up16', arpVol: 0.05, drums: 'final', leadWave: 'sq50', leadVol: 0.1,
+    lead: 'o5 l8 e4 e g b4 a g | o5 e4 f+ g a2 | o5 g4 a b o6 c4 o5 b a | o5 b2 f+2 | o5 e4 e g b4 o6 d e | o6 c4 o5 b a e4 a b | o6 c4 o5 b a b4 a g | o5 f+2 d+2' };
+  // 무한의 탑 — 한 층 더
+  T.tower = { bpm: 128, chords: 'C G Am F C G F G', bass: 'oct', arp: 'up16', arpVol: 0.045, drums: 'march', drumVol: 0.8, leadWave: 'sq25', leadVol: 0.1,
+    lead: 'o5 l8 c4 e g o6 c4 o5 g e | o5 d4 g b o6 d4 o5 b g | o5 c4 e a o6 c4 o5 a e | o5 f2 a2 | o5 e4 g o6 c e4 d c | o5 d4 g b o6 d4 c o5 b | o5 a4 o6 c o5 a f4 a o6 c | o5 b2 o6 d2',
+    harm: 'o4 l2 e g e d c d a b e g e d c d c d', harmWave: 'sq12', harmVol: 0.05 };
+  T.tower_high = { bpm: 142, chords: 'Am F G E Am F G E', bass: 'gallop', arp: 'up16', arpVol: 0.045, drums: 'boss', leadWave: 'sq50', leadVol: 0.1,
+    lead: 'o5 l8 a4 o6 c e a4 e c | o5 a4 o6 c f a4 f c | o5 b4 o6 d g b4 g d | o5 g+2 b2 | o5 a4 o6 c e a4 o7 c o6 a | o6 f4 a o7 c o6 f4 c o5 a | o5 g4 b o6 d g4 d o5 b | o5 g+2 e2' };
+  // 옛 오락기 — 「무한으로 렙업하기」에 바치는 가락
+  T.arcade = { bpm: 168, chords: 'C C F G C C G G', bass: 'oct', arp: 'up16', arpVol: 0.05, drums: 'dance', leadWave: 'sq50', leadVol: 0.1,
+    lead: 'o5 l8 c e g o6 c o5 g e c e | o5 c e g o6 c e4 c o5 g | o5 f a o6 c f c o5 a f a | o5 g b o6 d g d o5 b g b | o5 c e g o6 c o5 g e c e | o5 c e g o6 c e4 g4 | o6 g f e d e4 d4 | o6 c2 r2' };
+  // 별똥별 구덩이 — 떨어진 별의 숨
+  T.crater = { bpm: 76, chords: 'Fmaj7 G Em Am Fmaj7 G Am Am', bass: 'long', arp: 'bell', arpVol: 0.05, drums: 'none', leadWave: 'sine', leadVol: 0.13,
+    lead: 'o6 l4 c2 o5 b4 a4 | o5 b2 o6 d2 | o5 g2 e2 | o5 a1 | o6 c2 o5 b4 o6 e4 | o6 d2 o5 b2 | o6 c2 o5 a4 e4 | o5 a1',
+    harm: 'o5 l1 a b g e a b e e', harmWave: 'sine', harmVol: 0.04 };
+  // 안개 늪 — 가라앉은 것들의 물가
+  T.mist = { bpm: 78, chords: 'Dm Am Bb F Dm Am E E', bass: 'sparse', arp: 'pad', arpVol: 0.04, drumMML: 'l2 [k r]', drumVol: 0.4, leadWave: 'sq12', leadVol: 0.1,
+    lead: 'o5 l4 d2 f4 a4 | o5 e2. r4 | o5 f2 d4 o4 b-4 | o5 c2. r4 | o5 d2 f4 a4 | o6 c2 o5 a4 e4 | o5 g+2 e2 | o5 e1' };
+  // 단풍 협곡 — 메아리가 사는 골짜기 (3박)
+  T.amber = { bpm: 108, bpb: 3, chords: 'G Em C D G Em C D', bass: 'waltz', arp: 'waltz', drums: 'waltz', leadWave: 'sq25', leadVol: 0.1,
+    lead: 'o5 l4 d g b | o5 a2 g | o5 e g o6 c | o5 b2 a | o5 d g b | o6 d2 c | o5 b a f+ | o5 g2.' };
+  // 축제의 밤 — 불꽃이 다 지고 난 뒤
+  T.festival_night = { bpm: 96, chords: 'C Am F G C Am F G', bass: 'long', arp: 'bell', arpVol: 0.045, drums: 'soft', drumVol: 0.5, leadWave: 'sine', leadVol: 0.12,
+    lead: 'o5 l4 e2 g4 e4 | o5 c2. r4 | o5 a2 o6 c4 o5 a4 | o5 g2. r4 | o5 e2 g4 o6 c4 | o5 b2 a4 g4 | o5 f2 a4 f4 | o5 g1' };
+  // 먼 길 — 여덟 번째 장부터의 들판
+  T.journey = { bpm: 118, chords: 'Am F C G Am F G G', bass: 'oct', arp: 'up16', arpVol: 0.045, drums: 'rock', leadWave: 'sq25', leadVol: 0.1,
+    lead: 'o5 l8 e4 a4 o6 c4 o5 b a | o5 f4 a4 o6 c4 o5 a f | o5 e4 g4 o6 c4 d e | o6 d2 o5 b2 | o5 c4 e4 a4 g f | o5 f4 a4 o6 c4 d c | o5 b4 o6 d4 o5 b4 g a | o5 b2. r4' };
+
   /* ───────── 팡파르 ───────── */
   const J = {
     levelup: { bpm: 200, parts: [{ mml: 'o5 l16 c e g >c8< g8 >c4.<', wave: 'sq50', vol: 0.12 }, { mml: 'o3 l16 c8 r8 g8 >c4.<', wave: 'triangle', vol: 0.3 }] },

@@ -235,17 +235,24 @@
     e.x = best[0]; e.y = best[1]; if (e.home) e.home = { x: e.x, y: e.y };
     return true;
   }
+  function dedupe(Wd) {
+    const byCid = new Map();
+    for (const e of Wd.ents) {
+      if (e.dead || !e.npc || !e.cid || e.follower) continue;
+      const o = byCid.get(e.cid);
+      if (o) { if (e.walker && !o.walker) { e.dead = true; continue; } o.dead = true; }   // 길 위의 사람(군상)보다 이야기 자리를 남긴다
+      byCid.set(e.cid, e);
+    }
+    for (const e of Wd.ents) if (e.follower && !e.dead && byCid.has(e.cid)) e.dead = true;
+  }
+  // 이야기가 사람들을 다시 세울 때도 같은 사람이 둘이 되지 않게
+  if (G.story && G.story.refreshPeople) { const rp0 = G.story.refreshPeople; G.story.refreshPeople = function () { const r = rp0.apply(this, arguments); try { dedupe(W()); } catch (e) { /* 무시 */ } return r; }; }
   const pop0 = G.build.populate;
   G.build.populate = function (m) {
     const r = pop0.apply(this, arguments);
     const Pp = G.props, Wd = W(), p = Wd.player;
     // 같은 사람이 둘: 먼저 선 이를 지운다 · 따라오는 동료와 서 있는 본인이 겹치면 따라오는 쪽을 쉰다
-    const byCid = new Map();
-    for (const e of Wd.ents) {
-      if (e.dead || !e.npc || !e.cid || e.follower) continue;
-      const o = byCid.get(e.cid); if (o) o.dead = true; byCid.set(e.cid, e);
-    }
-    for (const e of Wd.ents) if (e.follower && !e.dead && byCid.has(e.cid)) e.dead = true;
+    dedupe(Wd);
     for (const e of Wd.ents) {
       if (e === p || e.dead || e.fly || e.script || e.vision || e.follower) continue;
       if (e.npc || e instanceof Pp.Chest) nudge(m, e, 3);

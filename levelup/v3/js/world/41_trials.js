@@ -56,7 +56,7 @@
     };
   }
   def('sec_crater', {
-    name: '별똥별 구덩이', sub: '숨은 던전 · 사막 동쪽', pal: 'yellow', music: 'hollow', tier: 6, floor: T.CRYSTAL, wall: 'vein', shape: 'cave', ambient: 'sparks', dark: 0.45,
+    name: '별똥별 구덩이', sub: '숨은 던전 · 사막 동쪽', pal: 'yellow', music: 'crater', tier: 6, floor: T.CRYSTAL, wall: 'vein', shape: 'cave', ambient: 'sparks', dark: 0.45,
     decor: [O.CRYSTAL, O.ROCK, O.PEBBLE], decorRate: 0.08, glowObjs: [O.CRYSTAL], glowCol: 'rgba(200,180,255,0.3)',
     start: ['1,3', 9, 11],
     exit: { at: ['1,3', 9, 13], to: 'world', tx: GATE.crater.x, ty: GATE.crater.y + 2 },
@@ -81,7 +81,7 @@
 
   /* ═════════ 숨은 던전 2: 옛 렙업의 땅 ═════════ */
   def('sec_origin', {
-    name: '옛 렙업의 땅', sub: '숨은 던전 · 모든 렙업이 시작된 곳', pal: 'green', music: 'field', tier: 10, floor: T.CHECKER, wall: 'marble', shape: 'rect', ambient: 'motes',
+    name: '옛 렙업의 땅', sub: '숨은 던전 · 모든 렙업이 시작된 곳', pal: 'green', music: 'arcade', tier: 10, floor: T.CHECKER, wall: 'marble', shape: 'rect', ambient: 'motes',
     decor: [O.FLOWER, O.TALL, O.BUSH], decorRate: 0.05,
     start: ['1,3', 9, 11],
     exit: { at: ['1,3', 9, 13], to: 'world', tx: GATE.origin.x, ty: GATE.origin.y + 2 },
@@ -156,7 +156,7 @@
   const tw = () => { const s = S(); s.tower = s.tower || { cur: 1, best: 0 }; return s.tower; };
   G.build.def('inf_tower', {
     build() {
-      const rm = G.build.room({ id: 'inf_tower', region: 'gray', name: '무한의 탑', w: 22, h: 15, floor: T.CHECKER, music: 'battle', back: ['world', GATE.tower.x + 1, GATE.tower.y + 3], rug: [9, 3, 4, 10] });
+      const rm = G.build.room({ id: 'inf_tower', region: 'gray', name: '무한의 탑', w: 22, h: 15, floor: T.CHECKER, music: 'tower', back: ['world', GATE.tower.x + 1, GATE.tower.y + 3], rug: [9, 3, 4, 10] });
       rm.noCard = true; rm.dark = 0.15;
       // 싸우는 동안에는 문이 닫힌다 (밀려서 나가 버리지 않게)
       for (const w of rm.warps) { w.cond = () => !G.combat.foes().some((e) => !e.dead); w.msg = '싸우는 동안에는 탑 문이 열리지 않는다'; }

@@ -58,7 +58,7 @@
   /* ───────── 오락기 속 ───────── */
   G.build.def('arcade_room', {
     build() {
-      const rm = G.build.room({ id: 'arcade_room', region: 'green', name: '오락기 속', w: 18, h: 13, floor: T.CHECKER, music: 'battle' });
+      const rm = G.build.room({ id: 'arcade_room', region: 'green', name: '오락기 속', w: 18, h: 13, floor: T.CHECKER, music: 'arcade' });
       rm.noFollow = true; rm.noCard = true; rm.dark = 0.1;
       // 문을 막는다 (끝나면 저절로 나간다)
       rm.warps.length = 0; rm.ter[rm.i(rm.exit.x, rm.exit.y)] = T.WALL;
