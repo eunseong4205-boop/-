@@ -292,20 +292,27 @@
     if (H.btnT <= 0 && touch()) { H.btnT = 0.25; syncButtons(); }
   }
   const btnCache = {};
+  /** 휴대폰 버튼 한 개: 글자 · 그림 · 흐림 (바뀐 때만 고친다) */
+  function setBtn(act, label, dim, ready, glyph) {
+    const key = act + label + dim + ready + (glyph || '');
+    if (btnCache[act] === key) return;
+    btnCache[act] = key;
+    const el = document.querySelector('.tb[data-act="' + act + '"]');
+    if (!el) return;
+    el.querySelector('small').textContent = label;
+    if (glyph) el.querySelector('i').textContent = glyph;
+    el.style.opacity = dim ? '0.28' : '';
+    if (act === 'special') el.classList.toggle('ready', !!ready);
+  }
   function syncButtons() {
     const s = G.state;
-    const set = (act, label, dim, ready) => {
-      const key = act + label + dim + ready;
-      if (btnCache[act] === key) return;
-      btnCache[act] = key;
-      const el = document.querySelector('.tb[data-act="' + act + '"]');
-      if (!el) return;
-      el.querySelector('small').textContent = label;
-      el.style.opacity = dim ? '0.28' : '';
-      if (act === 'special') el.classList.toggle('ready', !!ready);
-    };
-    set('bow', s.tools.bow ? '활 ' + s.ammo.arrows : '활', !s.tools.bow);
-    set('magic', s.spell ? G.data.SPELLS[s.spell].name : '마법', !s.spell || s.mp < (s.spell ? G.data.SPELLS[s.spell].mp : 99));
+    const set = setBtn;
+    // 공격 · 바꾸기 · 스킬 버튼은 든 무기를 따른다 (stance.js)
+    if (H.weaponButtons) H.weaponButtons(set);
+    else {
+      set('bow', s.tools.bow ? '활 ' + s.ammo.arrows : '활', !s.tools.bow);
+      set('magic', s.spell ? G.data.SPELLS[s.spell].name : '마법', !s.spell || s.mp < (s.spell ? G.data.SPELLS[s.spell].mp : 99));
+    }
     set('tool', s.tool ? G.data.ITEMS[s.tool].name + (s.tool === 'bomb' ? ' ' + s.ammo.bombs : '') : '도구', !s.tool);
     set('special', s.special >= 100 ? '필살!' : Math.floor(s.special) + '%', false, s.special >= 100);
   }

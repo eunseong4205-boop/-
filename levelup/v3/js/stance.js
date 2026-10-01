@@ -75,7 +75,7 @@
     a_parry: { w: 'sword', name: '반격 자세', icon: 'a_parry', cost: { st: 18 }, cd: 6, desc: '0.7초 자세를 잡는다. 그동안 맞으면 막아 내고 가장 가까운 적을 크게 되받아친다 (×3).' },
     a_wave: { w: 'sword', name: '대지 가르기', icon: 'a_wave', cost: { st: 30 }, cd: 8, desc: '앞으로 땅을 가르는 충격파가 여섯 칸 나아간다 (×1.5, 모두 꿰뚫음).' },
     // 활 — 화살 · 기력
-    a_fan: { w: 'bow', name: '부채 사격', icon: 'a_fan', cost: { ar: 3, st: 10 }, cd: 4, desc: '다섯 갈래로 퍼지는 화살 (한 발마다 ×1.1).' },
+    a_fan: { w: 'bow', name: '부채 사격', icon: 'a_fan', cost: { ar: 3, st: 10 }, cd: 4, desc: '다섯 갈래로 퍼지는 화살 (한 발마다 ×0.9).' },
     a_leap: { w: 'bow', name: '물러나 쏘기', icon: 'a_leap', cost: { ar: 1, st: 20 }, cd: 5, desc: '뒤로 크게 뛰며(무적) 다 모은 화살 한 발 (×2.2, 꿰뚫음).' },
     a_snare: { w: 'bow', name: '덫 화살', icon: 'a_snare', cost: { ar: 1, st: 10 }, cd: 8, desc: '맞은 자리에 덫이 펼쳐져 둘레 두 칸의 적을 2.5초 묶는다.' },
     a_rain: { w: 'bow', name: '작은 화살비', icon: 'a_rain', cost: { ar: 5, st: 15 }, cd: 9, desc: '앞쪽 네 칸 둘레에 1.5초 동안 화살이 쏟아진다.' },
@@ -110,6 +110,8 @@
       const w = cur(s), id = equipped(s, w);
       if (!id) { sfx('buzz'); G.fx.float(p.x, p.y - 30, WNAME[w] + ' 스킬 없음', '#c8c0d8'); return true; }
       const A = ASK[id];
+      // 등급 요구치 (능력치 · 레벨)
+      if (A.req && !G.prog.reqOk(s, A.req)) { sfx('buzz'); G.fx.float(p.x, p.y - 30, '필요: ' + G.prog.reqText(s, A.req).replace(/\[\/?r\]/g, ''), '#ff8a96', { life: 0.8 }); return true; }
       if (ST.cd[id] > 0) { sfx('buzz'); G.fx.float(p.x, p.y - 30, ST.cd[id].toFixed(1) + '초', '#c8c0d8', { life: 0.5 }); return true; }
       const c = A.cost, d = G.st.derive(s);
       const ck = (kind) => (G.stance.costK ? G.stance.costK(s, w, kind) : 1);
@@ -121,9 +123,12 @@
       if (c.st) { p.stamina = Math.max(0, p.stamina - c.st); p.stamDelay = 0.5; }
       if (ar) s.ammo.arrows -= ar;
       if (mp) s.mp -= mp;
-      ST.cd[id] = A.cd * cdMul(s, w);
+      // 숙련: 쓸수록 ★이 오르고 (★마다 피해 +8% · 재사용 대기 -5%)
+      const rk = G.stance.rank ? G.stance.rank(s, id) : 1;
+      ST.cd[id] = A.cd * cdMul(s, w) * (1 - 0.05 * (rk - 1));
       ST.usedAt[w] = p.t;
-      DO[id](p, s, d, m, skillMul(s, w));
+      DO[id](p, s, d, m, skillMul(s, w) * (1 + 0.08 * (rk - 1)));
+      if (G.stance.used) G.stance.used(s, id);
       return true;
     },
   };
@@ -132,7 +137,7 @@
   const magBase = (s, d) => (4 + s.lv * 0.25) * d.magMul;
   function arrow(p, d, ang, o) {
     const sp = o.sp || 320;
-    return C.shoot(Object.assign({ kind: 'arrow', x: p.x + Math.cos(ang) * 8, y: p.y - 2 + Math.sin(ang) * 6, ox: p.x, oy: p.y, vx: Math.cos(ang) * sp, vy: Math.sin(ang) * sp, dmg: d.bowAtk, src: 'arrow', w: 'bow', pierce: 0, charged: true, el: d.bowEl, r: 3, life: 0.9, owner: 'player' }, o));
+    return C.shoot(Object.assign({ skill: true, kind: 'arrow', x: p.x + Math.cos(ang) * 8, y: p.y - 2 + Math.sin(ang) * 6, ox: p.x, oy: p.y, vx: Math.cos(ang) * sp, vy: Math.sin(ang) * sp, dmg: d.bowAtk, src: 'arrow', w: 'bow', pierce: 0, charged: true, el: d.bowEl, r: 3, life: 0.9, owner: 'player' }, o));
   }
   const DO = {
     a_dash(p, s, d, m, k) { p.setState('skill'); p.skill = { id: 'a_dash', t: 0, dur: 0.2, dir: [...p.face], hit: new Set(), k }; p.inv = Math.max(p.inv, 0.25); sfx('swing'); },
@@ -146,13 +151,13 @@
     a_parry(p, s, d, m, k) { p.setState('skill'); p.skill = { id: 'a_parry', t: 0, dur: 0.7, k }; p.parryT = 0.7; G.fx.ring(p.x, p.y - 8, '#8ad8ff', 14, 0.3, 1); sfx('draw'); },
     a_wave(p, s, d, m, k) {
       const a = U.angle(p.face[0], p.face[1]);
-      C.shoot({ kind: 'beam', x: p.x + Math.cos(a) * 10, y: p.y - 2 + Math.sin(a) * 8, vx: Math.cos(a) * 240, vy: Math.sin(a) * 240, dmg: d.atk * 1.5 * k, src: 'sword', w: 'sword', r: 7, life: 0.42, pierce: 99, trail: '#d8a868', owner: 'player', el: d.el });
+      C.shoot({ skill: true, kind: 'beam', x: p.x + Math.cos(a) * 10, y: p.y - 2 + Math.sin(a) * 8, vx: Math.cos(a) * 240, vy: Math.sin(a) * 240, dmg: d.atk * 1.5 * k, src: 'sword', w: 'sword', r: 7, life: 0.42, pierce: 99, trail: '#d8a868', owner: 'player', el: d.el });
       W().shake(3, 0.2); G.fx.dust(p.x, p.y, 10); sfx('rumble');
       p.setState('skill'); p.skill = { id: 'a_wave', t: 0, dur: 0.22, k };
     },
     a_fan(p, s, d, m, k) {
       const a = U.angle(p.face[0], p.face[1]);
-      for (const off of [-0.5, -0.25, 0, 0.25, 0.5]) arrow(p, d, a + off, { dmg: d.bowAtk * 1.1 * k, trail: '#e8f0c0' });
+      for (const off of [-0.5, -0.25, 0, 0.25, 0.5]) arrow(p, d, a + off, { dmg: d.bowAtk * 0.9 * k, trail: '#e8f0c0' });
       sfx('shootc'); p.setState('skill'); p.skill = { id: 'a_fan', t: 0, dur: 0.18, k };
     },
     a_leap(p, s, d, m, k) { p.setState('skill'); p.skill = { id: 'a_leap', t: 0, dur: 0.3, dir: [-p.face[0], -p.face[1]], k, shot: false }; p.inv = Math.max(p.inv, 0.35); sfx('roll'); },
@@ -203,7 +208,9 @@
       sfx('cast'); p.setState('skill'); p.skill = { id: 'a_twin', t: 0, dur: 0.32, k };
     },
   };
-  // 스킬 동작 (상태 'skill')
+  // 스킬 동작 (상태 'skill') — 스킬마다 따로 움직이는 것은 UPD[스킬]
+  const UPD = {};
+  Object.assign(G.stance, { DO, UPD, near, hit, magBase, arrow, skillMul, cdMul, fx });
   C.actions.skill = {
     update(p, dt, m) {
       const K = p.skill; if (!K) { p.setState('idle'); return; }
@@ -228,7 +235,7 @@
         if (!K.shot && K.t > K.dur * 0.6) { K.shot = true; arrow(p, d, U.angle(-K.dir[0], -K.dir[1]), { dmg: d.bowAtk * 2.2 * K.k, pierce: 3, sp: 380, trail: '#fff4c0' }); sfx('shootc'); }
       } else if (K.id === 'a_parry') {
         p.atkFrame = 0; if (Math.floor(K.t * 10) % 2) G.fx.part({ x: p.x + (Math.random() - 0.5) * 12, y: p.y - 12, z: 0, vz: 10, g: 0, life: 0.2, col: '#8ad8ff', size: 1, glow: true });
-      }
+      } else if (UPD[K.id]) UPD[K.id](p, K, dt, m, s, d);   // skills.js의 스킬 동작
       if (K.t >= K.dur) { p.skill = null; p.parryT = 0; p.setState('idle'); }
     },
   };
@@ -342,6 +349,7 @@
     a_slow: [['  wwwwwww   ', ' w   w   w  ', 'w    w    w ', 'w    www  w ', 'w         w ', ' w       w  ', '  wwwwwww   '], { w: '#d8c8ff' }],
     a_twin: [['  y     y   ', ' yWy   yWy  ', '  y     y   ', '  l     l   ', '  l     l   '], { y: '#a8c8ff', W: '#ffffff', l: '#8a5a30' }],
   };
+  G.stance.GLY = GLY;
   H.icon = function (id) {
     if (ICO[id]) return ICO[id];
     const g2 = GLY[id]; if (!g2) return ic0(id);
@@ -360,7 +368,7 @@
     const id = equipped(s, wc), A = id ? ASK[id] : null;
     // 원래의 K · L 칸 자리를 덮어 그린다: [J 든 무기] [K 바꾸기→다음] [L 스킬] (I 도구는 그대로)
     const sy = h - 26, base = w - 6 - 3 * 24;
-    const box = (x, on) => { g.fillStyle = 'rgba(11,9,20,0.92)'; g.fillRect(x, sy, 21, 21); g.strokeStyle = on ? 'rgba(240,204,110,0.75)' : 'rgba(157,147,182,0.25)'; g.lineWidth = 1; g.strokeRect(x + 0.5, sy + 0.5, 20, 20); };
+    const box = (x, on, col) => { g.fillStyle = 'rgba(11,9,20,0.92)'; g.fillRect(x, sy, 21, 21); g.strokeStyle = col || (on ? 'rgba(240,204,110,0.75)' : 'rgba(157,147,182,0.25)'); g.lineWidth = 1; g.strokeRect(x + 0.5, sy + 0.5, 20, 20); };
     const key = (k, x) => { g.fillStyle = '#f0cc6e'; g.fillRect(x + 1, sy - 7, 7, 7); g.fillStyle = '#0b0914'; g.font = "8px 'Galmuri11', monospace"; g.fillText(k, x + 2, sy - 1); };
     // J: 든 무기 (왼쪽에 하나 더)
     const jx = base - 24;
@@ -373,9 +381,13 @@
     key('K', base);
     // L: 스킬 (재사용 대기)
     const lx = base + 24;
-    box(lx, !!A);
+    const GR = A && G.prog.GRADES[A.grade || 1];
+    box(lx, !!A, A ? (A.req && !G.prog.reqOk(s, A.req) ? '#ff6a7a' : GR.col) : null);
     if (A) {
       g.drawImage(H.icon(A.icon), lx + 3, sy + 3);
+      // 숙련 ★: 아래쪽 점
+      const rk = G.stance.rank ? G.stance.rank(s, id) : 1;
+      for (let i = 0; i < rk; i++) { g.fillStyle = '#ffe066'; g.fillRect(lx + 3 + i * 3, sy + 18, 2, 2); }
       const cdl = ST.cd[id] || 0;
       if (cdl > 0) { const k = Math.min(1, cdl / (A.cd || 1)); g.fillStyle = 'rgba(0,0,20,0.6)'; g.fillRect(lx + 1, sy + 1 + Math.round(19 * (1 - k)), 19, Math.round(19 * k)); X2.digits(g, Math.ceil(cdl), lx + 20 - X2.digitsWidth(String(Math.ceil(cdl))), sy + 15, '#ffffff'); }
     }
@@ -387,21 +399,15 @@
     g.fillStyle = WCOL[wc]; g.fillText(lab, jx - 4, sy + 14); g.textAlign = 'left';
     return r;
   };
-  // 휴대폰 버튼: 활 → 바꾸기, 마법 → 스킬, 공격 → 든 무기
-  const sync0 = H.syncButtons;
-  const btn = {};
-  H.syncButtons = function () {
-    sync0.apply(this, arguments);
+  // 휴대폰 버튼: 공격 → 든 무기 (화살 수), 바꾸기 → 다음 무기, 스킬 → 낀 스킬 이름 · 남은 재사용 대기 · 비용 부족이면 흐리게
+  H.weaponButtons = function (set) {
     const s = S(); if (!s) return;
     const a = avail(s), wc = cur(s), nx = a.length > 1 ? a[(a.indexOf(wc) + 1) % a.length] : null, id = equipped(s, wc), cdl = id ? Math.ceil(ST.cd[id] || 0) : 0;
-    const set = (act, glyph, label, dim) => {
-      const k = glyph + label + dim; if (btn[act] === k) return; btn[act] = k;
-      const el = document.querySelector('.tb[data-act="' + act + '"]'); if (!el) return;
-      el.querySelector('i').textContent = glyph; el.querySelector('small').textContent = label; el.style.opacity = dim ? '0.35' : '';
-    };
-    set('attack', { sword: '⚔', bow: '➶', magic: '✦' }[wc], WNAME[wc] + (wc === 'bow' ? ' ' + s.ammo.arrows : ''), false);
-    set('bow', '⇄', nx ? '→' + WNAME[nx] : '바꾸기', !nx);
-    set('magic', '✸', id ? (cdl > 0 ? cdl + '초' : ASK[id].name) : '스킬', !id || cdl > 0);
+    set('attack', WNAME[wc] + (wc === 'bow' ? ' ' + s.ammo.arrows : wc === 'magic' && s.spell && D.SPELLS[s.spell] ? ' ' + D.SPELLS[s.spell].name : ''), wc === 'bow' && s.ammo.arrows <= 0, false, { sword: '⚔', bow: '➶', magic: '✦' }[wc]);
+    set('bow', nx ? '→' + WNAME[nx] : '바꾸기', !nx || (G.stance.swapBlocked && G.stance.swapBlocked()), false, '⇄');
+    let short = false;
+    if (id && !cdl) { const c = ASK[id].cost || {}, p = W().player; short = (c.st && p && p.stamina < c.st * 0.6) || (c.ar && s.ammo.arrows < c.ar) || (c.mp && s.mp < c.mp); }
+    set('magic', id ? (cdl > 0 ? cdl + '초' : ASK[id].name) : '스킬 없음', !id || cdl > 0 || short, false, '✸');
   };
 
   /* ───────── 기록: 예전 기록에도 새 칸 ───────── */

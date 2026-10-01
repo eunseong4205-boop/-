@@ -41,7 +41,7 @@
     if (upto >= 3) s.flags.route_lock1 = route;
     if (upto >= 6) s.flags.route_lock = route;
     // 성장 점수: 레벨만큼 받고, 3분의 2를 고르게 나눠 둔다 (나머지는 직접)
-    { const tot = (s.lv - 1) * 3, use = Math.floor(tot * 0.66), w = { str: 0.3, vit: 0.22, sta: 0.12, int: 0.2, dex: 0.16 }; let left = tot; for (const k in w) { const n = Math.floor(use * w[k]); s.stats[k] = n; left -= n; } s.pts = left; }
+    { const tot = (s.lv - 1) * G.prog.PTS_PER_LV, use = Math.floor(tot * 0.66), w = { str: 0.3, vit: 0.22, sta: 0.12, int: 0.2, dex: 0.16 }; let left = tot; for (const k in w) { const n = Math.floor(use * w[k]); s.stats[k] = n; left -= n; } s.pts = left; }
     G.st.autoEquip(s);
     s.gold = 500 * upto; s.ammo.arrows = 30; s.ammo.bombs = s.tools.bomb ? 10 : 0;
     s.hp = G.st.derive(s).hpMax; s.mp = G.st.derive(s).mpMax;

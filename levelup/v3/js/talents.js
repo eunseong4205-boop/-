@@ -263,7 +263,8 @@
   item('ac_chime', { type: 'acc', grade: 4, name: '풍경 귀걸이', fx: { cd: 0.15, mpRegen: 0.4 }, price: 31000, req: { lv: 24 }, desc: '스킬 재사용 대기 -15%, MP가 조금씩 찬다.' });
   item('ac_storm', { type: 'acc', grade: 5, name: '폭풍의 눈', fx: { dmg_sword: 0.1, dmg_bow: 0.1, dmg_magic: 0.1, cd: 0.1 }, req: { lv: 40 }, desc: '검 · 활 · 마법 피해 +10%, 스킬 재사용 대기 -10%.' });
 
-  const put = (id, list) => { const sh = D.SHOPS[id]; if (sh) for (const k of list) if (!sh.items.includes(k)) sh.items.push(k); };
+  const SHOP_LATE = [];   // 98_balance가 마지막에 넣는다 (가게 목록이 이야기 쪽에서 다시 만들어지기도 한다)
+  const put = (id, list) => { SHOP_LATE.push([id, list]); };
   put('red', ['sw_wind', 'bw_hunter2']);
   put('blue', ['ar_swift', 'fc_rune', 'ac_swap']);
   put('yellow', ['bw_twin2', 'ac_hunter']);
@@ -274,5 +275,5 @@
   put('black', ['ar_tri', 'ac_tri', 'sw_titan', 'ac_chime']);
   // 전설은 숨은 곳 · 고원 굴 · 다시 도전 보상으로
   if (G.arsenal && G.arsenal.TOP) { const T2 = G.arsenal.TOP; T2.sword.push('sw_prism'); T2.bow.push('bw_sun'); T2.focus.push('fc_chaos'); (T2.armor = T2.armor || []).push('ar_dawn2'); (T2.acc = T2.acc || []).push('ac_storm'); }
-  G.talents = { LEGEND: ['sw_prism', 'bw_sun', 'fc_chaos', 'ar_dawn2', 'ac_storm'] };
+  G.talents = { LEGEND: ['sw_prism', 'bw_sun', 'fc_chaos', 'ar_dawn2', 'ac_storm'], placeLate() { for (const [id, list] of SHOP_LATE.splice(0)) { const sh = D.SHOPS[id]; if (sh) for (const k of list) if (!sh.items.includes(k)) sh.items.push(k); } } };
 })();

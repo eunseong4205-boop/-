@@ -18,7 +18,7 @@
   /** 적에게 피해. info: { src, kx, ky, el, crit, stun, power, pierce } */
   function damage(e, amt, info) {
     info = info || {};
-    if (!e || e.dead || e.dying || e.inv > 0) return false;
+    if (!e || e.dead || e.dying || (e.inv > 0 && !info.skill)) return false;   // 스킬 타격은 맞은 직후 무적을 무시한다 (여러 발 · 여러 번 맞히는 스킬)
     // 막기 (방패 든 적: 정면)
     if (e.guards && e.guards(info) && !info.unblockable) {
       sfx('clank'); G.fx.sparks(e.x, e.y - 8, 6, '#ffffff', 80);
@@ -43,7 +43,7 @@
     if (info.src === 'spell' && sk.mg_over && S().mp >= d.mpMax * 0.8) mult *= 1.8;
     const dmg = Math.max(1, Math.round(amt * mult * 10) / 10);
     e.hp -= dmg;
-    e.flash = 0.12; e.inv = info.src === 'spin' ? 0.12 : 0.14;
+    e.flash = 0.12; if (!info.skill) e.inv = info.src === 'spin' ? 0.12 : 0.14;
     e.hurtT = 0.2;
     const kb = (info.power || 1) * 160 / (e.weight || 1) * (melee ? d.heavy : 1);
     if (info.kx != null) { e.kx = info.kx * kb; e.ky = info.ky * kb; }
@@ -257,7 +257,7 @@
           if (U.dist(this.x, this.y, e.x, e.y - (e.h || 16) / 2) < (e.r || 8) + this.r) {
             this.hit.add(e);
             const [nx, ny] = U.norm(this.vx, this.vy);
-            damage(e, this.reflected ? this.dmg * 2 : this.dmg, { src: this.src || 'shot', kx: nx, ky: ny, el: this.el, stun: this.stun, power: this.power || 0.6, refl: this.reflected, travel: this.ox != null ? U.dist(this.ox, this.oy, this.x, this.y) : 0, charged: this.charged, crit: this.crit, shot: this });
+            damage(e, this.reflected ? this.dmg * 2 : this.dmg, { src: this.src || 'shot', w: this.w, skill: this.skill, kx: nx, ky: ny, el: this.el, stun: this.stun, power: this.power || 0.6, refl: this.reflected, travel: this.ox != null ? U.dist(this.ox, this.oy, this.x, this.y) : 0, charged: this.charged, crit: this.crit, shot: this });
             if (this.onHitFoe) this.onHitFoe(e);
             if (this.pierce-- <= 0) { this.die(); return true; }
           }
@@ -445,19 +445,19 @@
     p.setState('attack');
     p.combo = stage; p.hitSet = new Set(); p.queued = false; p.chargeOk = true;
     const spd = d.swing * (p.frenzyT > 0 ? 0.7 : 1);
-    p.swing = { a0: 0, a1: 0, t: 0, dur: (stage === 2 ? 0.2 : 0.18) * spd, reach: d.reach + (stage === 2 ? 6 : 0), stage };
+    p.swing = { a0: 0, a1: 0, t: 0, dur: (stage === 2 ? 0.2 : 0.18) * spd, reach: d.reach + 6 + (stage === 2 ? 7 : 0), stage };   // 앞으로 조금 더 길게 (+6, 찌르기 +13)
     const base = swordAngle(p);
-    const sweep = stage === 2 ? 0.25 : 1.9;
+    const sweep = stage === 2 ? 0.4 : 2.3;   // 양옆으로 조금 더 넓게
     const flip = stage === 1 ? -1 : 1;
     p.swing.a0 = base - sweep / 2 * flip; p.swing.a1 = base + sweep / 2 * flip;
-    if (stage === 3) { p.swing.a0 = base + 1.2; p.swing.a1 = base - 1.2; p.swing.dur = 0.24 * spd; p.swing.reach += 4; }
+    if (stage === 3) { p.swing.a0 = base + 1.4; p.swing.a1 = base - 1.4; p.swing.dur = 0.24 * spd; p.swing.reach += 4; }
     // 앞으로 조금 내딛는다 (무거운 검은 덜, 빠른 검은 더)
     const [ux, uy] = U.DV[p.dir];
     p.lunge = (stage === 2 ? 70 : 40) / Math.max(0.8, d.swing); p.lungeDir = [ux, uy];
     // 돌진 찌르기 (달리다 공격) · 회피 베기 (구르기 끝에 공격)
     const dodgeAtk = s.skills.sv_dodgeatk && p.t - (p.rollEndT || -9) < 0.32;
     if (stage === 0 && ((s.skills.sw_lunge && (p.moveT || 0) > 0.45) || dodgeAtk)) {
-      p.swing.stage = 2; p.swing.lunge = true; p.swing.a0 = base - 0.12; p.swing.a1 = base + 0.12; p.swing.dur = 0.26 * spd; p.swing.reach += 8;
+      p.swing.stage = 2; p.swing.lunge = true; p.swing.a0 = base - 0.2; p.swing.a1 = base + 0.2; p.swing.dur = 0.26 * spd; p.swing.reach += 8;
       p.lunge = dodgeAtk ? 230 : 190; p.swing.mul = dodgeAtk ? 1.6 : 1.8;
       G.fx.ring(p.x, p.y - 8, '#ffffff', 12, 0.2, 1); sfx('dash');
     }
@@ -494,7 +494,7 @@
         if (dd > sw.reach + (e.r || 8)) continue;
         const ea = U.angle(ex - cxp, ey - cyp);
         const lo = Math.min(sw.a0, a), hi = Math.max(sw.a0, a);
-        const within = dd < 10 || (U.angDiff(lo, ea) >= -0.35 && U.angDiff(ea, hi) >= -0.35);
+        const within = dd < 12 || (U.angDiff(lo, ea) >= -0.5 && U.angDiff(ea, hi) >= -0.5);
         if (!within) continue;
         p.hitSet.add(e);
         const [nx, ny] = U.norm(ex - p.x, ey - p.y + 9);
@@ -551,7 +551,7 @@
     const s = S();
     p.setState('spin');
     p.hitSet = new Set();
-    p.spin = { t: 0, dur: s.skills.sw_great ? 0.55 : 0.36, turns: s.skills.sw_great ? 2 : 1, reach: G.st.derive(s).reach + (s.skills.sw_great ? 10 : 4), a0: swordAngle(p) };
+    p.spin = { t: 0, dur: s.skills.sw_great ? 0.55 : 0.36, turns: s.skills.sw_great ? 2 : 1, reach: G.st.derive(s).reach + (s.skills.sw_great ? 12 : 6), a0: swordAngle(p) };
     sfx('spin');
     G.fx.ring(p.x, p.y - 6, '#ffffff', p.spin.reach + 4, 0.35, 2);
     if (s.skills.sw_wave) {

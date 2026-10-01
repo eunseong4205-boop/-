@@ -11,7 +11,8 @@
   const sfx = (k) => G.audio && G.audio.sfx(k);
 
   const DUN = {};
-  const RW0 = 20, RH0 = 14;          // 방 크기 기본값 (벽 포함) — 던전마다 D.rw · D.rh 로 키울 수 있다
+  const RW0 = 20, RH0 = 14;
+  const RESPAWN = 1800;              // 쓰러뜨린 던전 적이 다시 나오기까지 (놀이 시간 30분)          // 방 크기 기본값 (벽 포함) — 던전마다 D.rw · D.rh 로 키울 수 있다
 
   /* 던전 모양 (방마다 또는 던전 전체): rect(네모) · cave(굽은 자연 벽) · round(둥근 방) · open(벽 없이 허공 위의 섬) · hall(기둥이 늘어선 큰 방)
      D.pos: 방 이름 → 격자 자리 (이름은 이야기와 깃발에 쓰이니 그대로, 자리만 옮긴다)
@@ -312,16 +313,39 @@
   class RoomCtl extends E.Ent {
     constructor(o) { super(Object.assign({ kind: 'roomctl', solid: false, hidden: true }, o)); this.active = false; this.foes = []; }
     get flagClear() { return this.did + ':' + this.k + ':clear'; }
-    spawnList(list, Wd) {
+    /** 쓰러뜨린 적 기록 (방 · 적 차례). 놀이 시간 RESPAWN초가 지나기 전에는 다시 나오지 않는다 */
+    slainRec() {
+      const s = S(), key = this.did + ':' + this.k;
+      s.slain = s.slain || {};
+      const r = s.slain[key];
+      // 던전을 나갔다 다시 들어왔고(방문 번호가 바뀜) 놀이 시간도 충분히 흘렀을 때만 다시 채운다
+      if (r && s.t - r.t >= RESPAWN && r.v !== (s.dgVisit || 0)) { delete s.slain[key]; return null; }
+      return r || null;
+    }
+    spawnList(list, Wd, tag) {
       const s = S();
       const hpK = G.dungeon.HP_MUL;
-      for (const f of list || []) {
+      const rec = tag ? this.slainRec() : null;
+      (list || []).forEach((f, i) => {
         const [type, fx, fy, fo] = f;
-        if (fo && fo.once && s.flags[this.did + ':' + this.k + ':f' + fx + fy]) continue;
+        const sid = tag ? tag + i : null;
+        if (sid && rec && rec.ids.includes(sid)) return;
+        if (fo && fo.once && s.flags[this.did + ':' + this.k + ':f' + fx + fy]) return;
         const e = G.foes.spawn(type, (this.x0 + fx) * TS + 8, (this.y0 + fy) * TS + 12, Object.assign({ tier: this.tier, hpMul: hpK, inDungeon: true }, fo || {}));
-        e.room = this.k; e.home = { x: e.x, y: e.y }; e.aggro = !(fo && fo.sleep);
+        e.room = this.k; e.home = { x: e.x, y: e.y }; e.aggro = !(fo && fo.sleep); e.slainId = sid;
         G.fx.glow(e.x, e.y - 8, '#b8a8ff', 6);
         this.foes.push(e);
+      });
+    }
+    /** 이 방에서 쓰러진 적을 적어 둔다 (방을 나갔다 들어와도 되살아나지 않게) */
+    noteSlain() {
+      for (const e of this.foes) {
+        if (!e.dead || e._slainNoted || !e.slainId || e.hp > 0) continue;
+        e._slainNoted = true;
+        const s = S(), key = this.did + ':' + this.k;
+        const r = this.slainRec() || (s.slain[key] = { t: s.t, ids: [], v: s.dgVisit || 0 });
+        if (!r.ids.includes(e.slainId)) r.ids.push(e.slainId);
+        r.t = s.t; r.v = s.dgVisit || 0;
       }
     }
     get RW() { return G.world.map.RW || RW0; } get RH() { return G.world.map.RH || RH0; }
@@ -348,10 +372,13 @@
         const R = this.R;
         if (R.onEnter && !this.enteredOnce) { this.enteredOnce = true; R.onEnter(this, Wd); }
         const solvedClear = R.solve && (R.solve.type === 'clear' || R.solve.type === 'waves') && s.flags[this.flagClear] && !R.respawn;
-        if (!solvedClear) this.spawnList(R.waves ? R.waves[0] : R.foes, Wd);
+        if (!solvedClear) this.spawnList(R.waves ? R.waves[0] : R.foes, Wd, R.waves ? null : 'f:');   // 파도 방은 적지 않는다 (다시 들어오면 첫 파도부터)
+        // 「방 정리」 방의 적을 이미 다 쓰러뜨렸으면 풀린 것으로
+        this.allSlain = !solvedClear && !R.waves && (R.foes || []).length > 0 && !this.foes.length;
         this.wave = 0;
         if (R.solve && (R.solve.type === 'clear' || R.solve.type === 'waves') && !s.flags[this.flagClear] && this.foes.length) { this.trap = true; sfx('door'); if (R.waves) G.ui.toast('시련의 방 — 파도 1 / ' + R.waves.length, 'bad'); }
       }
+      if (this.active) this.noteSlain();
       // 파도: 다 쓰러뜨리면 다음 무리
       if (this.active && this.R.waves && !s.flags[this.flagClear] && this.foes.length && this.foes.every((e) => e.dead) && this.wave < this.R.waves.length - 1) {
         this.waveT = (this.waveT || 0) + dt;
@@ -366,7 +393,7 @@
       if (R.solve && !s.flags[this.flagClear]) {
         const sv = R.solve;
         let ok = false;
-        if (sv.type === 'clear') ok = this.active && this.foes.length > 0 && this.foes.every((e) => e.dead);
+        if (sv.type === 'clear') ok = this.active && ((this.foes.length > 0 && this.foes.every((e) => e.dead)) || this.allSlain);
         else if (sv.type === 'waves') ok = this.active && this.foes.length > 0 && this.foes.every((e) => e.dead) && this.wave >= (this.R.waves || [0]).length - 1;
         else if (sv.type === 'order') ok = !!this.seqDone;
         else if (sv.type === 'torches') ok = Wd.ents.filter((e) => e.room === this.k && e instanceof P().Torch).every((t) => t.lit);

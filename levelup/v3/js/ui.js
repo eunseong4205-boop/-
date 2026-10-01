@@ -476,50 +476,70 @@
     body.appendChild(row({ icon: G.hud.icon('arrows'), name: '화살', v: s.ammo.arrows + ' / ' + s.ammo.arrowsMax, desc: s.tools.bow ? '활로 쏘고, 활 스킬에도 쓴다.' : '활이 없다' }));
     body.appendChild(row({ icon: G.hud.icon('bomb'), name: '폭탄', v: s.ammo.bombs + ' / ' + s.ammo.bombsMax, desc: s.tools.bomb ? '도구로 폭탄을 골라 두면 도구 버튼으로 놓는다.' : '폭탄 가방이 없다' }));
   }
-  /* ── 스킬: 무기마다 스킬(L) 하나 · 필살기(O) 하나, 마법은 공격 버튼으로 거는 주문 하나 ── */
+  /* ── 스킬: 무기 탭 → 등급별 스킬(L) 열다섯 · 마법은 공격 버튼으로 거는 주문 · 필살기(O) ── */
+  let skillW = null;
   function tabSkills(body) {
-    const s = S(), D = G.data, P = G.prog, SN = G.stance;
+    const s = S(), D = G.data, P = G.prog, SN = G.stance, SKL = G.skills;
     if (!SN) return;
     const cur = SN.cur(s), have = SN.avail(s);
-    note(body, markup('지금 든 무기: [y]' + SN.WNAME[cur] + '[/] — [y]K[/]로 바꿔 든다. 무기마다 [y]스킬(L)[/] 하나와 [y]필살기(O)[/] 하나를 골라 둔다. 스킬은 재능 나무에서 더 배운다.'));
-    const d = G.st.derive(s);
+    if (!skillW || !SN.WEAPONS.includes(skillW)) skillW = cur;
+    note(body, markup('지금 든 무기: [y]' + SN.WNAME[cur] + '[/] — [y]K[/]로 바꿔 든다. 무기마다 [y]스킬(L)[/] 하나와 [y]필살기(O)[/] 하나를 골라 둔다. 스킬은 쓸수록 [y]숙련 ★[/]이 오른다(★마다 피해 +8% · 대기 -5%).'));
+    // 무기 탭
+    const tabs = document.createElement('div'); tabs.className = 'ttabs';
     for (const w of SN.WEAPONS) {
-      const own = have.includes(w);
-      sec(body, SN.WNAME[w] + (own ? '' : ' — 아직 없다') + (w === cur ? ' ◆ 손에 듦' : ''));
-      // 스킬
-      const list = Object.keys(SN.ASK).filter((k) => SN.ASK[k].w === w);
-      for (const k of list) {
-        const A = SN.ASK[k], got = !!(s.askills && s.askills[k]), on = SN.equipped(s, w) === k;
-        const cost = [A.cost.st ? '기력 ' + A.cost.st : '', A.cost.ar ? '화살 ' + A.cost.ar : '', A.cost.mp ? 'MP ' + A.cost.mp : '', A.cost.mpX ? 'MP 주문×' + A.cost.mpX : ''].filter(Boolean).join(' · ');
-        const src = (D.SKILLS || []).find((x) => x.act === k);
-        body.appendChild(row({ icon: G.hud.icon(A.icon), name: (on ? '[y]◆[/] ' : '') + (got ? '' : '[s]') + '스킬: ' + A.name + (got ? '' : '[/]'), v: cost + ' · ' + A.cd + '초', desc: A.desc + (got ? '' : ' — ' + (src ? '재능 나무 「' + src.tree + '」 ' + src.row + '줄에서 배운다' : '아직 익히지 못했다')), dim: !got || !own, onClick: () => {
-          if (!got) { toast(src ? '재능 나무 「' + src.tree + '」에서 배운다' : '아직 익히지 못했다', 'bad'); sfx('buzz'); return; }
+      const list = Object.keys(SN.ASK).filter((k) => SN.ASK[k].w === w), got = list.filter((k) => s.askills && s.askills[k]).length;
+      const b = document.createElement('button'); b.className = 'nav ttab' + (w === skillW ? ' on' : '') + (have.includes(w) ? '' : ' dim');
+      b.innerHTML = '<b>' + SN.WNAME[w] + (w === cur ? ' ◆' : '') + '</b><small>스킬 ' + got + ' / ' + list.length + '</small>';
+      b.addEventListener('click', () => { skillW = w; sfx('page'); refresh(); });
+      tabs.appendChild(b);
+    }
+    body.appendChild(tabs);
+    const w = skillW, own = have.includes(w), d = G.st.derive(s);
+    if (!own) note(body, markup('[s]아직 ' + SN.WNAME[w] + '이 없다 — 스킬은 미리 익혀 둘 수 있다.[/]'));
+    const on = SN.equipped(s, w);
+    const list = Object.keys(SN.ASK).filter((k) => SN.ASK[k].w === w);
+    for (let g = 1; g <= 5; g++) {
+      const lg = list.filter((k) => (SN.ASK[k].grade || 1) === g); if (!lg.length) continue;
+      const GR = P.GRADES[g];
+      sec(body, GR.name + ' 스킬' + (SKL && SKL.GREQ[g] ? ' — 필요 ' + P.STAT_NAME[{ sword: 'str', bow: 'dex', magic: 'int' }[w]] + ' ' + SKL.GREQ[g].s + ' · Lv ' + SKL.GREQ[g].lv : ''));
+      for (const k of lg) {
+        const A = SN.ASK[k], got = !!(s.askills && s.askills[k]), ok = P.reqOk(s, A.req), eq = on === k;
+        const rk = SKL ? SKL.rank(s, k) : 1, nx = SKL && got ? G.stance.nextRank && G.stance.nextRank(s, k) : null;
+        const cost = [A.cost.st ? '기력 ' + A.cost.st : '', A.cost.ar ? '화살 ' + A.cost.ar : '', A.cost.mp ? 'MP ' + Math.round(A.cost.mp * d.mpCost) : '', A.cost.mpX ? 'MP 주문×' + A.cost.mpX : ''].filter(Boolean).join(' · ');
+        const src = SKL ? SKL.sources(k) : [];
+        const stars = got ? ' [y]' + '★'.repeat(rk) + '[/][s]' + '☆'.repeat(5 - rk) + '[/]' : '';
+        const tail = got ? (ok ? (nx ? ' — 숙련 ' + ((s.askUse && s.askUse[k]) || 0) + '회, 다음 ★까지 ' + nx + '번' : ' — 숙련 끝(★5)') : ' — [r]필요: ' + P.reqText(s, A.req).replace(/\[\/?r\]/g, '') + '[/]') : ' — [s]얻는 곳: ' + (src.length ? src.join(' · ') : '아직 알려지지 않았다') + '[/]' + (A.req && !ok ? ' · [r]필요 ' + P.reqText(s, A.req).replace(/\[\/?r\]/g, '') + '[/]' : '');
+        body.appendChild(row({ icon: G.hud.icon(A.icon || k), name: (eq ? '[y]◆[/] ' : '') + (got ? '[g' + g + ']' : '[s]') + A.name + '[/]' + stars, v: cost + ' · ' + A.cd + '초', desc: A.desc + tail, dim: !got || !ok, onClick: () => {
+          if (!got) { toast(src.length ? '얻는 곳: ' + src[0] : '아직 익히지 못했다', 'bad'); sfx('buzz'); return; }
+          if (!ok) { toast('아직 다룰 수 없다: ' + P.reqText(s, A.req).replace(/\[\/?r\]/g, ''), 'bad'); sfx('buzz'); return; }
           s.wskill = s.wskill || {}; s.wskill[w] = k; sfx('equip'); toast(SN.WNAME[w] + ' 스킬: ' + A.name, 'gold'); refresh();
         } }));
       }
-      // 마법: 공격 버튼으로 거는 주문
-      if (w === 'magic') {
-        const sp = Object.keys(s.spells);
-        if (!sp.length) note(body, '아직 주문을 모른다. 마도서를 읽으면 배운다.');
-        for (const k of sp) {
-          const S2 = D.SPELLS[k]; if (!S2) continue; const ok = P.reqOk(s, S2.req);
-          body.appendChild(row({ icon: G.hud.icon(S2.icon), name: (s.spell === k ? '[y]◆[/] ' : '') + '주문: ' + gname(S2), v: 'MP ' + Math.round(S2.mp * d.mpCost), desc: gradeLabel(S2) + ' — ' + S2.desc + (S2.req ? ' · 필요 ' + P.reqText(s, S2.req) : ''), dim: !ok, onClick: () => {
-            if (!ok) { toast('아직 다룰 수 없다: ' + P.reqText(s, S2.req).replace(/\[\/?r\]/g, ''), 'bad'); sfx('buzz'); return; }
-            s.spell = k; sfx('equip'); refresh();
-          } }));
-        }
-      }
-      // 필살기
-      const sps = Object.keys(D.SPECIALS).filter((k) => (D.SPECIALS[k].type || 'sword') === w && s.specials[k]);
-      for (const k of sps) {
-        const sp = D.SPECIALS[k], ok = P.reqOk(s, sp.req), on = (s.specialBy && s.specialBy[w] === k) || (!(s.specialBy && s.specialBy[w]) && G.combat.specialFor && w === cur && G.combat.specialFor(s) === k);
-        body.appendChild(row({ icon: G.hud.icon('special'), name: (on ? '[y]◆[/] ' : '') + '필살기: ' + gname(sp), desc: gradeLabel(sp) + ' — ' + sp.desc + (sp.req ? ' · 필요 ' + P.reqText(s, sp.req) : ''), dim: !ok, onClick: () => {
-          if (!ok) { toast('아직 다룰 수 없다: ' + P.reqText(s, sp.req).replace(/\[\/?r\]/g, ''), 'bad'); sfx('buzz'); return; }
-          s.specialBy = s.specialBy || {}; s.specialBy[w] = k; s.specialMove = k; sfx('equip'); toast(SN.WNAME[w] + ' 필살기: ' + sp.name, 'gold'); refresh();
+    }
+    // 마법: 공격 버튼으로 거는 주문
+    if (w === 'magic') {
+      sec(body, '주문 — 마법을 들고 공격 버튼(J)');
+      const sp = Object.keys(s.spells);
+      if (!sp.length) note(body, '아직 주문을 모른다. 마도서를 읽으면 배운다.');
+      for (const k of sp) {
+        const S2 = D.SPELLS[k]; if (!S2) continue; const ok = P.reqOk(s, S2.req);
+        body.appendChild(row({ icon: G.hud.icon(S2.icon), name: (s.spell === k ? '[y]◆[/] ' : '') + '주문: ' + gname(S2), v: 'MP ' + Math.round(S2.mp * d.mpCost), desc: gradeLabel(S2) + ' — ' + S2.desc + (S2.req ? ' · 필요 ' + P.reqText(s, S2.req) : ''), dim: !ok, onClick: () => {
+          if (!ok) { toast('아직 다룰 수 없다: ' + P.reqText(s, S2.req).replace(/\[\/?r\]/g, ''), 'bad'); sfx('buzz'); return; }
+          s.spell = k; sfx('equip'); refresh();
         } }));
       }
-      if (!sps.length) note(body, markup('[s]' + SN.WNAME[w] + ' 필살기가 아직 없다 — 비기 두루마리로 익힌다.[/]'));
     }
+    // 필살기
+    sec(body, '필살기 — ' + SN.WNAME[w] + '을 들고 O');
+    const sps = Object.keys(D.SPECIALS).filter((k) => (D.SPECIALS[k].type || 'sword') === w && s.specials[k]);
+    for (const k of sps) {
+      const sp = D.SPECIALS[k], ok = P.reqOk(s, sp.req), eq = (s.specialBy && s.specialBy[w] === k) || (!(s.specialBy && s.specialBy[w]) && G.combat.specialFor && w === cur && G.combat.specialFor(s) === k);
+      body.appendChild(row({ icon: G.hud.icon('special'), name: (eq ? '[y]◆[/] ' : '') + '필살기: ' + gname(sp), desc: gradeLabel(sp) + ' — ' + sp.desc + (sp.req ? ' · 필요 ' + P.reqText(s, sp.req) : ''), dim: !ok, onClick: () => {
+        if (!ok) { toast('아직 다룰 수 없다: ' + P.reqText(s, sp.req).replace(/\[\/?r\]/g, ''), 'bad'); sfx('buzz'); return; }
+        s.specialBy = s.specialBy || {}; s.specialBy[w] = k; s.specialMove = k; sfx('equip'); toast(SN.WNAME[w] + ' 필살기: ' + sp.name, 'gold'); refresh();
+      } }));
+    }
+    if (!sps.length) note(body, markup('[s]' + SN.WNAME[w] + ' 필살기가 아직 없다 — 비기 두루마리로 익힌다.[/]'));
   }
   let treeSel = null;
   function tabTree(body) {
@@ -643,7 +663,7 @@
     const s = S(), I2 = G.data.ITEMS;
     for (const k of sh.items) {
       const it = I2[k]; if (!it) continue;
-      const owned = ['sword', 'shield', 'armor', 'bow', 'acc'].includes(it.type) && s.inv[k] > 0 || it.type === 'tome' && s.spells[it.spell] || it.type === 'art' && s.specials[it.special];
+      const owned = ['sword', 'shield', 'armor', 'bow', 'acc'].includes(it.type) && s.inv[k] > 0 || it.type === 'tome' && s.spells[it.spell] || it.type === 'art' && s.specials[it.special] || it.type === 'sbook' && s.askills && s.askills[it.skill];
       const price = it.price;
       body.appendChild(row({ icon: itemIcon(k), name: gname(it) + (owned ? ' [s](가짐)[/]' : ''), desc: (statLine(it) ? statLine(it) + ' — ' : '') + it.desc, v: '◎ ' + U.fmtInt(price), dim: owned || s.gold < price, onClick: () => {
         if (owned) { toast('이미 가지고 있다', ''); return; }

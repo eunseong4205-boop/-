@@ -324,6 +324,7 @@ button.stat small.fx { color: var(--paper-dim); }
 .ttab b { display: block; font-weight: normal; font-size: 13px; } .ttab small { display: block; font-size: 10px; color: var(--muted); font-variant-numeric: tabular-nums; }
 .ttab.can small { color: var(--exp); }
 .ttab.on { background: rgba(240, 204, 110, .12); box-shadow: inset 0 0 0 1px var(--hair); color: var(--gold); }
+.ttab.dim { opacity: .55; }
 .ttab .tag { position: absolute; top: -7px; right: 4px; }
 .trow { display: grid; grid-template-columns: 58px 1fr; gap: 8px; align-items: stretch; margin-bottom: 8px; }
 .trow .trh { display: grid; place-content: center; text-align: center; border-radius: 9px; background: rgba(0, 0, 0, .25); box-shadow: inset 0 0 0 1px var(--line); }

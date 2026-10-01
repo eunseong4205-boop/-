@@ -392,6 +392,9 @@
     const ents0 = Dn.ents;
     Dn.ents = function (m, Wd) { if (ents0) ents0.apply(this, arguments); Wd.add(new RuleCtl({ x: m.entry ? m.entry.x : 0, y: m.entry ? m.entry.y : 0 })); };
   }
+  // 던전 방문 번호(쓰러뜨린 적이 다시 채워지는 때를 정한다, 03_dungeon): 다른 지도에서 던전으로 들어올 때마다 하나씩
+  let lastDg = null;
+  ST.enterHooks.push((m) => { const d = m && m.dungeon; if (d && d !== lastDg && S()) S().dgVisit = (S().dgVisit || 0) + 1; lastDg = d || null; });
   ST.enterHooks.push((m) => {
     const did = m && m.dungeon ? m.dungeon : null;
     const p = W().player;

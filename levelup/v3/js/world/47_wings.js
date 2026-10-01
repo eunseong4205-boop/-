@@ -299,7 +299,9 @@
       const strong = ctx.pool[ctx.pool.length - 1], foes = [[strong, 9, 5, { elite: true, ward: ctx.wset.length > 1 ? 'cycle' : false }]];
       if (ctx.tier >= 6) foes.push([ctx.pool[Math.floor(ctx.rnd() * ctx.pool.length)], 5, 9, { elite: true, ward: ctx.wset.length > 1 ? 'auto' : false }]);
       foes.push(...foesFor(ctx, 1 + Math.floor(ctx.tier / 3), 2));
-      const props = [['chest', 13, 4, { item: ctx.reward, big: true, hidden: ctx.flag, col: '#e8c048' }], ['chest', 6, 4, { item: ctx.tier >= 5 ? 'potion_g' : 'potion_r', hidden: ctx.flag }], ['torch', 4, 9, { lit: true }], ['torch', 15, 9, { lit: true }]];
+      const book = G.skills ? G.skills.wingBook(ctx.did, ctx.tier) : 'potion_r';
+      if (G.skills) G.skills.wingBooks[ctx.did] = book;
+      const props = [['chest', 13, 4, { item: ctx.reward, big: true, hidden: ctx.flag, col: '#e8c048' }], ['chest', 6, 4, { item: ctx.tier >= 5 ? 'potion_g' : 'potion_r', hidden: ctx.flag }], ['chest', 6, 10, { item: book, hidden: ctx.flag, col: '#8a6ad8' }], ['torch', 4, 9, { lit: true }], ['torch', 15, 9, { lit: true }]];
       props.push(['sign', 12, 12, { text: '「별관의 수호자 — 머리 위 표식이 바뀐다. 무기도 따라 바꿔라.」' }]);
       return { shape: 'round', props, foes, solve: { type: 'clear', flag: ctx.flag, msg: '수호자가 쓰러졌다 — 별관의 보물' + (ctx.mandatory ? ' · 깊은 구역 계단이 열린다' : '') } };
     },
