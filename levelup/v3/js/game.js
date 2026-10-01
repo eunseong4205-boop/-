@@ -112,8 +112,8 @@
     const p = new G.Player({ x, y });
     p.look = G.story && G.story.heroLook ? G.story.heroLook(s) : { gender: s.gender === 'girl' ? 'girl' : 'boy', hair: s.gender === 'girl' ? 'long' : 'spiky', hc: '#6a4a3a', top: 'tunic', tc: '#3aa84a', eye: '#4a9a6a' };
     p.actions = G.combat.actions;
-    p.behindWeapon = () => { if (p.dir === 'up') G.combat.drawWeapon(W.ctx, p, W.rcx, W.rcy); };
-    p.onDraw = () => { if (p.dir !== 'up') G.combat.drawWeapon(W.ctx, p, W.rcx, W.rcy); };
+    p.behindWeapon = () => { if (G.gear && p.dir !== 'up') G.gear.drawCarry(W.ctx, p, W.rcx, W.rcy); if (p.dir === 'up') G.combat.drawWeapon(W.ctx, p, W.rcx, W.rcy); };
+    p.onDraw = () => { if (G.gear && p.dir === 'up') G.gear.drawCarry(W.ctx, p, W.rcx, W.rcy); if (p.dir !== 'up') G.combat.drawWeapon(W.ctx, p, W.rcx, W.rcy); };
     return p;
   }
 

@@ -97,6 +97,7 @@
       if (s.skills.mg_siphon && src === 'spell') s.mp = Math.min(d.mpMax, s.mp + 8);
     }
     drops(e);
+    if (C.onKill) { try { C.onKill(e, info || {}); } catch (err) { console.error(err); } }
     if (G.story && G.story.onKill) G.story.onKill(e);
   }
   /** 떨어뜨리기: 빛 알갱이(경험) · 골드 · 하트 · MP · 화살 · 재료 */
@@ -134,6 +135,7 @@
         G.fx.ring(p.x, p.y - 10, '#8ad8ff', 26, 0.5, 2);
         sfx('perfect');
         p.counterT = 0.9;
+        if (C.onPerfect) C.onPerfect(p);
       }
       return false;
     }
@@ -160,6 +162,7 @@
       const lv = G.data.ITEMS[s.equip.shield].lv || 1;
       if (Math.abs(U.angDiff(a, f)) < 1.0 && (src.blockLv || 1) <= lv) {
         sfx('shield'); G.fx.sparks(p.x + Math.cos(f) * 8, p.y - 10 + Math.sin(f) * 6, 6, '#ffffff', 70);
+        if (C.onBlock) C.onBlock(p, src);
         if (s.skills.sw_guard) { addSpecial(15); p.critNext = true; p.counterT = 0.9; }      // 철벽 자세
         if (src.reflectable && lv >= 3) { src.vx *= -1.3; src.vy *= -1.3; src.owner = 'player'; src.reflected = true; src.hit = new Set(); return false; }
         src.dead = true; return false;
@@ -257,7 +260,7 @@
           if (U.dist(this.x, this.y, e.x, e.y - (e.h || 16) / 2) < (e.r || 8) + this.r) {
             this.hit.add(e);
             const [nx, ny] = U.norm(this.vx, this.vy);
-            damage(e, this.reflected ? this.dmg * 2 : this.dmg, { src: this.src || 'shot', w: this.w, skill: this.skill, kx: nx, ky: ny, el: this.el, stun: this.stun, power: this.power || 0.6, refl: this.reflected, travel: this.ox != null ? U.dist(this.ox, this.oy, this.x, this.y) : 0, charged: this.charged, crit: this.crit, shot: this });
+            damage(e, this.reflected ? this.dmg * 2 : this.dmg, { src: this.src || 'shot', w: this.w, skill: this.skill, kx: nx, ky: ny, el: this.el, stun: this.stun, power: this.power || 0.6, refl: this.reflected, travel: this.ox != null ? U.dist(this.ox, this.oy, this.x, this.y) : 0, charged: this.charged, crit: this.crit, shot: this, proc: this.proc });
             if (this.onHitFoe) this.onHitFoe(e);
             if (this.pierce-- <= 0) { this.die(); return true; }
           }
@@ -522,6 +525,7 @@
     }
     p.atkFrame = 0;
     sfx(stage === 2 ? 'thrust' : 'swing');
+    if (C.onSwing) C.onSwing(p, p.swing);
     // 반격 (완벽 회피 직후)
     p.critNext = p.counterT > 0 && s.skills.sw_counter;
     p.counterT = 0;
@@ -540,6 +544,7 @@
     sw.t += dt;
     const k = Math.min(1, sw.t / sw.dur);
     p.atkFrame = k < 0.25 ? 0 : k < 0.85 ? 1 : 2;
+    if (!sw.mid && k >= 0.45) { sw.mid = true; if (C.onSwingMid) C.onSwingMid(p, sw); }
     if (p.lunge > 0) { E.move(m, p, p.lungeDir[0] * p.lunge * dt, p.lungeDir[1] * p.lunge * dt); p.lunge = Math.max(0, p.lunge - 500 * dt); }
     // 판정: 휘두르는 동안
     if (k > 0.1 && k < 0.95) {
@@ -613,6 +618,7 @@
     p.spin = { t: 0, dur: s.skills.sw_great ? 0.55 : 0.36, turns: s.skills.sw_great ? 2 : 1, reach: G.st.derive(s).reach + (s.skills.sw_great ? 12 : 6), a0: swordAngle(p) };
     sfx('spin');
     G.fx.ring(p.x, p.y - 6, '#ffffff', p.spin.reach + 4, 0.35, 2);
+    if (C.onSpin) C.onSpin(p, p.spin);
     if (s.skills.sw_wave) {
       const d = G.st.derive(s);
       for (let i = 0; i < 8; i++) { const a = i * Math.PI / 4; shoot({ kind: 'orb', col: '#e8f4ff', x: p.x + Math.cos(a) * 12, y: p.y - 4 + Math.sin(a) * 10, vx: Math.cos(a) * 230, vy: Math.sin(a) * 230, dmg: d.atk * 0.9, src: 'beam', r: 3, life: 0.32, pierce: 2, trail: '#e8f4ff', ghost: true }); }
@@ -732,6 +738,7 @@
   function castSpell(p, id, d) {
     const a = U.angle(p.face[0], p.face[1]);
     const mm = d.magMul;
+    if (C.onCast) C.onCast(p, id, d, a);
     if (id === 'fire') { shoot({ kind: 'fire', x: p.x + Math.cos(a) * 10, y: p.y - 2 + Math.sin(a) * 8, vx: Math.cos(a) * 210, vy: Math.sin(a) * 210, dmg: (4 + S().lv * 0.25) * mm, src: 'spell', el: 'fire', r: 4, life: 0.8, trail: '#ffb04a', explode: d.fireBlast || 0.6 }); sfx('fire'); }
     else if (id === 'ice') { shoot({ kind: 'ice', x: p.x + Math.cos(a) * 10, y: p.y - 2 + Math.sin(a) * 8, vx: Math.cos(a) * 240, vy: Math.sin(a) * 240, dmg: (3 + S().lv * 0.2) * mm, src: 'spell', el: 'ice', r: 4, life: 0.7, trail: '#e8f8ff', pierce: d.icePierce || 2, ghost: false }); sfx('ice'); }
     else if (id === 'bolt') {

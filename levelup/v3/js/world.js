@@ -123,6 +123,7 @@
     // 바닥에 붙는 것 (그림자 · 떨어진 물건 · 효과)
     for (const e of W.ents) if (!e.dead && !e.hidden && e.drawShadow && e.x > cx - 60 && e.x < cx + v.w + 60 && e.y > cy - 20 && e.y < cy + v.h + 60) e.drawShadow(g, cx, cy);
     if (G.fx) G.fx.drawUnder(g, cx, cy);
+    if (G.gear && G.gear.drawUnder) { try { G.gear.drawUnder(g, cx, cy); } catch (_) { /* 무시 */ } }
     // y 정렬: 서 있는 사물 + 존재
     const list = [];
     m.collect(list, tx0, ty0, tx1, ty1 + 3);

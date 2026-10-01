@@ -240,7 +240,7 @@
     r.style.width = '100%'; r.style.textAlign = 'left';
     let ic = '';
     r.innerHTML = (o.icon ? '<div class="ic"></div>' : '') + '<div class="nm"><b>' + markup(o.name) + '</b>' + (o.desc ? '<small>' + markup(o.desc) + '</small>' : '') + '</div>' + (o.v != null ? '<div class="v">' + markup(String(o.v)) + '</div>' : '');
-    if (o.icon) { const c = o.icon.cloneNode ? o.icon : null; const box = r.querySelector('.ic'); const cv = document.createElement('canvas'); cv.width = 16; cv.height = 16; const g = cv.getContext('2d'); g.imageSmoothingEnabled = false; if (c) g.drawImage(o.icon, Math.round((16 - o.icon.width) / 2), Math.round((16 - o.icon.height) / 2)); box.appendChild(cv); }
+    if (o.icon) { const c = o.icon.cloneNode ? o.icon : null; const box = r.querySelector('.ic'); const cv = document.createElement('canvas'); const sz = o.icon.width > 16 ? 32 : 16; cv.width = sz; cv.height = sz; const g = cv.getContext('2d'); g.imageSmoothingEnabled = false; if (c) g.drawImage(o.icon, Math.round((sz - o.icon.width) / 2), Math.round((sz - o.icon.height) / 2)); box.appendChild(cv); }
     void ic;
     if (o.onClick) r.addEventListener('click', () => { o.onClick(); });
     return r;
@@ -250,6 +250,7 @@
   function itemIcon(id) {
     const it = G.data.ITEMS[id]; const H = G.hud;
     if (!it) return H.icon('none');
+    if (G.gear && G.gear.icon && !it.icon) { const gi = G.gear.icon(id); if (gi) return gi; }
     if (it.icon) return H.icon(it.icon);
     if (it.type === 'use') return H.icon(it.heal ? 'heart' : 'light');
     if (it.type === 'sword') return swordIcon(it.col);
@@ -357,6 +358,7 @@
     if (it.def && it.def < 1) p.push('피해 -' + Math.round((1 - it.def) * 100) + '%');
     if (it.resist) p.push({ heat: '더위', cold: '추위', all: '더위 · 추위' }[it.resist] + ' 막음');
     if (it.fx) for (const k of ['str', 'vit', 'sta', 'int', 'dex']) if (it.fx[k]) p.push(G.prog.STAT_NAME[k] + (it.fx[k] > 0 ? ' +' : ' ') + it.fx[k]);
+    if (G.gear && G.gear.line) { const gx = G.gear.line(it); if (gx) p.push(gx); }
     if (it.req) p.push('필요 ' + G.prog.reqText(S(), it.req));
     return p.join(' · ');
   }
