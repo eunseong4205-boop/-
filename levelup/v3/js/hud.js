@@ -242,7 +242,7 @@
       if (mx < x || my < y || mx > x + mw || my > y + mh) continue;
       g.fillStyle = mk.col || '#8ad8ff'; g.fillRect(Math.round(mx) - 1, Math.round(my) - 1, 2, 2);
     }
-    const goal = G.story && G.story.goal && G.story.goal();
+    const goal = G.story && (G.story.goalOn ? G.story.goalOn(m.id) : G.story.goal && G.story.goal());   // 다른 지도의 목표는 그리로 가는 문을
     if (goal && goal.map === m.id) {
       let gx = x + goal.x * sc - sx, gy = y + goal.y * sc - sy;
       const inside = gx >= x && gy >= y && gx <= x + mw && gy <= y + mh;

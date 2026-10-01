@@ -8786,7 +8786,7 @@ button.stat small.fx { color: var(--paper-dim); }
       if (mx < x || my < y || mx > x + mw || my > y + mh) continue;
       g.fillStyle = mk.col || '#8ad8ff'; g.fillRect(Math.round(mx) - 1, Math.round(my) - 1, 2, 2);
     }
-    const goal = G.story && G.story.goal && G.story.goal();
+    const goal = G.story && (G.story.goalOn ? G.story.goalOn(m.id) : G.story.goal && G.story.goal());   // 다른 지도의 목표는 그리로 가는 문을
     if (goal && goal.map === m.id) {
       let gx = x + goal.x * sc - sx, gy = y + goal.y * sc - sy;
       const inside = gx >= x && gy >= y && gx <= x + mw && gy <= y + mh;
@@ -12352,6 +12352,28 @@ button.stat small.fx { color: var(--paper-dim); }
     return g || null;
   };
   ST.goalText = function () { const g = ST.goal(); return g ? g.text : ''; };
+  /** 다른 지도로 들어가는 길이 문이 아닌 곳(무한호처럼): ST.entries[지도] = () => ({ map, x, y }) 또는 { via: 거쳐 가는 지도 } */
+  ST.entries = {};
+  /** 목표를 지금 지도 위의 자리로 옮겨 본다: 목표가 다른 지도에 있으면 그리로 가는 문(대륙이면 그 집 문 · 무한호, 실내 · 던전이면 출구) */
+  ST.goalOn = function (mapId) {
+    const g = ST.goal(); if (!g || !g.map || g.map === mapId) return g;
+    let m; try { m = G.build.get(mapId); } catch (e) { return null; }
+    if (!m) return null;
+    const ok = (w) => { try { return !w.cond || w.cond(); } catch (e) { return false; } };
+    const at = (x, y) => Object.assign({}, g, { map: mapId, x, y, via: true });
+    const door = (mm, to) => (mm.warps || []).find((w) => w.to === to && ok(w));
+    // 목표 지도로 들어가는 자리(대륙 쪽): 문, 따로 적어 둔 길, 거쳐 가는 지도의 문 — 두 단계까지
+    const entry = (to, depth) => {
+      const e = ST.entries[to];
+      if (e && typeof e === 'function') { const r = e(); if (r && r.map === mapId) return [r.x, r.y]; }
+      const w = door(m, to); if (w) return [w.x, w.y + (w.exit || w.dir === 'down' ? -1 : 1)];
+      if (e && e.via && depth < 3) return entry(e.via, depth + 1);
+      return null;
+    };
+    const r = entry(g.map, 0); if (r) return at(r[0], r[1]);
+    if (!m.overworld) { const w = (m.warps || []).find((w2) => (w2.exit || w2.to === 'world') && ok(w2)); if (w) return at(w.x, w.y - 1); }
+    return null;
+  };
   ST.routeNote = function () {
     const r = S().route; const tot = r.dawn + r.order + r.night;
     if (!tot) return '아직 어느 쪽에도 기울지 않았다.';
@@ -17979,7 +18001,7 @@ button.stat small.fx { color: var(--paper-dim); }
       // 발사대 방어 중에는 공방이 아니라 발사대를 가리킨다
       if (ST.COLORFUL.defendT != null && !f('c10_launch')) return { text: '발사대를 지켜라! 다가오는 기사단을 막는다 — 예열 ' + Math.min(100, Math.floor(ST.COLORFUL.defendT / 60 * 100)) + '%', map: 'world', x: PAD.x + 3, y: PAD.y + 9 };
       if (!f('c10_launch')) return { text: '부품이 다 모였다. 피로스 박사에게!', map: 'world', ...OW.pt(289, 211) };
-      return { text: '하늘 정거장으로.', map: 'world', x: PAD.x + 2, y: PAD.y + 6 };
+      return { text: '하늘 정거장으로. (발사대의 무한호에 탄다)', map: 'world', x: PAD.x + 3, y: PAD.y + 8 };
     } });
 
   /* ───────── 물건 ───────── */
@@ -18004,7 +18026,7 @@ button.stat small.fx { color: var(--paper-dim); }
   ST.onMap('world', (m, Wd) => {
     const P = G.props;
     Wd.add(new P.Waystone({ x: px(CT.plaza.x - 3), y: py(CT.plaza.y + 3), wid: 'w_colorful', name: '알록달록 곶' }));
-    Wd.add(new P.Sign({ x: px(PAD.x + 3), y: py(PAD.y + 9), text: '무한호 발사대\n「제412안. 이번엔 진짜다」 — 피로스\n「지난번에도 그랬다」 — 봄바' }));
+    Wd.add(new P.Sign({ x: px(PAD.x + 6), y: py(PAD.y + 9), text: '무한호 발사대\n「제412안. 이번엔 진짜다」 — 피로스\n「지난번에도 그랬다」 — 봄바' }));
     Wd.add(new P.Sign({ x: px(X0 + 12), y: py(Y0 + 21), text: '알록달록 곶 — 쾅! 소리는 성공의 소리\n「폭발은 실패가 아니다. 방향이 틀렸을 뿐이다」' }));
   });
 
@@ -18307,10 +18329,20 @@ button.stat small.fx { color: var(--paper-dim); }
       return rm;
     },
   });
+  // 대륙에서 정거장 · 아스트라로 가는 길은 문이 아니라 무한호 — 목표 표시가 발사대를 가리키게
+  ST.entries.station = () => (f('c10_launch') ? { map: 'world', x: PAD.x + 3, y: PAD.y + 8 } : null);
+  ST.entries.astra = { via: 'station' };
+  ST.entries.astra_core = { via: 'astra' };
   // 무한호: 발사대에서 정거장으로 (10장 뒤)
   ST.onMap('world', (m, Wd) => {
     if (!f('c10_launch')) return;
-    Wd.add(new G.props.Spot({ x: px(PAD.x + 3), y: py(PAD.y + 7), verb: '무한호에 탄다', text: async (c) => { if (await c.confirm('무한호를 타고 하늘 정거장으로 갈까?', '간다', '아직')) { await c.fade(true, { sec: 0.8 }); c.sfx('rumble'); G.game.goto('station', px(17), py(17), 'up'); await c.fade(false, { sec: 0.8 }); } } }));
+    Wd.add(new G.props.Spot({ x: px(PAD.x + 3), y: py(PAD.y + 7), verb: '무한호에 탄다', text: async (c) => {
+      if (!(await c.confirm('무한호를 타고 하늘 정거장으로 갈까?', '간다', '아직'))) return;
+      await c.fade(true, { sec: 0.8 }); c.sfx('rumble');
+      // 아직 11장이 시작되지 않았으면(발사 장면 뒤 바로 저장된 경우 등) 정거장 도착 장면부터
+      if (!f('ch:c11') && ST.startStation) { c.lock(true); await c.cinema(true); await ST.startStation(c); return; }
+      G.game.goto('station', px(17), py(17), 'up'); await c.fade(false, { sec: 0.8 });
+    } }));
   });
 
   ST.startStation = async function (c) {
@@ -23043,7 +23075,7 @@ button.stat small.fx { color: var(--paper-dim); }
       g.fillStyle = '#0a1830'; g.fillRect(x - 4, y - 4, 8, 8); g.fillStyle = '#8ad8ff'; g.beginPath(); g.moveTo(x, y - 4); g.lineTo(x + 3, y); g.lineTo(x, y + 4); g.lineTo(x - 3, y); g.closePath(); g.fill();
     }
     // 목표
-    const goal = ST.goal && ST.goal();
+    const goal = ST.goalOn ? ST.goalOn('world') : ST.goal && ST.goal();
     if (goal && goal.map === 'world') { const x = goal.x * SC + SC / 2, y = goal.y * SC + SC / 2; g.strokeStyle = '#ffd84a'; g.lineWidth = 2; g.beginPath(); g.arc(x, y, 7, 0, Math.PI * 2); g.stroke(); g.fillStyle = '#ffd84a'; g.fillRect(x - 1, y - 1, 3, 3); g.lineWidth = 1; }
     // 지금 자리
     const cm = G.world.map, p = G.world.player;

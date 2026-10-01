@@ -53,10 +53,20 @@
       return rm;
     },
   });
+  // 대륙에서 정거장 · 아스트라로 가는 길은 문이 아니라 무한호 — 목표 표시가 발사대를 가리키게
+  ST.entries.station = () => (f('c10_launch') ? { map: 'world', x: PAD.x + 3, y: PAD.y + 8 } : null);
+  ST.entries.astra = { via: 'station' };
+  ST.entries.astra_core = { via: 'astra' };
   // 무한호: 발사대에서 정거장으로 (10장 뒤)
   ST.onMap('world', (m, Wd) => {
     if (!f('c10_launch')) return;
-    Wd.add(new G.props.Spot({ x: px(PAD.x + 3), y: py(PAD.y + 7), verb: '무한호에 탄다', text: async (c) => { if (await c.confirm('무한호를 타고 하늘 정거장으로 갈까?', '간다', '아직')) { await c.fade(true, { sec: 0.8 }); c.sfx('rumble'); G.game.goto('station', px(17), py(17), 'up'); await c.fade(false, { sec: 0.8 }); } } }));
+    Wd.add(new G.props.Spot({ x: px(PAD.x + 3), y: py(PAD.y + 7), verb: '무한호에 탄다', text: async (c) => {
+      if (!(await c.confirm('무한호를 타고 하늘 정거장으로 갈까?', '간다', '아직'))) return;
+      await c.fade(true, { sec: 0.8 }); c.sfx('rumble');
+      // 아직 11장이 시작되지 않았으면(발사 장면 뒤 바로 저장된 경우 등) 정거장 도착 장면부터
+      if (!f('ch:c11') && ST.startStation) { c.lock(true); await c.cinema(true); await ST.startStation(c); return; }
+      G.game.goto('station', px(17), py(17), 'up'); await c.fade(false, { sec: 0.8 });
+    } }));
   });
 
   ST.startStation = async function (c) {

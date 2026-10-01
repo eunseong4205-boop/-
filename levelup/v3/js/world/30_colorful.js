@@ -39,7 +39,7 @@
       // 발사대 방어 중에는 공방이 아니라 발사대를 가리킨다
       if (ST.COLORFUL.defendT != null && !f('c10_launch')) return { text: '발사대를 지켜라! 다가오는 기사단을 막는다 — 예열 ' + Math.min(100, Math.floor(ST.COLORFUL.defendT / 60 * 100)) + '%', map: 'world', x: PAD.x + 3, y: PAD.y + 9 };
       if (!f('c10_launch')) return { text: '부품이 다 모였다. 피로스 박사에게!', map: 'world', ...OW.pt(289, 211) };
-      return { text: '하늘 정거장으로.', map: 'world', x: PAD.x + 2, y: PAD.y + 6 };
+      return { text: '하늘 정거장으로. (발사대의 무한호에 탄다)', map: 'world', x: PAD.x + 3, y: PAD.y + 8 };
     } });
 
   /* ───────── 물건 ───────── */
@@ -64,7 +64,7 @@
   ST.onMap('world', (m, Wd) => {
     const P = G.props;
     Wd.add(new P.Waystone({ x: px(CT.plaza.x - 3), y: py(CT.plaza.y + 3), wid: 'w_colorful', name: '알록달록 곶' }));
-    Wd.add(new P.Sign({ x: px(PAD.x + 3), y: py(PAD.y + 9), text: '무한호 발사대\n「제412안. 이번엔 진짜다」 — 피로스\n「지난번에도 그랬다」 — 봄바' }));
+    Wd.add(new P.Sign({ x: px(PAD.x + 6), y: py(PAD.y + 9), text: '무한호 발사대\n「제412안. 이번엔 진짜다」 — 피로스\n「지난번에도 그랬다」 — 봄바' }));
     Wd.add(new P.Sign({ x: px(X0 + 12), y: py(Y0 + 21), text: '알록달록 곶 — 쾅! 소리는 성공의 소리\n「폭발은 실패가 아니다. 방향이 틀렸을 뿐이다」' }));
   });
 

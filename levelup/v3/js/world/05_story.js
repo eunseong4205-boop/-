@@ -21,6 +21,28 @@
     return g || null;
   };
   ST.goalText = function () { const g = ST.goal(); return g ? g.text : ''; };
+  /** 다른 지도로 들어가는 길이 문이 아닌 곳(무한호처럼): ST.entries[지도] = () => ({ map, x, y }) 또는 { via: 거쳐 가는 지도 } */
+  ST.entries = {};
+  /** 목표를 지금 지도 위의 자리로 옮겨 본다: 목표가 다른 지도에 있으면 그리로 가는 문(대륙이면 그 집 문 · 무한호, 실내 · 던전이면 출구) */
+  ST.goalOn = function (mapId) {
+    const g = ST.goal(); if (!g || !g.map || g.map === mapId) return g;
+    let m; try { m = G.build.get(mapId); } catch (e) { return null; }
+    if (!m) return null;
+    const ok = (w) => { try { return !w.cond || w.cond(); } catch (e) { return false; } };
+    const at = (x, y) => Object.assign({}, g, { map: mapId, x, y, via: true });
+    const door = (mm, to) => (mm.warps || []).find((w) => w.to === to && ok(w));
+    // 목표 지도로 들어가는 자리(대륙 쪽): 문, 따로 적어 둔 길, 거쳐 가는 지도의 문 — 두 단계까지
+    const entry = (to, depth) => {
+      const e = ST.entries[to];
+      if (e && typeof e === 'function') { const r = e(); if (r && r.map === mapId) return [r.x, r.y]; }
+      const w = door(m, to); if (w) return [w.x, w.y + (w.exit || w.dir === 'down' ? -1 : 1)];
+      if (e && e.via && depth < 3) return entry(e.via, depth + 1);
+      return null;
+    };
+    const r = entry(g.map, 0); if (r) return at(r[0], r[1]);
+    if (!m.overworld) { const w = (m.warps || []).find((w2) => (w2.exit || w2.to === 'world') && ok(w2)); if (w) return at(w.x, w.y - 1); }
+    return null;
+  };
   ST.routeNote = function () {
     const r = S().route; const tot = r.dawn + r.order + r.night;
     if (!tot) return '아직 어느 쪽에도 기울지 않았다.';

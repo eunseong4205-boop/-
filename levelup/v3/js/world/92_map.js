@@ -39,7 +39,7 @@
       g.fillStyle = '#0a1830'; g.fillRect(x - 4, y - 4, 8, 8); g.fillStyle = '#8ad8ff'; g.beginPath(); g.moveTo(x, y - 4); g.lineTo(x + 3, y); g.lineTo(x, y + 4); g.lineTo(x - 3, y); g.closePath(); g.fill();
     }
     // 목표
-    const goal = ST.goal && ST.goal();
+    const goal = ST.goalOn ? ST.goalOn('world') : ST.goal && ST.goal();
     if (goal && goal.map === 'world') { const x = goal.x * SC + SC / 2, y = goal.y * SC + SC / 2; g.strokeStyle = '#ffd84a'; g.lineWidth = 2; g.beginPath(); g.arc(x, y, 7, 0, Math.PI * 2); g.stroke(); g.fillStyle = '#ffd84a'; g.fillRect(x - 1, y - 1, 3, 3); g.lineWidth = 1; }
     // 지금 자리
     const cm = G.world.map, p = G.world.player;
