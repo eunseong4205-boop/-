@@ -192,13 +192,15 @@
     G.audio && G.audio.sfx('faint');
     W.slowmo(0.3, 0.8);
     await G.script.wait(1.4);
-    const r = await G.ui.gameOver();
+    // 쓰러짐의 대가: 레벨은 그대로, 이번 레벨에서 모은 경험(빛 알갱이)은 0으로
     const s = G.state, d = G.st.derive(s);
+    const lost = Math.floor(s.exp || 0); s.exp = 0; s.expLost = (s.expLost || 0) + lost;
+    const r = await G.ui.gameOver({ lost, lv: s.lv });
     if (r === 'title') { toTitle(); return; }
     s.hp = Math.min(d.hpMax, 12); s.mp = Math.max(s.mp, d.mpMax * 0.5);
     const rp = respawnPoint(s);
     p.setState('idle'); p.inv = 2;
-    G.script.run(async (c) => { await c.fade(true, { sec: 0.01 }); goto(rp.map, rp.x, rp.y, 'down'); await c.wait(0.3); await c.fade(false, { sec: 0.6 }); c.toast('빛이 다시 몸을 채웠다', 'good'); });
+    G.script.run(async (c) => { await c.fade(true, { sec: 0.01 }); goto(rp.map, rp.x, rp.y, 'down'); await c.wait(0.3); await c.fade(false, { sec: 0.6 }); c.toast('빛이 다시 몸을 채웠다', 'good'); if (lost > 0) c.toast('쓰러진 대가 — 경험 ' + lost + '을 잃었다 (Lv.' + s.lv + ' 그대로)', 'bad'); });
   }
   /** 쓰러진 뒤 깨어날 곳: 던전이면 그 던전 입구, 들판이면 쓰러진 자리에서 가장 가까운 불 켠 이정표나 열린 마을.
       (예전에는 마지막으로 만진 이정표, 없으면 늘 첫 마을이라 넓은 대륙 반대편에서 깨어나곤 했다) */

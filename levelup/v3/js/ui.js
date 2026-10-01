@@ -800,10 +800,12 @@
   }
 
   /* ───────── 쓰러짐 ───────── */
-  function gameOver() {
+  function gameOver(o) {
+    o = o || {};
     return openModal({ title: '쓰러졌다', menuCloses: false, render: (body) => {
-      note(body, '빛이 몸을 감싼다. 이리스 대륙에서는 싸움에 져도 죽지 않는다.<br>마지막으로 쉬었던 곳에서 눈을 뜬다.');
-      body.appendChild(row({ name: '[y]일어난다[/]', desc: '마지막 이정표 · 쉼터에서 하트 3칸으로', onClick: () => { closeModal('retry'); } }));
+      note(body, markup('빛이 몸을 감싼다. 이리스 대륙에서는 싸움에 져도 죽지 않는다.') + '<br>' + markup('다만 쓰러지면 [r]이번 레벨에서 모은 경험이 모두 흩어진다[/]. 레벨은 그대로 남는다.')
+        + (o.lv != null ? '<br>' + markup('Lv.' + o.lv + ' · 잃은 경험 [r]' + (o.lost || 0) + '[/]') : ''));
+      body.appendChild(row({ name: '[y]일어난다[/]', desc: '가까운 이정표 · 열린 마을(던전이면 입구)에서 하트 3칸으로', onClick: () => { closeModal('retry'); } }));
       body.appendChild(row({ name: '타이틀로', onClick: () => { closeModal('title'); } }));
     } });
   }

@@ -618,5 +618,5 @@
     await c.fade(false, { sec: 0.35 });
     return done;
   }
-  G.sanity = { label, jumps, analyze, fixSinks, passI, trapped, toGood, unembed, escape, fresh, mainsOf, linksOf };
+  G.sanity = { label, jumps, analyze, fixSinks, passI, passAll, carvePath, trapped, toGood, unembed, escape, fresh, mainsOf, linksOf };
 })();
