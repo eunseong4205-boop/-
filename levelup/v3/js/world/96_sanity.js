@@ -150,6 +150,65 @@
     return { fixed, left: A ? A.sinks.length : 0, A };
   }
 
+  /* ───────── 들판의 문 · 동굴 앞길: 끝까지 가도 닿지 못하는 입구는 길을 낸다 ───────── */
+  // 마을에서 걸어 · 뛰어내려 닿는 무리(fwd) 중 돌아올 수 있는(good) 땅
+  function fwdGood(m, pass) {
+    const A = analyze(m, mainsOf(m), linksOf(m), pass);
+    const fwd = new Uint8Array(A.L.nc), q = [];
+    for (const [x, y] of mainsOf(m)) { if (!m.inb(x, y)) continue; const c = A.L.comp[m.i(x, y)]; if (c >= 0 && !fwd[c]) { fwd[c] = 1; q.push(c); } }
+    while (q.length) { const c = q.pop(); const out = A.J.get(c); if (out) for (const b2 of out) if (!fwd[b2]) { fwd[b2] = 1; q.push(b2); } }
+    A.fwd = fwd;
+    return A;
+  }
+  function fixApproaches(m) {
+    let A = fwdGood(m, passAll), carved = 0;
+    const ok = (i) => { const c = A.L.comp[i]; return c >= 0 && A.good[c] && A.fwd[c]; };
+    for (const w of m.warps || []) {
+      if (w.exit) continue;
+      const ax = w.x, ay = w.y + 1;
+      if (!m.inb(ax, ay)) continue;
+      let reach = false; for (let k = 0; k < (w.w || 1); k++) if (m.inb(w.x + k, ay) && ok(m.i(w.x + k, ay))) reach = true;
+      if (reach) continue;
+      // 가장 싼 길(다익스트라): 사물 치우기 3 · 절벽/높이 바꿈 → 계단 5 · 물 → 다리 12 · 벽 · 건물 · 깊은 구덩이는 못 지난다
+      const N = m.w * m.h, dist = new Float32Array(N).fill(1e9), prev = new Int32Array(N).fill(-1);
+      const s0 = m.i(ax, ay); dist[s0] = 0; const open = [[0, s0]];
+      let hit = -1;
+      while (open.length) {
+        let bi = 0; for (let k = 1; k < open.length; k++) if (open[k][0] < open[bi][0]) bi = k;
+        const [d, i] = open[bi]; open[bi] = open[open.length - 1]; open.pop();
+        if (d > dist[i]) continue;
+        if (i !== s0 && ok(i)) { hit = i; break; }
+        if (d > 400) break;
+        const x = i % m.w, y = (i / m.w) | 0;
+        for (const [dx, dy] of D4) {
+          const nx = x + dx, ny = y + dy; if (!m.inb(nx, ny)) continue;
+          const j = m.i(nx, ny), t = m.ter[j], P2 = PROP[t];
+          if (m.solidExtra[j] || t === T.WALL || t === T.VOID || (P2 && P2.h && t !== T.WATER)) continue;
+          if ((warpAtTile(m, nx, ny) && j !== s0)) continue;
+          let c = 1;
+          const o = m.obj[j]; if (o && OB.DEF[o] && OB.DEF[o].solid && !passAll(m, j)) c += 3;
+          if (t === T.CLIFF) c += 5; else if (m.hgt[j] !== m.hgt[i] && t !== T.STAIRS && m.ter[i] !== T.STAIRS) c += 5;
+          if (t === T.WATER || t === T.DEEP) c += 12;
+          if (d + c < dist[j]) { dist[j] = d + c; prev[j] = i; open.push([d + c, j]); }
+        }
+      }
+      if (hit < 0) { console.warn('입구 앞길을 낼 수 없다', w.to, w.x, w.y); continue; }
+      const path = []; for (let k = hit; k >= 0; k = prev[k]) path.push(k);
+      for (let k = 0; k < path.length; k++) {
+        const i = path[k], t = m.ter[i];
+        const o = m.obj[i]; if (o && OB.DEF[o] && OB.DEF[o].solid) m.obj[i] = 0;
+        if (t === T.WATER || t === T.DEEP) m.ter[i] = T.BRIDGE;
+        const nb = [path[k - 1], path[k + 1]].filter((v) => v != null);
+        if (t === T.CLIFF || nb.some((j) => m.hgt[j] !== m.hgt[i] && m.ter[j] !== T.STAIRS)) m.ter[i] = T.STAIRS;
+      }
+      carved++;
+      A = fwdGood(m, passAll);
+    }
+    if (carved && m.dirtyAll) m.dirtyAll();
+    return carved;
+  }
+  function warpAtTile(m, x, y) { for (const w of m.warps || []) if (x >= w.x && y >= w.y && x < w.x + (w.w || 1) && y < w.y + (w.h || 1)) return w; return null; }
+
   /* ───────── 지도마다 한 번: 짓자마자 고친다 ───────── */
   function mainsOf(m) {
     const out = [];
@@ -173,6 +232,7 @@
     if (m && !checked.has(m) && !m.indoor && (m.overworld || m.dungeon || m.entry)) {
       checked.add(m);
       try {
+        if (m.overworld) m.sanPaths = fixApproaches(m);
         const r = fixSinks(m, () => mainsOf(m), () => linksOf(m));
         m.san = r.A; m.sanFixed = r.fixed; m.sanLeft = r.left;
       } catch (e) { console.error('sanity', id, e); }
@@ -287,6 +347,7 @@
       A0.fwd = fwd; m.sanAll = A0;
     }
     const A = m.sanAll, p = Wd.player, R = 30;
+    const doors = doorRects(m).map((r) => ({ x: r.x - TS, y: r.y - TS, w: r.w + TS * 2, h: r.h + TS * 2 }));
     const goodAt = (x, y) => { if (!m.inb(x, y)) return false; const c = A.L.comp[m.i(x, y)]; return c >= 0 && A.good[c] && A.fwd[c]; };
     const near = (tx, ty) => { for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (goodAt(tx + dx, ty + dy)) return true; return false; };
     for (const e of Wd.ents) {
@@ -298,11 +359,17 @@
       for (let dy = -R; dy <= R; dy++) for (let dx = -R; dx <= R; dx++) {
         const d = dx * dx + dy * dy; if (d >= bd) continue;
         const x = tx + dx, y = ty + dy;
-        // 둘레 3×2칸이 트인 땅이고, 한 칸 안에 다른 소품이 없어야 앞에서 다가설 수 있다
+        // 둘레 5×3칸이 트인 같은 높이 땅(길목 · 다리 · 계단 · 문 앞이 아닌 곳)이고, 한 칸 안에 다른 소품이 없어야
+        // 앞에서 다가설 수 있고 지나가는 길도 막지 않는다
         let open = true;
-        for (let yy = y; yy <= y + 1 && open; yy++) for (let xx = x - 1; xx <= x + 1; xx++) if (!goodAt(xx, yy) || !freeTile(m, xx, yy) || m.H(xx, yy) !== m.H(x, y)) { open = false; break; }
+        for (let yy = y - 1; yy <= y + 1 && open; yy++) for (let xx = x - 2; xx <= x + 2; xx++) {
+          if (!goodAt(xx, yy) || !freeTile(m, xx, yy) || m.H(xx, yy) !== m.H(x, y)) { open = false; break; }
+          const t = m.T(xx, yy); if (t === T.ROAD || t === T.BRIDGE || t === T.STAIRS) { open = false; break; }
+        }
         if (!open) continue;
-        if (Wd.propBlock((x - 1) * TS, (y - 1) * TS, TS * 3, TS * 3, e)) continue;
+        const box = { x: (x - 1) * TS, y: (y - 1) * TS, w: TS * 3, h: TS * 3 };
+        if (doors.some((r) => hitR(box, r))) continue;
+        if (Wd.propBlock(box.x, box.y, box.w, box.h, e)) continue;
         best = [x, y]; bd = d;
       }
       if (!best) continue;
@@ -335,7 +402,7 @@
     // 문 · 동굴 입구와 그 앞 칸을 막고 선 소품 · 사람은 옆으로 비킨다
     clearDoors(m, Wd);
     // 대륙: 계단 없는 고원 · 숲 속에 놓여 끝까지 가도 닿지 못할 명소 · 사람은 가까운 닿는 땅으로
-    if (m.overworld) try { reachUsables(m, Wd); } catch (e) { console.error('reachUsables', e); }
+    if (m.overworld) try { reachUsables(m, Wd); clearDoors(m, Wd); } catch (e) { console.error('reachUsables', e); }
     // 앞(남쪽)에서 다가설 수 없는 상자 · 표지판은 옆이나 뒤에서도 열고 읽게
     for (const e of Wd.ents) {
       if (e.dead || e.anyDir || !(e instanceof Pp.Chest || e instanceof Pp.Sign)) continue;
