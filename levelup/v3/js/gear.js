@@ -893,7 +893,11 @@
         // 검 스킬: 돌진형은 앞으로, 나머지는 크게 내려친다
         const K = p.skill, k = Math.min(1, K.t / Math.max(0.05, K.dur));
         if (K.dir) { a = Math.atan2(K.dir[1], K.dir[0]); tr = { a0: a - 0.35, a1: a + 0.35, k: 0.4 }; }
-        else { a = k < 0.3 ? fa - 1.6 - 0.4 * (k / 0.3) : U.lerp(fa - 2.0, fa + 1.3, easeOut3((k - 0.3) / 0.7)); if (k >= 0.3) tr = { a0: fa - 1.8, a1: a, k }; lift = k < 0.3 ? 4 * (k / 0.3) : 4 * (1 - k); }
+        else if (K.n > 1) {
+          // 여러 번 베는 스킬(검무): 좌우로 번갈아
+          const kk = (k * K.n) % 1, sg = Math.floor(k * K.n) % 2 ? -1 : 1;
+          a = fa + sg * U.lerp(-1.1, 1.1, easeOut3(kk)); tr = { a0: fa - sg * 1.1, a1: a, k: kk }; lift = 2;
+        } else { a = k < 0.3 ? fa - 1.6 - 0.4 * (k / 0.3) : U.lerp(fa - 2.0, fa + 1.3, easeOut3((k - 0.3) / 0.7)); if (k >= 0.3) tr = { a0: fa - 1.8, a1: a, k }; lift = k < 0.3 ? 4 * (k / 0.3) : 4 * (1 - k); }
       }
       if (tr) trailArc(g, hx, hy - lift, tr.a0, tr.a1, 6 - Math.min(3, gr * 0.5), reach + 1 + gr * 0.8, tr.k, tcol, gr, tr.spin);
       swordBody(g, hx, hy, a, s, reach, p.chargeFull ? 0.35 + Math.sin(t * 20) * 0.15 : (d.swordGlow && Math.random() < 0.15 ? 0.25 : 0), lift);

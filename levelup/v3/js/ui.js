@@ -541,7 +541,8 @@
         s.specialBy = s.specialBy || {}; s.specialBy[w] = k; s.specialMove = k; sfx('equip'); toast(SN.WNAME[w] + ' 필살기: ' + sp.name, 'gold'); refresh();
       } }));
     }
-    if (!sps.length) note(body, markup('[s]' + SN.WNAME[w] + ' 필살기가 아직 없다 — 비기 두루마리로 익힌다.[/]'));
+    if (!sps.length) note(body, markup('[s]' + SN.WNAME[w] + ' 필살기가 아직 없다 — 비기 두루마리 · 비문 · 연성으로 익힌다.[/]'));
+    if (G.skills2 && G.skills2.craftSection) G.skills2.craftSection(body, w, { sec, note, markup, row, toast, refresh });
   }
   let treeSel = null;
   function tabTree(body) {

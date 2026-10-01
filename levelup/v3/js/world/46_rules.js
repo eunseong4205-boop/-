@@ -130,8 +130,9 @@
           const nx = p.x + dx * 12, ny = p.y - 2 + dy * 12, ntx = Math.floor(nx / TS), nty = Math.floor(ny / TS);
           const onWarp = (m.warps || []).some((w2) => ntx >= w2.x - 1 && ntx < w2.x + (w2.w || 1) + 1 && nty >= w2.y - 1 && nty < w2.y + (w2.h || 1) + 1);
           const onStair = Wd.ents.some((e) => e.kind === 'stairlink' && Math.abs(e.x - nx) < 22 && ny > e.y - 24 && ny < e.y + 8);
-          const k = onWarp || onStair ? 0 : m.hazardAt(nx, ny) ? 0.25 : 1;
-          if (k) E.move(m, p, dx * 44 * k * dt, dy * 44 * k * dt);
+          // 구덩이 앞에서는 밀지 않는다 · 세기도 줄였다(44 → 26): 바람에 엉뚱한 곳으로 계속 밀려 다니던 것
+          const k = onWarp || onStair || m.hazardAt(nx, ny) || m.hazardAt(p.x + dx * 24, p.y - 2 + dy * 24) ? 0 : 1;
+          if (k) E.move(m, p, dx * 26 * k * dt, dy * 26 * k * dt);
         }
         for (const e of C.foes()) {
           if (e.boss || e.fly || e.dead) continue;

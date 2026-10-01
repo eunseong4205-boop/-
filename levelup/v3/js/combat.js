@@ -394,6 +394,7 @@
   function spawnPickup(x, y, what, n, id) { return W().add(new Pickup({ x, y, what, n, id })); }
   function collect(pk) {
     const s = S(), d = G.st.derive(s), p = W().player;
+    if (C.onPickup) { try { C.onPickup(pk); } catch (err) { console.error(err); } }
     switch (pk.what) {
       case 'exp': {
         const up = G.st.gainExp(s, pk.n);

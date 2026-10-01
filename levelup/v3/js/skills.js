@@ -136,7 +136,7 @@
     if (Math.abs(ax) + Math.abs(ay) > 0.3) { const [nx, ny] = U.norm(ax, ay); if (Math.abs(nx * p.face[0] + ny * p.face[1]) < 0.7) dir = [nx, ny]; }
     busy(p, 'a_hop', 0.22, { dir, k, shot: false }); p.inv = Math.max(p.inv, 0.22); sfx('roll');
   };
-  UPD.a_hop = (p, K, dt, m, s, d) => { E.move(m, p, K.dir[0] * 280 * (1 - K.t / K.dur) * dt, K.dir[1] * 280 * (1 - K.t / K.dur) * dt); if (!K.shot && K.t > 0.12) { K.shot = true; arrow(p, d, ang(p), { dmg: d.bowAtk * 1.4 * K.k, pierce: 1, trail: '#fff4c0' }); sfx('shootc'); } };
+  UPD.a_hop = (p, K, dt, m, s, d) => { E.move(m, p, K.dir[0] * 280 * (1 - K.t / K.dur) * dt, K.dir[1] * 280 * (1 - K.t / K.dur) * dt); if (!K.shot && K.t > 0.12) { K.shot = true; arrow(p, d, C.faceAim ? C.faceAim(p, 'bow') : ang(p), { dmg: d.bowAtk * 1.4 * K.k, pierce: 1, trail: '#fff4c0' }); sfx('shootc'); } };
   DO.a_firearrow = (p, s, d, m, k) => { for (const off of [-0.15, 0, 0.15]) arrow(p, d, ang(p) + off, { dmg: d.bowAtk * k, el: 'fire', trail: '#ffb04a' }); sfx('fire'); busy(p, 'a_firearrow', 0.2); };
   DO.a_icearrow = (p, s, d, m, k) => { const sh = arrow(p, d, ang(p), { dmg: d.bowAtk * 1.4 * k, el: 'ice', trail: '#bfe8ff' }); if (sh) sh.onHitFoe = (e) => { e.freezeT = Math.max(e.freezeT || 0, e.boss ? 0.3 : 1.5); G.fx.shards(e.x, e.y - 8, 6, '#bfe8ff'); }; sfx('ice'); busy(p, 'a_icearrow', 0.18); };
   DO.a_blast = (p, s, d, m, k) => {
