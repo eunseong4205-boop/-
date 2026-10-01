@@ -234,10 +234,12 @@
     const dummies = Wd.ents.filter((e) => e.type === 'dummy');
     if (dummies.length < 3) { await c.say(n, '허수아비가 없네… 다음에!'); return; }
     await c.say(n, '준비… 시작! 각각 세 번씩 때리면 돼!');
+    // 수련 중에 대련해도 수련이 이어지게: 원래 처리를 잠시 비켜 두었다가 되돌린다
+    const prevHurt = new Map(dummies.map((d) => [d, d.onHurt])); ST.dummyUntil = performance.now() + 15000;   // 대련이 끊겨도 15초면 풀린다
     const hits = new Map(); dummies.forEach((d) => { hits.set(d, 0); d.onHurt = function () { hits.set(this, hits.get(this) + 1); this.hpShow = 0; if (hits.get(this) === 3) { G.fx.ring(this.x, this.y - 8, '#6ae07a', 14, 0.4); G.audio.sfx('clickspot'); } }; });
     let t = 0;
     const ok = await (async () => { let done = false; await c.freeWhile(() => { t += 1 / 60; done = [...hits.values()].every((v) => v >= 3); return done || t > 12; }); return done; })();
-    dummies.forEach((d) => { d.onHurt = null; });
+    dummies.forEach((d) => { d.onHurt = prevHurt.get(d) || null; }); ST.dummyUntil = 0;
     c.lock(true);
     if (ok) { c.flag('g_berna_duel'); c.bond('berna', 1); await c.say(n, t.toFixed(1) + '초?! 말도 안 돼… 인정! 오늘부터 너는 내 라이벌 2호야!', { face: 'shock' }); await c.getItem('arrows10', 1).catch(() => {}); c.gold(30); }
     else await c.say(n, '에이, 12초 넘었어! 다시 해!', { face: 'smile' });

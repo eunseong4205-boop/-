@@ -864,6 +864,17 @@
   }
   /** spawn한 NPC를 대사 주인으로 쓸 때: 그대로 돌려준다 (가독성용) */
   function n0(n) { return n; }
+  // 축제 동안 대륙에 내려와 있으면: 하늘섬까지 걸어 오르는 길은 멀다 — 퍼플 마을의 누베부터 안내한다
+  const goal0 = ST.goal;
+  ST.goal = function () {
+    const g = goal0.apply(this, arguments);
+    if (!g || g.map !== 'world' || g.x == null || !f('ch:c6') || f('c6_done')) return g;
+    const Wd = G.world, m = Wd.map, p = Wd.player; if (!m || !p) return g;
+    let x = p.x / TS, y = p.y / TS;
+    if (!m.overworld) { const lw = S().lastWorld; if (!lw || lw.x == null) return g; x = lw.x; y = lw.y; }   // 실내 · 던전이면 마지막으로 밟은 들판
+    if (OW.regionOf(Math.floor(x), Math.floor(y)) === 'rainbow' || OW.regionOf(Math.floor(g.x), Math.floor(g.y)) !== 'rainbow') return g;
+    return { text: '하늘섬 무지개로 — 퍼플 마을의 구름고래 누베에게. (' + g.text + ')', map: 'world', x: OW.towns.purple.x + 16, y: OW.towns.purple.y + 4 };
+  };
 
   /* ───────── 기둥이 부러진 뒤 ───────── */
   const oldPillar = B.SPECIAL.pillar;

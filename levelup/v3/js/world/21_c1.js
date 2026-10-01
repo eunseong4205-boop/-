@@ -162,13 +162,15 @@
   }
 
   /* ═════════ 마당 수련 ═════════ */
+  function trainHurt(dmg, info) { const T = S().train; if (T) { T.hit++; if (info && info.src === 'spin') T.spin++; } this.hpShow = 0; }
   ST.onTick.push(() => {
     const s = S(); if (!f('c1_sword') || f('c1_trained')) return;
     const Wd = G.world; if (!Wd.map || Wd.map.id !== 'world' || G.script.running) return;
     const ds = Wd.ents.filter((e) => e.type === 'dummy');
     if (!ds.length) return;
     s.train = s.train || { hit: 0, spin: 0, roll: 0 };
-    for (const d of ds) if (!d.trainHook) { d.trainHook = true; d.onHurt = function (dmg, info) { s.train.hit++; if (info.src === 'spin') s.train.spin++; this.hpShow = 0; }; }
+    // 맞음 처리는 늘 다시 건다 (다른 놀이가 지우거나 바꿔도 수련이 멈추지 않게. 베르나 대련 중에는 비켜 준다)
+    if (!(ST.dummyUntil > performance.now())) for (const d of ds) if (d.onHurt !== trainHurt) d.onHurt = trainHurt;
     const p = Wd.player;
     if (p.state === 'roll' && !p.rollCounted) { p.rollCounted = true; s.train.roll++; }
     if (p.state !== 'roll') p.rollCounted = false;

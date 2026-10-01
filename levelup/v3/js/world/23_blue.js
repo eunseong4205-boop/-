@@ -18,7 +18,7 @@
   ST.CH.push({ no: '제3장', id: 'c3', title: '파도와 지혜', sub: '책장이 파도처럼 넘어가는 항구. 엄마가 찾던 것이 금서고 깊은 곳에 잠들어 있다.',
     goal(s) {
       if (!f('c3_octavio')) return { text: '블루 대도서관의 옥타비오 관장을 찾아가자.', map: 'world', x: X0 + 18, y: Y0 + 6 };
-      if (!f('c3_archive')) return { text: '사서 헤미아의 수수께끼 셋을 풀고 금서고에 들어가자.', map: 'b_lib', x: 4, y: 4 };
+      if (!f('c3_archive')) return f('c3_riddles') ? { text: '수수께끼를 다 풀었다. 뒤쪽 책장의 세 번째 책을 당겨 금서고로.', map: 'b_lib', x: 15, y: 7 } : { text: '사서 헤미아의 수수께끼 셋을 풀고 금서고에 들어가자.', map: 'b_lib', x: 4, y: 4 };
       if (!f('c3_luce')) return { text: '동쪽 등대의 루체가 무언가를 알고 있다고 한다.', map: 'world', x: LH.x, y: LH.y };
       if (!f('d3:boss')) return { text: '물갈퀴로 헤엄쳐 서쪽 바다 동굴로. 루체 아버지의 나침반이 거기 있다.', map: 'world', x: CAVE.x, y: CAVE.y };
       if (!f('c3_luce_done')) return { text: '루체에게 나침반을 돌려주자.', map: 'world', x: LH.x, y: LH.y };

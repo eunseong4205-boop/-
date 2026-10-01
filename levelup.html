@@ -5179,8 +5179,9 @@ button.stat small.fx { color: var(--paper-dim); }
       const maxStage = s.skills.sw_combo ? 3 : 2;
       if (p.queued && sw.stage < maxStage) { startSwing(p, sw.stage + 1); return; }
       // 누르고 있으면 모으기
-      // (연속 베기 중간에 꾹 눌러도 모은다: 몇 번 베다가 누르고 있으면 회전 베기가 안 나가던 것)
-      if (ctl && I.down('attack') && p.chargeOk && !p.queued) { p.setState('charge'); p.chargeT = 0; return; }
+      // (연속 베기 중간에 꾹 눌러도 모은다: 몇 번 베다가 누르고 있으면 회전 베기가 안 나가던 것.
+      //  마지막 베기 중에 눌러 그대로 누르고 있을 때도 — 이어 벨 단계가 없으니 모으기로)
+      if (ctl && I.down('attack') && p.chargeOk) { p.setState('charge'); p.chargeT = 0; p.queued = false; return; }
       if (sw.t >= sw.dur + (p.queued ? 0 : 0.08)) { p.swing = null; p.setState('idle'); }
     }
   }
@@ -13698,10 +13699,12 @@ button.stat small.fx { color: var(--paper-dim); }
     const dummies = Wd.ents.filter((e) => e.type === 'dummy');
     if (dummies.length < 3) { await c.say(n, '허수아비가 없네… 다음에!'); return; }
     await c.say(n, '준비… 시작! 각각 세 번씩 때리면 돼!');
+    // 수련 중에 대련해도 수련이 이어지게: 원래 처리를 잠시 비켜 두었다가 되돌린다
+    const prevHurt = new Map(dummies.map((d) => [d, d.onHurt])); ST.dummyUntil = performance.now() + 15000;   // 대련이 끊겨도 15초면 풀린다
     const hits = new Map(); dummies.forEach((d) => { hits.set(d, 0); d.onHurt = function () { hits.set(this, hits.get(this) + 1); this.hpShow = 0; if (hits.get(this) === 3) { G.fx.ring(this.x, this.y - 8, '#6ae07a', 14, 0.4); G.audio.sfx('clickspot'); } }; });
     let t = 0;
     const ok = await (async () => { let done = false; await c.freeWhile(() => { t += 1 / 60; done = [...hits.values()].every((v) => v >= 3); return done || t > 12; }); return done; })();
-    dummies.forEach((d) => { d.onHurt = null; });
+    dummies.forEach((d) => { d.onHurt = prevHurt.get(d) || null; }); ST.dummyUntil = 0;
     c.lock(true);
     if (ok) { c.flag('g_berna_duel'); c.bond('berna', 1); await c.say(n, t.toFixed(1) + '초?! 말도 안 돼… 인정! 오늘부터 너는 내 라이벌 2호야!', { face: 'shock' }); await c.getItem('arrows10', 1).catch(() => {}); c.gold(30); }
     else await c.say(n, '에이, 12초 넘었어! 다시 해!', { face: 'smile' });
@@ -13881,13 +13884,15 @@ button.stat small.fx { color: var(--paper-dim); }
   }
 
   /* ═════════ 마당 수련 ═════════ */
+  function trainHurt(dmg, info) { const T = S().train; if (T) { T.hit++; if (info && info.src === 'spin') T.spin++; } this.hpShow = 0; }
   ST.onTick.push(() => {
     const s = S(); if (!f('c1_sword') || f('c1_trained')) return;
     const Wd = G.world; if (!Wd.map || Wd.map.id !== 'world' || G.script.running) return;
     const ds = Wd.ents.filter((e) => e.type === 'dummy');
     if (!ds.length) return;
     s.train = s.train || { hit: 0, spin: 0, roll: 0 };
-    for (const d of ds) if (!d.trainHook) { d.trainHook = true; d.onHurt = function (dmg, info) { s.train.hit++; if (info.src === 'spin') s.train.spin++; this.hpShow = 0; }; }
+    // 맞음 처리는 늘 다시 건다 (다른 놀이가 지우거나 바꿔도 수련이 멈추지 않게. 베르나 대련 중에는 비켜 준다)
+    if (!(ST.dummyUntil > performance.now())) for (const d of ds) if (d.onHurt !== trainHurt) d.onHurt = trainHurt;
     const p = Wd.player;
     if (p.state === 'roll' && !p.rollCounted) { p.rollCounted = true; s.train.roll++; }
     if (p.state !== 'roll') p.rollCounted = false;
@@ -14719,7 +14724,7 @@ button.stat small.fx { color: var(--paper-dim); }
   ST.CH.push({ no: '제3장', id: 'c3', title: '파도와 지혜', sub: '책장이 파도처럼 넘어가는 항구. 엄마가 찾던 것이 금서고 깊은 곳에 잠들어 있다.',
     goal(s) {
       if (!f('c3_octavio')) return { text: '블루 대도서관의 옥타비오 관장을 찾아가자.', map: 'world', x: X0 + 18, y: Y0 + 6 };
-      if (!f('c3_archive')) return { text: '사서 헤미아의 수수께끼 셋을 풀고 금서고에 들어가자.', map: 'b_lib', x: 4, y: 4 };
+      if (!f('c3_archive')) return f('c3_riddles') ? { text: '수수께끼를 다 풀었다. 뒤쪽 책장의 세 번째 책을 당겨 금서고로.', map: 'b_lib', x: 15, y: 7 } : { text: '사서 헤미아의 수수께끼 셋을 풀고 금서고에 들어가자.', map: 'b_lib', x: 4, y: 4 };
       if (!f('c3_luce')) return { text: '동쪽 등대의 루체가 무언가를 알고 있다고 한다.', map: 'world', x: LH.x, y: LH.y };
       if (!f('d3:boss')) return { text: '물갈퀴로 헤엄쳐 서쪽 바다 동굴로. 루체 아버지의 나침반이 거기 있다.', map: 'world', x: CAVE.x, y: CAVE.y };
       if (!f('c3_luce_done')) return { text: '루체에게 나침반을 돌려주자.', map: 'world', x: LH.x, y: LH.y };
@@ -15069,7 +15074,7 @@ button.stat small.fx { color: var(--paper-dim); }
     goal(s) {
       if (!f('c4_goldy')) return { text: '옐로 한가운데 황금궁의 주인, 금화왕 골디를 만나자.', map: 'world', x: X0 + 19, y: Y0 + 3 };
       if (!f('c4_pika')) return { text: '대바자르에서 소매치기를 조심하자. 그늘 골목에 무언가 있다.', map: 'world', x: X0 + 5, y: Y0 + 20 };
-      if (!f('c4_yana')) return { text: '모래바다를 건널 길잡이, 여우 귀의 야나를 찾자. (오아시스 쪽)', map: 'world', ...OW.pt(274, 136) };
+      if (!f('c4_yana')) return { text: '모래바다를 건널 길잡이, 여우 귀의 야나를 찾자. (오아시스 쪽)', map: 'world', ...OW.pt(274, 129) };   // 야나가 선 자리 바로 앞
       if (!f('d4:boss')) return { text: '모래바다 서쪽, 태양 피라미드 깊은 곳의 「태양의 눈」을 가져오자.', map: 'world', x: PYR.x + 5, y: PYR.y + 3 };
       if (!f('c4_eye')) return { text: '태양의 눈을 들고 황금궁으로.', map: 'world', x: X0 + 19, y: Y0 + 3 };
       return { text: '북서쪽, 해 질 녘의 숲 퍼플로 가는 길이 열렸다.', map: 'world', x: OW.towns.purple.x + 16, y: OW.towns.purple.y + 12 };
@@ -15405,7 +15410,7 @@ button.stat small.fx { color: var(--paper-dim); }
       if (!f('c5_vera')) return { text: '라벤더 학원의 베라 교수를 찾아가자.', map: 'world', x: X0 + 6, y: Y0 + 6 };
       if (!f('c5_viola')) return { text: '학원 뜰의 천재, 비올라가 기다린다. (마법 과녁 대결)', map: 'world', x: X0 + 10, y: Y0 + 9 };
       if (!f('c5_sybil')) return { text: '거울 연못의 시빌 할멈에게 가자.', map: 'world', x: POND.x, y: POND.y - 6 };
-      if (!f('d5:boss')) return { text: '연못 아래, 거꾸로 선 탑 가장 깊은 곳으로.', map: 'world', x: POND.x, y: POND.y - 6 };
+      if (!f('d5:boss')) return { text: '연못 가운데 돌계단으로 내려가, 거꾸로 선 탑 가장 깊은 곳으로.', map: 'world', x: POND.x, y: POND.y };   // 연못 속 입구
       if (!f('c5_tea')) return { text: '베라 교수에게 돌아가자.', map: 'world', x: X0 + 6, y: Y0 + 6 };
       return { text: '구름고래의 초대장. 하늘섬 무지개의 천년제로.', map: 'world', x: X0 + 16, y: Y0 + 2 };
     } });
@@ -16569,6 +16574,17 @@ button.stat small.fx { color: var(--paper-dim); }
   }
   /** spawn한 NPC를 대사 주인으로 쓸 때: 그대로 돌려준다 (가독성용) */
   function n0(n) { return n; }
+  // 축제 동안 대륙에 내려와 있으면: 하늘섬까지 걸어 오르는 길은 멀다 — 퍼플 마을의 누베부터 안내한다
+  const goal0 = ST.goal;
+  ST.goal = function () {
+    const g = goal0.apply(this, arguments);
+    if (!g || g.map !== 'world' || g.x == null || !f('ch:c6') || f('c6_done')) return g;
+    const Wd = G.world, m = Wd.map, p = Wd.player; if (!m || !p) return g;
+    let x = p.x / TS, y = p.y / TS;
+    if (!m.overworld) { const lw = S().lastWorld; if (!lw || lw.x == null) return g; x = lw.x; y = lw.y; }   // 실내 · 던전이면 마지막으로 밟은 들판
+    if (OW.regionOf(Math.floor(x), Math.floor(y)) === 'rainbow' || OW.regionOf(Math.floor(g.x), Math.floor(g.y)) !== 'rainbow') return g;
+    return { text: '하늘섬 무지개로 — 퍼플 마을의 구름고래 누베에게. (' + g.text + ')', map: 'world', x: OW.towns.purple.x + 16, y: OW.towns.purple.y + 4 };
+  };
 
   /* ───────── 기둥이 부러진 뒤 ───────── */
   const oldPillar = B.SPECIAL.pillar;
@@ -17955,9 +17971,13 @@ button.stat small.fx { color: var(--paper-dim); }
       if (got() < 6) {
         const n = PARTS.find((p) => !f('part:' + p.id));
         // 표시는 그 부품을 가진 사람이 있는 집 문 앞
-        const wm = G.build.get('world'), b = wm.buildings.find((bb) => bb.id === n.map);
-        return { text: '부품 모으기 (' + got() + '/6) — 다음: ' + n.name + ' (' + n.where + ')', map: 'world', x: b ? b.doorX : 289, y: b ? b.doorY : 211 };
+        const wm = G.build.get('world'), b = wm.buildings.find((bb) => bb.id === n.map || bb.to === n.map);
+        const w = !b && (wm.warps || []).find((ww) => ww.to === n.map);
+        const at = b ? { x: b.doorX, y: b.doorY } : w ? { x: w.x, y: w.y + 1 } : OW.pt(289, 211);
+        return { text: '부품 모으기 (' + got() + '/6) — 다음: ' + n.name + ' (' + n.where + ')', map: 'world', ...at };
       }
+      // 발사대 방어 중에는 공방이 아니라 발사대를 가리킨다
+      if (ST.COLORFUL.defendT != null && !f('c10_launch')) return { text: '발사대를 지켜라! 다가오는 기사단을 막는다 — 예열 ' + Math.min(100, Math.floor(ST.COLORFUL.defendT / 60 * 100)) + '%', map: 'world', x: PAD.x + 3, y: PAD.y + 9 };
       if (!f('c10_launch')) return { text: '부품이 다 모였다. 피로스 박사에게!', map: 'world', ...OW.pt(289, 211) };
       return { text: '하늘 정거장으로.', map: 'world', x: PAD.x + 2, y: PAD.y + 6 };
     } });
@@ -18168,16 +18188,16 @@ button.stat small.fx { color: var(--paper-dim); }
     const Wd = G.world, p = Wd.player;
     let t = 0, spawnT = 0, alive = [];
     const types = ['knight', 'knight', 'bandit', 'mage', 'drone'];
-    S().duel = true;
+    S().duel = true; ST.COLORFUL.defendT = 0;
     await c.freeWhile(() => {
-      t += 1 / 60; spawnT -= 1 / 60;
+      t += 1 / 60; spawnT -= 1 / 60; ST.COLORFUL.defendT = t;
       alive = alive.filter((e) => !e.dead);
       if (spawnT <= 0 && alive.length < 6 && t < 55) { spawnT = 3.2; const side = Math.random() < 0.5 ? -1 : 1; const e = G.foes.spawn(U.pick(types), px(PAD.x + 3) + side * 150, py(PAD.y + 12) + (Math.random() - 0.5) * 60, { tier: 9 }); e.aggro = true; alive.push(e); }
       if (Math.floor(t) !== Math.floor(t - 1 / 60) && Math.floor(t) % 10 === 0 && t > 1) G.ui.toast('예열 ' + Math.min(100, Math.floor(t / 60 * 100)) + '%', 'gold');
       if (S().hp <= 1) { S().hp = G.st.derive(S()).hpMax >> 1; G.ui.toast('봄바가 물약을 던졌다!', 'good'); }
       return t >= 60;
     });
-    S().duel = false;
+    S().duel = false; ST.COLORFUL.defendT = null;
     for (const e of alive) if (!e.dead) { G.fx.shards(e.x, e.y - 8, 8, '#ffffff'); e.dead = true; }
     c.lock(true);
     await c.cinema(true);
@@ -18706,7 +18726,7 @@ button.stat small.fx { color: var(--paper-dim); }
   ST.onTick.push(() => {
     if (!f('c2_done') || f('sala_done') || f('sala_on') || G.script.running) return;
     const Wd = G.world, m = Wd.map, p = Wd.player; if (!m || !m.overworld || !p) return;
-    if (U.dist(p.x / TS, p.y / TS, VX, VY) > 4) return;
+    if (U.dist(p.x / TS, p.y / TS, VX, VY) > 6) return;   // 한가운데는 용암이라 걸어서는 4칸 안까지 못 들어가 깨어나지 않던 것
     S().flags.sala_on = true;
     G.script.run(async (c) => {
       c.lock(true);
@@ -23428,6 +23448,43 @@ button.stat small.fx { color: var(--paper-dim); }
     A.fwd = fwd;
     return A;
   }
+  /** 가장 싼 길(다익스트라)로 s0에서 ok 칸까지 낸다: 사물 치우기 3 · 절벽/높이 바꿈 → 계단 5 · 물 → 다리 12 · 벽 · 건물 · 깊은 구덩이는 못 지난다 */
+  function carvePath(m, s0, ok, maxD, allow) {
+    const N = m.w * m.h, dist = new Float32Array(N).fill(1e9), prev = new Int32Array(N).fill(-1);
+    dist[s0] = 0; const open = [[0, s0]];
+    let hit = -1;
+    while (open.length) {
+      let bi = 0; for (let k = 1; k < open.length; k++) if (open[k][0] < open[bi][0]) bi = k;
+      const [d, i] = open[bi]; open[bi] = open[open.length - 1]; open.pop();
+      if (d > dist[i]) continue;
+      if (i !== s0 && ok(i)) { hit = i; break; }
+      if (d > maxD) break;
+      const x = i % m.w, y = (i / m.w) | 0;
+      for (const [dx, dy] of D4) {
+        const nx = x + dx, ny = y + dy; if (!m.inb(nx, ny)) continue;
+        const j = m.i(nx, ny), t = m.ter[j], P2 = PROP[t];
+        if (m.solidExtra[j] || t === T.WALL || t === T.VOID || (P2 && P2.h && t !== T.WATER)) continue;
+        if ((warpAtTile(m, nx, ny) && j !== s0)) continue;
+        if (allow && !allow(j)) continue;
+        let c = 1;
+        const o = m.obj[j]; if (o && OB.DEF[o] && OB.DEF[o].solid && !passAll(m, j)) c += 3;
+        if (t === T.CLIFF) c += 5; else if (m.hgt[j] !== m.hgt[i] && t !== T.STAIRS && m.ter[i] !== T.STAIRS) c += 5;
+        if (t === T.WATER || t === T.DEEP) c += 12;
+        if (d + c < dist[j]) { dist[j] = d + c; prev[j] = i; open.push([d + c, j]); }
+      }
+    }
+    if (hit < 0) return false;
+    const path = []; for (let k = hit; k >= 0; k = prev[k]) path.push(k);
+    for (let k = 0; k < path.length; k++) {
+      const i = path[k], t = m.ter[i];
+      const o = m.obj[i]; if (o && OB.DEF[o] && OB.DEF[o].solid) m.obj[i] = 0;
+      if (t === T.WATER || t === T.DEEP) m.ter[i] = T.BRIDGE;
+      const nb = [path[k - 1], path[k + 1]].filter((v) => v != null);
+      if (t === T.CLIFF || nb.some((j) => m.hgt[j] !== m.hgt[i] && m.ter[j] !== T.STAIRS)) m.ter[i] = T.STAIRS;
+    }
+    (m.sanCarved = m.sanCarved || []).push(path);
+    return true;
+  }
   function fixApproaches(m) {
     let A = fwdGood(m, passAll), carved = 0;
     const ok = (i) => { const c = A.L.comp[i]; return c >= 0 && A.good[c] && A.fwd[c]; };
@@ -23437,40 +23494,38 @@ button.stat small.fx { color: var(--paper-dim); }
       if (!m.inb(ax, ay)) continue;
       let reach = false; for (let k = 0; k < (w.w || 1); k++) if (m.inb(w.x + k, ay) && ok(m.i(w.x + k, ay))) reach = true;
       if (reach) continue;
-      // 가장 싼 길(다익스트라): 사물 치우기 3 · 절벽/높이 바꿈 → 계단 5 · 물 → 다리 12 · 벽 · 건물 · 깊은 구덩이는 못 지난다
-      const N = m.w * m.h, dist = new Float32Array(N).fill(1e9), prev = new Int32Array(N).fill(-1);
-      const s0 = m.i(ax, ay); dist[s0] = 0; const open = [[0, s0]];
-      let hit = -1;
-      while (open.length) {
-        let bi = 0; for (let k = 1; k < open.length; k++) if (open[k][0] < open[bi][0]) bi = k;
-        const [d, i] = open[bi]; open[bi] = open[open.length - 1]; open.pop();
-        if (d > dist[i]) continue;
-        if (i !== s0 && ok(i)) { hit = i; break; }
-        if (d > 400) break;
-        const x = i % m.w, y = (i / m.w) | 0;
-        for (const [dx, dy] of D4) {
-          const nx = x + dx, ny = y + dy; if (!m.inb(nx, ny)) continue;
-          const j = m.i(nx, ny), t = m.ter[j], P2 = PROP[t];
-          if (m.solidExtra[j] || t === T.WALL || t === T.VOID || (P2 && P2.h && t !== T.WATER)) continue;
-          if ((warpAtTile(m, nx, ny) && j !== s0)) continue;
-          let c = 1;
-          const o = m.obj[j]; if (o && OB.DEF[o] && OB.DEF[o].solid && !passAll(m, j)) c += 3;
-          if (t === T.CLIFF) c += 5; else if (m.hgt[j] !== m.hgt[i] && t !== T.STAIRS && m.ter[i] !== T.STAIRS) c += 5;
-          if (t === T.WATER || t === T.DEEP) c += 12;
-          if (d + c < dist[j]) { dist[j] = d + c; prev[j] = i; open.push([d + c, j]); }
-        }
-      }
-      if (hit < 0) { console.warn('입구 앞길을 낼 수 없다', w.to, w.x, w.y); continue; }
-      const path = []; for (let k = hit; k >= 0; k = prev[k]) path.push(k);
-      for (let k = 0; k < path.length; k++) {
-        const i = path[k], t = m.ter[i];
-        const o = m.obj[i]; if (o && OB.DEF[o] && OB.DEF[o].solid) m.obj[i] = 0;
-        if (t === T.WATER || t === T.DEEP) m.ter[i] = T.BRIDGE;
-        const nb = [path[k - 1], path[k + 1]].filter((v) => v != null);
-        if (t === T.CLIFF || nb.some((j) => m.hgt[j] !== m.hgt[i] && m.ter[j] !== T.STAIRS)) m.ter[i] = T.STAIRS;
-      }
+      if (!carvePath(m, m.i(ax, ay), ok, 400)) { console.warn('입구 앞길을 낼 수 없다', w.to, w.x, w.y); continue; }
       carved++;
       A = fwdGood(m, passAll);
+    }
+    if (carved && m.dirtyAll) m.dirtyAll();
+    return carved;
+  }
+  /** 마을끼리: 첫 마을(그린)에서 걸어 가고 걸어 돌아올 수 있는 땅에 모든 마을 광장을 잇는다
+   *  (하늘섬처럼 마을에서 뛰어내려 대륙으로 갈 수는 있어도 대륙에서 걸어 올라올 수는 없던 곳).
+   *  지역은 이야기 차례대로 열리므로, 그 마을이 열리는 때까지 열린 땅만으로 잇는다 */
+  const OPEN_RANK = { green: 0, red: 1, blue: 2, amber: 2, yellow: 3, purple: 4, mist: 4, rainbow: 5, white: 6, gray: 7, black: 8, colorful: 9 };
+  function connectTowns(m) {
+    if (!m.overworld || !G.ow || !G.ow.towns || !G.ow.towns.green || !G.ow.regName) return 0;
+    const RN = G.ow.regName, rank = (i) => { const r = OPEN_RANK[RN[i]]; return r == null ? 99 : r; };
+    const towns = Object.entries(G.ow.towns).filter(([id, t]) => t.plaza);
+    let carved = 0;
+    for (let k = 0; k <= 9; k++) {
+      const pass = (mm, i) => rank(i) <= k && passAll(mm, i);
+      const failed = new Set();
+      for (let round = 0; round < 6; round++) {
+        const A = analyze(m, mainsOf(m), linksOf(m), pass);
+        const onTile = (p) => { for (let r = 0; r <= 3; r++) for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) { const x = p.x + dx, y = p.y + dy; if (m.inb(x, y) && A.L.comp[m.i(x, y)] >= 0) return m.i(x, y); } return -1; };
+        const i0 = onTile(G.ow.towns.green.plaza); if (i0 < 0) return carved;
+        const c0 = A.L.comp[i0], fw = new Uint8Array(A.L.nc), bk = new Uint8Array(A.L.nc);
+        const rev = new Map(); for (const [a, set] of A.J) for (const b of set) { let r = rev.get(b); if (!r) rev.set(b, r = new Set()); r.add(a); }
+        for (const [mark, G2] of [[fw, A.J], [bk, rev]]) { const q = [c0]; mark[c0] = 1; while (q.length) { const c = q.pop(); const out = G2.get(c); if (out) for (const b of out) if (!mark[b]) { mark[b] = 1; q.push(b); } } }
+        const core = (i) => { const c = A.L.comp[i]; return c >= 0 && fw[c] && bk[c]; };
+        const bad = towns.find(([id, t]) => { if (failed.has(id)) return false; const i = onTile(t.plaza); return i >= 0 && rank(i) === k && !core(i); });
+        if (!bad) break;
+        if (carvePath(m, onTile(bad[1].plaza), core, 900, (j) => rank(j) <= k)) { carved++; console.info('마을 사이 길', bad[0], '열리는 차례', k); }
+        else { failed.add(bad[0]); console.warn('마을 사이 길을 낼 수 없다', bad[0]); }
+      }
     }
     if (carved && m.dirtyAll) m.dirtyAll();
     return carved;
@@ -23500,6 +23555,7 @@ button.stat small.fx { color: var(--paper-dim); }
     if (m && !checked.has(m) && !m.indoor && (m.overworld || m.dungeon || m.entry)) {
       checked.add(m);
       try {
+        if (m.overworld) m.sanTowns = connectTowns(m);
         if (m.overworld) m.sanPaths = fixApproaches(m);
         const r = fixSinks(m, () => mainsOf(m), () => linksOf(m));
         m.san = r.A; m.sanFixed = r.fixed; m.sanLeft = r.left;
@@ -23651,6 +23707,8 @@ button.stat small.fx { color: var(--paper-dim); }
     for (const e of Wd.ents) {
       if (e.dead || !e.npc || !e.cid || e.follower) continue;
       const o = byCid.get(e.cid);
+      // 이야기가 일부러 멀리 떨어진 두 자리에 세운 사람(하늘섬 · 퍼플의 구름고래 누베처럼 오가는 길잡이)은 둘 다 남긴다
+      if (o && e.fromPeople && o.fromPeople && Math.hypot(e.x - o.x, e.y - o.y) > 20 * TS) { byCid.set(e.cid, e); continue; }
       if (o) { if (e.walker && !o.walker) { e.dead = true; continue; } o.dead = true; }   // 길 위의 사람(군상)보다 이야기 자리를 남긴다
       byCid.set(e.cid, e);
     }

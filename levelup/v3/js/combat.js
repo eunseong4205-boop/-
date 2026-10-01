@@ -517,8 +517,9 @@
       const maxStage = s.skills.sw_combo ? 3 : 2;
       if (p.queued && sw.stage < maxStage) { startSwing(p, sw.stage + 1); return; }
       // 누르고 있으면 모으기
-      // (연속 베기 중간에 꾹 눌러도 모은다: 몇 번 베다가 누르고 있으면 회전 베기가 안 나가던 것)
-      if (ctl && I.down('attack') && p.chargeOk && !p.queued) { p.setState('charge'); p.chargeT = 0; return; }
+      // (연속 베기 중간에 꾹 눌러도 모은다: 몇 번 베다가 누르고 있으면 회전 베기가 안 나가던 것.
+      //  마지막 베기 중에 눌러 그대로 누르고 있을 때도 — 이어 벨 단계가 없으니 모으기로)
+      if (ctl && I.down('attack') && p.chargeOk) { p.setState('charge'); p.chargeT = 0; p.queued = false; return; }
       if (sw.t >= sw.dur + (p.queued ? 0 : 0.08)) { p.swing = null; p.setState('idle'); }
     }
   }

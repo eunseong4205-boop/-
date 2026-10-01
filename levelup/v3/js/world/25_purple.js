@@ -19,7 +19,7 @@
       if (!f('c5_vera')) return { text: '라벤더 학원의 베라 교수를 찾아가자.', map: 'world', x: X0 + 6, y: Y0 + 6 };
       if (!f('c5_viola')) return { text: '학원 뜰의 천재, 비올라가 기다린다. (마법 과녁 대결)', map: 'world', x: X0 + 10, y: Y0 + 9 };
       if (!f('c5_sybil')) return { text: '거울 연못의 시빌 할멈에게 가자.', map: 'world', x: POND.x, y: POND.y - 6 };
-      if (!f('d5:boss')) return { text: '연못 아래, 거꾸로 선 탑 가장 깊은 곳으로.', map: 'world', x: POND.x, y: POND.y - 6 };
+      if (!f('d5:boss')) return { text: '연못 가운데 돌계단으로 내려가, 거꾸로 선 탑 가장 깊은 곳으로.', map: 'world', x: POND.x, y: POND.y };   // 연못 속 입구
       if (!f('c5_tea')) return { text: '베라 교수에게 돌아가자.', map: 'world', x: X0 + 6, y: Y0 + 6 };
       return { text: '구름고래의 초대장. 하늘섬 무지개의 천년제로.', map: 'world', x: X0 + 16, y: Y0 + 2 };
     } });
