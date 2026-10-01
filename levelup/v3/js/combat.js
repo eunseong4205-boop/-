@@ -517,7 +517,8 @@
       const maxStage = s.skills.sw_combo ? 3 : 2;
       if (p.queued && sw.stage < maxStage) { startSwing(p, sw.stage + 1); return; }
       // 누르고 있으면 모으기
-      if (ctl && I.down('attack') && sw.stage === 0 && p.chargeOk) { p.setState('charge'); p.chargeT = 0; return; }
+      // (연속 베기 중간에 꾹 눌러도 모은다: 몇 번 베다가 누르고 있으면 회전 베기가 안 나가던 것)
+      if (ctl && I.down('attack') && p.chargeOk && !p.queued) { p.setState('charge'); p.chargeT = 0; return; }
       if (sw.t >= sw.dur + (p.queued ? 0 : 0.08)) { p.swing = null; p.setState('idle'); }
     }
   }

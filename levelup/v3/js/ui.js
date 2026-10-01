@@ -41,14 +41,15 @@
   function plainLen(sg) { return sg.reduce((a, s) => a + s.t.replace(/\|/g, '').length, 0); }
 
   /* ───────── 알림 · 현수막 ───────── */
-  function toast(text, kind) {
+  /** key를 주면 같은 key의 알림을 새로 쌓지 않고 그 자리에서 고친다 (수련 진행 등) */
+  function toast(text, kind, key) {
     const box = $('toasts');
-    const el = document.createElement('div');
+    let el = key ? box.querySelector('[data-key="' + key + '"]') : null;
+    if (!el) { el = document.createElement('div'); if (key) el.dataset.key = key; box.appendChild(el); }
     el.className = 'toast ' + (kind || '');
     el.innerHTML = markup(text);
-    box.appendChild(el);
     while (box.children.length > 4) box.firstChild.remove();
-    setTimeout(() => el.remove(), 2900);
+    clearTimeout(el._t); el._t = setTimeout(() => el.remove(), key ? 4500 : 2900);
   }
   function banner(title, sub, sec) {
     const el = $('banner');

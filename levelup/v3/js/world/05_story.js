@@ -46,7 +46,7 @@
     spawnPeople(m, Wd);
     // 동료
     for (const f of ST.followers()) Wd.add(new Follower(f));
-    if (ST.decorate[m.id]) for (const fn of ST.decorate[m.id]) fn(m, Wd, S());
+    if (ST.decorate[m.id]) for (const fn of ST.decorate[m.id]) ST.safe(fn, [m, Wd, S()], 'map ' + m.id);
   };
   /** 이야기가 바뀌어 사람들이 오가야 할 때: 지금 지도의 사람들을 다시 세운다 */
   ST.refreshPeople = function () {
@@ -250,11 +250,21 @@
   };
   let lastOk = null, pushT = 0;
   ST.onTick = ST.onTick || [];
+  function nearOpen(tx, ty, r) {
+    for (let d = 1; d <= r; d++) for (let dy = -d; dy <= d; dy++) for (let dx = -d; dx <= d; dx++) {
+      if (Math.max(Math.abs(dx), Math.abs(dy)) !== d) continue;
+      if (ST.regionOpen(G.ow.regionOf(tx + dx, ty + dy))) return true;
+    }
+    return false;
+  }
   function checkRegion(dt) {
     const Wd = W(), m = Wd.map, p = Wd.player;
     if (!m || !m.overworld || !p || G.script.running) return;
-    const n = G.ow.regionOf(Math.floor(p.x / TS), Math.floor(p.y / TS));
+    const tx = Math.floor(p.x / TS), ty = Math.floor(p.y / TS);
+    const n = G.ow.regionOf(tx, ty);
     if (ST.regionOpen(n)) { if (p.state !== 'jump' && p.state !== 'fall') lastOk = { x: p.x, y: p.y, z: p.z }; return; }
+    // 경계에서 몇 칸은 들어설 수 있다: 경계 위의 일(산사태 바위 · 문 앞 등)을 열린 쪽에서 마칠 수 있게
+    if (nearOpen(tx, ty, 4)) return;
     if (!lastOk) return;
     p.x = lastOk.x; p.y = lastOk.y; p.z = lastOk.z; p.kx = p.ky = 0; if (p.state === 'roll') p.setState('idle');
     pushT -= dt;
@@ -306,18 +316,24 @@
   };
 
   /* ───────── 매 프레임 ───────── */
+  // 갈고리 하나가 오류를 내도 나머지(이야기 진행 · 수련 판정 …)는 계속 돈다. 오류는 갈고리마다 한 번만 남긴다
+  const failed = new WeakSet();
+  ST.safe = function (f, args, tag) {
+    try { return f.apply(null, args); }
+    catch (e) { if (!failed.has(f)) { failed.add(f); console.error('[story ' + (tag || 'hook') + ']', e); } }
+  };
   ST.tick = function (dt) {
-    if (ST.onTick) for (const f of ST.onTick) f(dt);
+    if (ST.onTick) for (const f of ST.onTick) ST.safe(f, [dt], 'tick');
   };
   ST.onTick = [checkRegion];
   ST.onKill = function (e) {
     const s = S(); s.kills = (s.kills || 0) + 1;
-    if (ST.killHooks) for (const f of ST.killHooks) f(e, s);
+    if (ST.killHooks) for (const f of ST.killHooks) ST.safe(f, [e, s], 'kill');
   };
   ST.killHooks = [];
-  ST.onLevel = function (lv) { if (ST.levelHooks) for (const f of ST.levelHooks) f(lv); };
+  ST.onLevel = function (lv) { if (ST.levelHooks) for (const f of ST.levelHooks) ST.safe(f, [lv], 'level'); };
   ST.levelHooks = [];
-  ST.onEnter = function (m) { if (ST.enterHooks) for (const f of ST.enterHooks) f(m); };
+  ST.onEnter = function (m) { if (ST.enterHooks) for (const f of ST.enterHooks) ST.safe(f, [m], 'enter'); };
   ST.enterHooks = [];
   /** 지역 단계 이상으로 적이 강해지지 않게 (장에 맞춰) */
   ST.foeScale = function () { return 0; };

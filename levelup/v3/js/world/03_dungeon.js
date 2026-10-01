@@ -325,6 +325,16 @@
       }
     }
     get RW() { return G.world.map.RW || RW0; } get RH() { return G.world.map.RH || RH0; }
+    /** 풀지 못한 채 방을 나가면 돌덩이를 처음 자리로 (구석에 밀어 넣거나 구덩이에 빠뜨려 퍼즐이 막히던 것) */
+    resetBlocks(Wd) {
+      const rr = Wd.map.rooms && Wd.map.rooms[this.k]; if (!rr || !rr.blockSpecs || !rr.blockSpecs.length) return;
+      if (S().flags[this.flagClear]) return;
+      for (const sp of rr.blockSpecs) {
+        const b = sp.ent;
+        if (b && !b.dead) { if (!b.moving && (b.x !== sp.x || b.y !== sp.y)) { b.x = sp.x; b.y = sp.y; b.moved = false; b.pushT = 0; } }
+        else { const nb = new (P().Block)({ x: sp.x, y: sp.y, col: sp.col }); nb.room = this.k; sp.ent = Wd.add(nb); }
+      }
+    }
     inside(p) { return p.x > (this.x0 + 1) * TS && p.x < (this.x0 + this.RW - 1) * TS && p.y > (this.y0 + 2) * TS && p.y < (this.y0 + this.RH - 1) * TS + 4; }
     update(dt, Wd) {
       const p = Wd.player; if (!p) return;
@@ -349,7 +359,7 @@
       }
       if (!inside && this.active && !this.trap) {
         // 방을 나가면 적은 사라진다 (다시 들어오면 새로)
-        if (U.dist(p.x, p.y, (this.x0 + this.RW / 2) * TS, (this.y0 + this.RH / 2) * TS) > Math.max(this.RW, this.RH) * TS) { for (const e of this.foes) if (!e.dead) e.dead = true; this.foes = []; this.active = false; }
+        if (U.dist(p.x, p.y, (this.x0 + this.RW / 2) * TS, (this.y0 + this.RH / 2) * TS) > Math.max(this.RW, this.RH) * TS) { for (const e of this.foes) if (!e.dead) e.dead = true; this.foes = []; this.active = false; this.resetBlocks(Wd); }
       }
       // 퍼즐 · 청소
       const R = this.R;
@@ -535,6 +545,7 @@
         const tier = D.tier || 0;
         for (const k of Object.keys(m.rooms)) {
           const { x0, y0, R } = m.rooms[k];
+          m.rooms[k].blockSpecs = [];
           const ctl = Wd.add(new RoomCtl({ did: id, k, x0, y0, R, tier, floorName: m.rooms[k].floor, x: (x0 + m.RW / 2) * TS, y: (y0 + m.RH / 2) * TS }));
           m.rooms[k].ctl = ctl;
           for (const pr of R.props || []) addProp(m, Wd, id, k, x0, y0, pr);
@@ -589,7 +600,7 @@
       }
       case 'torch': { const t = tag(new PR.Torch({ x, y, flagKey: did + ':torch:' + k + ':' + px + ',' + py, burn: o.burn, alwaysLit: o.lit })); if (o.lit) t.lit = true; return t; }
       case 'plate': return tag(new PR.Plate({ x, y: y + 4, sets: o.sets || (did + ':plate:' + k + ':' + px + ',' + py), hold: o.hold !== false }));
-      case 'block': return tag(new PR.Block({ x, y: y + 4, col: o.col }));
+      case 'block': { const spec = { x, y: y + 4, col: o.col }; const bl = tag(new PR.Block(spec)); spec.ent = bl; const rr = m.rooms[k]; (rr.blockSpecs = rr.blockSpecs || []).push(spec); return bl; }
       case 'pot': return tag(new PR.Pot({ x, y, v: o.v, drop: o.drop }));
       case 'crystal': return tag(new PR.Crystal({ x, y }));
       case 'cblock': return tag(new PR.ColorBlock({ x, y: y + 4, blue: o.blue !== false }));

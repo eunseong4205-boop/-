@@ -12,12 +12,22 @@
   const { X0, Y0 } = ST.GREEN;
   const px = (tx) => tx * TS + 8, py = (ty) => ty * TS + 12;
 
+  /** 들판에서 그 실내로 들어가는 문 (문 앞 칸) */
+  const doorOf = (id) => { const m = G.build.MAPS.world && G.build.get('world'); const w = m && (m.warps || []).find((w2) => w2.to === id); return w ? { x: w.x, y: w.y + 1 } : null; };
   ST.CH.push({ no: '제1장', id: 'c1', title: '시작의 검', sub: '열여섯 번째 봄, 장롱 속에서 빛이 새어 나왔다.',
     goal(s) {
       const h = { map: 'world' };
       if (!f('c1_sword')) return { text: '할머니가 장롱 맨 아래 칸의 보자기를 가져오라고 했다.', map: 'g_home', x: 10, y: 5 };
       if (!f('c1_trained')) return Object.assign(h, { text: '오두막 앞 마당에서 허수아비 셋을 상대로 검을 휘둘러 보자. (공격 · 길게 눌러 회전 베기 · 구르기)', x: X0 + 5, y: Y0 + 9 });
-      if (!f('c1_tower')) return Object.assign(h, { text: '마을 사람들에게 인사하자. 잡화점 마리엔 아줌마, 이장님, 그리고 노아.' + (f('met:noah') && f('met:marien') ? ' 그리고 광장으로.' : ''), x: X0 + 17, y: Y0 + 12 });
+      if (!f('c1_tower')) {
+        // 표시는 아직 인사하지 않은 사람의 집 문 앞으로 (모두 집 안에 있어 광장만 가리키면 헤맨다)
+        const next = [['met:marien', 'g_shop', '마리엔 아줌마(잡화점)'], ['met:verdex', 'g_chief', '이장님 집'], ['met:noah', 'g_noah', '노아네 집']].find(([k]) => !f(k));
+        const ready = f('met:noah') && (f('met:marien') || f('met:verdex'));
+        const door = next && !ready ? doorOf(next[1]) : null;
+        const left = [['met:marien', '마리엔 아줌마'], ['met:verdex', '이장님'], ['met:noah', '노아']].filter(([k]) => !f(k)).map(([, n]) => n);
+        const text = ready ? '인사는 충분하다. 마을 광장으로 가 보자.' + (left.length ? ' (아직: ' + left.join(' · ') + ')' : '') : '마을 사람들에게 인사하자: ' + left.join(' · ') + '. 다음은 ' + next[2] + '.';
+        return Object.assign(h, door ? { text, x: door.x, y: door.y } : { text, x: X0 + 17, y: Y0 + 12 });
+      }
       if (!f('c1_dew')) return Object.assign(h, { text: '마을 북쪽 숲, 뿌리굴 가장 깊은 곳에서 나무 정령의 이슬을 가져오자.', x: ST.GREEN.cave.x, y: ST.GREEN.cave.y });
       if (!f('c1_dew_given')) return { text: '노아에게 이슬을 가져다주자.', map: 'world', x: X0 + 5, y: Y0 + 19 };
       if (!f('c1_done')) return { text: '할머니 오두막으로 돌아가자. 할머니가 기다린다.', map: 'world', x: X0 + 4, y: Y0 + 6 };
@@ -163,8 +173,18 @@
     if (p.state === 'roll' && !p.rollCounted) { p.rollCounted = true; s.train.roll++; }
     if (p.state !== 'roll') p.rollCounted = false;
     const near = ds.some((d) => U.dist(d.x, d.y, p.x, p.y) < 90);
-    if (!near) return;
+    const done = s.train.hit >= 6 && s.train.spin >= 1 && s.train.roll >= 2;   // 다 했으면 허수아비에서 조금 떨어져 있어도 끝난다
+    if (!near && !done) return;
     if (!s.train.shown) { s.train.shown = true; G.ui.toast('수련: 허수아비를 벤다 (공격) · 길게 눌렀다 떼서 회전 베기 · 구르기 (Space / 파란 버튼)', 'gold'); }
+    // 어디까지 했는지 늘 보이게: 하나 늘 때마다 진행 알림, 회전 베기만 남으면 방법을 다시 알려 준다
+    const T = s.train, key = Math.min(T.hit, 6) + ':' + Math.min(T.spin, 1) + ':' + Math.min(T.roll, 2);
+    if (T.lastKey !== key) {
+      T.lastKey = key;
+      const mk = (n, need) => (n >= need ? '[완료]' : n + '/' + need);
+      G.ui.toast('수련 — 베기 ' + mk(T.hit, 6) + ' · 회전 베기 ' + mk(T.spin, 1) + ' · 구르기 ' + mk(T.roll, 2), 'gold', 'train');
+      if (T.hit >= 6 && T.spin < 1 && !T.spinHint) { T.spinHint = true; G.ui.toast('회전 베기: 공격 버튼을 꾹 누르고 있다가 반짝이면 손을 뗀다', 'white'); }
+      if (T.hit >= 6 && T.spin >= 1 && T.roll < 2 && !T.rollHint) { T.rollHint = true; G.ui.toast('구르기: Space · X · 파란 버튼 (방향을 누른 채로)', 'white'); }
+    }
     if (s.train.hit >= 6 && s.train.spin >= 1 && s.train.roll >= 2) {
       s.flags.c1_trained = true;
       G.script.run(async (c) => {

@@ -45,34 +45,37 @@
     if (n === 4) GM.acc = 0;
     draw();
   }
+  // 한 갈래가 오류를 내도 나머지(그리기 · 조작 · 이야기)는 계속 돈다: 예전에는 한 곳의 오류가 매 프레임 그리기까지 멈춰 화면이 굳었다
+  const errSeen = {};
+  function safe(name, fn) { try { fn(); } catch (e) { if (!errSeen[name]) { errSeen[name] = 1; console.error('[' + name + ']', e); } } }
   function tick(dt) {
-    I.update(dt);
-    if (G.script && G.script.update) G.script.update(dt);
+    safe('input', () => I.update(dt));
+    if (G.script && G.script.update) safe('script', () => G.script.update(dt));
     if (GM.scene === 'play') {
-      if (G.ui && G.ui.update) G.ui.update(dt);
-      const paused = G.ui.paused && G.ui.paused();
+      if (G.ui && G.ui.update) safe('ui', () => G.ui.update(dt));
+      let paused = false; safe('paused', () => { paused = !!(G.ui.paused && G.ui.paused()); });
       if (!paused) {
-        W.update(dt);
-        if (G.combat) G.combat.update(dt);
+        safe('world', () => W.update(dt));
+        if (G.combat) safe('combat', () => G.combat.update(dt));
         if (G.state) G.state.t += dt;
-        if (G.ow && G.ow.tick) G.ow.tick(dt);
-        if (G.story && G.story.tick) G.story.tick(dt);
-        trackPos(dt);
+        if (G.ow && G.ow.tick) safe('ow', () => G.ow.tick(dt));
+        if (G.story && G.story.tick) safe('story', () => G.story.tick(dt));
+        safe('pos', () => trackPos(dt));
       }
-      if (G.interact) G.interact.update();
-      if (G.cine && G.cine.update) G.cine.update(dt);
-      if (G.hud && G.hud.update) G.hud.update(dt);
-    } else if (GM.scene === 'title' && G.ui && G.ui.titleUpdate) G.ui.titleUpdate(dt);
+      if (G.interact) safe('interact', () => G.interact.update());
+      if (G.cine && G.cine.update) safe('cine', () => G.cine.update(dt));
+      if (G.hud && G.hud.update) safe('hud', () => G.hud.update(dt));
+    } else if (GM.scene === 'title' && G.ui && G.ui.titleUpdate) safe('title', () => G.ui.titleUpdate(dt));
   }
   function draw() {
     const cv = $('cv'), g = cv.getContext('2d');
     g.imageSmoothingEnabled = false;
     W.ctx = g;
     if (GM.scene === 'play' && W.map) {
-      W.render(g);
-      if (G.cine && G.cine.draw) G.cine.draw(g, W.view.w, W.view.h);
-      if (G.hud && G.hud.draw) G.hud.draw(g, W.view.w, W.view.h);
-    } else if (G.ui && G.ui.titleDraw) G.ui.titleDraw(g, cv.width, cv.height);
+      safe('render', () => W.render(g));
+      if (G.cine && G.cine.draw) safe('cine.draw', () => G.cine.draw(g, W.view.w, W.view.h));
+      if (G.hud && G.hud.draw) safe('hud.draw', () => G.hud.draw(g, W.view.w, W.view.h));
+    } else if (G.ui && G.ui.titleDraw) safe('title.draw', () => G.ui.titleDraw(g, cv.width, cv.height));
     else { g.fillStyle = '#05040a'; g.fillRect(0, 0, cv.width, cv.height); }
     if (GM.debug) { g.fillStyle = '#fff'; g.font = "8px 'Galmuri11'"; g.fillText(GM.fps + 'fps', 4, cv.height - 4); }
   }

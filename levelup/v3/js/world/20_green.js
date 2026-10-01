@@ -108,7 +108,7 @@
   }
 
   // 베르덱스 이장
-  ST.person('g_chief', { id: 'verdex', x: 6, y: 5, dir: 'down', talk: async (c, n) => {
+  ST.person('g_chief', { id: 'verdex', x: 6, y: 5, dir: 'down', mark: () => (f('c1_trained') && !f('c1_tower') && !f('met:verdex') ? '!' : null), talk: async (c, n) => {
     c.flag('met:verdex');
     if (!after('c2')) {
       await c.say(n, '오, {n}. 생일이라며. 축하한다. …허, 경사스러운 날에 이런 얼굴이라 미안하구나.', { face: 'sad' });
@@ -122,7 +122,7 @@
   } });
 
   // 노아 · 노아 엄마
-  ST.person('g_noah', { id: 'noah', x: 2, y: 4, dir: 'right', state: 'sit', when: () => !f('c1_noah_gone'), mark: () => (f('c1_quest_dew') && !f('c1_dew_given') && S().inv.dew ? '!' : null), talk: async (c, n) => {
+  ST.person('g_noah', { id: 'noah', x: 2, y: 4, dir: 'right', state: 'sit', when: () => !f('c1_noah_gone'), mark: () => ((f('c1_quest_dew') && !f('c1_dew_given') && S().inv.dew) || (f('c1_trained') && !f('c1_tower') && !f('met:noah')) ? '!' : null), talk: async (c, n) => {
     c.flag('met:noah');
     if (!f('c1_quest_dew')) {
       await c.say(n, '…{n} 형아' + (S().gender === 'girl' ? '… 아니, 누나' : '') + '? 생일이지. 나도 알아. 엄마가 말해 줬어.', { face: 'smile' });

@@ -2487,12 +2487,15 @@ button.stat small.fx { color: var(--paper-dim); }
   function slowmo(f, sec) { W.slow = f; W.slowT = sec; }
 
   /* ───────── 갱신 ───────── */
+  // 존재 하나가 오류를 내도 다른 존재 · 카메라 · 문 판정은 계속 돈다 (종류마다 한 번만 남긴다)
+  const entErrSeen = {};
+  function entErr(e, err) { const k = (e && (e.kind || (e.constructor && e.constructor.name))) || '?'; if (!entErrSeen[k]) { entErrSeen[k] = 1; console.error('[ent ' + k + ']', err); } }
   function update(dt) {
     if (W.stopT > 0) { W.stopT -= dt; updateCam(dt); G.fx && G.fx.update(dt * 0.2); return; }
     if (W.slowT > 0) { W.slowT -= dt; dt *= W.slow; if (W.slowT <= 0) W.slow = 1; }
     W.t += dt;
     if (!W.paused) {
-      for (const e of W.ents.slice()) if (!e.dead && e.update) e.update(dt, W);
+      for (const e of W.ents.slice()) if (!e.dead && e.update) { try { e.update(dt, W); } catch (err) { entErr(e, err); } }
       W.ents = W.ents.filter((e) => !e.dead || e === W.player);
     }
     if (G.fx) G.fx.update(dt);
@@ -2546,7 +2549,7 @@ button.stat small.fx { color: var(--paper-dim); }
     for (const e of W.ents) if (!e.dead && !e.hidden && e.draw && e.x > x0 && e.x < x1 && e.y > y0 && e.y < y1) list.push({ y: e.y + (e.sortBias || 0), ent: e });
     list.sort((a, b) => a.y - b.y);
     for (const it of list) {
-      if (it.ent) it.ent.draw(g, cx, cy);
+      if (it.ent) { try { it.ent.draw(g, cx, cy); } catch (err) { entErr(it.ent, err); } }
       else {
         // 플레이어가 큰 나무 뒤에 있으면 잎을 조금 비친다
         const p = W.player;
@@ -5176,7 +5179,8 @@ button.stat small.fx { color: var(--paper-dim); }
       const maxStage = s.skills.sw_combo ? 3 : 2;
       if (p.queued && sw.stage < maxStage) { startSwing(p, sw.stage + 1); return; }
       // 누르고 있으면 모으기
-      if (ctl && I.down('attack') && sw.stage === 0 && p.chargeOk) { p.setState('charge'); p.chargeT = 0; return; }
+      // (연속 베기 중간에 꾹 눌러도 모은다: 몇 번 베다가 누르고 있으면 회전 베기가 안 나가던 것)
+      if (ctl && I.down('attack') && p.chargeOk && !p.queued) { p.setState('charge'); p.chargeT = 0; return; }
       if (sw.t >= sw.dur + (p.queued ? 0 : 0.08)) { p.swing = null; p.setState('idle'); }
     }
   }
@@ -8901,14 +8905,15 @@ button.stat small.fx { color: var(--paper-dim); }
   function plainLen(sg) { return sg.reduce((a, s) => a + s.t.replace(/\|/g, '').length, 0); }
 
   /* ───────── 알림 · 현수막 ───────── */
-  function toast(text, kind) {
+  /** key를 주면 같은 key의 알림을 새로 쌓지 않고 그 자리에서 고친다 (수련 진행 등) */
+  function toast(text, kind, key) {
     const box = $('toasts');
-    const el = document.createElement('div');
+    let el = key ? box.querySelector('[data-key="' + key + '"]') : null;
+    if (!el) { el = document.createElement('div'); if (key) el.dataset.key = key; box.appendChild(el); }
     el.className = 'toast ' + (kind || '');
     el.innerHTML = markup(text);
-    box.appendChild(el);
     while (box.children.length > 4) box.firstChild.remove();
-    setTimeout(() => el.remove(), 2900);
+    clearTimeout(el._t); el._t = setTimeout(() => el.remove(), key ? 4500 : 2900);
   }
   function banner(title, sub, sec) {
     const el = $('banner');
@@ -12022,6 +12027,16 @@ button.stat small.fx { color: var(--paper-dim); }
       }
     }
     get RW() { return G.world.map.RW || RW0; } get RH() { return G.world.map.RH || RH0; }
+    /** 풀지 못한 채 방을 나가면 돌덩이를 처음 자리로 (구석에 밀어 넣거나 구덩이에 빠뜨려 퍼즐이 막히던 것) */
+    resetBlocks(Wd) {
+      const rr = Wd.map.rooms && Wd.map.rooms[this.k]; if (!rr || !rr.blockSpecs || !rr.blockSpecs.length) return;
+      if (S().flags[this.flagClear]) return;
+      for (const sp of rr.blockSpecs) {
+        const b = sp.ent;
+        if (b && !b.dead) { if (!b.moving && (b.x !== sp.x || b.y !== sp.y)) { b.x = sp.x; b.y = sp.y; b.moved = false; b.pushT = 0; } }
+        else { const nb = new (P().Block)({ x: sp.x, y: sp.y, col: sp.col }); nb.room = this.k; sp.ent = Wd.add(nb); }
+      }
+    }
     inside(p) { return p.x > (this.x0 + 1) * TS && p.x < (this.x0 + this.RW - 1) * TS && p.y > (this.y0 + 2) * TS && p.y < (this.y0 + this.RH - 1) * TS + 4; }
     update(dt, Wd) {
       const p = Wd.player; if (!p) return;
@@ -12046,7 +12061,7 @@ button.stat small.fx { color: var(--paper-dim); }
       }
       if (!inside && this.active && !this.trap) {
         // 방을 나가면 적은 사라진다 (다시 들어오면 새로)
-        if (U.dist(p.x, p.y, (this.x0 + this.RW / 2) * TS, (this.y0 + this.RH / 2) * TS) > Math.max(this.RW, this.RH) * TS) { for (const e of this.foes) if (!e.dead) e.dead = true; this.foes = []; this.active = false; }
+        if (U.dist(p.x, p.y, (this.x0 + this.RW / 2) * TS, (this.y0 + this.RH / 2) * TS) > Math.max(this.RW, this.RH) * TS) { for (const e of this.foes) if (!e.dead) e.dead = true; this.foes = []; this.active = false; this.resetBlocks(Wd); }
       }
       // 퍼즐 · 청소
       const R = this.R;
@@ -12232,6 +12247,7 @@ button.stat small.fx { color: var(--paper-dim); }
         const tier = D.tier || 0;
         for (const k of Object.keys(m.rooms)) {
           const { x0, y0, R } = m.rooms[k];
+          m.rooms[k].blockSpecs = [];
           const ctl = Wd.add(new RoomCtl({ did: id, k, x0, y0, R, tier, floorName: m.rooms[k].floor, x: (x0 + m.RW / 2) * TS, y: (y0 + m.RH / 2) * TS }));
           m.rooms[k].ctl = ctl;
           for (const pr of R.props || []) addProp(m, Wd, id, k, x0, y0, pr);
@@ -12286,7 +12302,7 @@ button.stat small.fx { color: var(--paper-dim); }
       }
       case 'torch': { const t = tag(new PR.Torch({ x, y, flagKey: did + ':torch:' + k + ':' + px + ',' + py, burn: o.burn, alwaysLit: o.lit })); if (o.lit) t.lit = true; return t; }
       case 'plate': return tag(new PR.Plate({ x, y: y + 4, sets: o.sets || (did + ':plate:' + k + ':' + px + ',' + py), hold: o.hold !== false }));
-      case 'block': return tag(new PR.Block({ x, y: y + 4, col: o.col }));
+      case 'block': { const spec = { x, y: y + 4, col: o.col }; const bl = tag(new PR.Block(spec)); spec.ent = bl; const rr = m.rooms[k]; (rr.blockSpecs = rr.blockSpecs || []).push(spec); return bl; }
       case 'pot': return tag(new PR.Pot({ x, y, v: o.v, drop: o.drop }));
       case 'crystal': return tag(new PR.Crystal({ x, y }));
       case 'cblock': return tag(new PR.ColorBlock({ x, y: y + 4, blue: o.blue !== false }));
@@ -12360,7 +12376,7 @@ button.stat small.fx { color: var(--paper-dim); }
     spawnPeople(m, Wd);
     // 동료
     for (const f of ST.followers()) Wd.add(new Follower(f));
-    if (ST.decorate[m.id]) for (const fn of ST.decorate[m.id]) fn(m, Wd, S());
+    if (ST.decorate[m.id]) for (const fn of ST.decorate[m.id]) ST.safe(fn, [m, Wd, S()], 'map ' + m.id);
   };
   /** 이야기가 바뀌어 사람들이 오가야 할 때: 지금 지도의 사람들을 다시 세운다 */
   ST.refreshPeople = function () {
@@ -12564,11 +12580,21 @@ button.stat small.fx { color: var(--paper-dim); }
   };
   let lastOk = null, pushT = 0;
   ST.onTick = ST.onTick || [];
+  function nearOpen(tx, ty, r) {
+    for (let d = 1; d <= r; d++) for (let dy = -d; dy <= d; dy++) for (let dx = -d; dx <= d; dx++) {
+      if (Math.max(Math.abs(dx), Math.abs(dy)) !== d) continue;
+      if (ST.regionOpen(G.ow.regionOf(tx + dx, ty + dy))) return true;
+    }
+    return false;
+  }
   function checkRegion(dt) {
     const Wd = W(), m = Wd.map, p = Wd.player;
     if (!m || !m.overworld || !p || G.script.running) return;
-    const n = G.ow.regionOf(Math.floor(p.x / TS), Math.floor(p.y / TS));
+    const tx = Math.floor(p.x / TS), ty = Math.floor(p.y / TS);
+    const n = G.ow.regionOf(tx, ty);
     if (ST.regionOpen(n)) { if (p.state !== 'jump' && p.state !== 'fall') lastOk = { x: p.x, y: p.y, z: p.z }; return; }
+    // 경계에서 몇 칸은 들어설 수 있다: 경계 위의 일(산사태 바위 · 문 앞 등)을 열린 쪽에서 마칠 수 있게
+    if (nearOpen(tx, ty, 4)) return;
     if (!lastOk) return;
     p.x = lastOk.x; p.y = lastOk.y; p.z = lastOk.z; p.kx = p.ky = 0; if (p.state === 'roll') p.setState('idle');
     pushT -= dt;
@@ -12620,18 +12646,24 @@ button.stat small.fx { color: var(--paper-dim); }
   };
 
   /* ───────── 매 프레임 ───────── */
+  // 갈고리 하나가 오류를 내도 나머지(이야기 진행 · 수련 판정 …)는 계속 돈다. 오류는 갈고리마다 한 번만 남긴다
+  const failed = new WeakSet();
+  ST.safe = function (f, args, tag) {
+    try { return f.apply(null, args); }
+    catch (e) { if (!failed.has(f)) { failed.add(f); console.error('[story ' + (tag || 'hook') + ']', e); } }
+  };
   ST.tick = function (dt) {
-    if (ST.onTick) for (const f of ST.onTick) f(dt);
+    if (ST.onTick) for (const f of ST.onTick) ST.safe(f, [dt], 'tick');
   };
   ST.onTick = [checkRegion];
   ST.onKill = function (e) {
     const s = S(); s.kills = (s.kills || 0) + 1;
-    if (ST.killHooks) for (const f of ST.killHooks) f(e, s);
+    if (ST.killHooks) for (const f of ST.killHooks) ST.safe(f, [e, s], 'kill');
   };
   ST.killHooks = [];
-  ST.onLevel = function (lv) { if (ST.levelHooks) for (const f of ST.levelHooks) f(lv); };
+  ST.onLevel = function (lv) { if (ST.levelHooks) for (const f of ST.levelHooks) ST.safe(f, [lv], 'level'); };
   ST.levelHooks = [];
-  ST.onEnter = function (m) { if (ST.enterHooks) for (const f of ST.enterHooks) f(m); };
+  ST.onEnter = function (m) { if (ST.enterHooks) for (const f of ST.enterHooks) ST.safe(f, [m], 'enter'); };
   ST.enterHooks = [];
   /** 지역 단계 이상으로 적이 강해지지 않게 (장에 맞춰) */
   ST.foeScale = function () { return 0; };
@@ -12977,7 +13009,7 @@ button.stat small.fx { color: var(--paper-dim); }
     // 10) 사물
     decorate(m, sea, regName);
     // 11) 이야기 갈고리: 건물 · 던전 입구 · 탑 · 이정표 · 숨은 것
-    for (const h of OW.hooks) h(m, OW);
+    for (const h of OW.hooks) { try { h(m, OW); } catch (e) { console.error('[world hook]', e); } }
     GN.cliffs(m);
     m.markers = [];
     OW.ready = true;
@@ -13405,7 +13437,7 @@ button.stat small.fx { color: var(--paper-dim); }
       m.weatherAt = OW.weatherAt;
       return m;
     },
-    ents(m, Wd) { resetSpawns(); if (OW.ents) for (const f of OW.ents) f(m, Wd); },
+    ents(m, Wd) { resetSpawns(); if (OW.ents) for (const f of OW.ents) { try { f(m, Wd); } catch (e) { console.error('[world ents]', e); } } },
   });
   OW.near = near; OW.clear = clear; OW.regionAt = regionAt; OW.inTown = inTown; OW.TABLE = TABLE; OW.TIERS = TIERS; OW.ents = [];
   OW.tp = (x, y) => ({ x: x * TS + 8, y: y * TS + 12 });
@@ -13540,7 +13572,7 @@ button.stat small.fx { color: var(--paper-dim); }
   }
 
   // 베르덱스 이장
-  ST.person('g_chief', { id: 'verdex', x: 6, y: 5, dir: 'down', talk: async (c, n) => {
+  ST.person('g_chief', { id: 'verdex', x: 6, y: 5, dir: 'down', mark: () => (f('c1_trained') && !f('c1_tower') && !f('met:verdex') ? '!' : null), talk: async (c, n) => {
     c.flag('met:verdex');
     if (!after('c2')) {
       await c.say(n, '오, {n}. 생일이라며. 축하한다. …허, 경사스러운 날에 이런 얼굴이라 미안하구나.', { face: 'sad' });
@@ -13554,7 +13586,7 @@ button.stat small.fx { color: var(--paper-dim); }
   } });
 
   // 노아 · 노아 엄마
-  ST.person('g_noah', { id: 'noah', x: 2, y: 4, dir: 'right', state: 'sit', when: () => !f('c1_noah_gone'), mark: () => (f('c1_quest_dew') && !f('c1_dew_given') && S().inv.dew ? '!' : null), talk: async (c, n) => {
+  ST.person('g_noah', { id: 'noah', x: 2, y: 4, dir: 'right', state: 'sit', when: () => !f('c1_noah_gone'), mark: () => ((f('c1_quest_dew') && !f('c1_dew_given') && S().inv.dew) || (f('c1_trained') && !f('c1_tower') && !f('met:noah')) ? '!' : null), talk: async (c, n) => {
     c.flag('met:noah');
     if (!f('c1_quest_dew')) {
       await c.say(n, '…{n} 형아' + (S().gender === 'girl' ? '… 아니, 누나' : '') + '? 생일이지. 나도 알아. 엄마가 말해 줬어.', { face: 'smile' });
@@ -13699,12 +13731,22 @@ button.stat small.fx { color: var(--paper-dim); }
   const { X0, Y0 } = ST.GREEN;
   const px = (tx) => tx * TS + 8, py = (ty) => ty * TS + 12;
 
+  /** 들판에서 그 실내로 들어가는 문 (문 앞 칸) */
+  const doorOf = (id) => { const m = G.build.MAPS.world && G.build.get('world'); const w = m && (m.warps || []).find((w2) => w2.to === id); return w ? { x: w.x, y: w.y + 1 } : null; };
   ST.CH.push({ no: '제1장', id: 'c1', title: '시작의 검', sub: '열여섯 번째 봄, 장롱 속에서 빛이 새어 나왔다.',
     goal(s) {
       const h = { map: 'world' };
       if (!f('c1_sword')) return { text: '할머니가 장롱 맨 아래 칸의 보자기를 가져오라고 했다.', map: 'g_home', x: 10, y: 5 };
       if (!f('c1_trained')) return Object.assign(h, { text: '오두막 앞 마당에서 허수아비 셋을 상대로 검을 휘둘러 보자. (공격 · 길게 눌러 회전 베기 · 구르기)', x: X0 + 5, y: Y0 + 9 });
-      if (!f('c1_tower')) return Object.assign(h, { text: '마을 사람들에게 인사하자. 잡화점 마리엔 아줌마, 이장님, 그리고 노아.' + (f('met:noah') && f('met:marien') ? ' 그리고 광장으로.' : ''), x: X0 + 17, y: Y0 + 12 });
+      if (!f('c1_tower')) {
+        // 표시는 아직 인사하지 않은 사람의 집 문 앞으로 (모두 집 안에 있어 광장만 가리키면 헤맨다)
+        const next = [['met:marien', 'g_shop', '마리엔 아줌마(잡화점)'], ['met:verdex', 'g_chief', '이장님 집'], ['met:noah', 'g_noah', '노아네 집']].find(([k]) => !f(k));
+        const ready = f('met:noah') && (f('met:marien') || f('met:verdex'));
+        const door = next && !ready ? doorOf(next[1]) : null;
+        const left = [['met:marien', '마리엔 아줌마'], ['met:verdex', '이장님'], ['met:noah', '노아']].filter(([k]) => !f(k)).map(([, n]) => n);
+        const text = ready ? '인사는 충분하다. 마을 광장으로 가 보자.' + (left.length ? ' (아직: ' + left.join(' · ') + ')' : '') : '마을 사람들에게 인사하자: ' + left.join(' · ') + '. 다음은 ' + next[2] + '.';
+        return Object.assign(h, door ? { text, x: door.x, y: door.y } : { text, x: X0 + 17, y: Y0 + 12 });
+      }
       if (!f('c1_dew')) return Object.assign(h, { text: '마을 북쪽 숲, 뿌리굴 가장 깊은 곳에서 나무 정령의 이슬을 가져오자.', x: ST.GREEN.cave.x, y: ST.GREEN.cave.y });
       if (!f('c1_dew_given')) return { text: '노아에게 이슬을 가져다주자.', map: 'world', x: X0 + 5, y: Y0 + 19 };
       if (!f('c1_done')) return { text: '할머니 오두막으로 돌아가자. 할머니가 기다린다.', map: 'world', x: X0 + 4, y: Y0 + 6 };
@@ -13850,8 +13892,18 @@ button.stat small.fx { color: var(--paper-dim); }
     if (p.state === 'roll' && !p.rollCounted) { p.rollCounted = true; s.train.roll++; }
     if (p.state !== 'roll') p.rollCounted = false;
     const near = ds.some((d) => U.dist(d.x, d.y, p.x, p.y) < 90);
-    if (!near) return;
+    const done = s.train.hit >= 6 && s.train.spin >= 1 && s.train.roll >= 2;   // 다 했으면 허수아비에서 조금 떨어져 있어도 끝난다
+    if (!near && !done) return;
     if (!s.train.shown) { s.train.shown = true; G.ui.toast('수련: 허수아비를 벤다 (공격) · 길게 눌렀다 떼서 회전 베기 · 구르기 (Space / 파란 버튼)', 'gold'); }
+    // 어디까지 했는지 늘 보이게: 하나 늘 때마다 진행 알림, 회전 베기만 남으면 방법을 다시 알려 준다
+    const T = s.train, key = Math.min(T.hit, 6) + ':' + Math.min(T.spin, 1) + ':' + Math.min(T.roll, 2);
+    if (T.lastKey !== key) {
+      T.lastKey = key;
+      const mk = (n, need) => (n >= need ? '[완료]' : n + '/' + need);
+      G.ui.toast('수련 — 베기 ' + mk(T.hit, 6) + ' · 회전 베기 ' + mk(T.spin, 1) + ' · 구르기 ' + mk(T.roll, 2), 'gold', 'train');
+      if (T.hit >= 6 && T.spin < 1 && !T.spinHint) { T.spinHint = true; G.ui.toast('회전 베기: 공격 버튼을 꾹 누르고 있다가 반짝이면 손을 뗀다', 'white'); }
+      if (T.hit >= 6 && T.spin >= 1 && T.roll < 2 && !T.rollHint) { T.rollHint = true; G.ui.toast('구르기: Space · X · 파란 버튼 (방향을 누른 채로)', 'white'); }
+    }
     if (s.train.hit >= 6 && s.train.spin >= 1 && s.train.roll >= 2) {
       s.flags.c1_trained = true;
       G.script.run(async (c) => {
@@ -14266,7 +14318,9 @@ button.stat small.fx { color: var(--paper-dim); }
       if (!f('d2:boss')) return { text: '황금 광산 깊은 곳으로. 폭탄을 찾아 막힌 길을 열자.', map: 'world', x: MINE.x, y: MINE.y };
       if (!f('c2_extractor')) return { text: '두더지왕이 지키던 문 너머, 광산 가장 깊은 방으로.', map: 'd2' };
       if (!f('c2_done')) return { text: '볼칸에게 돌아가자.', map: 'world', x: X0 + 5, y: Y0 + 6 };
-      return { text: '블루 가는 길의 산사태를 폭탄으로 치우고 블루 항구로.', map: 'world', ...OW.pt(136, 196) };
+      // 산사태를 치우기 전에는 표시가 바위 앞(열린 쪽)을 가리킨다: 블루 항구는 아직 닫힌 땅이라 그쪽만 가리키면 헤맨다
+      if (!f('slide_clear') && ST.RED.slideAt) return { text: '블루 가는 길의 산사태를 폭탄으로 치우자. (도구 버튼으로 폭탄을 놓는다)', map: 'world', x: ST.RED.slideAt[0] - 2, y: ST.RED.slideAt[1] };
+      return { text: '산사태가 치워졌다. 블루 항구로.', map: 'world', ...OW.pt(136, 196) };
     } });
   ST.closedMsg.blue = '찍… 블루 가는 길은 산사태로 막혔대. 폭탄이라도 있으면 몰라.';
 
@@ -14319,6 +14373,13 @@ button.stat small.fx { color: var(--paper-dim); }
     const m = G.world.map; if (!m || !m.overworld) return;
     const [sx, sy] = ST.RED.slideAt;
     let left = 0; for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 2; dx++) if (m.O(sx + dx, sy + dy) === O.BOULDER) left++;
+    const R0 = ST.RED; if (R0.slideN == null || left > R0.slideN) R0.slideN = left;
+    // 절반을 부수면 나머지는 저절로 무너진다 (경계 너머 바위까지 폭탄이 닿지 않던 것)
+    if (left > 0 && left <= R0.slideN / 2) {
+      for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 2; dx++) if (m.O(sx + dx, sy + dy) === O.BOULDER) { m.setO(sx + dx, sy + dy, 0); G.fx.dust((sx + dx) * TS + 8, (sy + dy) * TS + 10, 8); }
+      G.world.shake(4, 0.5); if (G.audio) G.audio.sfx('rock');
+      left = 0;
+    }
     if (left === 0) { S().flags.slide_clear = true; S().flags['open:blue'] = true; G.ui.toast('산사태가 치워졌다 — 블루 항구로 가는 길이 열렸다!', 'gold'); if (G.audio) G.audio.jingle('secret'); }
   });
 
@@ -23838,34 +23899,37 @@ button.stat small.fx { color: var(--paper-dim); }
     if (n === 4) GM.acc = 0;
     draw();
   }
+  // 한 갈래가 오류를 내도 나머지(그리기 · 조작 · 이야기)는 계속 돈다: 예전에는 한 곳의 오류가 매 프레임 그리기까지 멈춰 화면이 굳었다
+  const errSeen = {};
+  function safe(name, fn) { try { fn(); } catch (e) { if (!errSeen[name]) { errSeen[name] = 1; console.error('[' + name + ']', e); } } }
   function tick(dt) {
-    I.update(dt);
-    if (G.script && G.script.update) G.script.update(dt);
+    safe('input', () => I.update(dt));
+    if (G.script && G.script.update) safe('script', () => G.script.update(dt));
     if (GM.scene === 'play') {
-      if (G.ui && G.ui.update) G.ui.update(dt);
-      const paused = G.ui.paused && G.ui.paused();
+      if (G.ui && G.ui.update) safe('ui', () => G.ui.update(dt));
+      let paused = false; safe('paused', () => { paused = !!(G.ui.paused && G.ui.paused()); });
       if (!paused) {
-        W.update(dt);
-        if (G.combat) G.combat.update(dt);
+        safe('world', () => W.update(dt));
+        if (G.combat) safe('combat', () => G.combat.update(dt));
         if (G.state) G.state.t += dt;
-        if (G.ow && G.ow.tick) G.ow.tick(dt);
-        if (G.story && G.story.tick) G.story.tick(dt);
-        trackPos(dt);
+        if (G.ow && G.ow.tick) safe('ow', () => G.ow.tick(dt));
+        if (G.story && G.story.tick) safe('story', () => G.story.tick(dt));
+        safe('pos', () => trackPos(dt));
       }
-      if (G.interact) G.interact.update();
-      if (G.cine && G.cine.update) G.cine.update(dt);
-      if (G.hud && G.hud.update) G.hud.update(dt);
-    } else if (GM.scene === 'title' && G.ui && G.ui.titleUpdate) G.ui.titleUpdate(dt);
+      if (G.interact) safe('interact', () => G.interact.update());
+      if (G.cine && G.cine.update) safe('cine', () => G.cine.update(dt));
+      if (G.hud && G.hud.update) safe('hud', () => G.hud.update(dt));
+    } else if (GM.scene === 'title' && G.ui && G.ui.titleUpdate) safe('title', () => G.ui.titleUpdate(dt));
   }
   function draw() {
     const cv = $('cv'), g = cv.getContext('2d');
     g.imageSmoothingEnabled = false;
     W.ctx = g;
     if (GM.scene === 'play' && W.map) {
-      W.render(g);
-      if (G.cine && G.cine.draw) G.cine.draw(g, W.view.w, W.view.h);
-      if (G.hud && G.hud.draw) G.hud.draw(g, W.view.w, W.view.h);
-    } else if (G.ui && G.ui.titleDraw) G.ui.titleDraw(g, cv.width, cv.height);
+      safe('render', () => W.render(g));
+      if (G.cine && G.cine.draw) safe('cine.draw', () => G.cine.draw(g, W.view.w, W.view.h));
+      if (G.hud && G.hud.draw) safe('hud.draw', () => G.hud.draw(g, W.view.w, W.view.h));
+    } else if (G.ui && G.ui.titleDraw) safe('title.draw', () => G.ui.titleDraw(g, cv.width, cv.height));
     else { g.fillStyle = '#05040a'; g.fillRect(0, 0, cv.width, cv.height); }
     if (GM.debug) { g.fillStyle = '#fff'; g.font = "8px 'Galmuri11'"; g.fillText(GM.fps + 'fps', 4, cv.height - 4); }
   }

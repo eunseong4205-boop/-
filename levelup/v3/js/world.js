@@ -68,12 +68,15 @@
   function slowmo(f, sec) { W.slow = f; W.slowT = sec; }
 
   /* ───────── 갱신 ───────── */
+  // 존재 하나가 오류를 내도 다른 존재 · 카메라 · 문 판정은 계속 돈다 (종류마다 한 번만 남긴다)
+  const entErrSeen = {};
+  function entErr(e, err) { const k = (e && (e.kind || (e.constructor && e.constructor.name))) || '?'; if (!entErrSeen[k]) { entErrSeen[k] = 1; console.error('[ent ' + k + ']', err); } }
   function update(dt) {
     if (W.stopT > 0) { W.stopT -= dt; updateCam(dt); G.fx && G.fx.update(dt * 0.2); return; }
     if (W.slowT > 0) { W.slowT -= dt; dt *= W.slow; if (W.slowT <= 0) W.slow = 1; }
     W.t += dt;
     if (!W.paused) {
-      for (const e of W.ents.slice()) if (!e.dead && e.update) e.update(dt, W);
+      for (const e of W.ents.slice()) if (!e.dead && e.update) { try { e.update(dt, W); } catch (err) { entErr(e, err); } }
       W.ents = W.ents.filter((e) => !e.dead || e === W.player);
     }
     if (G.fx) G.fx.update(dt);
@@ -127,7 +130,7 @@
     for (const e of W.ents) if (!e.dead && !e.hidden && e.draw && e.x > x0 && e.x < x1 && e.y > y0 && e.y < y1) list.push({ y: e.y + (e.sortBias || 0), ent: e });
     list.sort((a, b) => a.y - b.y);
     for (const it of list) {
-      if (it.ent) it.ent.draw(g, cx, cy);
+      if (it.ent) { try { it.ent.draw(g, cx, cy); } catch (err) { entErr(it.ent, err); } }
       else {
         // 플레이어가 큰 나무 뒤에 있으면 잎을 조금 비친다
         const p = W.player;

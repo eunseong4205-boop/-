@@ -285,7 +285,7 @@
     // 10) 사물
     decorate(m, sea, regName);
     // 11) 이야기 갈고리: 건물 · 던전 입구 · 탑 · 이정표 · 숨은 것
-    for (const h of OW.hooks) h(m, OW);
+    for (const h of OW.hooks) { try { h(m, OW); } catch (e) { console.error('[world hook]', e); } }
     GN.cliffs(m);
     m.markers = [];
     OW.ready = true;
@@ -713,7 +713,7 @@
       m.weatherAt = OW.weatherAt;
       return m;
     },
-    ents(m, Wd) { resetSpawns(); if (OW.ents) for (const f of OW.ents) f(m, Wd); },
+    ents(m, Wd) { resetSpawns(); if (OW.ents) for (const f of OW.ents) { try { f(m, Wd); } catch (e) { console.error('[world ents]', e); } } },
   });
   OW.near = near; OW.clear = clear; OW.regionAt = regionAt; OW.inTown = inTown; OW.TABLE = TABLE; OW.TIERS = TIERS; OW.ents = [];
   OW.tp = (x, y) => ({ x: x * TS + 8, y: y * TS + 12 });
