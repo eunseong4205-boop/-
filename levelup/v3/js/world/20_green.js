@@ -170,7 +170,7 @@
     } else await c.say(n, after('c6') ? '나도 언젠가 너처럼 흰빛으로 렙업할 거야! …안 되면 초록빛도 괜찮고.' : '두고 봐. 다음엔 내가 이겨!', { face: 'smile' });
   } });
   ST.person(W, { id: 'karel', x: tx(15), y: ty(11), wander: 20, barks: ['베르나는 매일 천 번. 나는 매일 천한 번.'], talk: async (c, n) => { c.flag('met:karel'); await c.say(n, U.pick(['베르나가 너한테 대련하재? 걔 목검 진짜 아파.', '내 꿈은 기사단에 들어가는 거야. 아니… 요즘은 잘 모르겠어. 노아 보면.'])); } });
-  ST.person(W, { name: '감자 농부 브람', folk: 'farmer', x: tx(29), y: ty(8), dir: 'down', mark: () => (!f('q_bram') ? '!' : S().quests.bram && S().quests.bram.st === 'on' && (S().bramKills || 0) >= 5 ? '!' : null), talk: async (c, n) => {
+  ST.person(W, { name: '감자 농부 브람', folk: 'farmer', x: tx(34), y: ty(7), dir: 'down', mark: () => (!f('q_bram') ? '!' : S().quests.bram && S().quests.bram.st === 'on' && (S().bramKills || 0) >= 5 ? '!' : null), talk: async (c, n) => {
     const q = S().quests.bram;
     if (!q) {
       await c.say(n, '저 젤리 놈들이 밭을 다 뭉개. 감자가 빛을 먹고 자라야 하는데, 젤리가 먼저 먹어 치워.', { face: 'angry' });
