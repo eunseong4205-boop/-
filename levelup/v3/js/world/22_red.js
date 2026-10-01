@@ -157,7 +157,7 @@
     await c.say(n, '…날은 안 건드렸다. 이 검은 내 모루가 감당 못 해. 손잡이만 감았다. 덜 미끄러울 거다.', { face: 'closed' });
     await c.say(n, '하나 더. 레드 사람은 불을 다룬다. 손바닥에 열을 모아 던지는 법이다. 네 할미가 나한테 가르친 걸 돌려주는 거다.', { face: 'normal' });
     G.st.learnSpell(S(), 'fire'); c.sfx('fire'); c.flash('#ff8a3a', 0.4);
-    await c.say(null, '[r]화염구[/]를 배웠다! (마법 버튼 · MP 8) 풀과 얼음을 태우고, 횃불에 불을 붙인다.', { style: 'sys' });
+    await c.say(null, '[r]화염구[/]를 배웠다! ([K]로 마법을 들고 공격 버튼 · MP 8) 풀과 얼음을 태우고, 횃불에 불을 붙인다.', { style: 'sys' });
     c.exp(40);
     c.flag('c2_done'); c.quest('main', 'on');
     await c.say(n, '가라. 레드 사람은 인사를 길게 안 한다.', { face: 'angry' });

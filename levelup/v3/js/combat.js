@@ -28,6 +28,7 @@
     }
     const d = G.st.derive(S());
     let mult = 1;
+    if (C.dmgMod) { const k = C.dmgMod(e, info, amt); if (k === 0) return false; mult *= k; }
     if (info.el && e.weak && e.weak.includes(info.el)) mult *= 2;
     if (info.el && e.resist && e.resist.includes(info.el)) mult *= 0.35;
     if (e.stunT > 0) mult *= 1.5;
@@ -112,6 +113,7 @@
     else if (r < 0.6 && s.tools.bow) spawnPickup(e.x, e.y, 'arrow', 5);
     else if (r < 0.64 && s.tools.bomb) spawnPickup(e.x, e.y, 'bomb', 2);
     if (e.mat && Math.random() < (e.matRate || 0.25)) spawnPickup(e.x, e.y, 'item', 1, e.mat);
+    if (C.extraDrop) C.extraDrop(e);
   }
 
   /** 주인공이 맞았을 때. q: 하트 ¼칸 단위 */
@@ -120,6 +122,8 @@
     if (p.dead || p.state === 'dead') return false;
     // 연출(레터박스) 중에는 다치지 않는다
     if (G.cine && G.cine.active && G.cine.active() && !opt.force) return false;
+    // 스킬이 대신 받는다 (반격 자세 · 마나 방패)
+    if (C.hurtMod && !opt.force && !(p.inv > 0)) { const r = C.hurtMod(p, q, src, opt); if (r === false) return false; if (typeof r === 'number') q = r; }
     if (p.inv > 0 && !opt.force) {
       // 구르기 무적 중 막 맞을 뻔했다 → 완벽 회피
       if (p.state === 'roll' && p.perfectWin > 0 && !p.perfectDone) {
@@ -315,6 +319,8 @@
     }
   }
   function shoot(o) {
+    // 쏘기 전 갈고리 (재능 · 던전 법칙이 화살 · 주문을 바꾼다)
+    if (C.onShoot) o = C.onShoot(o) || o;
     // 높이를 안 준 탄: 쏜 이의 높이에서 난다 (높은 마을 · 고원에서 마법 · 적 탄이 바로 벽에 부딪혀 사라지던 것)
     if (o.z == null) {
       const Wd = W(), m = Wd.map, p = Wd.player;
@@ -423,6 +429,11 @@
       if (p.carry) { throwCarry(p); I.eat('attack'); return true; }
       const L = liftTarget(p, m);
       if (L && (!s.equip.sword || OB.DEF[L.o].drop === 'rock')) { startLift(p, m, L); I.eat('attack'); return true; }
+      // 든 무기로 (검 · 활 · 마법 — 바꾸기 버튼으로 바꾼다). 바꾸는 틈에는 쉬어 간다
+      if (p.swapT > 0) return false;
+      const w = C.weapon ? C.weapon() : 'sword';
+      if (w === 'bow') return startBow(p, 'attack');
+      if (w === 'magic') return castMagic(p);
       if (!s.equip.sword) return false;
       startSwing(p, 0);
       return true;
@@ -575,14 +586,18 @@
   const bow = {
     update(p, dt, m, ctl) { updBow(p, dt, m, ctl); },
     input(p) {
-      const s = S();
-      if (!I.pressed('bow') || !s.tools.bow) return false;
-      if (p.carry) return false;
-      p.setState('bow'); p.bowT = 0; p.bowFull = false; p.bowHeavy = false; p.aim = U.angle(p.face[0], p.face[1]);
-      sfx('draw');
-      return true;
+      if (!I.pressed('bow')) return false;
+      return startBow(p, 'bow');
     },
   };
+  /** 활 당기기 시작: key를 누르고 있는 동안 당기고, 떼면 쏜다 */
+  function startBow(p, key) {
+    const s = S();
+    if (!s.tools.bow || p.carry) return false;
+    p.setState('bow'); p.bowT = 0; p.bowFull = false; p.bowHeavy = false; p.aim = U.angle(p.face[0], p.face[1]); p.bowKey = key || 'bow';
+    sfx('draw');
+    return true;
+  }
   function updBow(p, dt, m, ctl) {
     const s = S(), d = G.st.derive(s);
     p.bowT += dt;
@@ -590,7 +605,7 @@
     if (U.len(ax, ay) > 0.3) { p.aim = U.angle(ax, ay); p.dir = U.dir4(ax, ay, p.dir); }
     if (p.bowT > d.draw + 0.35 && !p.bowFull) { p.bowFull = true; sfx('charged'); }
     if (p.bowFull && s.skills.bw_heavy && p.bowT > d.draw + 1.2 && !p.bowHeavy) { p.bowHeavy = true; sfx('charged'); G.fx.ring(p.x, p.y - 8, '#fff8c0', 14, 0.3, 2); }
-    if (!ctl || !I.down('bow')) {
+    if (!ctl || !I.down(p.bowKey || 'bow')) {
       if (s.ammo.arrows <= 0) { sfx('buzz'); G.ui.toast('화살이 없다', 'bad'); p.setState('idle'); return; }
       if (p.bowT < 0.12) { p.bowT = 0.12; }
       s.ammo.arrows--;
@@ -620,8 +635,15 @@
   /* ── 마법 ── */
   const magic = {
     input(p) {
+      if (!I.pressed('magic')) return false;
+      return castMagic(p);
+    },
+  };
+  /** 고른 주문을 건다 (MP · 요구치 확인) */
+  function castMagic(p) {
+    {
       const s = S();
-      if (!I.pressed('magic') || !s.spell || p.carry) return false;
+      if (!s.spell || p.carry) return false;
       const sp = G.data.SPELLS[s.spell];
       if (G.prog && !G.prog.reqOk(s, sp.req)) { sfx('buzz'); G.fx.float(p.x, p.y - 30, '아직 못 다룬다', '#8ab8ff'); G.ui.toast(sp.name + ' — 필요: ' + G.prog.reqText(s, sp.req).replace(/\[\/?r\]/g, ''), 'bad'); return true; }
       const cost = Math.round(sp.mp * G.st.derive(s).mpCost);
@@ -634,8 +656,8 @@
       p.setState('cast'); p.castSpell = s.spell; p.castDone = false;
       sfx('cast');
       return true;
-    },
-  };
+    }
+  }
   function updCast(p, dt, m) {
     const s = S(), d = G.st.derive(s);
     const q = (s.skills.mg_quick ? 0.5 : 1) * (d.castMul || 1);
@@ -693,22 +715,23 @@
       if (!I.pressed('tool') || !s.tool || p.carry) return false;
       if (s.tool === 'bomb') {
         if (s.ammo.bombs <= 0) { sfx('buzz'); G.ui.toast('폭탄이 없다', 'bad'); return true; }
-        s.ammo.bombs--;
+        if (!(C.freeTool && C.freeTool('bomb'))) s.ammo.bombs--;
         const [ux, uy] = U.DV[p.dir];
-        W().add(new Bomb({ x: p.x + ux * 10, y: p.y + uy * 8 }));
+        const bo = W().add(new Bomb({ x: p.x + ux * 10, y: p.y + uy * 8, fuse: C.bombFuse ? C.bombFuse() : 1.6, power: C.bombPower ? C.bombPower() : 1 }));
+        if (C.toolUsed) C.toolUsed('bomb', p, bo);
         sfx('fuse');
         return true;
       }
-      if (s.tool === 'hook') { startHook(p, m); return true; }
+      if (s.tool === 'hook') { startHook(p, m); if (C.toolUsed) C.toolUsed('hook', p); return true; }
       if (s.tool === 'lantern') { p.lantern = !p.lantern; sfx(p.lantern ? 'lamp' : 'click'); if (G.interact) G.interact.lanternAt(p); return true; }
-      if (s.tool === 'mirror') { if (G.light) G.light.flare(p.x, p.y, 80, 2, '#d8b0ff'); for (const e of W().ents) if (e.reveal && U.dist(p.x, p.y, e.x, e.y) < 90) e.reveal(); sfx('mirror'); return true; }
+      if (s.tool === 'mirror') { if (G.light) G.light.flare(p.x, p.y, 80, 2, '#d8b0ff'); for (const e of W().ents) if (e.reveal && U.dist(p.x, p.y, e.x, e.y) < 90) e.reveal(); sfx('mirror'); if (C.toolUsed) C.toolUsed('mirror', p); return true; }
       if (s.tool === 'rod') { if (G.story && G.story.fish) G.story.fish(p); return true; }
       return false;
     },
   };
   class Bomb extends E.Ent {
     constructor(o) { super(Object.assign({ kind: 'bomb', solid: false, bw: 8, bh: 6, fuse: 1.6 }, o)); }
-    update(dt) { this.t += dt; if (Math.random() < 0.5) G.fx.part({ x: this.x + 2, y: this.y - 10, z: 0, vz: 20, g: 0, life: 0.3, col: '#ffd84a', size: 1, glow: true }); if (this.t >= this.fuse) { this.dead = true; explode(this.x, this.y - 4, 'player', 1); } }
+    update(dt) { this.t += dt; if (Math.random() < 0.5) G.fx.part({ x: this.x + 2, y: this.y - 10, z: 0, vz: 20, g: 0, life: 0.3, col: '#ffd84a', size: 1, glow: true }); if (this.t >= this.fuse) { this.dead = true; explode(this.x, this.y - 4, 'player', this.power || 1); } }
     drawShadow(g, cx, cy) { g.fillStyle = 'rgba(0,0,0,0.3)'; g.beginPath(); g.ellipse(this.x - cx, this.y - cy, 5, 2, 0, 0, Math.PI * 2); g.fill(); }
     draw(g, cx, cy) {
       const x = Math.round(this.x - cx), y = Math.round(this.y - cy - 5);
@@ -721,7 +744,7 @@
   function startHook(p, m) {
     if (p.hook) return;
     const a = ANG[p.dir];
-    p.hook = { x: p.x, y: p.y - 8, a, d: 0, out: true, max: 160, hit: null };
+    p.hook = { x: p.x, y: p.y - 8, a, d: 0, out: true, max: 160 * (C.hookMul ? C.hookMul() : 1), hit: null };
     p.setState('hook');
     sfx('hook');
   }
@@ -812,7 +835,7 @@
     input(p) {
       const s = S();
       if (!I.pressed('special') || s.special < 100 || p.carry) return false;
-      const mv = s.specialMove || 'flash';
+      const mv = (C.specialFor ? C.specialFor(s) : null) || s.specialMove || 'flash';
       if (mv !== 'flash' && G.specials && G.data.SPECIALS[mv] && G.prog.reqOk(s, G.data.SPECIALS[mv].req)) { s.special = 0; G.specials.start(p, mv); return true; }
       s.special = 0;
       p.setState('dash'); p.dash = { t: 0, dur: 0.24, dir: [...p.face], hit: new Set() };
@@ -970,7 +993,7 @@
     };
   }
 
-  Object.assign(C, { drops, damage, kill, hurtPlayer, addSpecial, cutAt, shoot, Shot, Pickup, spawnPickup, explode, update, drawWeapon, drawBolts, makeIcons, levelUp, freezeWater, foes, after, cutArc, startSpin });
+  Object.assign(C, { drops, damage, kill, hurtPlayer, addSpecial, cutAt, shoot, Shot, Pickup, spawnPickup, explode, update, drawWeapon, drawBolts, makeIcons, levelUp, freezeWater, foes, after, cutArc, startSpin, startBow, castMagic, castSpell, startSwing });
   C.hookLanding = hookLanding;
   C.actions = { attack: atk, bow, magic, tool, special, hook: hookAct, charge: atk, spin: atk, dash: atk, lift: atk, cast: atk, sp: atk };
   G.combat = C;
