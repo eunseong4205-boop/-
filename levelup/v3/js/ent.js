@@ -82,6 +82,7 @@
     // 착지 칸 전체가 비어 있어야
     const lx = ux ? land.tx * TS + 8 : e.x, ly = uy ? land.ty * TS + 12 : e.y;
     if (!m.boxFree(lx - e.bw / 2, ly - e.bh, e.bw, e.bh, land.h, e)) return null;
+    if (G.world && G.world.map === m && G.world.propBlock(lx - e.bw / 2, ly - e.bh, e.bw, e.bh, e)) return null;   // 표지판 · 상자 위로 뛰어내려 박히지 않게
     return { x: lx, y: ly, h: land.h, dir: d };
   }
 

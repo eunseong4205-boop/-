@@ -234,7 +234,7 @@
       '1,1': { ter: [['pit', 1, 4, 18, 6]], props: [['chest', 9, 11, { item: 'hook', col: '#3a6ab8' }], ['post', 9, 2], ['sign', 3, 11, { text: '구덩이 너머 말뚝. 갈고리가 있으면 건널 수 있다.' }], ['chest', 13, 2, { item: 'luce_compass' }], ['post', 4, 11]], foes: [['bat', 4, 11], ['bat', 15, 11]] },
       '2,2': { ter: [['water', 2, 2, 16, 11], ['stone', 8, 5, 4, 4]], props: [['eye', 17, 7, { sets: 'd3:eye', timer: 6 }], ['chest', 10, 6, { item: 'map_d' }]], foes: [['octo', 4, 5], ['octo', 14, 10]] },
       '2,1': { solve: { type: 'clear' }, foes: [['bandit', 6, 6], ['bandit', 13, 6], ['crab', 9, 9]], props: [['chest', 9, 5, { item: 'key_big', big: true, hidden: true }], ['torch', 3, 3, { lit: true }], ['torch', 16, 3, { lit: true }]] },
-      '0,1': { ter: [['pit', 1, 4, 18, 2], ['pit', 1, 9, 18, 2]], props: [['post', 9, 7], ['post', 15, 2], ['chest', 16, 3, { item: 'heartpiece' }], ['chest', 3, 7, { item: 'compass' }], ['sign', 4, 12, { text: '말뚝에서 말뚝으로.' }]], foes: [['bat', 9, 7]] },
+      '0,1': { ter: [['pit', 1, 4, 18, 2], ['pit', 1, 9, 18, 2]], props: [['post', 9, 7], ['post', 15, 2], ['post', 14, 12], ['chest', 16, 3, { item: 'heartpiece' }], ['chest', 3, 7, { item: 'compass' }], ['sign', 4, 12, { text: '말뚝에서 말뚝으로.' }]], foes: [['bat', 9, 7]] },
       '1,0': { boss: true, ter: [['deep', 2, 2, 16, 5], ['water', 2, 7, 16, 1]], props: [['boss', 9, 4, { type: 'kraken' }]] },
     },
     doors: [['1,3', '1,2', 'open'], ['1,2', '0,2', 'open'], ['1,2', '2,2', 'open'], ['1,2', '1,1', 'key'], ['2,2', '2,1', 'switch', 'd3:eye'], ['0,2', '0,1', 'open'], ['1,1', '1,0', 'big']],

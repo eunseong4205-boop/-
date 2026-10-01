@@ -23,6 +23,7 @@
     route = route || 'order';
     const s = G.state = G.st.fresh('아린', 'boy');
     s.party = ['toria']; s.ch = ch; s.seeds = 0;
+    s.worldVer = G.ow.VER; s.roomFix1 = true;   // 새 대륙 · 새 방 이름으로 시작한 기록 (옛 기록 옮기기를 건너뛴다)
     const upto = ORDER.indexOf(ch);
     for (let i = 0; i < upto; i++) {
       const D = DONE[ORDER[i]]; if (!D) continue;

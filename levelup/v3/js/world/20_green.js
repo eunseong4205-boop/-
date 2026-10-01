@@ -12,7 +12,7 @@
   const after = (id) => { const order = ['c1', 'c2', 'c3', 'c4', 'c5', 'c6', 'c7', 'c8', 'c9', 'c10', 'c11', 'c12']; return order.indexOf(ch()) >= order.indexOf(id); };
   const GT = OW.towns.green;
   const X0 = GT.x, Y0 = GT.y;           // 82, 170
-  ST.GREEN = { X0, Y0, cave: { x: 94, y: 155 } };
+  ST.GREEN = { X0, Y0, cave: OW.pt(94, 155) };   // 넓어진 대륙에서도 마을 북쪽 숲 (예전 좌표 그대로면 그레이 땅에 떨어져 1장에서 들어갈 수 없었다)
 
   /* ───────── 넓은 지도에 짓기 ───────── */
   OW.hooks.push((m) => {

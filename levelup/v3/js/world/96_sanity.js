@@ -401,7 +401,8 @@
       // 무대(주인공 없이 다른 곳을 비추는 방)에서 이어지면: 마지막으로 걷던 대륙 자리로
       if (m && (m.stage || (m.indoor && !(m.warps || []).length))) {   // 나갈 문이 없는 방(오락기 속 등)도
         const s = S(), lw = s.lastWorld;
-        if (lw && lw.x != null) G.game.goto('world', Math.floor(lw.x) * TS + 8, Math.floor(lw.y) * TS + 12, 'down', { fresh: true });
+        if (m.id === 'arcade_room' && s.arcadeRet && s.arcadeRet.map) G.game.goto(s.arcadeRet.map, s.arcadeRet.x, s.arcadeRet.y, 'down', { fresh: true });   // 오락기 앞으로
+        else if (lw && lw.x != null) G.game.goto('world', Math.floor(lw.x) * TS + 8, Math.floor(lw.y) * TS + 12, 'down', { fresh: true });
         else { const rp = s.respawn || { map: 'world', x: (G.ow.towns.green.x + 17) * TS + 8, y: (G.ow.towns.green.y + 12) * TS + 12 }; G.game.goto(rp.map, rp.x, rp.y, 'down', { fresh: true }); }
         Wd = W(); p = Wd.player; m = Wd.map;
       }

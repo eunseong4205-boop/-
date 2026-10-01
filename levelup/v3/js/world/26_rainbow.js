@@ -605,7 +605,7 @@
     rooms: {
       '1,3': { ter: [['pit', 1, 5, 4, 3], ['pit', 15, 5, 4, 3], ['stone', 8, 2, 4, 11]], props: [['sign', 9, 4, { text: '구름 신전\n「바람을 거스르지 마라. 바람에 실려라.」\n발밑의 구름이 뚫린 곳은 하늘이다. 떨어지면 아래층이 없다.' }], ['pot', 2, 11], ['pot', 17, 11], ['pot', 2, 3]], foes: [['wisp', 5, 9], ['wisp', 14, 9], ['bat', 9, 6]] },
       '1,2': { ter: [['pit', 1, 4, 18, 3]], props: [['fn', 9, 7, gust(9, 3, 2, 5, 'up', 80)], ['eye', 5, 2, { sets: 'd6:eye' }], ['sign', 13, 10, { text: '「눈을 뜨게 하려면 멀리서 쏴라」' }]], foes: [['bat', 4, 10], ['bat', 15, 10]] },
-      '0,2': { ter: [['pit', 6, 2, 8, 11]], props: [['post', 3, 7], ['post', 16, 4], ['chest', 2, 3, { item: 'key_small' }], ['pot', 1, 11]], foes: [['bat', 9, 5], ['bat', 10, 9]] },
+      '0,2': { ter: [['pit', 6, 2, 8, 11]], props: [['post', 5, 7], ['post', 14, 4], ['chest', 2, 3, { item: 'key_small' }], ['pot', 1, 11]], foes: [['bat', 9, 5], ['bat', 10, 9]] },
       '2,2': { props: [['crystal', 9, 8], ['cblock', 9, 3], ['cblock', 10, 3], ['cblock', 15, 3, { blue: false }], ['cblock', 16, 4, { blue: false }], ['cblock', 17, 3, { blue: false }], ['chest', 16, 3, { item: 'compass' }], ['pot', 2, 11], ['pot', 3, 11]], foes: [['wisp', 5, 6], ['wisp', 14, 9], ['mage', 9, 11]] },
       '2,1': { ter: [['pit', 1, 4, 18, 7]], props: [['fn', 14, 11, gust(14, 3, 2, 9, 'up', 85)], ['fn', 4, 3, gust(4, 3, 2, 9, 'down', 85)], ['chest', 9, 2, { item: 'heartpiece' }], ['chest', 11, 2, { item: 'map_d' }]], foes: [['wisp', 8, 11], ['wisp', 12, 11]] },
       '1,1': { solve: { type: 'clear' }, props: [['chest', 9, 5, { item: 'glove', hidden: true, col: '#e8c048' }], ['sign', 9, 10, { text: '「바위를 드는 손이 둥지로 가는 문을 연다」' }]], foes: [['golem', 9, 6], ['wisp', 4, 9], ['wisp', 15, 9]] },

@@ -2291,6 +2291,7 @@ button.stat small.fx { color: var(--paper-dim); }
     // 착지 칸 전체가 비어 있어야
     const lx = ux ? land.tx * TS + 8 : e.x, ly = uy ? land.ty * TS + 12 : e.y;
     if (!m.boxFree(lx - e.bw / 2, ly - e.bh, e.bw, e.bh, land.h, e)) return null;
+    if (G.world && G.world.map === m && G.world.propBlock(lx - e.bw / 2, ly - e.bh, e.bw, e.bh, e)) return null;   // 표지판 · 상자 위로 뛰어내려 박히지 않게
     return { x: lx, y: ly, h: land.h, dir: d };
   }
 
@@ -13443,7 +13444,7 @@ button.stat small.fx { color: var(--paper-dim); }
   const after = (id) => { const order = ['c1', 'c2', 'c3', 'c4', 'c5', 'c6', 'c7', 'c8', 'c9', 'c10', 'c11', 'c12']; return order.indexOf(ch()) >= order.indexOf(id); };
   const GT = OW.towns.green;
   const X0 = GT.x, Y0 = GT.y;           // 82, 170
-  ST.GREEN = { X0, Y0, cave: { x: 94, y: 155 } };
+  ST.GREEN = { X0, Y0, cave: OW.pt(94, 155) };   // 넓어진 대륙에서도 마을 북쪽 숲 (예전 좌표 그대로면 그레이 땅에 떨어져 1장에서 들어갈 수 없었다)
 
   /* ───────── 넓은 지도에 짓기 ───────── */
   OW.hooks.push((m) => {
@@ -14873,7 +14874,7 @@ button.stat small.fx { color: var(--paper-dim); }
       '1,1': { ter: [['pit', 1, 4, 18, 6]], props: [['chest', 9, 11, { item: 'hook', col: '#3a6ab8' }], ['post', 9, 2], ['sign', 3, 11, { text: '구덩이 너머 말뚝. 갈고리가 있으면 건널 수 있다.' }], ['chest', 13, 2, { item: 'luce_compass' }], ['post', 4, 11]], foes: [['bat', 4, 11], ['bat', 15, 11]] },
       '2,2': { ter: [['water', 2, 2, 16, 11], ['stone', 8, 5, 4, 4]], props: [['eye', 17, 7, { sets: 'd3:eye', timer: 6 }], ['chest', 10, 6, { item: 'map_d' }]], foes: [['octo', 4, 5], ['octo', 14, 10]] },
       '2,1': { solve: { type: 'clear' }, foes: [['bandit', 6, 6], ['bandit', 13, 6], ['crab', 9, 9]], props: [['chest', 9, 5, { item: 'key_big', big: true, hidden: true }], ['torch', 3, 3, { lit: true }], ['torch', 16, 3, { lit: true }]] },
-      '0,1': { ter: [['pit', 1, 4, 18, 2], ['pit', 1, 9, 18, 2]], props: [['post', 9, 7], ['post', 15, 2], ['chest', 16, 3, { item: 'heartpiece' }], ['chest', 3, 7, { item: 'compass' }], ['sign', 4, 12, { text: '말뚝에서 말뚝으로.' }]], foes: [['bat', 9, 7]] },
+      '0,1': { ter: [['pit', 1, 4, 18, 2], ['pit', 1, 9, 18, 2]], props: [['post', 9, 7], ['post', 15, 2], ['post', 14, 12], ['chest', 16, 3, { item: 'heartpiece' }], ['chest', 3, 7, { item: 'compass' }], ['sign', 4, 12, { text: '말뚝에서 말뚝으로.' }]], foes: [['bat', 9, 7]] },
       '1,0': { boss: true, ter: [['deep', 2, 2, 16, 5], ['water', 2, 7, 16, 1]], props: [['boss', 9, 4, { type: 'kraken' }]] },
     },
     doors: [['1,3', '1,2', 'open'], ['1,2', '0,2', 'open'], ['1,2', '2,2', 'open'], ['1,2', '1,1', 'key'], ['2,2', '2,1', 'switch', 'd3:eye'], ['0,2', '0,1', 'open'], ['1,1', '1,0', 'big']],
@@ -16248,7 +16249,7 @@ button.stat small.fx { color: var(--paper-dim); }
     rooms: {
       '1,3': { ter: [['pit', 1, 5, 4, 3], ['pit', 15, 5, 4, 3], ['stone', 8, 2, 4, 11]], props: [['sign', 9, 4, { text: '구름 신전\n「바람을 거스르지 마라. 바람에 실려라.」\n발밑의 구름이 뚫린 곳은 하늘이다. 떨어지면 아래층이 없다.' }], ['pot', 2, 11], ['pot', 17, 11], ['pot', 2, 3]], foes: [['wisp', 5, 9], ['wisp', 14, 9], ['bat', 9, 6]] },
       '1,2': { ter: [['pit', 1, 4, 18, 3]], props: [['fn', 9, 7, gust(9, 3, 2, 5, 'up', 80)], ['eye', 5, 2, { sets: 'd6:eye' }], ['sign', 13, 10, { text: '「눈을 뜨게 하려면 멀리서 쏴라」' }]], foes: [['bat', 4, 10], ['bat', 15, 10]] },
-      '0,2': { ter: [['pit', 6, 2, 8, 11]], props: [['post', 3, 7], ['post', 16, 4], ['chest', 2, 3, { item: 'key_small' }], ['pot', 1, 11]], foes: [['bat', 9, 5], ['bat', 10, 9]] },
+      '0,2': { ter: [['pit', 6, 2, 8, 11]], props: [['post', 5, 7], ['post', 14, 4], ['chest', 2, 3, { item: 'key_small' }], ['pot', 1, 11]], foes: [['bat', 9, 5], ['bat', 10, 9]] },
       '2,2': { props: [['crystal', 9, 8], ['cblock', 9, 3], ['cblock', 10, 3], ['cblock', 15, 3, { blue: false }], ['cblock', 16, 4, { blue: false }], ['cblock', 17, 3, { blue: false }], ['chest', 16, 3, { item: 'compass' }], ['pot', 2, 11], ['pot', 3, 11]], foes: [['wisp', 5, 6], ['wisp', 14, 9], ['mage', 9, 11]] },
       '2,1': { ter: [['pit', 1, 4, 18, 7]], props: [['fn', 14, 11, gust(14, 3, 2, 9, 'up', 85)], ['fn', 4, 3, gust(4, 3, 2, 9, 'down', 85)], ['chest', 9, 2, { item: 'heartpiece' }], ['chest', 11, 2, { item: 'map_d' }]], foes: [['wisp', 8, 11], ['wisp', 12, 11]] },
       '1,1': { solve: { type: 'clear' }, props: [['chest', 9, 5, { item: 'glove', hidden: true, col: '#e8c048' }], ['sign', 9, 10, { text: '「바위를 드는 손이 둥지로 가는 문을 연다」' }]], foes: [['golem', 9, 6], ['wisp', 4, 9], ['wisp', 15, 9]] },
@@ -18308,7 +18309,7 @@ button.stat small.fx { color: var(--paper-dim); }
       '1,2': { props: [['sign', 9, 9, { text: '「중력 구역. 구덩이는 우주다. 떨어지면 정거장이 붙잡는다 — 입구로.」' }], ['pot', 2, 11], ['pot', 17, 11]], ter: [['pit', 3, 4, 3, 3], ['pit', 14, 4, 3, 3]], foes: [['drone', 5, 8], ['drone', 14, 8], ['turret', 9, 3]] },
       '0,2': { ter: [['pit', 5, 2, 10, 11]], props: [['post', 3, 7], ['post', 16, 7], ['chest', 17, 3, { item: 'key_small' }], ['chest', 17, 11, { item: 'arrows10' }]], foes: [['drone', 10, 5], ['drone', 10, 9]] },
       '2,2': { solve: { type: 'clear' }, props: [['chest', 9, 6, { item: 'compass', hidden: true }], ['crystal', 4, 4], ['cblock', 9, 3], ['cblock', 10, 3], ['cblock', 15, 9, { blue: false }], ['cblock', 16, 9, { blue: false }]], foes: [['golem', 9, 8], ['drone', 5, 10], ['drone', 14, 10]] },
-      '1,1': { ter: [['pit', 1, 6, 18, 2]], props: [['post', 4, 4], ['post', 15, 4], ['sign', 3, 11, { text: '「구덩이 너머 말뚝 — 갈고리를 걸어 건너시오. (구르기로 뛰어넘어도 된다)」' }], ['eye', 9, 2, { sets: 'd11:eye' }], ['fn', 9, 10, { fn: (x, y, Wd) => Wd.add(new G.props.Sign({ x, y, text: '「사다리 제어 — 눈을 맞히면 다리가 뜬다」', look: 'stone', anyDir: true })) }], ['chest', 16, 3, { item: 'map_d' }]], foes: [['turret', 3, 3], ['turret', 16, 10], ['drone', 9, 4]] },
+      '1,1': { ter: [['pit', 1, 6, 18, 2]], props: [['post', 4, 4], ['post', 15, 4], ['post', 4, 10], ['post', 15, 10], ['sign', 3, 11, { text: '「구덩이 너머 말뚝 — 갈고리를 걸어 건너시오. (구르기로 뛰어넘어도 된다)」' }], ['eye', 9, 2, { sets: 'd11:eye' }], ['fn', 9, 10, { fn: (x, y, Wd) => Wd.add(new G.props.Sign({ x, y, text: '「사다리 제어 — 눈을 맞히면 다리가 뜬다」', look: 'stone', anyDir: true })) }], ['chest', 16, 3, { item: 'map_d' }]], foes: [['turret', 3, 3], ['turret', 16, 10], ['drone', 9, 4]] },
       '0,1': { props: [['chest', 9, 6, { item: 'key_big', big: true, hidden: true }], ['spot', 15, 3, { verb: '기록 화면을 본다', text: '「관리자 기록 — 984년. 방문자 1명. 이름: 카이론. 명령 변경: 방위 등급 최대. 사유 입력란: (공란)」\n공란 옆에 누가 손가락으로 쓴 먼지 글씨: 「세린」.' }]], solve: { type: 'clear' }, foes: [['golem', 6, 7], ['golem', 13, 7], ['drone', 9, 10]] },
       '2,1': { props: [['chest', 9, 6, { item: 'heartpiece' }], ['chest', 3, 11, { item: 'bombs5' }]], foes: [['drone', 6, 5], ['drone', 13, 5], ['turret', 9, 10]] },
       '1,0': { boss: true, props: [['boss', 9, 6, { type: 'core' }]] },
@@ -22876,6 +22877,7 @@ button.stat small.fx { color: var(--paper-dim); }
     route = route || 'order';
     const s = G.state = G.st.fresh('아린', 'boy');
     s.party = ['toria']; s.ch = ch; s.seeds = 0;
+    s.worldVer = G.ow.VER; s.roomFix1 = true;   // 새 대륙 · 새 방 이름으로 시작한 기록 (옛 기록 옮기기를 건너뛴다)
     const upto = ORDER.indexOf(ch);
     for (let i = 0; i < upto; i++) {
       const D = DONE[ORDER[i]]; if (!D) continue;
@@ -23606,7 +23608,8 @@ button.stat small.fx { color: var(--paper-dim); }
       // 무대(주인공 없이 다른 곳을 비추는 방)에서 이어지면: 마지막으로 걷던 대륙 자리로
       if (m && (m.stage || (m.indoor && !(m.warps || []).length))) {   // 나갈 문이 없는 방(오락기 속 등)도
         const s = S(), lw = s.lastWorld;
-        if (lw && lw.x != null) G.game.goto('world', Math.floor(lw.x) * TS + 8, Math.floor(lw.y) * TS + 12, 'down', { fresh: true });
+        if (m.id === 'arcade_room' && s.arcadeRet && s.arcadeRet.map) G.game.goto(s.arcadeRet.map, s.arcadeRet.x, s.arcadeRet.y, 'down', { fresh: true });   // 오락기 앞으로
+        else if (lw && lw.x != null) G.game.goto('world', Math.floor(lw.x) * TS + 8, Math.floor(lw.y) * TS + 12, 'down', { fresh: true });
         else { const rp = s.respawn || { map: 'world', x: (G.ow.towns.green.x + 17) * TS + 8, y: (G.ow.towns.green.y + 12) * TS + 12 }; G.game.goto(rp.map, rp.x, rp.y, 'down', { fresh: true }); }
         Wd = W(); p = Wd.player; m = Wd.map;
       }
