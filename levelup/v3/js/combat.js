@@ -156,7 +156,7 @@
     }
     // 방패: 공격하지 않을 때 정면 투사체
     if (src && src.blockable && s.equip.shield && !p.busy && p.state !== 'roll') {
-      const a = U.angle(src.x - p.x, src.y - p.y), f = ANG[p.dir];
+      const a = U.angle(src.x - p.x, src.y - p.y), f = faceAng(p);
       const lv = G.data.ITEMS[s.equip.shield].lv || 1;
       if (Math.abs(U.angDiff(a, f)) < 1.0 && (src.blockLv || 1) <= lv) {
         sfx('shield'); G.fx.sparks(p.x + Math.cos(f) * 8, p.y - 10 + Math.sin(f) * 6, 6, '#ffffff', 70);
@@ -418,22 +418,81 @@
     if (G.story && G.story.onLevel) G.story.onLevel(s.lv);
   }
 
+  /* ───────── 360° 조준 ─────────
+     겨누는 쪽: 직접 겨눈 방향(마우스 · 오른쪽 스틱 · 버튼 끌기 · 방향키 조준) → 없으면 바라보는 쪽(걷는 방향, 8방향 · 아날로그)에서
+     그 무기 사거리 · 원뿔 안의 가장 알맞은 적(자동 조준, 설정에서 끔) → 그것도 없으면 바라보는 쪽 그대로.
+     공격 · 스킬 · 필살기가 시작할 때 주인공이 그쪽을 바라보고(p.face), 동작 중에도 걸을 수 있다(player.js) */
+  const AIMR = { sword: [64, 1.05], bow: [210, 0.75], magic: [190, 0.8], skill: [170, 0.9], special: [190, 0.95], throw: [120, 0.75] };
+  function explicitAim(p) {
+    const A = I.aimDir ? I.aimDir() : null;
+    if (!A) return null;
+    if (A.src === 'mouse') {
+      const cv = typeof document !== 'undefined' && document.getElementById('cv'); if (!cv || !W()) return null;
+      const r = cv.getBoundingClientRect(); if (!r.width || !r.height) return null;
+      const wx = (A.mx - r.left) * cv.width / r.width + (W().rcx || 0), wy = (A.my - r.top) * cv.height / r.height + (W().rcy || 0);
+      const dx = wx - p.x, dy = wy - (p.y - 9 - (p.jz || 0));
+      if (U.len(dx, dy) < 4) return null;
+      const n = U.norm(dx, dy); return { x: n[0], y: n[1], src: 'mouse', wx, wy };
+    }
+    return A;
+  }
+  function autoTarget(p, a0, range, cone) {
+    let best = null, bs = 1e9;
+    for (const e of foes()) {
+      if (e.hidden || e.dying || e.friendly || e.cloakT > 0 || e.submerged) continue;
+      const ex = e.x, ey = e.y - (e.h || 16) / 2;
+      const dd = U.dist(p.x, p.y - 9, ex, ey); if (dd > range + (e.r || 8)) continue;
+      const da = Math.abs(U.angDiff(a0, U.angle(ex - p.x, ey - (p.y - 9))));
+      if (da > cone && dd > 20) continue;
+      const sc = dd + da * 70 - (e.boss ? 16 : 0);
+      if (sc < bs) { bs = sc; best = e; }
+    }
+    return best;
+  }
+  function aimFor(p, kind) {
+    const ex = explicitAim(p);
+    if (ex) return { a: U.angle(ex.x, ex.y), src: ex.src };
+    const a0 = U.angle(p.face[0], p.face[1]);
+    const st = (S() && S().settings) || {};
+    if (st.autoAim !== false) {
+      const R = AIMR[kind] || AIMR.skill, t = autoTarget(p, a0, R[0], R[1]);
+      if (t) return { a: U.angle(t.x - p.x, t.y - (t.h || 16) / 2 - (p.y - 9)), src: 'auto', target: t };
+    }
+    return { a: a0, src: 'face' };
+  }
+  /** 겨눈 쪽을 바라본다 — 각도를 돌려준다 */
+  function faceAim(p, kind) {
+    const r = aimFor(p, kind);
+    p.face = [Math.cos(r.a), Math.sin(r.a)]; p.dir = U.dir4(p.face[0], p.face[1], p.dir);
+    p.aimA = r.a; p.aimSrc = r.src; p.aimTgt = r.target || null; p.aimT = p.t;
+    return r.a;
+  }
+  C.explicitAim = explicitAim; C.aimFor = aimFor; C.faceAim = faceAim; C.autoTarget = autoTarget;
+
   /* ───────── 주인공 동작 ───────── */
-  function swordAngle(p) { return ANG[p.dir]; }
+  function swordAngle(p) { return faceAim(p, 'sword'); }
+  const faceAng = (p) => U.angle(p.face[0], p.face[1]);
   const atk = {
     input(p, m) {
       const s = S();
-      if (!I.pressed('attack')) return false;
-      // 먼저 말 걸기 · 조사 · 들기
-      if (G.interact && G.interact.tryAt(p)) { I.eat('attack'); return true; }
-      if (p.carry) { throwCarry(p); I.eat('attack'); return true; }
-      const L = liftTarget(p, m);
-      if (L && (!s.equip.sword || OB.DEF[L.o].drop === 'rock')) { startLift(p, m, L); I.eat('attack'); return true; }
+      const fire = I.pressed('aimfire');   // 방향키 조준 모드: 겨누면서 바로 공격
+      const w0 = C.weapon ? C.weapon() : 'sword';
+      // 마법은 누르고 있으면 이어서 건다 (걸면서 겨누기 좋게)
+      const key = fire || (I.down('aimfire') && !I.down('attack')) ? 'aimfire' : 'attack';
+      const repeat = w0 === 'magic' && I.held(key) > 0.3 && p.t - (p.castAt || -9) > 0.38 && !p.carry;
+      if (!I.pressed('attack') && !fire && !repeat) return false;
+      if (!fire && !repeat) {
+        // 먼저 말 걸기 · 조사 · 들기
+        if (G.interact && G.interact.tryAt(p)) { I.eat('attack'); return true; }
+        if (p.carry) { throwCarry(p); I.eat('attack'); return true; }
+        const L = liftTarget(p, m);
+        if (L && (!s.equip.sword || OB.DEF[L.o].drop === 'rock')) { startLift(p, m, L); I.eat('attack'); return true; }
+      } else if (p.carry) { throwCarry(p); return true; }
       // 든 무기로 (검 · 활 · 마법 — 바꾸기 버튼으로 바꾼다). 바꾸는 틈에는 쉬어 간다
       if (p.swapT > 0) return false;
-      const w = C.weapon ? C.weapon() : 'sword';
-      if (w === 'bow') return startBow(p, 'attack');
-      if (w === 'magic') return castMagic(p);
+      p.atkKey = key;
+      if (w0 === 'bow') return startBow(p, key);
+      if (w0 === 'magic') { p.castAt = p.t; return castMagic(p); }
       if (!s.equip.sword) return false;
       startSwing(p, 0);
       return true;
@@ -445,14 +504,14 @@
     p.setState('attack');
     p.combo = stage; p.hitSet = new Set(); p.queued = false; p.chargeOk = true;
     const spd = d.swing * (p.frenzyT > 0 ? 0.7 : 1);
-    p.swing = { a0: 0, a1: 0, t: 0, dur: (stage === 2 ? 0.2 : 0.18) * spd, reach: d.reach + 6 + (stage === 2 ? 7 : 0), stage };   // 앞으로 조금 더 길게 (+6, 찌르기 +13)
+    p.swing = { a0: 0, a1: 0, t: 0, dur: (stage === 2 ? 0.2 : 0.18) * spd, reach: d.reach + 4 + (stage === 2 ? 6 : 0), stage };   // 앞으로 조금 더 길게 (+4, 찌르기 +10) — 지난 판 +6/+13에서 살짝 되돌림
     const base = swordAngle(p);
-    const sweep = stage === 2 ? 0.4 : 2.3;   // 양옆으로 조금 더 넓게
+    const sweep = stage === 2 ? 0.4 : 2.15;   // 양옆으로 조금 더 넓게 (기본 1.9 · 지난 판 2.3)
     const flip = stage === 1 ? -1 : 1;
     p.swing.a0 = base - sweep / 2 * flip; p.swing.a1 = base + sweep / 2 * flip;
     if (stage === 3) { p.swing.a0 = base + 1.4; p.swing.a1 = base - 1.4; p.swing.dur = 0.24 * spd; p.swing.reach += 4; }
     // 앞으로 조금 내딛는다 (무거운 검은 덜, 빠른 검은 더)
-    const [ux, uy] = U.DV[p.dir];
+    const [ux, uy] = p.face;
     p.lunge = (stage === 2 ? 70 : 40) / Math.max(0.8, d.swing); p.lungeDir = [ux, uy];
     // 돌진 찌르기 (달리다 공격) · 회피 베기 (구르기 끝에 공격)
     const dodgeAtk = s.skills.sv_dodgeatk && p.t - (p.rollEndT || -9) < 0.32;
@@ -494,7 +553,7 @@
         if (dd > sw.reach + (e.r || 8)) continue;
         const ea = U.angle(ex - cxp, ey - cyp);
         const lo = Math.min(sw.a0, a), hi = Math.max(sw.a0, a);
-        const within = dd < 12 || (U.angDiff(lo, ea) >= -0.5 && U.angDiff(ea, hi) >= -0.5);
+        const within = dd < 11 || (U.angDiff(lo, ea) >= -0.4 && U.angDiff(ea, hi) >= -0.4);
         if (!within) continue;
         p.hitSet.add(e);
         const [nx, ny] = U.norm(ex - p.x, ey - p.y + 9);
@@ -519,18 +578,18 @@
     const masterBeam = s.skills.sw_master && sw.stage === lastStage;
     if (sw.t >= sw.dur * 0.5 && !sw.beamed && (itemBeam || masterBeam)) {
       sw.beamed = true;
-      const a = swordAngle(p);
+      const a = faceAng(p);
       shoot({ kind: 'beam', x: p.x + Math.cos(a) * 10, y: p.y - 2 + Math.sin(a) * 8, vx: Math.cos(a) * 260, vy: Math.sin(a) * 260, dmg: d.atk * 0.8, src: 'beam', el: 'light', r: 4, life: 0.6, pierce: 1, trail: '#fff8c0' });
       sfx('beam');
     }
-    if (ctl && I.pressed('attack')) p.queued = true;
+    if (ctl && (I.pressed('attack') || I.pressed('aimfire'))) p.queued = true;
     if (sw.t >= sw.dur) {
       const maxStage = s.skills.sw_combo ? 3 : 2;
       if (p.queued && sw.stage < maxStage) { startSwing(p, sw.stage + 1); return; }
       // 누르고 있으면 모으기
       // (연속 베기 중간에 꾹 눌러도 모은다: 몇 번 베다가 누르고 있으면 회전 베기가 안 나가던 것.
       //  마지막 베기 중에 눌러 그대로 누르고 있을 때도 — 이어 벨 단계가 없으니 모으기로)
-      if (ctl && I.down('attack') && p.chargeOk) { p.setState('charge'); p.chargeT = 0; p.queued = false; return; }
+      if (ctl && I.down(p.atkKey || 'attack') && p.chargeOk) { p.setState('charge'); p.chargeT = 0; p.queued = false; return; }
       if (sw.t >= sw.dur + (p.queued ? 0 : 0.08)) { p.swing = null; p.setState('idle'); }
     }
   }
@@ -542,7 +601,7 @@
     if (U.len(ax, ay) > 0.2) { const n = U.norm(ax, ay); E.move(m, p, n[0] * 34 * dt, n[1] * 34 * dt); p.walkT += dt * 0.6; }
     if (p.chargeT >= d.chargeTime && !p.chargeFull) { p.chargeFull = true; sfx('charged'); G.fx.ring(p.x, p.y - 8, '#fff2a8', 16, 0.3); }
     if (p.chargeFull && Math.random() < dt * 30) G.fx.sparks(p.x + (Math.random() - 0.5) * 14, p.y - 10 + (Math.random() - 0.5) * 10, 1, '#fff2a8', 20);
-    if (!ctl || !I.down('attack')) {
+    if (!ctl || !I.down(p.atkKey || 'attack')) {
       if (p.chargeFull) startSpin(p); else { p.setState('idle'); }
       p.chargeFull = false;
     }
@@ -594,15 +653,15 @@
   function startBow(p, key) {
     const s = S();
     if (!s.tools.bow || p.carry) return false;
-    p.setState('bow'); p.bowT = 0; p.bowFull = false; p.bowHeavy = false; p.aim = U.angle(p.face[0], p.face[1]); p.bowKey = key || 'bow';
+    p.setState('bow'); p.bowT = 0; p.bowFull = false; p.bowHeavy = false; p.aim = faceAim(p, 'bow'); p.bowKey = key || 'bow';
     sfx('draw');
     return true;
   }
   function updBow(p, dt, m, ctl) {
     const s = S(), d = G.st.derive(s);
     p.bowT += dt;
-    const ax = ctl ? I.axisX : 0, ay = ctl ? I.axisY : 0;
-    if (U.len(ax, ay) > 0.3) { p.aim = U.angle(ax, ay); p.dir = U.dir4(ax, ay, p.dir); }
+    // 당기는 동안 겨눈 쪽을 따라 돈다 (걸으면서 · 마우스 · 오른쪽 스틱 · 끌기 — 없으면 걷는 쪽의 적을 자동으로)
+    if (ctl) p.aim = faceAim(p, 'bow');
     if (p.bowT > d.draw + 0.35 && !p.bowFull) { p.bowFull = true; sfx('charged'); }
     if (p.bowFull && s.skills.bw_heavy && p.bowT > d.draw + 1.2 && !p.bowHeavy) { p.bowHeavy = true; sfx('charged'); G.fx.ring(p.x, p.y - 8, '#fff8c0', 14, 0.3, 2); }
     if (!ctl || !I.down(p.bowKey || 'bow')) {
@@ -653,6 +712,7 @@
       }
       if (s.mp < cost) { sfx('buzz'); G.fx.float(p.x, p.y - 30, 'MP 부족', '#8ab8ff'); return true; }
       s.mp -= cost;
+      faceAim(p, 'magic');
       p.setState('cast'); p.castSpell = s.spell; p.castDone = false;
       sfx('cast');
       return true;
@@ -663,6 +723,7 @@
     const q = (s.skills.mg_quick ? 0.5 : 1) * (d.castMul || 1);
     if (!p.castDone && p.st > 0.14 * q) {
       p.castDone = true;
+      faceAim(p, 'magic');
       castSpell(p, p.castSpell, d);
       if (d.echo && Math.random() < d.echo) after(0.18, () => castSpell(p, p.castSpell, G.st.derive(S())));
     }
@@ -823,7 +884,7 @@
   }
   function throwCarry(p) {
     const c = p.carry; p.carry = null;
-    const a = ANG[p.dir];
+    const a = faceAim(p, 'throw');
     shoot({ kind: 'thrown', img: c.img, x: p.x + Math.cos(a) * 6, y: p.y - 4 + Math.sin(a) * 4, vx: Math.cos(a) * 180, vy: Math.sin(a) * 180, dmg: c.o === OB.O.ROCK ? 6 : 3, src: 'throw', r: 6, life: 0.4, power: 1.2, zoff: 14, z: p.z,
       onDie() { G.fx.shards(this.x, this.y, 8, c.pot ? '#c87a4a' : c.o === OB.O.ROCK ? '#8a7a6a' : '#5aa84a'); sfx(c.pot || c.o === OB.O.ROCK ? 'rock' : 'cut'); if (c.pot) { c.pot.x = this.x; c.pot.y = this.y; c.pot.dropLoot(); } } });
     sfx('throw');
@@ -836,6 +897,7 @@
       const s = S();
       if (!I.pressed('special') || s.special < 100 || p.carry) return false;
       const mv = (C.specialFor ? C.specialFor(s) : null) || s.specialMove || 'flash';
+      faceAim(p, 'special');
       if (mv !== 'flash' && G.specials && G.data.SPECIALS[mv] && G.prog.reqOk(s, G.data.SPECIALS[mv].req)) { s.special = 0; G.specials.start(p, mv); return true; }
       s.special = 0;
       p.setState('dash'); p.dash = { t: 0, dur: 0.24, dir: [...p.face], hit: new Set() };
@@ -962,6 +1024,52 @@
     C.marks = C.marks.filter((mk) => mk.t < mk.life);
     C.bolts = C.bolts.filter((b) => b.t < 0.25);
   }
+  /** 조준 표시: 주인공 둘레의 꺾쇠(겨눈 쪽) · 마우스 조준점 · 버튼을 끌 때 안내선 · 자동 조준이 잡은 적 */
+  const WCOLA = { sword: '#ffd8a8', bow: '#c8f0a0', magic: '#a8c8ff' };
+  function drawAim(g, cx, cy) {
+    const p = W().player, s = S();
+    if (!p || !s || p.state === 'dead' || G.script.running || (G.ui && G.ui.blocking && G.ui.blocking())) return;
+    if (s.settings && s.settings.aimMark === false) return;
+    const ex = explicitAim(p);
+    const col = WCOLA[C.weapon ? C.weapon() : 'sword'] || '#ffffff';
+    const ox = p.x - cx, oy = p.y - 9 - (p.jz || 0) - cy;
+    let a = null, alpha = 0.75;
+    if (ex) a = U.angle(ex.x, ex.y);
+    else if (p.state === 'bow' && p.aim != null) a = p.aim;
+    else if (p.aimT != null && p.t - p.aimT < 0.35 && p.aimA != null) { a = p.aimA; alpha = 0.75 * (1 - (p.t - p.aimT) / 0.35); }
+    if (a != null) {
+      const r = 17 + Math.sin(W().t * 6) * 0.8;
+      const hx = ox + Math.cos(a) * r, hy = oy + Math.sin(a) * r * 0.85;
+      g.save(); g.globalAlpha = alpha; g.translate(Math.round(hx), Math.round(hy)); g.rotate(a);
+      g.fillStyle = 'rgba(10,8,20,0.6)'; g.beginPath(); g.moveTo(4, 0); g.lineTo(-3, -4); g.lineTo(-1, 0); g.lineTo(-3, 4); g.closePath(); g.fill();
+      g.fillStyle = col; g.beginPath(); g.moveTo(3, 0); g.lineTo(-2, -3); g.lineTo(-0.5, 0); g.lineTo(-2, 3); g.closePath(); g.fill();
+      g.restore();
+    }
+    // 휴대폰: 스킬 · 필살 버튼을 끄는 동안 — 어디로 나갈지 길게
+    if (ex && ex.src === 'touch' && I.touchAim.on) {
+      const L = I.touchAim.act === 'attack' ? 34 : 70;
+      g.save(); g.globalAlpha = 0.55; g.strokeStyle = col; g.lineWidth = 2; g.setLineDash([4, 3]); g.lineDashOffset = -W().t * 20;
+      g.beginPath(); g.moveTo(ox + Math.cos(a) * 12, oy + Math.sin(a) * 10); g.lineTo(ox + Math.cos(a) * L, oy + Math.sin(a) * L * 0.85); g.stroke();
+      g.setLineDash([]); g.globalAlpha = 0.35; g.beginPath(); g.ellipse(ox + Math.cos(a) * L, oy + Math.sin(a) * L * 0.85, 7, 4, 0, 0, Math.PI * 2); g.stroke(); g.restore();
+    }
+    // 마우스 조준점
+    if (ex && ex.src === 'mouse') {
+      const mx = Math.round(ex.wx - cx), my = Math.round(ex.wy - cy);
+      g.save(); g.globalAlpha = 0.85; g.strokeStyle = 'rgba(10,8,20,0.7)'; g.lineWidth = 3;
+      g.beginPath(); g.arc(mx + 0.5, my + 0.5, 4, 0, Math.PI * 2); g.stroke();
+      g.strokeStyle = col; g.lineWidth = 1; g.beginPath(); g.arc(mx + 0.5, my + 0.5, 4, 0, Math.PI * 2); g.stroke();
+      g.fillStyle = col; g.fillRect(mx - 7, my, 3, 1); g.fillRect(mx + 5, my, 3, 1); g.fillRect(mx, my - 7, 1, 3); g.fillRect(mx, my + 5, 1, 3);
+      g.restore();
+    }
+    // 자동 조준이 잡은 적: 발밑 꺾쇠 (활을 당기는 동안 · 막 겨눈 뒤)
+    const t = p.aimSrc === 'auto' && p.aimTgt && !p.aimTgt.dead && (p.state === 'bow' || p.t - (p.aimT || -9) < 0.4) ? p.aimTgt : null;
+    if (t) {
+      const tx = Math.round(t.x - cx), ty = Math.round(t.y - cy), w2 = (t.r || 8) + 3;
+      g.save(); g.globalAlpha = 0.7; g.strokeStyle = col; g.lineWidth = 1;
+      for (const sx of [-1, 1]) { g.beginPath(); g.moveTo(tx + sx * w2, ty - 3); g.lineTo(tx + sx * w2, ty + 1); g.lineTo(tx + sx * (w2 - 3), ty + 1); g.stroke(); }
+      g.restore();
+    }
+  }
   function drawBolts(g, cx, cy) {
     for (const mk of C.marks) {
       const k = Math.min(1, mk.t / mk.life);
@@ -993,7 +1101,7 @@
     };
   }
 
-  Object.assign(C, { drops, damage, kill, hurtPlayer, addSpecial, cutAt, shoot, Shot, Pickup, spawnPickup, explode, update, drawWeapon, drawBolts, makeIcons, levelUp, freezeWater, foes, after, cutArc, startSpin, startBow, castMagic, castSpell, startSwing });
+  Object.assign(C, { drops, damage, kill, hurtPlayer, addSpecial, cutAt, shoot, Shot, Pickup, spawnPickup, explode, update, drawWeapon, drawBolts, drawAim, makeIcons, levelUp, freezeWater, foes, after, cutArc, startSpin, startBow, castMagic, castSpell, startSwing });
   C.hookLanding = hookLanding;
   C.actions = { attack: atk, bow, magic, tool, special, hook: hookAct, charge: atk, spin: atk, dash: atk, lift: atk, cast: atk, sp: atk };
   G.combat = C;

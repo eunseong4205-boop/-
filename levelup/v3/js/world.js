@@ -142,6 +142,7 @@
       }
     }
     if (G.combat && G.combat.drawBolts) G.combat.drawBolts(g, cx, cy);
+    if (G.combat && G.combat.drawAim) { try { G.combat.drawAim(g, cx, cy); } catch (_) { /* 무시 */ } }
     if (G.fx) G.fx.drawOver(g, cx, cy);
     if (G.light) G.light.draw(g, cx, cy);
   }

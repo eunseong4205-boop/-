@@ -428,7 +428,15 @@
   /* ───────── 상호작용 ───────── */
   const IA = { hint: null };
   function candidates(p) {
-    const [ux, uy] = U.DV[p.dir];
+    const e0 = candidatesDir(p, U.DV[p.dir]);
+    if (e0) return e0;
+    // 마우스 · 스틱으로 다른 쪽을 겨누고 있을 때: 마지막으로 걸어온 쪽 앞의 것도 (말 걸려고 다가갔는데 겨눈 쪽만 보던 것)
+    const wf = p.walkFace;
+    if (wf && U.dir4(wf[0], wf[1], p.dir) !== p.dir) return candidatesDir(p, U.DV[U.dir4(wf[0], wf[1], p.dir)]);
+    return null;
+  }
+  function candidatesDir(p, dv) {
+    const [ux, uy] = dv;
     const fx = p.x + ux * 12, fy = p.y - 4 + uy * 10;
     let best = null, bd = 99;
     for (const e of W().ents) {

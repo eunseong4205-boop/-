@@ -181,6 +181,7 @@
   function continueGame(save) {
     G.state = G.prog ? G.prog.migrate(Object.assign(G.st.fresh(), save, { settings: Object.assign(G.st.fresh().settings, save.settings || {}) })) : save;
     W.player = null;
+    if (G.audio) { G.audio.unlock(); G.audio.applySettings(); }
     const s = G.state;
     const r = s.map ? s : s.respawn;
     try { goto(r.map || 'world', r.x, r.y, 'down', { fresh: true }); }
@@ -242,7 +243,7 @@
   }
 
   function boot(hot) {
-    I.bindTouch();
+    I.bindTouch(); if (I.bindMouse) I.bindMouse();
     if (G.combat) G.combat.makeIcons();
     if (G.ui && G.ui.bindTap) G.ui.bindTap();
     addEventListener('resize', resize);

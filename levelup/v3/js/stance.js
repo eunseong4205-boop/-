@@ -127,6 +127,7 @@
       const rk = G.stance.rank ? G.stance.rank(s, id) : 1;
       ST.cd[id] = A.cd * cdMul(s, w) * (1 - 0.05 * (rk - 1));
       ST.usedAt[w] = p.t;
+      if (C.faceAim) C.faceAim(p, 'skill');   // 360° — 겨눈 쪽(없으면 바라보는 쪽의 적)으로
       DO[id](p, s, d, m, skillMul(s, w) * (1 + 0.08 * (rk - 1)));
       if (G.stance.used) G.stance.used(s, id);
       return true;
@@ -315,6 +316,11 @@
     if (s.tools.bow && !s.askills.a_fan) learn(s, 'a_fan');
     if (s.spell && !s.askills.a_nova) learn(s, 'a_nova');
     if (s.askills.a_dash && s.flags.c1_trained && !s.flags.skillTold && !G.script.running) { s.flags.skillTold = true; G.ui.toast('스킬 [L]: 돌진 베기 — 기력을 써서 앞으로 뛰어들며 벤다', 'white'); }
+    // 360° 조준 안내 (한 번씩)
+    if (s.flags.c1_trained && !G.script.running && !(G.ui.blocking && G.ui.blocking())) {
+      if (I.touchMode && !s.flags.aimToldT) { s.flags.aimToldT = true; G.ui.toast('공격 · 스킬 · 필살 버튼을 [y]누른 채 끌면[/] 그쪽으로 겨눈다 — 걸으면서 따로 겨눌 수 있다', 'white'); }
+      else if (!I.touchMode && I.mouseAimOn && I.mouseAimOn() && !s.flags.aimToldM) { s.flags.aimToldM = true; G.ui.toast('[y]마우스[/]로 겨눈다 — 왼쪽 단추 공격 · 오른쪽 스킬 · 바퀴 무기 바꾸기 (설정에서 끌 수 있다)', 'white'); }
+    }
     if (s.tools.bow && !s.flags.swapTold && !G.script.running) { s.flags.swapTold = true; G.ui.toast('[K]로 무기를 바꿔 든다 — 지금 든 무기로만 공격한다 (검 → 활 → 마법)', 'white'); }
     return r;
   };

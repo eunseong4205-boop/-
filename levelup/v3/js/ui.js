@@ -638,6 +638,11 @@
     tog('music', '음악'); tog('sfx', '효과음'); tog('shake', '화면 흔들림'); tog('minimap', '작은 지도');
     body.appendChild(row({ name: '음량', v: Math.round((st.vol == null ? 0.7 : st.vol) * 10) + ' / 10', onClick: () => { st.vol = ((Math.round((st.vol == null ? 0.7 : st.vol) * 10) % 10) + 1) / 10; if (G.audio) G.audio.applySettings(); refresh(); } }));
     body.appendChild(row({ name: '글자 속도', v: ['', '느리게', '보통', '빠르게'][st.textSpeed || 2], onClick: () => { st.textSpeed = ((st.textSpeed || 2) % 3) + 1; refresh(); } }));
+    sec(body, '조준 (360°)');
+    body.appendChild(row({ name: '방향키', desc: st.arrowAim ? '조준 — WASD로 걷고 방향키로 겨눈 채 공격한다 (메뉴에서는 그대로 위아래)' : '이동 — WASD와 같이 걷는다. 겨누기는 마우스 · 오른쪽 스틱 · 자동 조준', v: st.arrowAim ? '조준' : '이동', onClick: () => { st.arrowAim = !st.arrowAim; sfx('select'); refresh(); } }));
+    body.appendChild(row({ name: '마우스 조준', desc: '마우스를 움직이면 그쪽을 겨눈다 · 왼쪽 단추 = 공격 · 오른쪽 = 스킬 · 바퀴 = 무기 바꾸기', v: st.mouseAim === false ? '끔' : '켬', onClick: () => { st.mouseAim = st.mouseAim === false; sfx('select'); refresh(); } }));
+    body.appendChild(row({ name: '자동 조준', desc: '직접 겨누지 않을 때, 바라보는 쪽 가까이의 적을 알아서 겨눈다', v: st.autoAim === false ? '끔' : '켬', onClick: () => { st.autoAim = st.autoAim === false; sfx('select'); refresh(); } }));
+    body.appendChild(row({ name: '조준 표시', desc: '주인공 둘레의 꺾쇠 · 마우스 조준점 · 자동 조준이 잡은 적', v: st.aimMark === false ? '끔' : '켬', onClick: () => { st.aimMark = st.aimMark === false; sfx('select'); refresh(); } }));
     sec(body, '기록');
     body.appendChild(row({ name: '지금 기록하기', desc: '빛의 이정표와 침대에서 쉬어도 기록된다.', onClick: () => { if (G.script.running || G.script.busy || !G.st.save(s)) { toast('지금은 기록할 수 없다 — 벌어지고 있는 일을 먼저 끝내자', 'bad'); return; } toast('기록했다', 'good'); sfx('save'); } }));
     body.appendChild(row({ name: '빠져나오기', desc: '어딘가에 끼었거나 갇혔을 때: 가까운 트인 곳으로 — 멀쩡한 자리면 이 지역에 들어온 곳으로 돌아간다.', onClick: () => {
@@ -647,7 +652,7 @@
     body.appendChild(row({ name: '타이틀로', desc: '기록하지 않은 것은 사라진다.', onClick: () => { closeModal(); G.game.toTitle(); } }));
     sec(body, '조작');
     const k = document.createElement('div'); k.className = 'keys card';
-    k.innerHTML = [['WASD · 방향키', '이동'], ['J · Z · Enter', '든 무기로 공격 · 말 걸기 (검: 길게 눌렀다 떼면 회전 베기 / 활: 누른 채 조준, 떼면 쏜다 / 마법: 고른 주문)'], ['Space · X', '구르기 (기력)'], ['K · C', '무기 바꾸기 (검 → 활 → 마법)'], ['L · V', '든 무기의 스킬 (재사용 대기)'], ['I · B', '도구 (폭탄 · 갈고리 · 등불 …)'], ['O · F', '든 무기의 필살기 (게이지 가득)'], ['Q · E', '메뉴 탭 넘기기'], ['Esc · Tab', '메뉴'], ['M', '지도'], ['턱을 밀기', '뛰어내리기']].map(([a, b]) => '<kbd>' + a + '</kbd><span>' + b + '</span>').join('');
+    k.innerHTML = [['WASD · 방향키', '이동 (방향키 조준 모드면 방향키 = 겨눠 공격)'], ['마우스', '겨누기 (360°) · 왼쪽 단추 공격 · 오른쪽 스킬 · 바퀴 무기 바꾸기'], ['J · Z · Enter', '든 무기로 공격 · 말 걸기 (검: 길게 눌렀다 떼면 회전 베기 / 활: 누른 채 조준, 떼면 쏜다 / 마법: 고른 주문, 누르고 있으면 이어서)'], ['걸으며 공격', '공격 · 스킬 · 필살기 동안에도 걷는다. 겨누는 쪽은 따로 (직접 겨누지 않으면 바라보는 쪽의 적을 자동으로)'], ['Space · X', '구르기 (기력)'], ['K · C', '무기 바꾸기 (검 → 활 → 마법)'], ['L · V', '든 무기의 스킬 (재사용 대기)'], ['I · B', '도구 (폭탄 · 갈고리 · 등불 …)'], ['O · F', '든 무기의 필살기 (게이지 가득)'], ['Q · E', '메뉴 탭 넘기기'], ['Esc · Tab', '메뉴'], ['M', '지도'], ['턱을 밀기', '뛰어내리기']].map(([a, b]) => '<kbd>' + a + '</kbd><span>' + b + '</span>').join('');
     body.appendChild(k);
   }
 
@@ -851,7 +856,7 @@
     const bg = UI.titleBg; if (bg) el.appendChild(bg);
     el.insertAdjacentHTML('beforeend', '<div class="t-logo" style="font-size:24px"><small>조작</small>이렇게 움직인다</div>');
     const k = document.createElement('div'); k.className = 'keys card'; k.style.maxWidth = '420px';
-    k.innerHTML = [['이동', 'WASD · 방향키 / 왼쪽 스틱'], ['공격 · 말 걸기', 'J · Z · Enter / 빨간 버튼 — 지금 든 무기로 (검: 길게 눌렀다 떼면 회전 베기 · 활: 누른 채 조준 · 마법: 고른 주문)'], ['구르기', 'Space · X / 파란 버튼 — 적의 공격 직전에 구르면 완벽 회피'], ['무기 바꾸기', 'K · C / ⇄ 버튼 — 검 → 활 → 마법. 하나만 손에 든다'], ['스킬', 'L · V / ✸ 버튼 — 든 무기의 스킬 (기력 · 화살 · MP, 재사용 대기)'], ['도구', 'I · B (폭탄 · 갈고리 · 등불 …)'], ['필살기', 'O · F — 든 무기의 필살기 (게이지가 가득 찼을 때)'], ['바꾸기', 'Q · E / ⇄'], ['메뉴 · 지도', 'Esc · Tab / M'], ['높은 곳', '낮은 쪽 턱을 밀면 뛰어내린다. 오를 때는 계단으로']].map(([a, b]) => '<kbd>' + a + '</kbd><span>' + b + '</span>').join('');
+    k.innerHTML = [['이동', 'WASD · 방향키 / 왼쪽 스틱'], ['겨누기 (360°)', '마우스 · 오른쪽 스틱 / 휴대폰은 공격 · 스킬 · 필살 버튼을 누른 채 끌기 — 걸으면서 따로 겨눈다. 겨누지 않으면 바라보는 쪽의 적을 자동으로'], ['공격 · 말 걸기', 'J · Z · Enter · 마우스 왼쪽 / 빨간 버튼 — 지금 든 무기로 (검: 길게 눌렀다 떼면 회전 베기 · 활: 누른 채 조준 · 마법: 고른 주문)'], ['구르기', 'Space · X / 파란 버튼 — 적의 공격 직전에 구르면 완벽 회피'], ['무기 바꾸기', 'K · C / ⇄ 버튼 — 검 → 활 → 마법. 하나만 손에 든다'], ['스킬', 'L · V / ✸ 버튼 — 든 무기의 스킬 (기력 · 화살 · MP, 재사용 대기)'], ['도구', 'I · B (폭탄 · 갈고리 · 등불 …)'], ['필살기', 'O · F — 든 무기의 필살기 (게이지가 가득 찼을 때)'], ['바꾸기', 'Q · E / ⇄'], ['메뉴 · 지도', 'Esc · Tab / M'], ['높은 곳', '낮은 쪽 턱을 밀면 뛰어내린다. 오를 때는 계단으로']].map(([a, b]) => '<kbd>' + a + '</kbd><span>' + b + '</span>').join('');
     el.appendChild(k);
     const m = document.createElement('div'); m.className = 't-menu';
     const back = document.createElement('button'); back.className = 't-btn pri'; back.textContent = '돌아가기'; back.addEventListener('click', () => title());
