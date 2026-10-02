@@ -23,58 +23,64 @@
   acc('ac_champbelt', 3, '챔피언 벨트', { str: 2, vit: 3 }, '챔피언 도전 금메달. 힘 +2, 체력 +3.');
   acc('ac_runband', 3, '깃발 달리기 띠', { stamina: 25, roll: 0.15 }, '깃발 달리기 금메달. 기력 +25, 구르기 기력 -15%.');
   acc('ac_memring', 3, '기억의 고리', { int: 3, special: 0.15 }, '기억의 발판 금메달. 지혜 +3, 필살 게이지 +15%.');
-  acc('ac_arcking', 4, '오락실의 왕관', { exp: 0.15, gold: 0.15, crit: 0.05 }, '여덟 게임 모두 금메달. 빛 알갱이 · 골드 +15%, 치명타 +5%. 작은 화면 속 영웅의 왕관.');
+  acc('ac_snare', 3, '도둑 잡이 방울', { speed: 0.06, gold: 0.15 }, '호박 오락기 「도둑 잡기」 금메달. 베는 속도 +6%, 골드 +15%.');
+  acc('ac_balloon', 4, '무지개 풍선 매듭', { crit: 0.08, special: 0.1 }, '무지개 오락기 「색깔 풍선」 금메달. 치명타 +8%, 필살 게이지 +10%.');
+  acc('ac_firefly', 4, '반딧불 병', { regen: 0.5, int: 2, mpRegen: 0.5 }, '안개 오락기 「안개 속 사냥」 금메달. 가만히 있으면 체력이 조금씩, 지혜 +2.');
+  acc('ac_shepherd', 4, '양치기 피리', { stamina: 25, vit: 3, roll: 0.1 }, '알록달록 오락기 「몬스터 몰이」 금메달. 기력 +25, 체력 +3, 구르기 기력 -10%.');
+  acc('ac_giantslayer', 5, '거인 사냥꾼의 증표', { str: 3, crit: 0.06, special: 0.15 }, '별빛 오락기 「거인 사냥」 금메달. 힘 +3, 치명타 +6%, 필살 게이지 +15%.');
+  acc('ac_arcking', 4, '오락실의 왕관', { exp: 0.15, gold: 0.15, crit: 0.05 }, '열세 오락기 모두 금메달. 빛 알갱이 · 골드 +15%, 치명타 +5%. 작은 화면 속 영웅의 왕관.');
 
   /* ───────── 오락기가 놓인 곳: 마을 빛깔 등급 = 난이도 ★ ───────── */
-  const ALL = ['lvup', 'mole', 'defend', 'coins', 'rain', 'champ', 'flags', 'simon'];
+  /* 오락기마다 게임 하나 — 열세 곳 모두 다른 게임 */
   const CABS = {
-    green: { D: 0, at: [6, 2], games: ['lvup', 'mole', 'coins', 'simon'] },
-    red: { D: 1, at: [6, 2], games: ['lvup', 'defend', 'flags', 'mole'] },
-    blue: { D: 2, at: [6, 2], games: ['lvup', 'simon', 'rain', 'coins'] },
-    amber: { D: 3, at: [6, 2], games: ['mole', 'flags', 'defend', 'champ'] },
-    yellow: { D: 3, at: [6, 2], games: ['lvup', 'coins', 'rain', 'champ'] },
-    purple: { D: 4, at: [6, 2], games: ['lvup', 'defend', 'simon', 'rain'] },
-    rainbow: { D: 5, at: [-6, 4], games: ALL, hall: true },
-    white: { D: 6, at: [6, 2], games: ['lvup', 'rain', 'flags', 'champ'] },
-    mist: { D: 6, at: [6, 2], games: ['mole', 'simon', 'coins', 'defend'] },
-    gray: { D: 7, at: [6, 2], games: ['lvup', 'defend', 'champ', 'flags'] },
-    black: { D: 8, at: [6, 2], games: ['lvup', 'rain', 'champ', 'mole'] },
-    colorful: { D: 9, at: [5, 3], games: ALL, hall: true },
-    station: { D: 10, games: ALL, hall: true, name: '별빛 오락기' },
+    green: { D: 0, at: [6, 2], game: 'lvup' },
+    red: { D: 1, at: [6, 2], game: 'mole' },
+    blue: { D: 2, at: [6, 2], game: 'coins' },
+    amber: { D: 3, at: [6, 2], game: 'thief' },
+    yellow: { D: 3, at: [6, 2], game: 'rain' },
+    purple: { D: 4, at: [6, 2], game: 'simon' },
+    rainbow: { D: 5, at: [-6, 4], game: 'balloon' },
+    white: { D: 6, at: [6, 2], game: 'flags' },
+    mist: { D: 6, at: [6, 2], game: 'dark' },
+    gray: { D: 7, at: [6, 2], game: 'defend' },
+    black: { D: 8, at: [6, 2], game: 'champ' },
+    colorful: { D: 9, at: [5, 3], game: 'herd' },
+    station: { D: 10, game: 'giant', name: '별빛 오락기' },
   };
+  const ALL = Object.values(CABS).map((K) => K.game);
+  const TOWN_OF = {}; for (const [t, K] of Object.entries(CABS)) TOWN_OF[K.game] = t;
   /* 오락기마다 다른 몬스터(그 지역 들판의 몬스터로) · 다른 경품
      mobs: 초반 · 중반 · 후반 무리 / champ: 챔피언 도전 / chase: 동전 러시의 쫓는 것 / mole: 두더지 / seek: 수정을 노리는 것 / theme: 부제
-     shelf: 이 오락기에서 처음 성적(점수/기준) 0.6 · 1.0 · 1.5를 넘기면 한 번씩 — 참가상 · 우수상 · 최우수상
+     prize: 이 오락기의 동 · 은 · 금메달 보상(★가 높을수록 값지다) — ['gold', n] 골드 · ['pts', n] 능력 포인트 · 그 밖은 물건
      pool: 판마다 경품 뽑기(성적에 따라 확률) [아이템, 개수, 무게] */
   const ROSTER = {
     green: { theme: '젤리 들판', mobs: [['slime', 'slime', 'bat'], ['slime', 'bat', 'boar', 'plant'], ['boar', 'bigslime', 'bat']], champ: ['boar', 'bigslime', 'plant'], chase: 'wisp', mole: 'slime', seek: ['slime', 'slime', 'bat', 'boar'],
-      shelf: [['potion_r', 3], ['arrows10', 2], ['ac_str', 1]], pool: [['potion_r', 1, 3], ['food_corn', 2, 2], ['arrows10', 1, 1]] },
+      prize: [[['gold', 500]], [['key_origin', 1]], [['ac_lvband', 1]]], pool: [['potion_r', 1, 3], ['food_corn', 2, 2], ['arrows10', 1, 1]] },
     red: { theme: '불꽃 고개', mobs: [['slime', 'bat', 'wisp'], ['boar', 'bat', 'wisp', 'bomber'], ['boar', 'bomber', 'bandit', 'golem']], champ: ['boar', 'bandit', 'bomber', 'golem'], chase: 'wisp', mole: 'slime', seek: ['boar', 'bat', 'wisp'],
-      shelf: [['potion_r', 4], ['food_tteok', 3], ['ac_shell', 1]], pool: [['potion_r', 1, 3], ['food_tteok', 1, 2], ['bombs5', 1, 1]] },
+      prize: [[['potion_r', 4], ['food_tteok', 2]], [['ac_shell', 1], ['pts', 1]], [['ac_mallet', 1], ['gold', 350]]], pool: [['potion_r', 1, 3], ['food_tteok', 1, 2], ['bombs5', 1, 1]] },
     blue: { theme: '파도 해변', mobs: [['slime', 'slime', 'bat'], ['crab', 'slime', 'bandit', 'plant'], ['crab', 'bandit', 'bigslime']], champ: ['crab', 'bandit', 'bigslime'], chase: 'ghost', mole: 'crab', seek: ['crab', 'slime', 'crab', 'bigslime'],
-      shelf: [['potion_b', 3], ['food_udon', 3], ['ac_roll', 1]], pool: [['potion_b', 1, 3], ['food_udon', 1, 2], ['arrows10', 1, 1], ['m_pearl', 2, 1]] },
+      prize: [[['potion_b', 3], ['food_udon', 2]], [['ac_roll', 1], ['pts', 1]], [['ac_coinpurse', 1], ['gold', 500]]], pool: [['potion_b', 1, 3], ['food_udon', 1, 2], ['arrows10', 1, 1], ['m_pearl', 2, 1]] },
     amber: { theme: '단풍 협곡', mobs: [['bat', 'slime', 'boar'], ['boar', 'bandit', 'wolf'], ['wolf', 'golem', 'bandit']], champ: ['bandit', 'wolf', 'golem'], chase: 'wisp', mole: 'worm', seek: ['boar', 'bat', 'wolf'],
-      shelf: [['potion_g', 1], ['bombs5', 2], ['ac_thief', 1]], pool: [['potion_r', 2, 2], ['potion_b', 1, 2], ['bombs5', 1, 1], ['m_hide', 3, 1]] },
+      prize: [[['bombs5', 2], ['potion_r', 3]], [['ac_thief', 1], ['pts', 1]], [['ac_snare', 1], ['gold', 650]]], pool: [['potion_r', 2, 2], ['potion_b', 1, 2], ['bombs5', 1, 1], ['m_hide', 3, 1]] },
     yellow: { theme: '황금 사막', mobs: [['bat', 'slime', 'wisp'], ['bandit', 'wisp', 'crab'], ['wolf', 'turret', 'bandit', 'crab']], champ: ['bandit', 'crab', 'wolf', 'golem'], chase: 'wisp', mole: 'worm', seek: ['crab', 'bandit', 'bat'],
-      shelf: [['potion_g', 1], ['m_sand', 6], ['ac_ring_crit', 1]], pool: [['potion_b', 1, 3], ['m_sand', 3, 2], ['arrows10', 1, 1]] },
+      prize: [[['potion_b', 2], ['m_sand', 5]], [['ac_ring_crit', 1], ['pts', 1]], [['ac_starcloak', 1], ['gold', 650]]], pool: [['potion_b', 1, 3], ['m_sand', 3, 2], ['arrows10', 1, 1]] },
     purple: { theme: '가시 숲', mobs: [['bug', 'plant', 'bug'], ['ghost', 'plant', 'bigslime'], ['mage', 'wolf', 'ghost']], champ: ['bigslime', 'ghost', 'wolf', 'mage'], chase: 'ghost', mole: 'bug', seek: ['bug', 'ghost', 'bigslime'],
-      shelf: [['potion_g', 2], ['m_dust', 6], ['ac_mp', 1]], pool: [['potion_b', 1, 2], ['potion_g', 1, 2], ['m_dust', 2, 1]] },
+      prize: [[['potion_g', 1], ['m_dust', 5]], [['ac_mp', 1], ['pts', 1]], [['ac_memring', 1], ['gold', 800]]], pool: [['potion_b', 1, 2], ['potion_g', 1, 2], ['m_dust', 2, 1]] },
     rainbow: { theme: '무지개 축제', mobs: [['bug', 'bat', 'wisp'], ['bug', 'bigslime', 'wisp'], ['bigslime', 'bug', 'mage', 'wisp']], champ: ['bigslime', 'bug', 'wolf', 'mage'], chase: 'wisp', mole: 'bug', seek: ['bug', 'bat', 'bigslime'],
-      shelf: [['food_cotton', 5], ['potion_max', 1], ['ac_combo', 1]], pool: [['food_cotton', 2, 3], ['potion_g', 1, 2], ['m_star', 2, 1]] },
+      prize: [[['food_cotton', 5], ['potion_g', 1]], [['ac_combo', 1], ['pts', 1]], [['ac_balloon', 1], ['gold', 950]]], pool: [['food_cotton', 2, 3], ['potion_g', 1, 2], ['m_star', 2, 1]] },
     white: { theme: '눈의 성지', mobs: [['slime', 'icewisp', 'bat'], ['wolf', 'icewisp', 'golem'], ['golem', 'hollow', 'wolf', 'icewisp']], champ: ['wolf', 'hollow', 'golem'], chase: 'icewisp', mole: 'icewisp', seek: ['wolf', 'icewisp', 'golem'],
-      shelf: [['food_bread', 3], ['potion_max', 1], ['ac_clock', 1]], pool: [['food_bread', 1, 3], ['potion_g', 1, 2], ['m_ice', 3, 1]] },
+      prize: [[['food_bread', 3], ['potion_g', 1]], [['ac_clock', 1], ['pts', 1]], [['ac_runband', 1], ['gold', 1100]]], pool: [['food_bread', 1, 3], ['potion_g', 1, 2], ['m_ice', 3, 1]] },
     mist: { theme: '안개 늪', mobs: [['bug', 'plant', 'bug'], ['ghost', 'wisp', 'bigslime'], ['ghost', 'plant', 'bigslime', 'bug']], champ: ['bigslime', 'bug', 'plant', 'ghost'], chase: 'ghost', mole: 'bug', seek: ['bug', 'bigslime', 'wisp'],
-      shelf: [['lily', 3], ['potion_max', 1], ['ac_sage', 1]], pool: [['lily', 1, 3], ['potion_g', 1, 2], ['m_spore', 2, 1]] },
+      prize: [[['lily', 3], ['potion_max', 1]], [['ac_sage', 1], ['pts', 1]], [['ac_firefly', 1], ['gold', 1100]]], pool: [['lily', 1, 3], ['potion_g', 1, 2], ['m_spore', 2, 1]] },
     gray: { theme: '잿빛 공장', mobs: [['bat', 'drone', 'slime'], ['drone', 'bomber', 'turret', 'hollow'], ['golem', 'hollow', 'bomber', 'drone']], champ: ['drone', 'bomber', 'hollow', 'golem'], chase: 'drone', mole: 'drone', seek: ['drone', 'golem', 'hollow'],
-      shelf: [['m_gear', 8], ['potion_max', 1], ['ac_tri', 1]], pool: [['potion_g', 1, 3], ['m_gear', 3, 2], ['bombs5', 1, 1]] },
-    black: { theme: '영원한 밤', mobs: [['bat', 'ghost', 'bat'], ['ghost', 'hollow', 'shade'], ['knight', 'shade', 'hollow', 'ghost']], champ: ['hollow', 'shade', 'knight'], chase: 'shade', mole: 'ghost', seek: ['ghost', 'hollow', 'shade'],
-      shelf: [['shade_core', 2], ['potion_max', 2], ['ac_berserk', 1]], pool: [['potion_g', 1, 3], ['shade_core', 1, 2], ['potion_max', 1, 1]] },
+      prize: [[['m_gear', 8], ['potion_max', 1]], [['ac_tri', 1], ['pts', 1]], [['ac_guardgem', 1], ['gold', 1250]]], pool: [['potion_g', 1, 3], ['m_gear', 3, 2], ['bombs5', 1, 1]] },
+    black: { theme: '영원한 밤', mobs: [['bat', 'ghost', 'bat'], ['ghost', 'hollow', 'shade'], ['knight', 'shade', 'hollow', 'ghost']], champ: ['hollow', 'ghost', 'shade', 'knight'], chase: 'shade', mole: 'ghost', seek: ['ghost', 'hollow', 'shade'],
+      prize: [[['shade_core', 2], ['potion_max', 2]], [['ac_berserk', 1], ['pts', 2]], [['ac_champbelt', 1], ['gold', 1400]]], pool: [['potion_g', 1, 3], ['shade_core', 1, 2], ['potion_max', 1, 1]] },
     colorful: { theme: '알록달록 공방', mobs: [['slime', 'drone', 'bat'], ['drone', 'mage', 'knight', 'bomber'], ['shade', 'knight', 'golem', 'mage']], champ: ['mage', 'hollow', 'knight', 'shade', 'golem'], chase: 'drone', mole: 'drone', seek: ['drone', 'slime', 'golem'],
-      shelf: [['potion_max', 2], ['m_crystal', 6], ['ac_vamp', 1]], pool: [['potion_g', 2, 3], ['potion_max', 1, 2], ['m_crystal', 2, 1]] },
+      prize: [[['m_crystal', 6], ['potion_max', 2]], [['ac_vamp', 1], ['pts', 2]], [['ac_shepherd', 1], ['gold', 1550]]], pool: [['potion_g', 2, 3], ['potion_max', 1, 2], ['m_crystal', 2, 1]] },
     station: { theme: '별빛 격납고', mobs: [['drone', 'bat', 'icewisp'], ['drone', 'turret', 'shade'], ['golem', 'shade', 'knight', 'drone']], champ: ['drone', 'mage', 'shade', 'knight', 'golem'], chase: 'shade', mole: 'drone', seek: ['drone', 'golem', 'shade'],
-      shelf: [['potion_max', 3], ['fairy', 1], ['ac_chime', 1]], pool: [['potion_max', 1, 3], ['m_star', 3, 2], ['fairy', 1, 1]] },
+      prize: [[['potion_max', 3], ['fairy', 1]], [['ac_chime', 1], ['pts', 2]], [['ac_giantslayer', 1], ['gold', 1700]]], pool: [['potion_max', 1, 3], ['m_star', 3, 2], ['fairy', 1, 1]] },
   };
-  const SHELF_NAME = ['참가상', '우수상', '최우수상'], SHELF_AT = [0.6, 1.0, 1.5];
   /** 성적의 기준 점수: 어려운 오락기일수록 낮춘다 (같은 솜씨면 같은 성적) */
   const parAt = (Gm, D) => Gm.par * (1 - 0.04 * Math.min(10, D));
   const itemName = (id, n) => ((G.data.ITEMS[id] && G.data.ITEMS[id].name) || id) + (n > 1 ? ' ×' + n : '');
@@ -129,26 +135,29 @@
   const MEDAL_FLAG = (gid, k) => (gid === 'lvup' ? ['arcade:20', 'arcade:40', 'arcade:60'][k] : 'arc:' + gid + ':' + (k + 1));
   const medalsOf = (gid) => [0, 1, 2].filter((k) => f(MEDAL_FLAG(gid, k))).length;
   const MEDAL_NAME = ['동', '은', '금'];
-  /** 메달 점수: 어려운 오락기일수록 같은 점수가 더 무겁다 */
-  const medalScore = (score, D) => Math.round(score * (1 + D * 0.06));
+  /** 보상 한 줄: 골드 · 능력 포인트 · 물건 */
+  const prizeText = (list) => list.map(([id, n]) => (id === 'gold' ? n + '골드' : id === 'pts' ? '능력 포인트 +' + n : itemName(id, n))).join(' + ');
+  async function givePrize(c, list) {
+    for (const [id, n] of list) {
+      if (id === 'gold') { c.gold(n); await c.narr('[y]' + n + '골드[/]'); }
+      else if (id === 'pts') { S().pts = (S().pts || 0) + n; await c.narr('몸 안의 빛이 단단해진다. [y]능력 포인트 +' + n + '[/]'); }
+      else await c.getItem(id, n);
+    }
+  }
 
   async function menu(c, cab) {
     const s = S(), K = CABS[cab.town] || CABS.green, D = K.D, cost = costOf(D);
-    const RS = ROSTER[cab.town] || ROSTER.green;
+    const RS = ROSTER[cab.town] || ROSTER.green, gid = K.game, Gm = GAMES[gid];
     const mobs = [...new Set(RS.mobs.flat())].map(FOE_NAME).join(' · ');
-    await c.narr('[y]' + cabName(cab.town) + '[/] 「' + RS.theme + '」 — 난이도 [r]' + STARS(D) + '[/] · 동전 ' + cost + '골드\n나오는 몬스터: ' + mobs + '\n' + (K.hall ? '이 오락실에는 게임 여덟이 모두 있다. ' : '') + '어려운 오락기일수록 상금 · 경품이 크고 메달 점수가 무겁다.');
+    const md = medalsOf(gid), b = best(gid);
+    await c.narr('[y]' + cabName(cab.town) + '[/] 「' + RS.theme + '」 — 난이도 [r]' + STARS(D) + '[/] · 동전 ' + cost + '골드\n이 오락기의 게임: [y]「' + Gm.name + '」[/] (' + Gm.time + '초)' + (md ? ' ' + '●'.repeat(md) : '') + (b ? ' · 최고 ' + Gm.fmt(b) : '') + '\n나오는 몬스터: ' + mobs);
     for (;;) {
-      const opts = K.games.map((gid) => { const Gm = GAMES[gid], b = bestAt(gid, cab.town), md = medalsOf(gid); return Gm.name + ' (' + Gm.time + '초)' + (md ? ' ' + '●'.repeat(md) : '') + (b ? ' · 여기 최고 ' + Gm.fmt(b) : ''); });
-      opts.push('이 오락기의 경품', '메달 · 선물 보기', '그만둔다');
-      const k = await c.choice('어떤 게임을 할까?', opts);
-      if (k === K.games.length) { await showShelf(c, cab.town); continue; }
-      if (k === K.games.length + 1) { await showMedals(c); continue; }
-      if (k > K.games.length + 1 || k < 0) return;
-      const gid = K.games[k], Gm = GAMES[gid];
-      const ms = Gm.medals.map((v, i) => MEDAL_NAME[i] + ' ' + Gm.fmt(v)).join(' · ');
-      await c.narr('[y]「' + Gm.name + '」[/] ' + Gm.time + '초 · ' + STARS(D) + '\n' + Gm.how + '\n' + (Gm.dmg < 1 ? '[s]맞으면 다친다 — 많이 잡는 게임이라 피해는 절반.[/]' : '[r]맞으면 그대로 다친다.[/]') + ' 체력이 ¼칸만 남으면 게임 오버.\n[s]메달(메달 점수 = 점수 × ' + (1 + D * 0.06).toFixed(2) + '): ' + ms + '[/]');
+      const k = await c.choice('어떻게 할까?', ['동전을 넣는다 (' + cost + '골드)', '규칙 보기', '이 오락기의 보상', '모든 오락기 메달', '그만둔다']);
+      if (k === 1) { await rules(c, Gm, D); continue; }
+      if (k === 2) { await showPrize(c, cab.town); continue; }
+      if (k === 3) { await showMedals(c); continue; }
+      if (k !== 0) return;
       if (s.hp <= 1) { await c.narr('[r]몸이 너무 지쳤다. 체력을 채우고 오자.[/]'); continue; }
-      if (!(await c.confirm('동전을 넣을까? (' + cost + '골드 · 가진 돈 ' + s.gold + ')', '넣는다', '다른 게임'))) continue;
       if (s.gold < cost) { await c.narr('동전이 모자라다.'); continue; }
       s.gold -= cost;
       s.arcadeRet = { map: W().map.id, x: cab.x, y: cab.y + 18 };
@@ -161,19 +170,23 @@
       return;
     }
   }
-  const shelfFlag = (town, k) => 'arc:shelf:' + town + ':' + k;
-  async function showShelf(c, town) {
-    const RS = ROSTER[town] || ROSTER.green, D = (CABS[town] || CABS.green).D;
-    const lines = RS.shelf.map(([id, n], k) => (f(shelfFlag(town, k)) ? '[s]✓ ' : '[y]') + SHELF_NAME[k] + '[/] (성적 ' + SHELF_AT[k] + '↑) — ' + itemName(id, n));
+  async function rules(c, Gm, D) {
+    const ms = Gm.medals.map((v, i) => MEDAL_NAME[i] + ' ' + Gm.fmt(v)).join(' · ');
+    await c.narr('[y]「' + Gm.name + '」[/] ' + Gm.time + '초 · ' + STARS(D) + '\n' + Gm.how + '\n' + (Gm.dmg < 1 ? '[s]맞으면 다친다 — 많이 잡는 게임이라 피해는 절반.[/]' : '[r]맞으면 그대로 다친다.[/]') + ' 체력이 ¼칸만 남으면 게임 오버.\n[s]메달: ' + ms + '[/]');
+  }
+  async function showPrize(c, town) {
+    const RS = ROSTER[town] || ROSTER.green, K = CABS[town] || CABS.green, Gm = GAMES[K.game];
+    const lines = RS.prize.map((list, k) => (f(MEDAL_FLAG(K.game, k)) ? '[s]✓ ' : '[y]') + MEDAL_NAME[k] + '메달[/] ' + Gm.fmt(Gm.medals[k]) + ' — ' + prizeText(list));
     const tot = RS.pool.reduce((a, q) => a + q[2], 0);
     const pool = RS.pool.map(([id, n, w]) => itemName(id, n) + ' ' + Math.round(w / tot * 100) + '%').join(' · ');
-    await c.narr(cabName(town) + ' 경품 (' + STARS(D) + ')\n' + lines.join('\n') + '\n[s]성적 = 점수 ÷ 기준 점수(어려운 오락기일수록 낮다). 상은 이 오락기에서 한 번씩, 어느 게임으로든.[/]');
-    await c.narr('판마다 경품 뽑기 — 성적이 좋을수록 잘 나온다\n' + pool + '\n[s]게임 오버면 뽑기 확률 절반.[/]');
+    await c.narr(cabName(town) + ' 보상 (' + STARS(K.D) + ')\n' + lines.join('\n'));
+    await c.narr('판마다: 성적만큼 골드 · 빛 알갱이 + 경품 뽑기\n' + pool + '\n[s]성적이 좋을수록 잘 나오고, 게임 오버면 절반.[/]');
   }
   async function showMedals(c) {
-    const lines = ALL.map((gid) => { const Gm = GAMES[gid], md = medalsOf(gid); return (md ? '[y]' + '●'.repeat(md) + '[/]' + '○'.repeat(3 - md) : '○○○') + ' ' + Gm.name + ' — 최고 ' + Gm.fmt(best(gid)) + ' · 금: ' + Gm.prizeName; });
-    await c.narr('메달 (동 · 은 · 금)\n' + lines.slice(0, 4).join('\n'));
-    await c.narr(lines.slice(4).join('\n') + '\n[s]메달: 동 — 골드 · 은 — 능력 포인트 +1 · 금 — 그 게임의 장신구 (렙업하기는 골드 · 옛 오락기 열쇠 · 렙업 머리띠). 여덟 게임 모두 금이면 「오락실의 왕관」[/]');
+    const lines = ALL.map((gid) => { const Gm = GAMES[gid], md = medalsOf(gid), t = TOWN_OF[gid]; return (md ? '[y]' + '●'.repeat(md) + '[/]' + '○'.repeat(3 - md) : '○○○') + ' ' + (TOWN_NAME[t] || t) + ' ' + STARS(CABS[t].D) + ' 「' + Gm.name + '」' + (best(gid) ? ' 최고 ' + Gm.fmt(best(gid)) : ''); });
+    await c.narr('모든 오락기 메달 (1/3)\n' + lines.slice(0, 5).join('\n'));
+    await c.narr('모든 오락기 메달 (2/3)\n' + lines.slice(5, 10).join('\n'));
+    await c.narr('모든 오락기 메달 (3/3)\n' + lines.slice(10).join('\n') + '\n[s]열세 오락기 모두 금메달이면 「오락실의 왕관」.[/]');
   }
 
   /* ───────── 오락기 속: 공통 ───────── */
@@ -226,7 +239,7 @@
 
   /** HUD 끝: 다음 메달까지 남은 점수 (메달 점수 기준을 지금 오락기 점수로 되돌려) */
   function nextMedal(R) {
-    const k = (1 + R.D * 0.06), m = R.G.medals.findIndex((v) => Math.round(R.score * k) < v);
+    const k = 1, m = R.G.medals.findIndex((v) => Math.round(R.score * k) < v);
     if (m < 0) return ' · 금 ✓';
     return ' · ' + MEDAL_NAME[m] + '까지 ' + Math.max(1, Math.ceil(R.G.medals[m] / k - R.score));
   }
@@ -270,7 +283,7 @@
     }
     if (M.t > M.up) { e.dead = true; M.h.busy = false; G.fx.dust(e.x, e.y, 3); }
   };
-  game('mole', { name: '몬스터 두더지', kind: 'kill', time: 60, dmg: 0.5, par: 50, medals: [40, 60, 80], fmt: (v) => v + '마리', prizeName: '뿅망치 부적', start: [8.5, 8.6],
+  game('mole', { name: '몬스터 두더지', kind: 'kill', time: 60, dmg: 0.5, par: 50, medals: [35, 55, 75], fmt: (v) => v + '마리', prizeName: '뿅망치 부적', start: [8.5, 8.6],
     how: '아홉 구멍에서 그 마을 몬스터가 잠깐 튀어나온다. 들어가기 전에 쳐라 (+1, 금빛 +3). [r]검붉은 폭탄[/]은 치면 터지고 -3. 보라 가시는 튀어나오며 가시를 뿜는다(★2부터), ★5부터는 구멍 위에 서 있으면 문다.',
     setup(R) {
       R.score = 0; R.popT = 1.2;
@@ -310,7 +323,7 @@
     if (e.fly) { const [nx, ny] = U.norm(c.x - e.x, c.y - e.y); e.x += nx * e.speed * e.seekMul * dt; e.y += ny * e.speed * e.seekMul * dt; e.dirX = Math.sign(nx) || e.dirX; }
     else e.toward(c.x, c.y, e.speed * e.seekMul, dt);
   };
-  game('defend', { name: '수정 지키기', kind: 'kill', time: 60, dmg: 0.5, par: 45, medals: [35, 55, 70], fmt: (v) => v + '점', prizeName: '수호 수정', start: [8.5, 9],
+  game('defend', { name: '수정 지키기', kind: 'kill', time: 60, dmg: 0.5, par: 30, medals: [20, 35, 50], fmt: (v) => v + '점', prizeName: '수호 수정', start: [8.5, 9],
     how: '가운데 수정으로 몬스터가 몰려든다. 닿기 전에 쓰러뜨려라 (+1, 너를 노리는 사냥꾼 +2). 수정이 깨지면 실패, 1분을 지키면 남은 수정 빛만큼 더.',
     setup(R) {
       R.score = 0; R.spawnT = 1.0;
@@ -337,7 +350,7 @@
       const [x, y] = edgeSpot();
       const hunter = rnd() < 0.16 + R.D * 0.02;
       if (hunter) {
-        const e = foe(R, pick(R.K.mobs[1]), x, y);
+        const e = foe(R, pick(R.K.mobs[0]), x, y);
         e.onDieFn = () => { R.score += 2; float(e.x, e.y - 22, '+2', '#ffe066', true); };
         return;
       }
@@ -374,7 +387,7 @@
         g.fillStyle = this.v > 1 ? '#fff0a0' : '#ffd84a'; g.fillRect(x - w, y - (this.v > 1 ? 6 : 4), w * 2, this.v > 1 ? 12 : 8);
       } });
   }
-  game('coins', { name: '동전 러시', kind: 'collect', time: 45, dmg: 1, par: 35, medals: [30, 45, 60], fmt: (v) => v + '닢', prizeName: '황금 동전 지갑',
+  game('coins', { name: '동전 러시', kind: 'collect', time: 45, dmg: 1, par: 25, medals: [15, 28, 40], fmt: (v) => v + '닢', prizeName: '황금 동전 지갑',
     how: '흩어진 동전을 주워라 (+1, 반짝이는 큰 동전 +5 — 곧 사라진다). 유령은 쓰러뜨릴 수 없다, 쳐서 밀어내고 피하라. 맞으면 동전 둘을 흘린다. ★3부터 바닥 가시.',
     setup(R) { R.score = 0; R.bigT = 6; R.spikeT = 3; R.ghosts = []; },
     tick(R, dt) {
@@ -396,7 +409,7 @@
   });
 
   /* 5. 별똥비 버티기 — 떨어지는 별똥과 쏟아지는 탄을 피해 버틴다 */
-  game('rain', { name: '별똥비 버티기', kind: 'survive', time: 60, dmg: 1, par: 80, medals: [60, 90, 120], fmt: (v) => v + '점', prizeName: '별똥 망토 조각',
+  game('rain', { name: '별똥비 버티기', kind: 'survive', time: 60, dmg: 1, par: 80, medals: [55, 85, 115], fmt: (v) => v + '점', prizeName: '별똥 망토 조각',
     how: '바닥에 붉은 원이 뜨면 곧 별똥이 떨어진다. 벽에서 탄도 날아온다(★1부터). 버틴 1초마다 1점, 반짝이는 별을 주우면 +5, 끝까지 버티면 +15.',
     setup(R) { R.score = 0; R.metT = 1.2; R.fanT = 3; R.starT = 4; R.stars = 0; },
     tick(R, dt) {
@@ -433,7 +446,7 @@
   });
 
   /* 6. 챔피언 도전 — 정예 도전자를 차례로 꺾는다 */
-  game('champ', { name: '챔피언 도전', kind: 'duel', time: 90, dmg: 1, par: 12, medals: [8, 14, 20], fmt: (v) => v + '승', prizeName: '챔피언 벨트', start: [8.5, 9.5],
+  game('champ', { name: '챔피언 도전', kind: 'duel', time: 90, dmg: 1, par: 7, medals: [4, 8, 12], fmt: (v) => v + '승', prizeName: '챔피언 벨트', start: [8.5, 9.5],
     how: '정예 도전자가 하나씩(★5부터 넷째 판부터 둘씩) 나온다. 판마다 더 단단하다. 90초 동안 몇 명을 꺾을까.',
     setup(R) { R.score = 0; R.round = 0; R.nextT = 1.0; R.champs = []; },
     tick(R, dt) {
@@ -446,9 +459,9 @@
       for (let i = 0; i < n; i++) {
         const type = CP[Math.floor(rnd() * top)];
         const x = n === 1 ? 8.5 * TS + 8 : (i ? 12 : 5) * TS + 8;
-        const e = foe(R, type, x, py(4), { hpMul: 1.2 + R.round * 0.22 });
+        const e = foe(R, type, x, py(4), { hpMul: 1.0 + R.round * 0.2 });
         if (G.foes.makeElite) { G.foes.makeElite(e, R.round < 4 && G.foes.AFFIX ? [pick(Object.keys(G.foes.AFFIX).filter((k2) => k2 !== 'summon'))] : null); e.elite = 'arc'; }
-        e.atk = Math.max(1, Math.round(e.atk * 0.7)); e.champ = true; R.champs.push(e);
+        e.atk = Math.max(1, Math.round(e.atk * 0.55)); e.champ = true; R.champs.push(e);
         float(e.x, e.y - 34, '도전자 ' + R.round + ' — ' + (e.name || type), '#ffd84a', true);
         e.onDieFn = () => { R.score++; float(e.x, e.y - 28, R.score + '승!', '#ffe066', true); sfx('learn'); };
       }
@@ -478,7 +491,7 @@
         g.fillStyle = '#a87a4a'; for (let i = 0; i < 3; i++) { const o = ((r + i * 4) % 12 + 12) % 12 - 6; if (horiz) g.fillRect(x - 6, y + Math.round(o), 12, 1); else g.fillRect(x + Math.round(o), y - 5, 1, 10); }
       } });
   }
-  game('flags', { name: '깃발 달리기', kind: 'run', time: 45, dmg: 1, par: 22, medals: [18, 26, 34], fmt: (v) => v + '개', prizeName: '깃발 달리기 띠',
+  game('flags', { name: '깃발 달리기', kind: 'run', time: 45, dmg: 1, par: 18, medals: [14, 22, 30], fmt: (v) => v + '개', prizeName: '깃발 달리기 띠',
     how: '깃발이 하나씩 나타난다. 닿으면 +1, 곧 다른 곳에 새 깃발. 붉은 줄이 뜨면 통나무가 굴러온다, 가시공은 벽에 튕기며 돌아다닌다.',
     setup(R) { R.score = 0; R.rollT = 1.5; R.balls = []; R.flag = null; },
     tick(R, dt) {
@@ -517,7 +530,7 @@
 
   /* 8. 기억의 발판 — 빛나는 차례를 기억해 발판을 밟는다 */
   const PLATES = [{ tx: 8, ty: 2.6, col: '#ff5a5a', hz: 392 }, { tx: 14, ty: 6, col: '#4ab8ff', hz: 523 }, { tx: 8, ty: 9.4, col: '#ffd84a', hz: 659 }, { tx: 2, ty: 6, col: '#6ae07a', hz: 784 }];
-  game('simon', { name: '기억의 발판', kind: 'memory', time: 120, dmg: 1, par: 9, medals: [7, 10, 13], fmt: (v) => v + '칸', prizeName: '기억의 고리', start: [8.5, 7.4],
+  game('simon', { name: '기억의 발판', kind: 'memory', time: 120, dmg: 1, par: 8, medals: [6, 9, 12], fmt: (v) => v + '칸', prizeName: '기억의 고리', start: [8.5, 7.4],
     how: '네 발판이 차례로 빛난다. 같은 차례로 밟아라 — 맞히면 하나 더 길어진다. 틀리거나 오래 머뭇거리면 발판이 친다(세 번 틀리면 끝). ★2부터 방해꾼이 돌아다닌다.',
     setup(R) {
       R.score = 0; R.seq = [0, 1, 2].map(() => Math.floor(rnd() * 4)); R.phase = 'pause'; R.pt = 1.2; R.miss = 0; R.on = -1; R.lit = -1; R.harT = 2;
@@ -574,6 +587,215 @@
     hud: (R) => R.score + '칸 · ' + (R.phase === 'input' ? '밟아라 ' + R.ii + '/' + R.seq.length : '보아라…') + ' · 틀림 ' + R.miss + '/3',
   });
 
+  /* 9. 도둑 잡기 (호박) — 자루를 멘 도둑을 쫓아 치면 동전이 쏟아진다. 경비 몬스터가 막아선다 */
+  AI.arcFlee = function (e, dt) {
+    const p = W().player; if (!p) return;
+    e.hp = e.maxHp; e.inv = 0;
+    if (e.hitCd > 0) e.hitCd -= dt;
+    if (e.daze > 0) { e.daze -= dt; e.state = 'idle'; return; }
+    let [nx, ny] = U.norm(e.x - p.x, e.y - p.y);
+    const wall = Math.min(e.x - BX0, BX1 - e.x, e.y - BY0, BY1 - e.y);
+    if (wall < 34) { const [wx, wy] = U.norm((BX0 + BX1) / 2 - e.x, (BY0 + BY1) / 2 - e.y); nx = nx * 0.35 + wx; ny = ny * 0.35 + wy; }
+    e.wob = (e.wob || 0) + dt; nx += Math.sin(e.wob * 2.3) * 0.45; ny += Math.cos(e.wob * 1.7) * 0.45;
+    const [mx, my] = U.norm(nx, ny), d = U.dist(e.x, e.y, p.x, p.y);
+    const sp = e.fleeSp * (d < 70 ? 1 : 0.5);
+    e.go(mx * sp * dt, my * sp * dt);
+    e.x = U.clamp(e.x, BX0, BX1); e.y = U.clamp(e.y, BY0, BY1);
+    e.dir = U.dir4(mx, my, e.dir || 'down'); e.dirX = Math.sign(mx) || e.dirX; e.state = 'walk';
+  };
+  game('thief', { name: '도둑 잡기', kind: 'chase', time: 60, dmg: 1, par: 55, medals: [35, 60, 85], fmt: (v) => v + '닢', prizeName: '도둑 잡이 방울', start: [8.5, 9],
+    how: '자루를 멘 도둑이 달아난다. 쫓아가 칠 때마다 동전이 쏟아진다 — 땅에 떨어진 동전을 주워야 점수(+1, 다섯 번째 칠 때마다 큰 동전 +5). 도둑의 경비가 막아서고, ★3부터 도둑이 덫을 흘린다.',
+    setup(R) {
+      R.score = 0; R.hitsN = 0; R.guardT = 2; R.trapT = 4;
+      const e = foe(R, 'bandit', px(8.5), py(4), { ai: 'arcFlee', hpMul: 400 });
+      e.noContact = true; e.fleeSp = 66 + R.D * 3; e.thief = true; e.name = '자루 도둑';
+      const oh = e.onHurt.bind(e);
+      e.onHurt = function (dmg, info) {
+        const r = oh(dmg, info);
+        if (!(this.hitCd > 0)) {
+          this.hitCd = 0.3; this.daze = 0.35; R.hitsN++;
+          const big = R.hitsN % 5 === 0, n = big ? 1 : 1 + (rnd() < 0.35 ? 1 : 0);
+          for (let i = 0; i < n; i++) { const a = rnd() * 6.28; coin(R, U.clamp(this.x + Math.cos(a) * 18, BX0, BX1), U.clamp(this.y + Math.sin(a) * 12, BY0, BY1), big ? 5 : 1, 5); }
+          sfx('coin'); G.fx.sparks(this.x, this.y - 14, 6, '#ffe066', 70);
+        }
+        return r;
+      };
+      R.thief = e;
+    },
+    tick(R, dt) {
+      const guards = foes().filter((e) => !e.thief);
+      R.guardT -= dt;
+      if (R.guardT <= 0 && guards.length < 1 + Math.floor(R.D / 2) + Math.floor(R.el / 25)) { R.guardT = Math.max(2.5, 6 - R.D * 0.3); const [x, y] = edgeSpot(); foe(R, pick(R.K.mobs[R.el < 30 ? 0 : 1]), x, y); }
+      if (R.D >= 3 && R.thief) {
+        R.trapT -= dt;
+        if (R.trapT <= 0) { R.trapT = Math.max(2, 5 - R.D * 0.2); const t = R.thief, x = t.x, y = t.y; G.bosses.warnCircle(x, y, 14, 1.2, () => { G.fx.shards(x, y - 3, 8, '#c8c8d8'); sfx('thunk'); G.bosses.hitCircle(x, y, 14, 2 + Math.floor(R.D / 3)); }, 'rgba(200,200,220,0.4)'); }
+      }
+    },
+    adopt(R, e) { /* 경비가 부른 것은 그대로 */ },
+    hud: (R) => R.score + '닢 · 친 횟수 ' + R.hitsN,
+  });
+
+  /* 10. 색깔 풍선 (무지개) — 위에 뜬 색의 풍선만 터뜨린다. 다른 색은 터지며 다친다 */
+  const BCOL = [['빨강', '#ff5a5a'], ['파랑', '#4ab8ff'], ['노랑', '#ffd84a'], ['초록', '#6ae07a']];
+  AI.arcFloat = function (e, dt) {
+    e.y -= e.rise * dt; e.x = U.clamp(e.x + Math.sin(e.t * 2 + e.ph) * 14 * dt, BX0, BX1); e.vx = e.vy = 0;
+    if (e.y < BY0 - 8) e.dead = true;
+  };
+  function balloon(R) {
+    const x = BX0 + 8 + rnd() * (BX1 - BX0 - 16), y = BY1 + 6;
+    const e = foe(R, 'wisp', x, y, { ai: 'arcFloat', quiet: true });
+    e.maxHp = e.hp = 1; e.noContact = true; e.fly = true; e.h = 30; e.r = 7; e.rise = 26 + R.D * 2.5 + rnd() * 12; e.ph = rnd() * 6;
+    e.gold = rnd() < 0.07; e.bal = rnd() < 0.3 ? R.target : Math.floor(rnd() * 4);
+    e.draw = function (g, cx, cy) {
+      const bx = Math.round(this.x - cx), by = Math.round(this.y - cy - 16), col = this.gold ? '#fff2a8' : BCOL[this.bal][1];
+      g.strokeStyle = '#e8e0c8'; g.beginPath(); g.moveTo(bx, by + 7); g.lineTo(bx + Math.sin(this.t * 3) * 2, by + 16); g.stroke();
+      g.fillStyle = '#140c1c'; g.beginPath(); g.ellipse(bx, by, 7, 8, 0, 0, 6.29); g.fill();
+      g.fillStyle = col; g.beginPath(); g.ellipse(bx, by, 6, 7, 0, 0, 6.29); g.fill();
+      g.fillStyle = 'rgba(255,255,255,0.6)'; g.fillRect(bx - 3, by - 4, 2, 3);
+      if (this.gold) { g.fillStyle = '#ffd84a'; g.fillRect(bx - 1, by - 1, 2, 2); }
+    };
+    e.onDieFn = () => {
+      if (e.gold) { R.score += 3; float(e.x, e.y - 22, '+3', '#fff2a8', true); sfx('white'); return; }
+      if (e.bal === R.target) { R.score += 1; float(e.x, e.y - 22, '+1', BCOL[e.bal][1]); sfx('pop'); return; }
+      R.score = Math.max(0, R.score - 2); float(e.x, e.y - 22, '-2 (' + BCOL[e.bal][0] + ')', '#ff6a8a', true); boom(e.x, e.y - 10, 24, 2 + Math.floor(R.D / 3), BCOL[e.bal][1]);
+    };
+    return e;
+  }
+  game('balloon', { name: '색깔 풍선', kind: 'aim', time: 60, dmg: 1, par: 60, medals: [35, 65, 95], fmt: (v) => v + '점', prizeName: '무지개 풍선 매듭', start: [8.5, 6],
+    how: '풍선이 아래에서 떠오른다. 위쪽 띠에 뜬 [y]목표 색[/]의 풍선만 터뜨려라(+1, 반짝이는 금빛 +3). 다른 색을 터뜨리면 그 자리에서 터져 다치고 -2. 목표 색은 8초마다 바뀐다(바뀌기 전에 깜박인다). 축제 벌레도 날아든다.',
+    setup(R) { R.score = 0; R.target = Math.floor(rnd() * 4); R.tgtT = 8; R.popT = 0.5; R.harT = 3; },
+    tick(R, dt) {
+      R.tgtT -= dt;
+      if (R.tgtT <= 0) { let n; do { n = Math.floor(rnd() * 4); } while (n === R.target); R.target = n; R.tgtT = 8; sfx('switch'); float(W().player.x, W().player.y - 36, '목표: ' + BCOL[n][0], BCOL[n][1], true); }
+      R.popT -= dt;
+      if (R.popT <= 0) { R.popT = Math.max(0.28, 0.75 - R.D * 0.04 - R.el * 0.005); balloon(R); }
+      R.harT -= dt;
+      const har = foes().filter((e) => e.ai !== 'arcFloat');
+      if (R.harT <= 0 && har.length < 1 + Math.floor(R.D / 3)) { R.harT = 4; const [x, y] = edgeSpot(); foe(R, pick(R.K.mobs[0]), x, y); }
+    },
+    adopt(R, e) { },
+    hud: (R) => R.score + '점 · 목표 ' + BCOL[R.target][0] + (R.tgtT < 1.5 && Math.floor(R.t * 6) % 2 ? ' (곧 바뀜)' : ''),
+  });
+
+  /* 11. 안개 속 사냥 (안개 늪) — 등불 하나로 보이는 만큼만. 몬스터 눈빛을 보고 잡는다 (많이 잡기) */
+  game('dark', { name: '안개 속 사냥', kind: 'kill', time: 60, dmg: 0.5, par: 200, medals: [120, 200, 280], fmt: (v) => v + '점', prizeName: '반딧불 병', start: [8.5, 7.5],
+    how: '안개가 짙어 등불 둘레만 보인다. 어둠 속 몬스터는 눈빛만 보인다 — 잡을수록 점수(약한 것 +1 … 센 것 +3~4). 반딧불 병을 주우면 잠깐 넓게 보이고 +2.',
+    setup(R) { R.score = 0; R.spawnT = 0.6; R.jarT = 5; R.lightT = 0; R.dark = true; },
+    tick(R, dt) {
+      if (R.lightT > 0) R.lightT -= dt;
+      R.spawnT -= dt;
+      const alive = foes().length, cap = Math.min(12, 4 + Math.floor(R.D / 3) + Math.floor(R.el / 15));
+      if (alive < 2) R.spawnT = Math.min(R.spawnT, 0.2);
+      if (R.spawnT <= 0 && alive < cap) {
+        R.spawnT = Math.max(0.45, 1.2 - R.D * 0.04 - R.el * 0.01);
+        const ph = R.el < 25 ? 0 : R.el < 45 ? 1 : 2, type = pick(R.K.mobs[ph]);
+        const [x, y] = edgeSpot(), e = foe(R, type, x, y, { quiet: true });
+        e.onDieFn = () => { const v = LVVAL[type] || 1; R.score += v; float(e.x, e.y - 22, '+' + v, '#c8ffb8'); };
+      }
+      R.jarT -= dt;
+      if (R.jarT <= 0) {
+        R.jarT = 7;
+        const [x, y] = randSpot(12, 50);
+        addEnt(R, { kind: 'arcjar', x, y, glowy: true, update(dt2) { this.t += dt2; if (this.t > 9) { this.dead = true; return; } const pl = W().player; if (pl && U.dist(this.x, this.y, pl.x, pl.y) < 13) { this.dead = true; R.score += 2; R.lightT = 6; sfx('white'); float(this.x, this.y - 16, '+2 · 반딧불!', '#fff2a8', true); } },
+          draw(g, cx, cy) { const x2 = Math.round(this.x - cx), y2 = Math.round(this.y - cy - 8); g.fillStyle = '#8ac8e8'; g.fillRect(x2 - 3, y2 - 5, 6, 8); g.fillStyle = '#5a4a3a'; g.fillRect(x2 - 3, y2 - 7, 6, 2); g.fillStyle = Math.floor(this.t * 5) % 2 ? '#fff2a8' : '#ffe066'; g.fillRect(x2 - 1, y2 - 2, 2, 2); } });
+      }
+    },
+    adopt(R, e) { e.onDieFn = () => { R.score += 1; }; },
+    hud: (R) => R.score + '점' + (R.lightT > 0 ? ' · 반딧불 ' + Math.ceil(R.lightT) + '초' : '') + nextMedal(R),
+  });
+  /** 안개: 등불 둘레만 밝고 나머지는 어둡다. 어둠 속 몬스터는 눈빛 · 반딧불 병은 빛으로 보인다 */
+  function drawFog(g, cx, cy, v) {
+    const R = RUN, p = W().player; if (!R || !R.dark || !p) return;
+    const rad = Math.max(30, 56 - R.D * 1.5) + (R.lightT > 0 ? 40 : 0) + Math.sin(R.el * 6) * 1.5;
+    const x = p.x - cx, y = p.y - 10 - cy;
+    g.save();
+    g.fillStyle = 'rgba(8,10,14,0.94)';
+    g.beginPath(); g.rect(0, 0, v.w, v.h); g.arc(x, y, rad, 0, 6.29, true); g.fill('evenodd');
+    const gr = g.createRadialGradient(x, y, rad * 0.55, x, y, rad);
+    gr.addColorStop(0, 'rgba(8,10,14,0)'); gr.addColorStop(1, 'rgba(8,10,14,0.94)');
+    g.fillStyle = gr; g.beginPath(); g.arc(x, y, rad + 0.5, 0, 6.29); g.fill();
+    for (const e of G.combat.foes()) {
+      const ex = e.x - cx, ey = e.y - cy - (e.h || 12) * 0.7;
+      if (Math.hypot(ex - x, ey - y) < rad * 0.8) continue;
+      g.fillStyle = e.elite ? '#ff9a3a' : '#ff4a5a'; g.fillRect(Math.round(ex) - 3, Math.round(ey), 2, 2); g.fillRect(Math.round(ex) + 1, Math.round(ey), 2, 2);
+    }
+    for (const e of R.ents) if (e.glowy && !e.dead) { const ex = e.x - cx, ey = e.y - cy - 8; const gg = g.createRadialGradient(ex, ey, 0, ex, ey, 12); gg.addColorStop(0, 'rgba(255,242,168,0.7)'); gg.addColorStop(1, 'rgba(255,242,168,0)'); g.fillStyle = gg; g.fillRect(ex - 12, ey - 12, 24, 24); }
+    g.restore();
+  }
+
+  /* 12. 몬스터 몰이 (알록달록) — 순한 몬스터를 쳐서 밀어 위쪽 우리에 넣는다. 사냥꾼 몬스터가 노린다 */
+  const PEN = { x0: 7 * TS, x1: 11 * TS, y0: (FL.y0 + 1) * TS, y1: (FL.y0 + 3) * TS };
+  AI.arcSheep = function (e, dt) {
+    const p = W().player; e.hp = e.maxHp; e.inv = 0;
+    if (!p) return;
+    const d = U.dist(e.x, e.y, p.x, p.y);
+    e.wT = (e.wT || 0) - dt;
+    if (d < 36) { const [nx, ny] = U.norm(e.x - p.x, e.y - p.y); e.go(nx * 26 * dt, ny * 26 * dt); }
+    else { if (e.wT <= 0) { e.wT = 1 + rnd() * 1.5; const a = rnd() * 6.28; e.wd = [Math.cos(a), Math.sin(a)]; } e.go(e.wd[0] * 14 * dt, e.wd[1] * 14 * dt); }
+    e.x = U.clamp(e.x, BX0, BX1); e.y = U.clamp(e.y, BY0, BY1);
+  };
+  function sheep(R) {
+    const [x, y] = [px(3 + rnd() * 11), py(7 + rnd() * 3)];
+    const gold = rnd() < 0.12;
+    const e = foe(R, R.K.sheep || 'slime', x, y, { ai: 'arcSheep', hpMul: 400 });
+    e.noContact = true; e.sheep = true; e.gold = gold; e.col = gold ? '#ffd84a' : '#e8e8f0'; e.weight = 0.45; e.wd = [0, 0];
+    return e;
+  }
+  game('herd', { name: '몬스터 몰이', kind: 'herd', time: 60, dmg: 1, par: 7, medals: [3, 7, 11], fmt: (v) => v + '마리', prizeName: '양치기 피리', start: [8.5, 10],
+    how: '순한 젤리들이 돌아다닌다. 다가가면 달아나고, 치면 밀려난다 — 위쪽 우리 안으로 몰아넣어라(+1, 금빛 +3). 사냥꾼 몬스터가 젤리를 잡아먹으면 -1. 사냥꾼은 쓰러뜨려 막아라.',
+    setup(R) {
+      R.score = 0; R.hunT = 4; R.sheepN = 3 + (R.D >= 6 ? 1 : 0);
+      addEnt(R, { x: (PEN.x0 + PEN.x1) / 2, y: PEN.y1, sortBias: -60, update(dt) { this.t += dt; }, drawShadow(g, cx, cy) {
+        const x0 = Math.round(PEN.x0 - cx), y0 = Math.round(PEN.y0 - cy), w = PEN.x1 - PEN.x0, h = PEN.y1 - PEN.y0;
+        g.fillStyle = 'rgba(106,224,122,0.3)'; g.fillRect(x0, y0, w, h);
+        g.fillStyle = '#3a2a1a'; g.fillRect(x0 - 1, y0 - 1, w + 2, 3); g.fillRect(x0 - 1, y0, 3, h); g.fillRect(x0 + w - 2, y0, 3, h);
+        g.fillStyle = '#c89a5a'; for (let xx = 0; xx <= w; xx += 8) g.fillRect(x0 + xx - 1, y0 - 3, 2, 5);
+        for (let yy = 0; yy <= h; yy += 8) { g.fillRect(x0 - 1, y0 + yy - 1, 2, 4); g.fillRect(x0 + w - 1, y0 + yy - 1, 2, 4); }
+        g.fillRect(x0, y0, w, 1); g.fillRect(x0, y0, 1, h); g.fillRect(x0 + w - 1, y0, 1, h);
+        g.fillStyle = 'rgba(255,224,102,' + (0.5 + Math.sin(this.t * 4) * 0.3) + ')'; g.fillRect(x0 + 2, y0 + h - 1, w - 4, 1);
+        g.fillStyle = '#ffe066'; g.font = "9px 'Galmuri11', sans-serif"; g.textAlign = 'center'; g.fillText('우리', x0 + w / 2, y0 + h - 4); g.textAlign = 'left';
+      } });
+    },
+    tick(R, dt) {
+      const flock = foes().filter((e) => e.sheep);
+      for (const e of flock) {
+        if (e.x > PEN.x0 + 2 && e.x < PEN.x1 - 2 && e.y > PEN.y0 && e.y < PEN.y1 + 10) {
+          e.dead = true; const v = e.gold ? 3 : 1; R.score += v; sfx('puzzle'); G.fx.sparks(e.x, e.y - 8, 12, '#ffe066', 80); float(e.x, e.y - 22, '+' + v, '#ffe066', v > 1);
+          continue;
+        }
+        for (const h of foes()) if (!h.sheep && !h.dead && U.dist(h.x, h.y, e.x, e.y) < 14) { e.dead = true; R.score = Math.max(0, R.score - 1); sfx('growl'); G.fx.shards(e.x, e.y - 6, 10, '#e8e8f0'); float(e.x, e.y - 22, '잡아먹혔다 -1', '#ff6a8a', true); break; }
+      }
+      if (foes().filter((e) => e.sheep).length < R.sheepN) sheep(R);
+      R.hunT -= dt;
+      const hun = foes().filter((e) => !e.sheep);
+      if (R.hunT <= 0 && hun.length < 1 + Math.floor(R.D / 4) + Math.floor(R.el / 30)) { R.hunT = Math.max(4, 9 - R.D * 0.4); const [x, y] = edgeSpot(); const h = foe(R, pick(R.K.mobs[0]), x, y); h.atk = Math.max(1, Math.round(h.atk * 0.6)); }
+    },
+    adopt(R, e) { },
+    hud: (R) => R.score + '마리' + nextMedal(R),
+  });
+
+  /* 13. 거인 사냥 (정거장) — 쓰러지지 않는 거인 젤리에게 90초 동안 피해를 쌓는다 */
+  if (G.bosses && G.bosses.variant && G.bosses.B.lvslime) G.bosses.variant('arcgiant', 'lvslime', { name: '별빛 거인', title: '별빛 오락기 · 거인 젤리 「Lv.∞」', col: '#8ad8ff', hp: 420 });
+  game('giant', { name: '거인 사냥', kind: 'boss', time: 90, dmg: 1, par: 90, medals: [50, 100, 150], fmt: (v) => v + '%', prizeName: '거인 사냥꾼의 증표', start: [8.5, 10],
+    how: '쓰러지지 않는 별빛 거인 젤리와 90초. 준 피해만큼 점수(거인 체력의 %). 체력이 ¼ 아래로 내려가면 다시 일어서며 더 세진다. 졸개 젤리가 거인에게 닿으면 거인이 회복한다 — 졸개부터 막아라.',
+    setup(R) {
+      R.score = 0; R.dmg = 0; R.ups = 0;
+      const b = G.bosses.spawn(G.bosses.B.arcgiant ? 'arcgiant' : 'lvslime', px(8.5), py(5), { hpMul: 10 + R.D });
+      b.atk = Math.max(3, Math.round(b.atk * 0.75)); b.aggro = true; if (b.start) b.start(); b.exp = 0; b.gold = 0; b.arcade = true;
+      b.preKill = function () { this.hp = this.maxHp; return true; };
+      R.giant = b; R.gMax = b.maxHp; R.lastHp = b.hp;
+    },
+    tick(R, dt) {
+      const b = R.giant; if (!b || b.dead) return;
+      if (b.hp < R.lastHp) R.dmg += R.lastHp - b.hp;
+      if (b.hp < b.maxHp * 0.25) { b.hp = b.maxHp; R.ups++; b.atk += 1; sfx('levelup'); G.fx.ring(b.x, b.y - 16, '#8ad8ff', 40, 0.5, 3); float(b.x, b.y - 60, '거인이 다시 일어섰다! (' + R.ups + ')', '#8ad8ff', true); }
+      R.lastHp = b.hp;
+      R.score = Math.floor(R.dmg / R.gMax * 100);
+    },
+    adopt(R, e) { },
+    hud: (R) => '피해 ' + R.score + '%' + (R.ups ? ' · 일으킨 ' + R.ups + '번' : '') + nextMedal(R),
+  });
+
   /* ───────── 오락기 속 방 ───────── */
   G.build.def('arcade_room', {
     build() {
@@ -608,6 +830,7 @@
   });
   // 위쪽 띠: 게임 이름 · 점수 · 남은 시간 (왼쪽 하트 · 오른쪽 골드 사이)
   W().overlays = W().overlays || [];
+  W().overlays.push((g, cx, cy, v) => { const m = W().map; if (m && m.id === 'arcade_room') drawFog(g, cx, cy, v); });
   W().overlays.push((g, cx, cy, v) => {
     const R = RUN, m = W().map;
     if (!R || !m || m.id !== 'arcade_room') return;
@@ -641,45 +864,32 @@
     const gap = Math.max(0, s.lv - EXP_LV[Math.min(10, R.D)]), ek = U.clamp(1 - gap / 15, 0.15, 1);
     let gold = Math.round(cost * 2.4 * perf * (1 + R.D * 0.08)), exp = Math.round(G.data.expNext(s.lv) * 0.06 * perf * (1 + R.D * 0.12) * ek);
     if (half) { gold = Math.round(gold * 0.5); exp = Math.round(exp * 0.5); }
-    const ms = medalScore(score, R.D);
+    const ms = score;
     G.script.run(async (c) => {
       c.sfx('bell'); await c.wait(0.5);
       const head = why === 'down' ? '[r]쓰러졌다 — GAME OVER[/]' : why === 'fail' ? '[r]실패 — GAME OVER[/]' : '[y]TIME UP![/]';
       const old = best(R.gid), oldHere = bestAt(R.gid, R.town);
-      await c.narr(head + '\n「' + Gm.name + '」 ' + STARS(R.D) + ' — [y]' + Gm.fmt(score) + '[/]' + (bonus ? ' (보너스 +' + bonus + ')' : '') + (score > old ? '\n[y]새 기록![/]' : '\n최고 기록 ' + Gm.fmt(old)) + (score > oldHere && oldHere ? ' · 이 오락기 새 기록' : '') + '\n메달 점수 ' + ms + (half ? '\n[s]끝까지 못 가서 상금은 절반[/]' : ''));
+      await c.narr(head + '\n「' + Gm.name + '」 ' + STARS(R.D) + ' — [y]' + Gm.fmt(score) + '[/]' + (bonus ? ' (보너스 +' + bonus + ')' : '') + (score > old ? '\n[y]새 기록![/]' : '\n최고 기록 ' + Gm.fmt(old)) + (score > oldHere && oldHere ? ' · 이 오락기 새 기록' : '') + (half ? '\n[s]끝까지 못 가서 상금은 절반[/]' : ''));
       if (score > old) { if (R.gid === 'lvup') s.flags.arcade_best = score; else s.flags['arc:best:' + R.gid] = score; }
       if (score > oldHere) s.flags['arc:best:' + R.gid + ':' + R.town] = score;
       if (gold > 0 || exp > 0) { c.gold(gold); c.exp(exp); await c.narr('오락기가 동전을 토해 냈다. [y]' + gold + '골드[/] · 빛 알갱이 ' + exp); }
-      // 이 오락기의 경품: 선반(한 번씩) · 뽑기(판마다)
+      // 메달: 이 오락기만의 보상
       const RS = R.K;
       for (let k2 = 0; k2 < 3; k2++) {
-        if (perf < SHELF_AT[k2] || f(shelfFlag(R.town, k2))) continue;
-        c.flag(shelfFlag(R.town, k2)); c.sfx('learn');
-        const [id, n] = RS.shelf[k2];
-        await c.narr('[y]' + cabName(R.town) + ' ' + SHELF_NAME[k2] + '[/] — 경품 칸이 열렸다.'); await c.getItem(id, n);
+        const fl = MEDAL_FLAG(R.gid, k2);
+        if (ms < Gm.medals[k2] || f(fl)) continue;
+        c.flag(fl); c.sfx('learn');
+        await c.narr('[y]' + MEDAL_NAME[k2] + '메달[/] — ' + cabName(R.town) + ' 「' + Gm.name + '」' + (R.gid === 'lvup' && k2 === 1 ? '\n동전 구멍에서 작은 열쇠가 굴러 나왔다.' : ''));
+        await givePrize(c, RS.prize[k2]);
       }
+      // 판마다 경품 뽑기 (오락기마다 다른 물건)
       const chance = U.clamp(perf * 0.5, 0.1, 0.9) * (half ? 0.5 : 1);
       if (rnd() < chance) {
         const tot = RS.pool.reduce((a, q) => a + q[2], 0); let r2 = rnd() * tot, got = RS.pool[0];
         for (const q of RS.pool) { r2 -= q[2]; if (r2 <= 0) { got = q; break; } }
         c.sfx('item'); await c.narr('경품 뽑기 — 당첨!'); await c.getItem(got[0], got[1]);
       }
-      // 메달
-      for (let k2 = 0; k2 < 3; k2++) {
-        const fl = MEDAL_FLAG(R.gid, k2);
-        if (ms < Gm.medals[k2] || f(fl)) continue;
-        c.flag(fl); c.sfx('learn');
-        if (R.gid === 'lvup') {
-          if (k2 === 0) { c.gold(500); await c.narr('[y]동메달[/] — 오락기가 동전을 한 움큼 토해 냈다. [y]500골드[/]'); }
-          if (k2 === 1) { await c.narr('[y]은메달[/] — 동전 구멍에서 작은 열쇠가 굴러 나왔다.'); await c.getItem('key_origin'); }
-          if (k2 === 2) { await c.narr('[y]금메달[/]!'); await c.getItem('ac_lvband'); }
-        } else {
-          if (k2 === 0) { c.gold(300); await c.narr('[y]동메달[/] — 「' + Gm.name + '」 [y]300골드[/]'); }
-          if (k2 === 1) { s.pts = (s.pts || 0) + 1; await c.narr('[y]은메달[/] — 「' + Gm.name + '」 몸 안의 빛이 한 칸 단단해진다. [y]능력 포인트 +1[/]'); }
-          if (k2 === 2) { await c.narr('[y]금메달[/] — 「' + Gm.name + '」!'); await c.getItem(GAME_PRIZE[R.gid]); }
-        }
-      }
-      if (!f('arc:allgold') && ALL.every((gid) => f(MEDAL_FLAG(gid, 2)))) { c.flag('arc:allgold'); await c.narr('여덟 오락기 화면에 동시에 같은 글씨가 떴다.\n[y]「오락실의 전설」[/]'); await c.getItem('ac_arcking'); }
+      if (!f('arc:allgold') && ALL.every((gid) => f(MEDAL_FLAG(gid, 2)))) { c.flag('arc:allgold'); await c.narr('열세 오락기 화면에 동시에 같은 글씨가 떴다.\n[y]「오락실의 전설」[/]'); await c.getItem('ac_arcking'); }
       const r = s.arcadeRet || { map: 'world', x: px(G.ow.towns.green.plaza.x), y: py(G.ow.towns.green.plaza.y) };
       await c.fade(true, { sec: 0.3 });
       RUN = null; s.arcadeRun = null;
@@ -688,7 +898,6 @@
       await c.fade(false, { sec: 0.3 });
     });
   }
-  const GAME_PRIZE = { mole: 'ac_mallet', defend: 'ac_guardgem', coins: 'ac_coinpurse', rain: 'ac_starcloak', champ: 'ac_champbelt', flags: 'ac_runband', simon: 'ac_memring' };
 
   // 오락기 속에서 맞으면: 진짜로 다친다 (많이 잡는 게임은 절반). 체력이 ¼칸 남으면 게임 오버 — 쓰러지지는 않는다
   const hp0 = G.combat.hurtPlayer;
