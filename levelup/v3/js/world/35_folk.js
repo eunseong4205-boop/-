@@ -264,7 +264,7 @@
       if (P.id === 'sophie' && ST.after('c7') && !f('gift:sophie')) { await c.say(npc, '엄마가 또 빵을 보냈어. 이번엔 네 몫이래.', { face: 'happy' }); c.flag('gift:sophie'); await c.getItem('food_corn'); return; }
       const rt = ST.route();
       let t = P.route && P.route[rt] && ST.after(P.routeFrom || 'c4') ? P.route[rt] : ST.lines(P.lines || {});
-      if (!t) t = G.talk && G.talk.greet ? G.talk.greet(npc.look) : '…오늘도 렙업!';
+      if (!t) t = G.talk && G.talk.greet ? G.talk.greet(npc.look) : '어서 와. 이 동네는 처음이지?';
       c.flag('met:tw_' + P.id);
       for (const l of String(t).split('||')) await c.say(npc, l.trim());
     };
@@ -313,7 +313,7 @@
     // 길을 걷는 사람들: 마을마다 둘
     const WALK = {
       green: [['farmer', '농부 댄', ['올해 보리는 알이 작아. 탑 때문인지 날씨 때문인지.', '할머니 참나무 밑에서 쉬면 허리가 낫는대.']], ['kidg', '꼬마 넬', ['토리아다! 찍찍!', '광장 탑 밑에 가면 머리가 어지러워.']]],
-      red: [['miner', '광부 조', ['곡괭이는 무겁지만 빛은 가볍지.', '마그다 할매 떡볶이 먹었어? 안 먹었으면 레드에 안 온 거야.']], ['smith', '짐꾼 바크', ['화산이 요즘 코를 골아.', '오늘도 렙업! …아, 인사 안 받아 주네.']]],
+      red: [['miner', '광부 조', ['곡괭이는 무겁지만 빛은 가볍지.', '마그다 할매 떡볶이 먹었어? 안 먹었으면 레드에 안 온 거야.']], ['smith', '짐꾼 바크', ['화산이 요즘 코를 골아.', '짐 좀 들어 줄래? …아, 바쁘구나. 괜찮아.']]],
       blue: [['sailor', '선원 킷', ['갈매기가 내 빵을 채 갔어.', '등대 불빛이 요즘 두 번씩 깜빡여.']], ['scholar', '필사공 로라', ['금서고 먼지는 400년 묵었대.', '책은 파도처럼 와서 파도처럼 가.']]],
       yellow: [['merchant', '행상 알리', ['세 개 사면 하나 더! 네 개 사면… 그냥 네 개.', '골디 님 금화는 테두리를 세어 봐.']], ['merchantw', '물장수 샤', ['물 한 잔 5원. 오아시스 물이야.', '모래바다에 신기루가 떴어. 탑이 없는 도시였어.']]],
       purple: [['student', '학생 오린', ['과제가 「그릇을 설명하시오」야. 누가 좀 설명해 줘.', '베라 교수님 찻잔 밑에 뭐가 있대.']], ['mage', '마녀 견습 플로', ['빗자루는 아직 못 타. 대신 잘 쓸어.', '연못에 너무 오래 비치면 안 돼.']]],
