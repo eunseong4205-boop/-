@@ -295,6 +295,13 @@
       else { g.fillStyle = '#5a4030'; g.fillRect(x - 2, y - 4, 4, 2); }
     },
     echorock(g, x, y, t) { blob(g, x, y - 9, 14, 11, '#8a6a52'); blob(g, x - 2, y - 11, 11, 8, '#a8826a'); blob(g, x + 1, y - 9, 4, 5, '#3a2a22'); g.fillStyle = '#c8a088'; g.fillRect(x - 8, y - 17, 4, 2); if (Math.sin(t * 1.3) > 0.8) { g.globalAlpha = 0.6; g.fillStyle = '#f0b040'; g.fillRect(x + 6, y - 20, 2, 1); g.globalAlpha = 1; } },
+    bootpost(g, x, y, t, st) {
+      g.fillStyle = '#6a4a2a'; g.fillRect(x - 1, y - 22, 3, 22); g.fillStyle = '#8a6a3a'; g.fillRect(x - 7, y - 22, 15, 3); blob(g, x + 1, y, 6, 2, 'rgba(0,0,0,0.2)');
+      if (st) return;
+      const sw = Math.round(Math.sin(t * 3) * 1.5);
+      for (const [dx, c] of [[-5, '#7a4a2a'], [3, '#8a5a32']]) { line(g, x + dx + 1, y - 19, x + dx + 1 + sw, y - 14, '#d8c8a0'); g.fillStyle = c; g.fillRect(x + dx + sw, y - 14, 3, 6); g.fillRect(x + dx + sw, y - 9, 5, 2); g.fillStyle = '#c8e8ff'; g.fillRect(x + dx + sw, y - 13, 3, 1); }
+      if (Math.sin(t * 2.2) > 0.6) { g.globalAlpha = 0.5; g.fillStyle = '#e8f8ff'; g.fillRect(x + 8, y - 16, 4, 1); g.fillRect(x + 10, y - 12, 3, 1); g.globalAlpha = 1; }
+    },
     upsign(g, x, y) { g.fillStyle = '#6a4a2a'; g.fillRect(x - 1, y - 18, 3, 18); g.fillStyle = '#a8804a'; g.fillRect(x - 5, y - 24, 11, 7); g.fillStyle = '#2a1a10'; g.fillRect(x, y - 23, 1, 5); g.fillRect(x - 1, y - 22, 3, 1); g.fillStyle = '#a8804a'; g.fillRect(x - 6, y - 14, 9, 4); g.fillStyle = '#2a1a10'; g.fillRect(x - 3, y - 13, 1, 2); },
     wreck(g, x, y, t) { g.fillStyle = '#8a8a92'; g.fillRect(x - 12, y - 6, 9, 6); g.fillRect(x + 3, y - 10, 8, 10); g.fillStyle = '#a8a8b0'; g.fillRect(x - 12, y - 6, 9, 1); g.fillRect(x + 3, y - 10, 8, 1); g.fillStyle = '#6a6a72'; g.fillRect(x - 3, y - 3, 7, 3); const c = 0.5 + Math.sin(t * 2) * 0.3; g.globalAlpha = c; g.fillStyle = '#b8f0ff'; g.fillRect(x - 1, y - 14, 4, 6); g.globalAlpha = 1; g.fillStyle = '#e8ffff'; g.fillRect(x, y - 13, 1, 2); },
     helmet(g, x, y) { g.fillStyle = '#6a4a2a'; g.fillRect(x - 1, y - 14, 2, 14); blob(g, x, y - 16, 6, 5, '#8a8aa0'); g.fillStyle = '#a8a8c0'; g.fillRect(x - 5, y - 19, 10, 2); g.fillStyle = '#2a2a3a'; g.fillRect(x - 4, y - 16, 8, 1); g.fillStyle = '#c8402a'; g.fillRect(x - 1, y - 23, 2, 3); },
@@ -782,6 +789,22 @@
         else if (s.weapon === 'magic') await c.narr('땅에 남은 빛의 찌꺼기가 지팡이 끝에서 파르르 떤다. 여기서 많은 빛이 흩어졌다.');
         else await c.narr('칼자국이 난 돌. 누군가 여기서 끝까지 버텼다.');
         if (!done('battle')) { c.give('m_ore', 2); gainExp(50); finish(c, 'battle', '색 전쟁의 옛 전장을 지났다.'); }
+      } }));
+    },
+  });
+
+  // ── 이정표에 매달린 장화 (바람 장화) ──
+  tale({
+    id: 'boots', regs: ['red', 'yellow'], near: 'road', area: [4, 3], name: '이정표에 매달린 장화', blurb: '「다 닳도록 굴렀다. 이제 네가 굴러라.」 바람이 불면 장화가 저 혼자 달린다.',
+    state: () => (done('boots') ? 'done' : 'new'), hint: () => (done('boots') ? null : '레드 · 옐로 길가 어딘가, 바람 부는 이정표.'),
+    spawn(Wd, X, Y) {
+      Wd.add(new Thing({ x: X, y: Y, art: 'bootpost', solid: true, bw: 8, bh: 5, st: () => (done('boots') ? 1 : 0), glint: () => !done('boots'), verb: () => (done('boots') ? '이정표를 본다' : '장화를 내린다'), text: async (c) => {
+        if (done('boots')) { await c.narr('빈 이정표. 장화가 매달렸던 끈 자국만 남았다. 바람이 지나가며 휘파람을 분다.'); return; }
+        await c.narr('낡은 이정표에 장화 한 켤레가 끈으로 묶여 매달려 있다. 바람이 불 때마다 장화가 허공을 달리듯 흔들린다.');
+        await c.narr('밑창에 칼로 새긴 글씨. 「다 닳도록 굴렀다. 길 위에서 넘어진 적은 많아도 멈춘 적은 없다. 이제 네가 굴러라. — 늙은 파발꾼」');
+        await c.getItem('boots');
+        await c.say(null, '[y]바람 장화[/] — 가지고만 있으면 구르기가 더 멀리 나간다. 금 간 벽에 굴러 부딪치면 벽이 흔들려 폭탄 자리를 알려 준다.', { style: 'sys' });
+        finish(c, 'boots', '길가 이정표에서 늙은 파발꾼의 바람 장화를 물려받았다.');
       } }));
     },
   });

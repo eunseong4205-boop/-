@@ -135,6 +135,7 @@
       if ((r.hitX || r.hitY) && this.st > 0.05) {
         const L = E.ledgeAhead(m, this, this.rollDir[0], this.rollDir[1]);
         if (L) { this.startJump(L); return; }
+        if (this.rollBump) this.rollBump(this);
       }
       if (G.fx && Math.random() < dt * 20) G.fx.dust(this.x, this.y, 1);
       // 구르는 공 뒤로 옅은 잔상

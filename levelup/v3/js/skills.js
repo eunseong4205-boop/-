@@ -300,7 +300,7 @@
   // 가게: 기술서 (등급 차례로)
   const LATE = [];   // 이야기 쪽(world)에서 생기는 가게 — 98_balance가 마지막에 채운다
   const put = (sh, list) => { LATE.push([sh, list]); };   // 가게 목록은 이야기 쪽에서 다시 만들어지기도 해서 늘 마지막에
-  put('green', ['a_upper']); put('red', ['a_lunge2', 'a_quick']); put('blue', ['a_hop', 'a_sparks']); put('amber_market', ['a_blink2', 'a_leap']);
+  put('green', ['a_upper']); put('red', ['a_lunge2', 'a_quick']); put('blue', ['a_hop', 'a_sparks']); put('amber_market', ['a_blink2', 'a_leap']); put('amber', ['a_cross']);
   put('yellow', ['a_break', 'a_firearrow', 'a_chain']); put('purple', ['a_drain', 'a_heal2', 'a_frostring']); put('rainbow', ['a_spin3', 'a_blast', 'a_shout']);
   put('white', ['a_cyclone', 'a_snare', 'a_ward']); put('gray', ['a_slow', 'a_rain', 'a_parry', 'a_orbs']); put('black', ['a_wave', 'a_pierce', 'a_twin']); put('colorful', ['a_quake2', 'a_barrage', 'a_meteor3']);
   // 던전 보스 첫 승리 (예전 기록에도: 이미 이긴 보스는 다음에 들어설 때 받는다)
@@ -342,7 +342,8 @@
   }
   const placeLate = () => { for (const [sh, list] of LATE.splice(0)) { const S2 = D.SHOPS[sh] || D.SHOPS.blue; for (const k of list) if (!S2.items.includes('sb_' + k)) S2.items.push('sb_' + k); } };   // 그 가게가 끝내 없으면 블루 항구에
   const SK = { NEW, RANK_AT, rank, sources, wingBook, wingBooks: {}, BOSS_BOOK, tick: tick0, GREQ, placeLate,
-    extra: { a_heaven: ['기억의 거울 — 각성한 그림자 녹턴', '무한의 탑 50층'], a_comet: ['기억의 거울 — 각성한 빈 왕', '무한의 탑 35층'], a_starfall: ['기억의 거울 — 각성한 벨루', '무한의 탑 45층'] } };
+    extra: { a_heaven: ['기억의 거울 — 각성한 그림자 녹턴', '무한의 탑 50층'], a_comet: ['기억의 거울 — 각성한 빈 왕', '무한의 탑 35층'], a_starfall: ['기억의 거울 — 각성한 벨루', '무한의 탑 45층'],
+      a_judgment: ['기억의 거울 — 각성한 황금 두더지왕'], a_eclipse: ['기억의 거울 — 각성한 새끼 크라켄'], a_sunrain: ['기억의 거울 — 각성한 스핑크스'] } };
   G.skills = SK;
 
   // 기록: 숙련 칸

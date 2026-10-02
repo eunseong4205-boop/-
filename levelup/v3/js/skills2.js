@@ -654,7 +654,7 @@
   for (const id in NEW) { const A = ASK[id]; D.ITEMS['sb_' + id] = { id: 'sb_' + id, type: 'sbook', skill: id, grade: A.grade, icon: 'sbook', price: PRICE[A.grade], name: '기술서: ' + A.name, desc: '읽으면 ' + SN.WNAME[A.w] + ' 스킬 「' + A.name + '」을 익힌다. ' + A.desc }; }
   const LATE = [];
   const put = (sh, list) => LATE.push([sh, list]);
-  put('purple', ['sb_a_scatter', 'sb_a_lance']); put('rainbow', ['sb_a_draw']); put('white', ['sb_a_volley2', 'sb_a_vine', 'art_skysplit']); put('gray', ['sb_a_crescent', 'sb_a_mine', 'art_arrowwall', 'art_tempest']); put('black', ['sb_a_tornado', 'sb_a_mirrorwall']);
+  put('purple', ['sb_a_scatter', 'sb_a_lance']); put('rainbow', ['sb_a_draw']); put('white', ['sb_a_volley2', 'sb_a_vine', 'art_skysplit']); put('gray', ['sb_a_crescent', 'sb_a_mine', 'art_arrowwall', 'art_tempest']); put('black', ['sb_a_tornado', 'sb_a_mirrorwall', 'sb_a_gale', 'art_bladestorm', 'art_phoenix']); put('colorful', ['sb_a_blades', 'sb_a_tidal', 'art_skyfall', 'art_glacier']);
   // 연성: 숙련 ★3 두 기술 + 골드 → 새 기술 / 가진 필살기 둘 + 골드 → 새 필살기 (재료는 사라지지 않는다 — 깨달음일 뿐)
   const RECIPE = [
     { out: 'a_draw', a: 'a_lunge2', b: 'a_upper', gold: 1500 },

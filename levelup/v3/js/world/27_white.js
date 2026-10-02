@@ -459,7 +459,7 @@
     const got = S().snowC || 0;
     if (f('nive_done')) { await c.say(n, '아기 설인이 엄마 눈사람 옆에서 자! 코를 골아. 눈사람이 녹으면 어떡하지? …또 만들면 되지!', { face: 'happy' }); return; }
     if (got >= 10) {
-      S().snowC -= 10;
+      S().snowC -= 10; delete S().inv.crystal_snow;
       await c.say(n, '눈 결정 열 개! 이걸로 엄마 설인을 만들 수 있어! (뚝딱뚝딱)', { face: 'happy' });
       await c.narr('눈사람이 조금 커지고, 반짝이는 눈이 생겼다. 어딘가에서 커다란 아기 설인이 뒤뚱뒤뚱 걸어와 눈사람 옆에 앉았다. 그리고 잠들었다.');
       c.flag('nive_done'); await c.getItem('heartpiece');
@@ -468,7 +468,7 @@
     await c.say(n, '쉿! 저기 설원에 아기 설인 있지? 엄마를 잃어버렸대. 밤마다 울어.||눈사람으로 엄마를 만들어 주고 싶은데, 반짝이는 [y]눈 결정[/]이 열 개 필요해. 얼음 도깨비불이 가지고 있어. (' + got + '/10)', { face: 'sad' });
     c.flag('nive_q');
   } });
-  ST.killHooks.push((e, s) => { if (e.type === 'icewisp' && s.flags.nive_q && !s.flags.nive_done) { s.snowC = (s.snowC || 0) + 1; G.ui.toast('눈 결정 ' + Math.min(10, s.snowC) + '/10', 'good'); } });
+  ST.killHooks.push((e, s) => { if (e.type === 'icewisp' && s.flags.nive_q && !s.flags.nive_done) { s.snowC = (s.snowC || 0) + 1; s.inv.crystal_snow = Math.min(10, s.snowC); G.ui.toast('눈 결정 ' + Math.min(10, s.snowC) + '/10', 'good'); } });
 
   /* ───────── 빛 씨앗 (화이트) ───────── */
   ST.seed('w1', 'world', X0 - 8, Y0 + 6, { under: true });

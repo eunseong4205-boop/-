@@ -117,7 +117,10 @@
     d12: '울림', d13: '벨루', d14: '트리아', d15: '부르는 자', sec_crater: '유성두꺼비', sec_origin: 'Lv.9999',
   };
   // 처음 이기면 주는 선물 — 전설 스킬 기술서 · 전설 장비(talents.js의 다섯)도 여기서
-  const AWAKE_GIFT = { d5: 'fc_star', d6: 'sw_prism', d7: 'tome_blizzard', d8: ['bw_sun', 'sb_a_comet'], d9: ['sw_blood', 'sb_a_heaven'], d13: 'sb_a_starfall', d14: 'fc_chaos', d15: 'ar_dawn2', sec_origin: 'ac_storm' };
+  const AWAKE_GIFT = { d5: 'fc_star', d6: 'sw_prism', d7: 'tome_blizzard', d8: ['bw_sun', 'sb_a_comet'], d9: ['sw_blood', 'sb_a_heaven'], d13: 'sb_a_starfall', d14: 'fc_chaos', d15: 'ar_dawn2', sec_origin: 'ac_storm',
+    // 연성 · 비문으로만 닿던 5등급 기술서 · 비기도 여기서 (두루마리 자체를 얻는 길)
+    d2: 'sb_a_judgment', d3: 'sb_a_eclipse', d4: 'sb_a_sunrain', d12: 'art_oblivion', sec_crater: 'art_supernova' };
+  const GIFT_LATE = ['d2', 'd3', 'd4', 'd12', 'sec_crater'];
   function bossOf(id) { const Dn = G.dungeon.DUN[id]; if (!Dn) return null; for (const [k, R] of Object.entries(Dn.rooms)) if (R.boss) { const pr = (R.props || []).find((q) => q[0] === 'boss'); if (pr) return { k, type: pr[3].type }; } return null; }
   for (const id of Object.keys(AWAKE)) {
     ST.onMap(id, (m, Wd) => {
@@ -146,8 +149,13 @@
             await c2.narr('거울이 한 번 크게 울렸다. 각성의 파편이 떨어졌다.' + (sec ? ' (' + sec + '초)' : ''));
             await c2.getItem('awake_shard');
             for (const gift of [].concat(AWAKE_GIFT[id] || [])) await c2.getItem(gift);
+            if (AWAKE_GIFT[id]) c2.flag('awgift:' + id);
             if ((s.inv.awake_shard || 0) >= 5 && !s.inv.ac_awake && !f('awake:crown')) { c2.flag('awake:crown'); G.st.take(s, 'awake_shard', 5); await c2.narr('파편 다섯이 스스로 떠올라 엮였다.'); await c2.getItem('ac_awake'); }
-          } else { c2.gold(400 + lv * 30); await c2.narr('다시 이겼다. ' + sec + '초' + (sec < rec ? ' — [y]새 기록![/]' : '.')); }
+          } else {
+            c2.gold(400 + lv * 30); await c2.narr('다시 이겼다. ' + sec + '초' + (sec < rec ? ' — [y]새 기록![/]' : '.'));
+            // 나중에 더해진 선물: 예전에 이미 이긴 기록이면 다음 승리 때 받는다
+            if (GIFT_LATE.includes(id) && !f('awgift:' + id)) { c2.flag('awgift:' + id); for (const gift of [].concat(AWAKE_GIFT[id])) await c2.getItem(gift); }
+          }
         });
       } });
       Wd.add(mirror);
@@ -156,7 +164,7 @@
 
   /* ═════════ 무한의 탑 ═════════ */
   const BOSS_CYCLE = ['thornqueen', 'moleking', 'salamander', 'kraken', 'sphinx', 'roc', 'echogiant', 'frost', 'swampqueen', 'hollowking', 'toadstar', 'trialshade', 'forgotking', 'core', 'lvslime'];
-  const MILE = { 5: [['potion_max', 3]], 10: [['key_origin', 1]], 15: [['art_galaxy', 1]], 20: [['sw_sky', 1]], 25: [['bw_heaven', 1]], 30: [['art_genesis', 1]], 35: [['sb_a_comet', 1]], 40: [['ac_infinity', 1]], 45: [['sb_a_starfall', 1]], 50: [['sb_a_heaven', 1]] };
+  const MILE = { 5: [['potion_max', 3]], 10: [['key_origin', 1]], 15: [['art_galaxy', 1]], 20: [['sw_sky', 1]], 25: [['bw_heaven', 1]], 30: [['art_genesis', 1]], 35: [['sb_a_comet', 1]], 40: [['ac_infinity', 1]], 45: [['sb_a_starfall', 1]], 50: [['sb_a_heaven', 1]], 55: [['art_aurora', 1]] };
   const POOL = ['slime', 'bat', 'boar', 'bandit', 'wolf', 'bomber', 'golem', 'crab', 'octo', 'worm', 'mage', 'ghost', 'plant', 'bigslime', 'bug', 'icewisp', 'hollow', 'drone', 'turret', 'knight', 'shade'];
   const tw = () => { const s = S(); s.tower = s.tower || { cur: 1, best: 0 }; return s.tower; };
   G.build.def('inf_tower', {

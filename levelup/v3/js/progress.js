@@ -76,7 +76,7 @@
   item('ar_knight', { grade: 4, req: { vit: 18, str: 12 } });
   item('ar_star', { grade: 5 });
   // 장신구
-  item('ac_sprout', { grade: 1 });
+  item('ac_sprout', { grade: 1, price: 400 });
   item('ac_str', { type: 'acc', grade: 2, name: '힘의 팔찌', fx: { str: 4 }, price: 1500, desc: '힘 +4.' });
   item('ac_shell', { type: 'acc', grade: 2, name: '거북 등딱지', fx: { vit: 5 }, price: 1800, desc: '체력 +5.' });
   item('ac_thief', { type: 'acc', grade: 2, name: '도둑의 장갑', fx: { gold: 0.5 }, price: 4200, desc: '떨어뜨리는 골드 +50%.' });
@@ -195,7 +195,7 @@
 
   /* ───────── 가게 물건 (마을마다 그 마을에 어울리는 것 · 장이 갈수록 윗 등급) ───────── */
   Object.assign(D.SHOPS, {
-    green: { name: '초록 바구니 잡화점', items: ['potion_r', 'food_corn', 'arrows10', 'ar_leather', 'bw_bone', 'ac_str', 'ac_shell'] },
+    green: { name: '초록 바구니 잡화점', items: ['potion_r', 'food_corn', 'arrows10', 'ar_leather', 'bw_bone', 'ac_sprout', 'ac_str', 'ac_shell'] },
     red: { name: '볼칸의 대장간', items: ['sw_iron', 'sh_iron', 'ar_chain', 'ar_heat', 'potion_r', 'bombs5', 'food_tteok', 'art_whirl'], forge: true },
     blue: { name: '파도 잡화점', items: ['sw_tide', 'sw_dagger', 'ar_scale', 'potion_r', 'potion_b', 'arrows10', 'food_udon', 'ac_roll', 'tome_wind'] },
     yellow: { name: '대바자르', items: ['bw_long', 'sw_great', 'ac_ring_crit', 'ac_thief', 'potion_g', 'bombs5', 'arrows10', 'ac_mp', 'art_rain', 'art_triple'] },

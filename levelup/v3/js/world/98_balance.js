@@ -49,6 +49,7 @@
   for (let i = 0; i < TH.length && i < NEW.length; i++) TH[i] = NEW[i];
 
   // 가게: 기술서 · 새 장비 (가게 목록이 이야기 쪽에서 다시 만들어지기도 해서 맨 마지막에)
+  if (G.arsenal && G.arsenal.placeLate) G.arsenal.placeLate();
   if (G.skills && G.skills.placeLate) G.skills.placeLate();
   if (G.talents && G.talents.placeLate) G.talents.placeLate();
   if (G.skills2 && G.skills2.placeLate) G.skills2.placeLate();

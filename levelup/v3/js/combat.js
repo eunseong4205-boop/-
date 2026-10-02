@@ -8,6 +8,15 @@
   const W = () => G.world;
   const S = () => G.state;
   const sfx = (k) => G.audio && G.audio.sfx(k);
+  function bootBump(p) {
+    if ((p.bumpT || 0) > p.t) return; p.bumpT = p.t + 0.5;
+    const Wd = W(), ax = p.x + p.rollDir[0] * 12, ay = p.y + p.rollDir[1] * 12;
+    for (const e of Wd.ents) if (e.bombable && !e.dead && !e.done && Math.hypot(ax - e.x, ay - (e.y - 8)) < 20) {
+      Wd.shake(1.6, 0.18); sfx('rock'); if (G.fx) G.fx.dust(e.x, e.y - 4, 6);
+      const s = S(); if (s && !s.flags['boots:bump']) { s.flags['boots:bump'] = true; G.ui.toast('금 간 벽이 흔들린다 — 폭탄이면 무너질 것 같다', 'good'); }
+      return;
+    }
+  }
   const ANG = { right: 0, down: Math.PI / 2, left: Math.PI, up: -Math.PI / 2 };
 
   const C = {};
@@ -1039,6 +1048,8 @@
     if (p.counterT > 0) p.counterT -= dt;
     if (p.state !== 'roll') p.perfectDone = false;
     p.staminaMax = d.stamMax; p.rollCost = d.rollCost; p.rollIframes = d.rollIframes; p.stamRegenMul = d.stamRegen;
+    // 바람 장화: 구르기가 멀리 나가고, 금 간 벽에 부딪치면 벽이 흔들린다 (폭탄 자리 알림)
+    p.rollSpeed = s.inv.boots ? 230 : 170; p.rollBump = s.inv.boots ? bootBump : null;
     if (p.frenzyT > 0) { p.frenzyT -= dt; if (Math.random() < dt * 14) G.fx.part({ x: p.x + (Math.random() - 0.5) * 10, y: p.y, z: Math.random() * 20, vz: 26, g: 0, life: 0.3, col: '#ff6a5a', size: 1, glow: true }); }
     p.moveT = p.state === 'walk' ? (p.moveT || 0) + dt : 0;
     if (C.timers.length) { for (const tm of C.timers) { tm.t -= dt; if (tm.t <= 0 && !tm.done) { tm.done = true; try { tm.fn(); } catch (e) { console.error(e); } } } C.timers = C.timers.filter((tm) => !tm.done); }
