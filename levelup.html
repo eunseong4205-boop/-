@@ -2839,6 +2839,7 @@ button.stat small.fx { color: var(--paper-dim); }
       if ((r.hitX || r.hitY) && this.st > 0.05) {
         const L = E.ledgeAhead(m, this, this.rollDir[0], this.rollDir[1]);
         if (L) { this.startJump(L); return; }
+        if (this.rollBump) this.rollBump(this);
       }
       if (G.fx && Math.random() < dt * 20) G.fx.dust(this.x, this.y, 1);
       // 구르는 공 뒤로 옅은 잔상
@@ -4356,7 +4357,7 @@ button.stat small.fx { color: var(--paper-dim); }
   item('ar_knight', { grade: 4, req: { vit: 18, str: 12 } });
   item('ar_star', { grade: 5 });
   // 장신구
-  item('ac_sprout', { grade: 1 });
+  item('ac_sprout', { grade: 1, price: 400 });
   item('ac_str', { type: 'acc', grade: 2, name: '힘의 팔찌', fx: { str: 4 }, price: 1500, desc: '힘 +4.' });
   item('ac_shell', { type: 'acc', grade: 2, name: '거북 등딱지', fx: { vit: 5 }, price: 1800, desc: '체력 +5.' });
   item('ac_thief', { type: 'acc', grade: 2, name: '도둑의 장갑', fx: { gold: 0.5 }, price: 4200, desc: '떨어뜨리는 골드 +50%.' });
@@ -4475,7 +4476,7 @@ button.stat small.fx { color: var(--paper-dim); }
 
   /* ───────── 가게 물건 (마을마다 그 마을에 어울리는 것 · 장이 갈수록 윗 등급) ───────── */
   Object.assign(D.SHOPS, {
-    green: { name: '초록 바구니 잡화점', items: ['potion_r', 'food_corn', 'arrows10', 'ar_leather', 'bw_bone', 'ac_str', 'ac_shell'] },
+    green: { name: '초록 바구니 잡화점', items: ['potion_r', 'food_corn', 'arrows10', 'ar_leather', 'bw_bone', 'ac_sprout', 'ac_str', 'ac_shell'] },
     red: { name: '볼칸의 대장간', items: ['sw_iron', 'sh_iron', 'ar_chain', 'ar_heat', 'potion_r', 'bombs5', 'food_tteok', 'art_whirl'], forge: true },
     blue: { name: '파도 잡화점', items: ['sw_tide', 'sw_dagger', 'ar_scale', 'potion_r', 'potion_b', 'arrows10', 'food_udon', 'ac_roll', 'tome_wind'] },
     yellow: { name: '대바자르', items: ['bw_long', 'sw_great', 'ac_ring_crit', 'ac_thief', 'potion_g', 'bombs5', 'arrows10', 'ac_mp', 'art_rain', 'art_triple'] },
@@ -4826,6 +4827,15 @@ button.stat small.fx { color: var(--paper-dim); }
   const W = () => G.world;
   const S = () => G.state;
   const sfx = (k) => G.audio && G.audio.sfx(k);
+  function bootBump(p) {
+    if ((p.bumpT || 0) > p.t) return; p.bumpT = p.t + 0.5;
+    const Wd = W(), ax = p.x + p.rollDir[0] * 12, ay = p.y + p.rollDir[1] * 12;
+    for (const e of Wd.ents) if (e.bombable && !e.dead && !e.done && Math.hypot(ax - e.x, ay - (e.y - 8)) < 20) {
+      Wd.shake(1.6, 0.18); sfx('rock'); if (G.fx) G.fx.dust(e.x, e.y - 4, 6);
+      const s = S(); if (s && !s.flags['boots:bump']) { s.flags['boots:bump'] = true; G.ui.toast('금 간 벽이 흔들린다 — 폭탄이면 무너질 것 같다', 'good'); }
+      return;
+    }
+  }
   const ANG = { right: 0, down: Math.PI / 2, left: Math.PI, up: -Math.PI / 2 };
 
   const C = {};
@@ -5857,6 +5867,8 @@ button.stat small.fx { color: var(--paper-dim); }
     if (p.counterT > 0) p.counterT -= dt;
     if (p.state !== 'roll') p.perfectDone = false;
     p.staminaMax = d.stamMax; p.rollCost = d.rollCost; p.rollIframes = d.rollIframes; p.stamRegenMul = d.stamRegen;
+    // 바람 장화: 구르기가 멀리 나가고, 금 간 벽에 부딪치면 벽이 흔들린다 (폭탄 자리 알림)
+    p.rollSpeed = s.inv.boots ? 230 : 170; p.rollBump = s.inv.boots ? bootBump : null;
     if (p.frenzyT > 0) { p.frenzyT -= dt; if (Math.random() < dt * 14) G.fx.part({ x: p.x + (Math.random() - 0.5) * 10, y: p.y, z: Math.random() * 20, vz: 26, g: 0, life: 0.3, col: '#ff6a5a', size: 1, glow: true }); }
     p.moveT = p.state === 'walk' ? (p.moveT || 0) + dt : 0;
     if (C.timers.length) { for (const tm of C.timers) { tm.t -= dt; if (tm.t <= 0 && !tm.done) { tm.done = true; try { tm.fn(); } catch (e) { console.error(e); } } } C.timers = C.timers.filter((tm) => !tm.done); }
@@ -10888,7 +10900,8 @@ button.stat small.fx { color: var(--paper-dim); }
   add('mg_siphon', T('마법', 5, 'mg_blood', '피의 영창', 4, 'MP가 모자라면 체력으로 건다 (MP 10 = 하트 ¼칸).', { gate: 'mg5', need: { int: 16 } }));
 
   /* ═════════ 가게 · 상자에 놓기 ═════════ */
-  const SHOP = D.SHOPS, put = (id, list) => { if (SHOP[id]) for (const k of list) if (!SHOP[id].items.includes(k)) SHOP[id].items.push(k); };
+  // 이야기 쪽(world)이 가게 목록을 새로 만들기도 해서(무지개 노점 등) 98_balance가 마지막에 한 번 더 놓는다
+  const LATE_A = [], SHOP = D.SHOPS, put = (id, list) => { LATE_A.push([id, list]); if (SHOP[id]) for (const k of list) if (!SHOP[id].items.includes(k)) SHOP[id].items.push(k); };
   put('green', ['fc_twig']);
   put('red', ['sw_axe', 'fc_ember', 'art_moonslash']);
   put('blue', ['sw_rapier', 'fc_coral', 'tome_poison']);
@@ -10900,7 +10913,7 @@ button.stat small.fx { color: var(--paper-dim); }
   put('black', ['sw_twin', 'bw_moon', 'fc_moon', 'tome_gravity']);
   put('colorful', ['art_blackhole']);
   // 영웅 · 전설: 던전 깊은 곳 · 숨은 곳 · 다시 도전 보상 (world/40_trials.js · 41_secrets.js)
-  G.arsenal = { TOP: { sword: ['sw_blood', 'sw_sky'], bow: ['bw_seeker', 'bw_heaven'], focus: ['fc_star', 'fc_origin'], spell: ['tome_blizzard'], art: ['art_thousand', 'art_galaxy', 'art_genesis'] } };
+  G.arsenal = { placeLate() { for (const [id, list] of LATE_A) { const sh = D.SHOPS[id]; if (sh) for (const k of list) if (!sh.items.includes(k)) sh.items.push(k); } }, TOP: { sword: ['sw_blood', 'sw_sky'], bow: ['bw_seeker', 'bw_heaven'], focus: ['fc_star', 'fc_origin'], spell: ['tome_blizzard'], art: ['art_thousand', 'art_galaxy', 'art_genesis'] } };
 
   /* ═════════ 아이콘 ═════════ */
   const H = G.hud, ic0 = H.icon, X = G.gfx, ICO = {};
@@ -11931,7 +11944,7 @@ button.stat small.fx { color: var(--paper-dim); }
   // 가게: 기술서 (등급 차례로)
   const LATE = [];   // 이야기 쪽(world)에서 생기는 가게 — 98_balance가 마지막에 채운다
   const put = (sh, list) => { LATE.push([sh, list]); };   // 가게 목록은 이야기 쪽에서 다시 만들어지기도 해서 늘 마지막에
-  put('green', ['a_upper']); put('red', ['a_lunge2', 'a_quick']); put('blue', ['a_hop', 'a_sparks']); put('amber_market', ['a_blink2', 'a_leap']);
+  put('green', ['a_upper']); put('red', ['a_lunge2', 'a_quick']); put('blue', ['a_hop', 'a_sparks']); put('amber_market', ['a_blink2', 'a_leap']); put('amber', ['a_cross']);
   put('yellow', ['a_break', 'a_firearrow', 'a_chain']); put('purple', ['a_drain', 'a_heal2', 'a_frostring']); put('rainbow', ['a_spin3', 'a_blast', 'a_shout']);
   put('white', ['a_cyclone', 'a_snare', 'a_ward']); put('gray', ['a_slow', 'a_rain', 'a_parry', 'a_orbs']); put('black', ['a_wave', 'a_pierce', 'a_twin']); put('colorful', ['a_quake2', 'a_barrage', 'a_meteor3']);
   // 던전 보스 첫 승리 (예전 기록에도: 이미 이긴 보스는 다음에 들어설 때 받는다)
@@ -11973,7 +11986,8 @@ button.stat small.fx { color: var(--paper-dim); }
   }
   const placeLate = () => { for (const [sh, list] of LATE.splice(0)) { const S2 = D.SHOPS[sh] || D.SHOPS.blue; for (const k of list) if (!S2.items.includes('sb_' + k)) S2.items.push('sb_' + k); } };   // 그 가게가 끝내 없으면 블루 항구에
   const SK = { NEW, RANK_AT, rank, sources, wingBook, wingBooks: {}, BOSS_BOOK, tick: tick0, GREQ, placeLate,
-    extra: { a_heaven: ['기억의 거울 — 각성한 그림자 녹턴', '무한의 탑 50층'], a_comet: ['기억의 거울 — 각성한 빈 왕', '무한의 탑 35층'], a_starfall: ['기억의 거울 — 각성한 벨루', '무한의 탑 45층'] } };
+    extra: { a_heaven: ['기억의 거울 — 각성한 그림자 녹턴', '무한의 탑 50층'], a_comet: ['기억의 거울 — 각성한 빈 왕', '무한의 탑 35층'], a_starfall: ['기억의 거울 — 각성한 벨루', '무한의 탑 45층'],
+      a_judgment: ['기억의 거울 — 각성한 황금 두더지왕'], a_eclipse: ['기억의 거울 — 각성한 새끼 크라켄'], a_sunrain: ['기억의 거울 — 각성한 스핑크스'] } };
   G.skills = SK;
 
   // 기록: 숙련 칸
@@ -13648,7 +13662,7 @@ button.stat small.fx { color: var(--paper-dim); }
   for (const id in NEW) { const A = ASK[id]; D.ITEMS['sb_' + id] = { id: 'sb_' + id, type: 'sbook', skill: id, grade: A.grade, icon: 'sbook', price: PRICE[A.grade], name: '기술서: ' + A.name, desc: '읽으면 ' + SN.WNAME[A.w] + ' 스킬 「' + A.name + '」을 익힌다. ' + A.desc }; }
   const LATE = [];
   const put = (sh, list) => LATE.push([sh, list]);
-  put('purple', ['sb_a_scatter', 'sb_a_lance']); put('rainbow', ['sb_a_draw']); put('white', ['sb_a_volley2', 'sb_a_vine', 'art_skysplit']); put('gray', ['sb_a_crescent', 'sb_a_mine', 'art_arrowwall', 'art_tempest']); put('black', ['sb_a_tornado', 'sb_a_mirrorwall']);
+  put('purple', ['sb_a_scatter', 'sb_a_lance']); put('rainbow', ['sb_a_draw']); put('white', ['sb_a_volley2', 'sb_a_vine', 'art_skysplit']); put('gray', ['sb_a_crescent', 'sb_a_mine', 'art_arrowwall', 'art_tempest']); put('black', ['sb_a_tornado', 'sb_a_mirrorwall', 'sb_a_gale', 'art_bladestorm', 'art_phoenix']); put('colorful', ['sb_a_blades', 'sb_a_tidal', 'art_skyfall', 'art_glacier']);
   // 연성: 숙련 ★3 두 기술 + 골드 → 새 기술 / 가진 필살기 둘 + 골드 → 새 필살기 (재료는 사라지지 않는다 — 깨달음일 뿐)
   const RECIPE = [
     { out: 'a_draw', a: 'a_lunge2', b: 'a_upper', gold: 1500 },
@@ -20746,7 +20760,7 @@ button.stat small.fx { color: var(--paper-dim); }
     const got = S().snowC || 0;
     if (f('nive_done')) { await c.say(n, '아기 설인이 엄마 눈사람 옆에서 자! 코를 골아. 눈사람이 녹으면 어떡하지? …또 만들면 되지!', { face: 'happy' }); return; }
     if (got >= 10) {
-      S().snowC -= 10;
+      S().snowC -= 10; delete S().inv.crystal_snow;
       await c.say(n, '눈 결정 열 개! 이걸로 엄마 설인을 만들 수 있어! (뚝딱뚝딱)', { face: 'happy' });
       await c.narr('눈사람이 조금 커지고, 반짝이는 눈이 생겼다. 어딘가에서 커다란 아기 설인이 뒤뚱뒤뚱 걸어와 눈사람 옆에 앉았다. 그리고 잠들었다.');
       c.flag('nive_done'); await c.getItem('heartpiece');
@@ -20755,7 +20769,7 @@ button.stat small.fx { color: var(--paper-dim); }
     await c.say(n, '쉿! 저기 설원에 아기 설인 있지? 엄마를 잃어버렸대. 밤마다 울어.||눈사람으로 엄마를 만들어 주고 싶은데, 반짝이는 [y]눈 결정[/]이 열 개 필요해. 얼음 도깨비불이 가지고 있어. (' + got + '/10)', { face: 'sad' });
     c.flag('nive_q');
   } });
-  ST.killHooks.push((e, s) => { if (e.type === 'icewisp' && s.flags.nive_q && !s.flags.nive_done) { s.snowC = (s.snowC || 0) + 1; G.ui.toast('눈 결정 ' + Math.min(10, s.snowC) + '/10', 'good'); } });
+  ST.killHooks.push((e, s) => { if (e.type === 'icewisp' && s.flags.nive_q && !s.flags.nive_done) { s.snowC = (s.snowC || 0) + 1; s.inv.crystal_snow = Math.min(10, s.snowC); G.ui.toast('눈 결정 ' + Math.min(10, s.snowC) + '/10', 'good'); } });
 
   /* ───────── 빛 씨앗 (화이트) ───────── */
   ST.seed('w1', 'world', X0 - 8, Y0 + 6, { under: true });
@@ -21218,11 +21232,11 @@ button.stat small.fx { color: var(--paper-dim); }
   ST.person('world', { name: '고철상 러스크', folk: 'mech', x: X0 + 24, y: Y0 + 14, dir: 'down', mark: () => (!f('rusk_done') ? '?' : null), talk: async (c, n) => {
     const got = S().gears || 0;
     if (f('rusk_done')) { await c.say(n, '고철 의자 여덟 개. 이제 여관에 손님이 앉을 데가 있어. 색은 없지만 튼튼해.', { face: 'happy' }); return; }
-    if (got >= 8) { S().gears -= 8; await c.say(n, '녹슨 톱니 여덟 개! 이거면 의자 하나 뚝딱이지. 고마워! 값이야. 고철 시장에선 고철로 셈하는데, 너한텐 이걸로.', { face: 'happy' }); c.flag('rusk_done'); await c.getItem('heartpiece'); c.gold(300); return; }
+    if (got >= 8) { S().gears -= 8; delete S().inv.gear_rust; await c.say(n, '녹슨 톱니 여덟 개! 이거면 의자 하나 뚝딱이지. 고마워! 값이야. 고철 시장에선 고철로 셈하는데, 너한텐 이걸로.', { face: 'happy' }); c.flag('rusk_done'); await c.getItem('heartpiece'); c.gold(300); return; }
     await c.say(n, '고철 팝니다, 고철 삽니다. 러스크야.||부탁 하나 하자. 드론이 떨어뜨리는 [y]녹슨 톱니[/] 여덟 개만 구해 줘. 의자가 하나 모자라거든. (' + got + '/8)', { face: 'normal' });
     c.flag('rusk_q');
   } });
-  ST.killHooks.push((e, s) => { if (e.type === 'drone' && s.flags.rusk_q && !s.flags.rusk_done) { s.gears = (s.gears || 0) + 1; G.ui.toast('녹슨 톱니 ' + Math.min(8, s.gears) + '/8', 'good'); } });
+  ST.killHooks.push((e, s) => { if (e.type === 'drone' && s.flags.rusk_q && !s.flags.rusk_done) { s.gears = (s.gears || 0) + 1; s.inv.gear_rust = Math.min(8, s.gears); G.ui.toast('녹슨 톱니 ' + Math.min(8, s.gears) + '/8', 'good'); } });
   ST.folk('world', { name: '공장 일꾼', folk: 'miner', x: X0 + 10, y: Y0 + 9, wander: 20, lines: { c8: ['색? 그런 거 없어도 쇠는 잘 녹아. …우리 딸은 빨간 게 뭐냐고 물어. 대답을 못 해.', '볼트 영감이 요즘 이상해. 공방 불이 밤새 켜져 있어. 망치 소리는 안 나고.'], c9: '볼트 영감이 탑 도면을 불태웠어! 난로에. 그날 밤 공방에서 노랫소리가 났대. 볼트가? 설마.' } });
   ST.folk('world', { name: '회색 아이', folk: 'kid', x: X0 + 16, y: Y0 + 16, wander: 20, lines: { c8: [(girl() ? '누나' : '형') + ' 옷은 왜 그 색이야? 그게 초록이야? 만져 봐도 돼? …따뜻하지는 않네.', '은빛 왕국 폐허엔 가지 마. 밤에 왕이 운대. 배고프다고.'], c9: '하늘이 조금 파래졌어! 진짜야! 아침에 한 칸만큼!' } });
   ST.folk('world', { name: '늙은 광부', folk: 'miner', x: RUIN.x + 9, y: RUIN.y + 3, lines: { c8: ['우리 할아버지의 할아버지의… 아무튼 그 할아버지가 612년에 광맥을 캤대. 왕이 마시는 걸 봤대.', '「그릇이 되려는 자는 먼저 굶는 법을 배워야 한다.」 광부들 말이야. 무슨 뜻인지는 나도 몰라.'] } });
@@ -25926,7 +25940,10 @@ button.stat small.fx { color: var(--paper-dim); }
     d12: '울림', d13: '벨루', d14: '트리아', d15: '부르는 자', sec_crater: '유성두꺼비', sec_origin: 'Lv.9999',
   };
   // 처음 이기면 주는 선물 — 전설 스킬 기술서 · 전설 장비(talents.js의 다섯)도 여기서
-  const AWAKE_GIFT = { d5: 'fc_star', d6: 'sw_prism', d7: 'tome_blizzard', d8: ['bw_sun', 'sb_a_comet'], d9: ['sw_blood', 'sb_a_heaven'], d13: 'sb_a_starfall', d14: 'fc_chaos', d15: 'ar_dawn2', sec_origin: 'ac_storm' };
+  const AWAKE_GIFT = { d5: 'fc_star', d6: 'sw_prism', d7: 'tome_blizzard', d8: ['bw_sun', 'sb_a_comet'], d9: ['sw_blood', 'sb_a_heaven'], d13: 'sb_a_starfall', d14: 'fc_chaos', d15: 'ar_dawn2', sec_origin: 'ac_storm',
+    // 연성 · 비문으로만 닿던 5등급 기술서 · 비기도 여기서 (두루마리 자체를 얻는 길)
+    d2: 'sb_a_judgment', d3: 'sb_a_eclipse', d4: 'sb_a_sunrain', d12: 'art_oblivion', sec_crater: 'art_supernova' };
+  const GIFT_LATE = ['d2', 'd3', 'd4', 'd12', 'sec_crater'];
   function bossOf(id) { const Dn = G.dungeon.DUN[id]; if (!Dn) return null; for (const [k, R] of Object.entries(Dn.rooms)) if (R.boss) { const pr = (R.props || []).find((q) => q[0] === 'boss'); if (pr) return { k, type: pr[3].type }; } return null; }
   for (const id of Object.keys(AWAKE)) {
     ST.onMap(id, (m, Wd) => {
@@ -25955,8 +25972,13 @@ button.stat small.fx { color: var(--paper-dim); }
             await c2.narr('거울이 한 번 크게 울렸다. 각성의 파편이 떨어졌다.' + (sec ? ' (' + sec + '초)' : ''));
             await c2.getItem('awake_shard');
             for (const gift of [].concat(AWAKE_GIFT[id] || [])) await c2.getItem(gift);
+            if (AWAKE_GIFT[id]) c2.flag('awgift:' + id);
             if ((s.inv.awake_shard || 0) >= 5 && !s.inv.ac_awake && !f('awake:crown')) { c2.flag('awake:crown'); G.st.take(s, 'awake_shard', 5); await c2.narr('파편 다섯이 스스로 떠올라 엮였다.'); await c2.getItem('ac_awake'); }
-          } else { c2.gold(400 + lv * 30); await c2.narr('다시 이겼다. ' + sec + '초' + (sec < rec ? ' — [y]새 기록![/]' : '.')); }
+          } else {
+            c2.gold(400 + lv * 30); await c2.narr('다시 이겼다. ' + sec + '초' + (sec < rec ? ' — [y]새 기록![/]' : '.'));
+            // 나중에 더해진 선물: 예전에 이미 이긴 기록이면 다음 승리 때 받는다
+            if (GIFT_LATE.includes(id) && !f('awgift:' + id)) { c2.flag('awgift:' + id); for (const gift of [].concat(AWAKE_GIFT[id])) await c2.getItem(gift); }
+          }
         });
       } });
       Wd.add(mirror);
@@ -25965,7 +25987,7 @@ button.stat small.fx { color: var(--paper-dim); }
 
   /* ═════════ 무한의 탑 ═════════ */
   const BOSS_CYCLE = ['thornqueen', 'moleking', 'salamander', 'kraken', 'sphinx', 'roc', 'echogiant', 'frost', 'swampqueen', 'hollowking', 'toadstar', 'trialshade', 'forgotking', 'core', 'lvslime'];
-  const MILE = { 5: [['potion_max', 3]], 10: [['key_origin', 1]], 15: [['art_galaxy', 1]], 20: [['sw_sky', 1]], 25: [['bw_heaven', 1]], 30: [['art_genesis', 1]], 35: [['sb_a_comet', 1]], 40: [['ac_infinity', 1]], 45: [['sb_a_starfall', 1]], 50: [['sb_a_heaven', 1]] };
+  const MILE = { 5: [['potion_max', 3]], 10: [['key_origin', 1]], 15: [['art_galaxy', 1]], 20: [['sw_sky', 1]], 25: [['bw_heaven', 1]], 30: [['art_genesis', 1]], 35: [['sb_a_comet', 1]], 40: [['ac_infinity', 1]], 45: [['sb_a_starfall', 1]], 50: [['sb_a_heaven', 1]], 55: [['art_aurora', 1]] };
   const POOL = ['slime', 'bat', 'boar', 'bandit', 'wolf', 'bomber', 'golem', 'crab', 'octo', 'worm', 'mage', 'ghost', 'plant', 'bigslime', 'bug', 'icewisp', 'hollow', 'drone', 'turret', 'knight', 'shade'];
   const tw = () => { const s = S(); s.tower = s.tower || { cur: 1, best: 0 }; return s.tower; };
   G.build.def('inf_tower', {
@@ -29064,6 +29086,13 @@ button.stat small.fx { color: var(--paper-dim); }
       else { g.fillStyle = '#5a4030'; g.fillRect(x - 2, y - 4, 4, 2); }
     },
     echorock(g, x, y, t) { blob(g, x, y - 9, 14, 11, '#8a6a52'); blob(g, x - 2, y - 11, 11, 8, '#a8826a'); blob(g, x + 1, y - 9, 4, 5, '#3a2a22'); g.fillStyle = '#c8a088'; g.fillRect(x - 8, y - 17, 4, 2); if (Math.sin(t * 1.3) > 0.8) { g.globalAlpha = 0.6; g.fillStyle = '#f0b040'; g.fillRect(x + 6, y - 20, 2, 1); g.globalAlpha = 1; } },
+    bootpost(g, x, y, t, st) {
+      g.fillStyle = '#6a4a2a'; g.fillRect(x - 1, y - 22, 3, 22); g.fillStyle = '#8a6a3a'; g.fillRect(x - 7, y - 22, 15, 3); blob(g, x + 1, y, 6, 2, 'rgba(0,0,0,0.2)');
+      if (st) return;
+      const sw = Math.round(Math.sin(t * 3) * 1.5);
+      for (const [dx, c] of [[-5, '#7a4a2a'], [3, '#8a5a32']]) { line(g, x + dx + 1, y - 19, x + dx + 1 + sw, y - 14, '#d8c8a0'); g.fillStyle = c; g.fillRect(x + dx + sw, y - 14, 3, 6); g.fillRect(x + dx + sw, y - 9, 5, 2); g.fillStyle = '#c8e8ff'; g.fillRect(x + dx + sw, y - 13, 3, 1); }
+      if (Math.sin(t * 2.2) > 0.6) { g.globalAlpha = 0.5; g.fillStyle = '#e8f8ff'; g.fillRect(x + 8, y - 16, 4, 1); g.fillRect(x + 10, y - 12, 3, 1); g.globalAlpha = 1; }
+    },
     upsign(g, x, y) { g.fillStyle = '#6a4a2a'; g.fillRect(x - 1, y - 18, 3, 18); g.fillStyle = '#a8804a'; g.fillRect(x - 5, y - 24, 11, 7); g.fillStyle = '#2a1a10'; g.fillRect(x, y - 23, 1, 5); g.fillRect(x - 1, y - 22, 3, 1); g.fillStyle = '#a8804a'; g.fillRect(x - 6, y - 14, 9, 4); g.fillStyle = '#2a1a10'; g.fillRect(x - 3, y - 13, 1, 2); },
     wreck(g, x, y, t) { g.fillStyle = '#8a8a92'; g.fillRect(x - 12, y - 6, 9, 6); g.fillRect(x + 3, y - 10, 8, 10); g.fillStyle = '#a8a8b0'; g.fillRect(x - 12, y - 6, 9, 1); g.fillRect(x + 3, y - 10, 8, 1); g.fillStyle = '#6a6a72'; g.fillRect(x - 3, y - 3, 7, 3); const c = 0.5 + Math.sin(t * 2) * 0.3; g.globalAlpha = c; g.fillStyle = '#b8f0ff'; g.fillRect(x - 1, y - 14, 4, 6); g.globalAlpha = 1; g.fillStyle = '#e8ffff'; g.fillRect(x, y - 13, 1, 2); },
     helmet(g, x, y) { g.fillStyle = '#6a4a2a'; g.fillRect(x - 1, y - 14, 2, 14); blob(g, x, y - 16, 6, 5, '#8a8aa0'); g.fillStyle = '#a8a8c0'; g.fillRect(x - 5, y - 19, 10, 2); g.fillStyle = '#2a2a3a'; g.fillRect(x - 4, y - 16, 8, 1); g.fillStyle = '#c8402a'; g.fillRect(x - 1, y - 23, 2, 3); },
@@ -29551,6 +29580,22 @@ button.stat small.fx { color: var(--paper-dim); }
         else if (s.weapon === 'magic') await c.narr('땅에 남은 빛의 찌꺼기가 지팡이 끝에서 파르르 떤다. 여기서 많은 빛이 흩어졌다.');
         else await c.narr('칼자국이 난 돌. 누군가 여기서 끝까지 버텼다.');
         if (!done('battle')) { c.give('m_ore', 2); gainExp(50); finish(c, 'battle', '색 전쟁의 옛 전장을 지났다.'); }
+      } }));
+    },
+  });
+
+  // ── 이정표에 매달린 장화 (바람 장화) ──
+  tale({
+    id: 'boots', regs: ['red', 'yellow'], near: 'road', area: [4, 3], name: '이정표에 매달린 장화', blurb: '「다 닳도록 굴렀다. 이제 네가 굴러라.」 바람이 불면 장화가 저 혼자 달린다.',
+    state: () => (done('boots') ? 'done' : 'new'), hint: () => (done('boots') ? null : '레드 · 옐로 길가 어딘가, 바람 부는 이정표.'),
+    spawn(Wd, X, Y) {
+      Wd.add(new Thing({ x: X, y: Y, art: 'bootpost', solid: true, bw: 8, bh: 5, st: () => (done('boots') ? 1 : 0), glint: () => !done('boots'), verb: () => (done('boots') ? '이정표를 본다' : '장화를 내린다'), text: async (c) => {
+        if (done('boots')) { await c.narr('빈 이정표. 장화가 매달렸던 끈 자국만 남았다. 바람이 지나가며 휘파람을 분다.'); return; }
+        await c.narr('낡은 이정표에 장화 한 켤레가 끈으로 묶여 매달려 있다. 바람이 불 때마다 장화가 허공을 달리듯 흔들린다.');
+        await c.narr('밑창에 칼로 새긴 글씨. 「다 닳도록 굴렀다. 길 위에서 넘어진 적은 많아도 멈춘 적은 없다. 이제 네가 굴러라. — 늙은 파발꾼」');
+        await c.getItem('boots');
+        await c.say(null, '[y]바람 장화[/] — 가지고만 있으면 구르기가 더 멀리 나간다. 금 간 벽에 굴러 부딪치면 벽이 흔들려 폭탄 자리를 알려 준다.', { style: 'sys' });
+        finish(c, 'boots', '길가 이정표에서 늙은 파발꾼의 바람 장화를 물려받았다.');
       } }));
     },
   });
@@ -31632,6 +31677,7 @@ button.stat small.fx { color: var(--paper-dim); }
   for (let i = 0; i < TH.length && i < NEW.length; i++) TH[i] = NEW[i];
 
   // 가게: 기술서 · 새 장비 (가게 목록이 이야기 쪽에서 다시 만들어지기도 해서 맨 마지막에)
+  if (G.arsenal && G.arsenal.placeLate) G.arsenal.placeLate();
   if (G.skills && G.skills.placeLate) G.skills.placeLate();
   if (G.talents && G.talents.placeLate) G.talents.placeLate();
   if (G.skills2 && G.skills2.placeLate) G.skills2.placeLate();
