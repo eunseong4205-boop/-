@@ -25833,7 +25833,7 @@ button.stat small.fx { color: var(--paper-dim); }
   /* ───────── 자리 ───────── */
   const GATE = { tower: { x: 156, y: 192 }, crater: { x: 369, y: 174 }, origin: { x: 111, y: 288 } };
   /** 낡은 굴 자물쇠: 열쇠를 어디서 얻는지 알려 준다 (예전: 「열쇠가 필요하다」뿐이라 어디서 얻는지 알 길이 없었다) */
-  const ORIGIN_MSG = () => '낡은 굴. 자물쇠 옆에 「Lv.1」. [y]옛 오락기 열쇠[/]가 필요하다 — 오락기 「무한으로 렙업하기」 은메달(메달 점수 200) 또는 무한의 탑 10층' + (S().lv < 10 ? '(Lv 10부터)' : '') + '. [r]안은 위험도 ★10[/]';
+  const ORIGIN_MSG = () => '낡은 굴. 자물쇠 옆에 「Lv.1」. [y]옛 오락기 열쇠[/]가 필요하다 — 오락기 「무한으로 렙업하기」 은메달(메달 점수 150) 또는 무한의 탑 10층' + (S().lv < 10 ? '(Lv 10부터)' : '') + '. [r]안은 위험도 ★10[/]';
   OW.poi.inf_tower = GATE.tower; OW.poi.sec_crater = GATE.crater; OW.poi.sec_origin = GATE.origin;
   OW.hooks.push((m) => {
     const G0 = GATE.tower, h0 = m.hgt[m.i(G0.x, G0.y + 3)];
@@ -26272,6 +26272,12 @@ button.stat small.fx { color: var(--paper-dim); }
     } catch (_) { /* 무시 */ }
   }
 
+  /** HUD 끝: 다음 메달까지 남은 점수 (메달 점수 기준을 지금 오락기 점수로 되돌려) */
+  function nextMedal(R) {
+    const k = (1 + R.D * 0.06), m = R.G.medals.findIndex((v) => Math.round(R.score * k) < v);
+    if (m < 0) return ' · 금 ✓';
+    return ' · ' + MEDAL_NAME[m] + '까지 ' + Math.max(1, Math.ceil(R.G.medals[m] / k - R.score));
+  }
   /* ───────── 게임들 ───────── */
   const GAMES = {};
   function game(id, o) { GAMES[id] = Object.assign({ id, dmg: 1, start: [9, 8], fmt: (v) => String(v) }, o); }
@@ -26279,23 +26285,25 @@ button.stat small.fx { color: var(--paper-dim); }
 
   /* 1. 무한으로 렙업하기 — 몰려오는 몬스터를 잡을수록 Lv */
   const LVVAL = { slime: 1, bat: 1, bug: 1, boar: 2, bandit: 2, crab: 2, wisp: 2, icewisp: 2, plant: 2, worm: 2, drone: 2, bigslime: 3, wolf: 3, knight: 3, mage: 3, ghost: 3, bomber: 3, turret: 3, hollow: 3, golem: 4, shade: 4 };
-  game('lvup', { name: '무한으로 렙업하기', kind: 'kill', time: 60, dmg: 0.5, par: 160, medals: [100, 200, 300], fmt: (v) => 'Lv.' + v, prizeName: '렙업 머리띠',
-    how: '그 마을 들판의 몬스터가 몰려온다. 잡을수록 Lv이 오른다 (약한 것 +1, 보통 +2, 큰 것 · 센 것 +3~4, 정예 +3 더). 시간이 갈수록 빨리, 세게 몰려온다. [y]은메달: 옛 오락기 열쇠[/](그린 남서쪽 낡은 굴).',
-    setup(R) { R.score = 1; R.spawnT = 0.4; },
-    adopt(R, e) { e.onDieFn = () => { R.score += 1; float(e.x, e.y - 24, '렙업! Lv.' + R.score); sfx('levelup'); }; },
+  game('lvup', { name: '무한으로 렙업하기', kind: 'kill', time: 60, dmg: 0.5, par: 160, medals: [80, 150, 240], fmt: (v) => 'Lv.' + v, prizeName: '렙업 머리띠',
+    how: '그 마을 들판의 몬스터가 몰려온다. 잡을수록 Lv이 오른다 (약한 것 +1, 보통 +2, 큰 것 · 센 것 +3~4, 정예 +3 더). 시간이 갈수록 빨리, 세게 몰려온다. [y]은메달(메달 점수 150): 옛 오락기 열쇠[/] — 그린 남서쪽 낡은 굴(옛 렙업의 땅)이 열린다.',
+    setup(R) { R.score = 1; R.kills = 0; R.spawnT = 0.4; },
+    adopt(R, e) { e.onDieFn = () => { R.score += 1; R.kills++; float(e.x, e.y - 24, '렙업! Lv.' + R.score); sfx('levelup'); }; },
     tick(R, dt) {
       R.spawnT -= dt;
-      const cap = Math.min(16, 5 + Math.floor(R.D / 3) + Math.floor(R.el / 12) * 2);
-      if (R.spawnT > 0 || foes().length >= cap) return;
+      const alive = foes().length, cap = Math.min(16, 5 + Math.floor(R.D / 3) + Math.floor(R.el / 12) * 2);
+      // 잡는 만큼 바로 채운다: 점수는 시간이 아니라 잡는 빠르기로 (예전: 한 마리씩 시간마다 — 1분에 90마리, Lv.150 남짓이 끝이었다)
+      if (alive < 3) R.spawnT = Math.min(R.spawnT, 0.12);
+      if (R.spawnT > 0 || alive >= cap) return;
       R.spawnT = Math.max(0.3, 1.0 - R.D * 0.04 - R.el * 0.01);
       const ph = R.el < 25 ? 0 : R.el < 45 ? 1 : 2;
       const pool = R.K.mobs[ph];   // 오락기마다 그 지역 몬스터
       const [x, y] = edgeSpot(), type = pick(pool);
       const el = R.D >= 3 && rnd() < 0.02 + R.D * 0.01;
       const e = foe(R, type, x, y, { elite: el });
-      e.onDieFn = () => { const gain = (LVVAL[type] || 1) + (el ? 3 : 0); R.score += gain; float(e.x, e.y - 24, '렙업! Lv.' + R.score, '#ffe066', gain > 1); sfx('levelup'); };
+      e.onDieFn = () => { const gain = (LVVAL[type] || 1) + (el ? 3 : 0); R.score += gain; R.kills++; float(e.x, e.y - 24, '렙업! Lv.' + R.score, '#ffe066', gain > 1); sfx('levelup'); };
     },
-    hud: (R) => 'Lv.' + R.score,
+    hud: (R) => 'Lv.' + R.score + ' (' + R.kills + '마리)' + nextMedal(R),
   });
 
   /* 2. 몬스터 두더지 — 구멍에서 튀어나오는 그 마을 몬스터를 친다. 금빛 +3, 폭탄은 치면 터진다 */
@@ -26310,7 +26318,7 @@ button.stat small.fx { color: var(--paper-dim); }
     }
     if (M.t > M.up) { e.dead = true; M.h.busy = false; G.fx.dust(e.x, e.y, 3); }
   };
-  game('mole', { name: '몬스터 두더지', kind: 'kill', time: 60, dmg: 0.5, par: 50, medals: [45, 65, 85], fmt: (v) => v + '마리', prizeName: '뿅망치 부적', start: [8.5, 8.6],
+  game('mole', { name: '몬스터 두더지', kind: 'kill', time: 60, dmg: 0.5, par: 50, medals: [40, 60, 80], fmt: (v) => v + '마리', prizeName: '뿅망치 부적', start: [8.5, 8.6],
     how: '아홉 구멍에서 그 마을 몬스터가 잠깐 튀어나온다. 들어가기 전에 쳐라 (+1, 금빛 +3). [r]검붉은 폭탄[/]은 치면 터지고 -3. 보라 가시는 튀어나오며 가시를 뿜는다(★2부터), ★5부터는 구멍 위에 서 있으면 문다.',
     setup(R) {
       R.score = 0; R.popT = 1.2;
@@ -26350,7 +26358,7 @@ button.stat small.fx { color: var(--paper-dim); }
     if (e.fly) { const [nx, ny] = U.norm(c.x - e.x, c.y - e.y); e.x += nx * e.speed * e.seekMul * dt; e.y += ny * e.speed * e.seekMul * dt; e.dirX = Math.sign(nx) || e.dirX; }
     else e.toward(c.x, c.y, e.speed * e.seekMul, dt);
   };
-  game('defend', { name: '수정 지키기', kind: 'kill', time: 60, dmg: 0.5, par: 50, medals: [40, 60, 80], fmt: (v) => v + '점', prizeName: '수호 수정', start: [8.5, 9],
+  game('defend', { name: '수정 지키기', kind: 'kill', time: 60, dmg: 0.5, par: 45, medals: [35, 55, 70], fmt: (v) => v + '점', prizeName: '수호 수정', start: [8.5, 9],
     how: '가운데 수정으로 몬스터가 몰려든다. 닿기 전에 쓰러뜨려라 (+1, 너를 노리는 사냥꾼 +2). 수정이 깨지면 실패, 1분을 지키면 남은 수정 빛만큼 더.',
     setup(R) {
       R.score = 0; R.spawnT = 1.0;

@@ -24,7 +24,7 @@
   /* ───────── 자리 ───────── */
   const GATE = { tower: { x: 156, y: 192 }, crater: { x: 369, y: 174 }, origin: { x: 111, y: 288 } };
   /** 낡은 굴 자물쇠: 열쇠를 어디서 얻는지 알려 준다 (예전: 「열쇠가 필요하다」뿐이라 어디서 얻는지 알 길이 없었다) */
-  const ORIGIN_MSG = () => '낡은 굴. 자물쇠 옆에 「Lv.1」. [y]옛 오락기 열쇠[/]가 필요하다 — 오락기 「무한으로 렙업하기」 은메달(메달 점수 200) 또는 무한의 탑 10층' + (S().lv < 10 ? '(Lv 10부터)' : '') + '. [r]안은 위험도 ★10[/]';
+  const ORIGIN_MSG = () => '낡은 굴. 자물쇠 옆에 「Lv.1」. [y]옛 오락기 열쇠[/]가 필요하다 — 오락기 「무한으로 렙업하기」 은메달(메달 점수 150) 또는 무한의 탑 10층' + (S().lv < 10 ? '(Lv 10부터)' : '') + '. [r]안은 위험도 ★10[/]';
   OW.poi.inf_tower = GATE.tower; OW.poi.sec_crater = GATE.crater; OW.poi.sec_origin = GATE.origin;
   OW.hooks.push((m) => {
     const G0 = GATE.tower, h0 = m.hgt[m.i(G0.x, G0.y + 3)];
