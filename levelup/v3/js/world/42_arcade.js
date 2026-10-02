@@ -1,6 +1,6 @@
 /* 오락기 — 「무한으로 렙업하기」에 바치는 자리, 그리고 마을마다 다른 오락기
    · 열두 마을 광장 곁(+ 하늘 정거장)에 오락기. 마을의 빛깔 등급만큼 난이도(★)가 오르고, 동전 값 · 상금 · 메달 점수도 오른다
-   · 게임 여덟: 무한으로 렙업하기 · 젤리 두더지 · 수정 지키기(많이 잡기, 1분) / 동전 러시 · 별똥비 버티기 · 깃발 달리기 · 챔피언 도전 · 기억의 발판
+   · 게임 여덟: 무한으로 렙업하기 · 몬스터 두더지 · 수정 지키기(많이 잡기, 1분) / 동전 러시 · 별똥비 버티기 · 깃발 달리기 · 챔피언 도전 · 기억의 발판
    · 오락기 속에서도 맞으면 진짜로 다친다(많이 잡는 게임은 절반). 체력이 ¼칸만 남으면 그 자리에서 게임 오버 — 쓰러짐의 대가는 없다
    · 기록마다 메달(동 · 은 · 금): 렙업하기는 예전처럼 골드 · 옛 오락기 열쇠 · 렙업 머리띠, 나머지는 골드 · 능력 포인트 · 그 게임의 장신구
    그리고 책장 몇 곳: 「무한으로 렙업하기」 · 「무한으로 렙업하자!!」를 이 대륙의 옛 전설로 읽는다. */
@@ -16,7 +16,7 @@
   const sfx = (n) => G.audio && G.audio.sfx(n);
   I.ac_lvband = { id: 'ac_lvband', type: 'acc', grade: 4, name: '렙업 머리띠', fx: { exp: 0.25, speed: 0.08 }, price: 0, desc: '옛 오락기 최고 기록의 상. 얻는 빛 알갱이 +25%, 베는 속도 +8%. 이마에 「무한」.' };
   const acc = (id, grade, name, fx, desc) => { I[id] = { id, type: 'acc', grade, name, fx, price: 0, desc }; };
-  acc('ac_mallet', 3, '뿅망치 부적', { crit: 0.06, speed: 0.05 }, '젤리 두더지 금메달. 치명타 +6%, 베는 속도 +5%.');
+  acc('ac_mallet', 3, '뿅망치 부적', { crit: 0.06, speed: 0.05 }, '몬스터 두더지 금메달. 치명타 +6%, 베는 속도 +5%.');
   acc('ac_guardgem', 3, '수호 수정', { regen: 0.6, stamina: 15 }, '수정 지키기 금메달. 가만히 있으면 체력이 조금씩, 기력 +15.');
   acc('ac_coinpurse', 3, '황금 동전 지갑', { gold: 0.3 }, '동전 러시 금메달. 떨어뜨리는 골드 +30%.');
   acc('ac_starcloak', 3, '별똥 망토 조각', { roll: 0.25, stamina: 10 }, '별똥비 버티기 금메달. 구르기 기력 -25%, 기력 +10.');
@@ -42,6 +42,43 @@
     colorful: { D: 9, at: [5, 3], games: ALL, hall: true },
     station: { D: 10, games: ALL, hall: true, name: '별빛 오락기' },
   };
+  /* 오락기마다 다른 몬스터(그 지역 들판의 몬스터로) · 다른 경품
+     mobs: 초반 · 중반 · 후반 무리 / champ: 챔피언 도전 / chase: 동전 러시의 쫓는 것 / mole: 두더지 / seek: 수정을 노리는 것 / theme: 부제
+     shelf: 이 오락기에서 처음 성적(점수/기준) 0.6 · 1.0 · 1.5를 넘기면 한 번씩 — 참가상 · 우수상 · 최우수상
+     pool: 판마다 경품 뽑기(성적에 따라 확률) [아이템, 개수, 무게] */
+  const ROSTER = {
+    green: { theme: '젤리 들판', mobs: [['slime', 'slime', 'bat'], ['slime', 'bat', 'boar', 'plant'], ['boar', 'bigslime', 'bat']], champ: ['boar', 'bigslime', 'plant'], chase: 'wisp', mole: 'slime', seek: ['slime', 'slime', 'bat', 'boar'],
+      shelf: [['potion_r', 3], ['arrows10', 2], ['ac_str', 1]], pool: [['potion_r', 1, 3], ['food_corn', 2, 2], ['arrows10', 1, 1]] },
+    red: { theme: '불꽃 고개', mobs: [['slime', 'bat', 'wisp'], ['boar', 'bat', 'wisp', 'bomber'], ['boar', 'bomber', 'bandit', 'golem']], champ: ['boar', 'bandit', 'bomber', 'golem'], chase: 'wisp', mole: 'slime', seek: ['boar', 'bat', 'wisp'],
+      shelf: [['potion_r', 4], ['food_tteok', 3], ['ac_shell', 1]], pool: [['potion_r', 1, 3], ['food_tteok', 1, 2], ['bombs5', 1, 1]] },
+    blue: { theme: '파도 해변', mobs: [['slime', 'slime', 'bat'], ['crab', 'slime', 'bandit', 'plant'], ['crab', 'bandit', 'bigslime']], champ: ['crab', 'bandit', 'bigslime'], chase: 'ghost', mole: 'crab', seek: ['crab', 'slime', 'crab', 'bigslime'],
+      shelf: [['potion_b', 3], ['food_udon', 3], ['ac_roll', 1]], pool: [['potion_b', 1, 3], ['food_udon', 1, 2], ['arrows10', 1, 1], ['m_pearl', 2, 1]] },
+    amber: { theme: '단풍 협곡', mobs: [['bat', 'slime', 'boar'], ['boar', 'bandit', 'wolf'], ['wolf', 'golem', 'bandit']], champ: ['bandit', 'wolf', 'golem'], chase: 'wisp', mole: 'worm', seek: ['boar', 'bat', 'wolf'],
+      shelf: [['potion_g', 1], ['bombs5', 2], ['ac_thief', 1]], pool: [['potion_r', 2, 2], ['potion_b', 1, 2], ['bombs5', 1, 1], ['m_hide', 3, 1]] },
+    yellow: { theme: '황금 사막', mobs: [['bat', 'slime', 'wisp'], ['bandit', 'wisp', 'crab'], ['wolf', 'turret', 'bandit', 'crab']], champ: ['bandit', 'crab', 'wolf', 'golem'], chase: 'wisp', mole: 'worm', seek: ['crab', 'bandit', 'bat'],
+      shelf: [['potion_g', 1], ['m_sand', 6], ['ac_ring_crit', 1]], pool: [['potion_b', 1, 3], ['m_sand', 3, 2], ['arrows10', 1, 1]] },
+    purple: { theme: '가시 숲', mobs: [['bug', 'plant', 'bug'], ['ghost', 'plant', 'bigslime'], ['mage', 'wolf', 'ghost']], champ: ['bigslime', 'ghost', 'wolf', 'mage'], chase: 'ghost', mole: 'bug', seek: ['bug', 'ghost', 'bigslime'],
+      shelf: [['potion_g', 2], ['m_dust', 6], ['ac_mp', 1]], pool: [['potion_b', 1, 2], ['potion_g', 1, 2], ['m_dust', 2, 1]] },
+    rainbow: { theme: '무지개 축제', mobs: [['bug', 'bat', 'wisp'], ['bug', 'bigslime', 'wisp'], ['bigslime', 'bug', 'mage', 'wisp']], champ: ['bigslime', 'bug', 'wolf', 'mage'], chase: 'wisp', mole: 'bug', seek: ['bug', 'bat', 'bigslime'],
+      shelf: [['food_cotton', 5], ['potion_max', 1], ['ac_combo', 1]], pool: [['food_cotton', 2, 3], ['potion_g', 1, 2], ['m_star', 2, 1]] },
+    white: { theme: '눈의 성지', mobs: [['slime', 'icewisp', 'bat'], ['wolf', 'icewisp', 'golem'], ['golem', 'hollow', 'wolf', 'icewisp']], champ: ['wolf', 'hollow', 'golem'], chase: 'icewisp', mole: 'icewisp', seek: ['wolf', 'icewisp', 'golem'],
+      shelf: [['food_bread', 3], ['potion_max', 1], ['ac_clock', 1]], pool: [['food_bread', 1, 3], ['potion_g', 1, 2], ['m_ice', 3, 1]] },
+    mist: { theme: '안개 늪', mobs: [['bug', 'plant', 'bug'], ['ghost', 'wisp', 'bigslime'], ['ghost', 'plant', 'bigslime', 'bug']], champ: ['bigslime', 'bug', 'plant', 'ghost'], chase: 'ghost', mole: 'bug', seek: ['bug', 'bigslime', 'wisp'],
+      shelf: [['lily', 3], ['potion_max', 1], ['ac_sage', 1]], pool: [['lily', 1, 3], ['potion_g', 1, 2], ['m_spore', 2, 1]] },
+    gray: { theme: '잿빛 공장', mobs: [['bat', 'drone', 'slime'], ['drone', 'bomber', 'turret', 'hollow'], ['golem', 'hollow', 'bomber', 'drone']], champ: ['drone', 'bomber', 'hollow', 'golem'], chase: 'drone', mole: 'drone', seek: ['drone', 'golem', 'hollow'],
+      shelf: [['m_gear', 8], ['potion_max', 1], ['ac_tri', 1]], pool: [['potion_g', 1, 3], ['m_gear', 3, 2], ['bombs5', 1, 1]] },
+    black: { theme: '영원한 밤', mobs: [['bat', 'ghost', 'bat'], ['ghost', 'hollow', 'shade'], ['knight', 'shade', 'hollow', 'ghost']], champ: ['hollow', 'shade', 'knight'], chase: 'shade', mole: 'ghost', seek: ['ghost', 'hollow', 'shade'],
+      shelf: [['shade_core', 2], ['potion_max', 2], ['ac_berserk', 1]], pool: [['potion_g', 1, 3], ['shade_core', 1, 2], ['potion_max', 1, 1]] },
+    colorful: { theme: '알록달록 공방', mobs: [['slime', 'drone', 'bat'], ['drone', 'mage', 'knight', 'bomber'], ['shade', 'knight', 'golem', 'mage']], champ: ['mage', 'hollow', 'knight', 'shade', 'golem'], chase: 'drone', mole: 'drone', seek: ['drone', 'slime', 'golem'],
+      shelf: [['potion_max', 2], ['m_crystal', 6], ['ac_vamp', 1]], pool: [['potion_g', 2, 3], ['potion_max', 1, 2], ['m_crystal', 2, 1]] },
+    station: { theme: '별빛 격납고', mobs: [['drone', 'bat', 'icewisp'], ['drone', 'turret', 'shade'], ['golem', 'shade', 'knight', 'drone']], champ: ['drone', 'mage', 'shade', 'knight', 'golem'], chase: 'shade', mole: 'drone', seek: ['drone', 'golem', 'shade'],
+      shelf: [['potion_max', 3], ['fairy', 1], ['ac_chime', 1]], pool: [['potion_max', 1, 3], ['m_star', 3, 2], ['fairy', 1, 1]] },
+  };
+  const SHELF_NAME = ['참가상', '우수상', '최우수상'], SHELF_AT = [0.6, 1.0, 1.5];
+  /** 성적의 기준 점수: 어려운 오락기일수록 낮춘다 (같은 솜씨면 같은 성적) */
+  const parAt = (Gm, D) => Gm.par * (1 - 0.04 * Math.min(10, D));
+  const itemName = (id, n) => ((G.data.ITEMS[id] && G.data.ITEMS[id].name) || id) + (n > 1 ? ' ×' + n : '');
+  const FOE_NAME = (t) => (G.foes.T[t] && G.foes.T[t].name) || t;
   const TOWN_NAME = { green: '그린', red: '레드', blue: '블루', amber: '호박', yellow: '옐로', purple: '퍼플', rainbow: '무지개', white: '화이트', mist: '안개', gray: '그레이', black: '블랙', colorful: '알록달록', station: '하늘 정거장' };
   const cabName = (k) => CABS[k].name || (TOWN_NAME[k] || k) + ' 오락기';
   const costOf = (D) => 10 + D * 15;
@@ -97,13 +134,16 @@
 
   async function menu(c, cab) {
     const s = S(), K = CABS[cab.town] || CABS.green, D = K.D, cost = costOf(D);
-    await c.narr('[y]' + cabName(cab.town) + '[/] — 난이도 [r]' + STARS(D) + '[/] · 동전 ' + cost + '골드\n' + (K.hall ? '이 오락실에는 게임 여덟이 모두 있다. ' : '') + '어려운 오락기일수록 상금이 크고 메달 점수가 무겁다.');
+    const RS = ROSTER[cab.town] || ROSTER.green;
+    const mobs = [...new Set(RS.mobs.flat())].map(FOE_NAME).join(' · ');
+    await c.narr('[y]' + cabName(cab.town) + '[/] 「' + RS.theme + '」 — 난이도 [r]' + STARS(D) + '[/] · 동전 ' + cost + '골드\n나오는 몬스터: ' + mobs + '\n' + (K.hall ? '이 오락실에는 게임 여덟이 모두 있다. ' : '') + '어려운 오락기일수록 상금 · 경품이 크고 메달 점수가 무겁다.');
     for (;;) {
       const opts = K.games.map((gid) => { const Gm = GAMES[gid], b = bestAt(gid, cab.town), md = medalsOf(gid); return Gm.name + ' (' + Gm.time + '초)' + (md ? ' ' + '●'.repeat(md) : '') + (b ? ' · 여기 최고 ' + Gm.fmt(b) : ''); });
-      opts.push('메달 · 선물 보기', '그만둔다');
+      opts.push('이 오락기의 경품', '메달 · 선물 보기', '그만둔다');
       const k = await c.choice('어떤 게임을 할까?', opts);
-      if (k === K.games.length) { await showMedals(c); continue; }
-      if (k > K.games.length || k < 0) return;
+      if (k === K.games.length) { await showShelf(c, cab.town); continue; }
+      if (k === K.games.length + 1) { await showMedals(c); continue; }
+      if (k > K.games.length + 1 || k < 0) return;
       const gid = K.games[k], Gm = GAMES[gid];
       const ms = Gm.medals.map((v, i) => MEDAL_NAME[i] + ' ' + Gm.fmt(v)).join(' · ');
       await c.narr('[y]「' + Gm.name + '」[/] ' + Gm.time + '초 · ' + STARS(D) + '\n' + Gm.how + '\n' + (Gm.dmg < 1 ? '[s]맞으면 다친다 — 많이 잡는 게임이라 피해는 절반.[/]' : '[r]맞으면 그대로 다친다.[/]') + ' 체력이 ¼칸만 남으면 게임 오버.\n[s]메달(메달 점수 = 점수 × ' + (1 + D * 0.06).toFixed(2) + '): ' + ms + '[/]');
@@ -120,6 +160,15 @@
       await c.fade(false, { sec: 0.3 });
       return;
     }
+  }
+  const shelfFlag = (town, k) => 'arc:shelf:' + town + ':' + k;
+  async function showShelf(c, town) {
+    const RS = ROSTER[town] || ROSTER.green, D = (CABS[town] || CABS.green).D;
+    const lines = RS.shelf.map(([id, n], k) => (f(shelfFlag(town, k)) ? '[s]✓ ' : '[y]') + SHELF_NAME[k] + '[/] (성적 ' + SHELF_AT[k] + '↑) — ' + itemName(id, n));
+    const tot = RS.pool.reduce((a, q) => a + q[2], 0);
+    const pool = RS.pool.map(([id, n, w]) => itemName(id, n) + ' ' + Math.round(w / tot * 100) + '%').join(' · ');
+    await c.narr(cabName(town) + ' 경품 (' + STARS(D) + ')\n' + lines.join('\n') + '\n[s]성적 = 점수 ÷ 기준 점수(어려운 오락기일수록 낮다). 상은 이 오락기에서 한 번씩, 어느 게임으로든.[/]');
+    await c.narr('판마다 경품 뽑기 — 성적이 좋을수록 잘 나온다\n' + pool + '\n[s]게임 오버면 뽑기 확률 절반.[/]');
   }
   async function showMedals(c) {
     const lines = ALL.map((gid) => { const Gm = GAMES[gid], md = medalsOf(gid); return (md ? '[y]' + '●'.repeat(md) + '[/]' + '○'.repeat(3 - md) : '○○○') + ' ' + Gm.name + ' — 최고 ' + Gm.fmt(best(gid)) + ' · 금: ' + Gm.prizeName; });
@@ -155,7 +204,7 @@
     const e = G.foes.spawn(type, x, y, { tier: R.ET, elite: false, hpMul: (o.hpMul || 1) * R.hpMul });
     e.aggro = true; e.arcade = true; e.exp = 0; e.gold = 0; e.mat = null; e.respawn = false;
     if (o.elite && G.foes.makeElite) { G.foes.makeElite(e); e.elite = 'arc'; }
-    if (o.ai) e.ai = o.ai;
+    if (o.ai) { e.ai = o.ai; e.st = 'idle'; e.noContact = false; e.inv = 0; }
     e.atk = Math.max(1, Math.round(e.atk * R.atkMul));
     if (!o.quiet) G.fx.glow(x, y - 6, '#b8a8ff', 8);
     return e;
@@ -181,24 +230,18 @@
   const AI = G.foes.AI;
 
   /* 1. 무한으로 렙업하기 — 몰려오는 몬스터를 잡을수록 Lv */
-  const LVVAL = { slime: 1, bat: 1, boar: 2, bandit: 2, crab: 2, bigslime: 3, wolf: 3, knight: 3, mage: 3, ghost: 3, bomber: 3, shade: 4 };
+  const LVVAL = { slime: 1, bat: 1, bug: 1, boar: 2, bandit: 2, crab: 2, wisp: 2, icewisp: 2, plant: 2, worm: 2, drone: 2, bigslime: 3, wolf: 3, knight: 3, mage: 3, ghost: 3, bomber: 3, turret: 3, hollow: 3, golem: 4, shade: 4 };
   game('lvup', { name: '무한으로 렙업하기', kind: 'kill', time: 60, dmg: 0.5, par: 160, medals: [100, 200, 300], fmt: (v) => 'Lv.' + v, prizeName: '렙업 머리띠',
-    how: '몰려오는 몬스터를 잡을수록 Lv이 오른다 (젤리 · 박쥐 +1, 멧돼지 · 도적 +2, 큰 것 +3, 정예 +3 더). 시간이 갈수록 빨리, 세게 몰려온다. [y]은메달: 옛 오락기 열쇠[/](그린 남서쪽 낡은 굴).',
+    how: '그 마을 들판의 몬스터가 몰려온다. 잡을수록 Lv이 오른다 (약한 것 +1, 보통 +2, 큰 것 · 센 것 +3~4, 정예 +3 더). 시간이 갈수록 빨리, 세게 몰려온다. [y]은메달: 옛 오락기 열쇠[/](그린 남서쪽 낡은 굴).',
     setup(R) { R.score = 1; R.spawnT = 0.4; },
     adopt(R, e) { e.onDieFn = () => { R.score += 1; float(e.x, e.y - 24, '렙업! Lv.' + R.score); sfx('levelup'); }; },
     tick(R, dt) {
       R.spawnT -= dt;
-      const cap = Math.min(16, 8 + Math.floor(R.D / 2) + Math.floor(R.el / 15) * 2);
+      const cap = Math.min(16, 5 + Math.floor(R.D / 3) + Math.floor(R.el / 12) * 2);
       if (R.spawnT > 0 || foes().length >= cap) return;
       R.spawnT = Math.max(0.3, 1.0 - R.D * 0.04 - R.el * 0.01);
-      const ph = R.el < 20 ? 0 : R.el < 40 ? 1 : 2;
-      const pool = [['slime', 'slime', 'bat'], ['slime', 'bat', 'boar', 'bigslime'], ['boar', 'bigslime', 'wolf', 'bat']][ph].slice();
-      if (R.D >= 2) pool.push(ph ? 'wolf' : 'boar');
-      if (R.D >= 3 && ph) pool.push('bandit');
-      if (R.D >= 4 && ph === 2) pool.push('knight');
-      if (R.D >= 5 && ph) pool.push('mage');
-      if (R.D >= 6) pool.push('ghost');
-      if (R.D >= 7 && ph === 2) pool.push('bomber', 'shade');
+      const ph = R.el < 25 ? 0 : R.el < 45 ? 1 : 2;
+      const pool = R.K.mobs[ph];   // 오락기마다 그 지역 몬스터
       const [x, y] = edgeSpot(), type = pick(pool);
       const el = R.D >= 3 && rnd() < 0.02 + R.D * 0.01;
       const e = foe(R, type, x, y, { elite: el });
@@ -207,7 +250,7 @@
     hud: (R) => 'Lv.' + R.score,
   });
 
-  /* 2. 젤리 두더지 — 구멍에서 튀어나오는 젤리를 친다. 금 젤리 +3, 폭탄 젤리는 치면 터진다 */
+  /* 2. 몬스터 두더지 — 구멍에서 튀어나오는 그 마을 몬스터를 친다. 금빛 +3, 폭탄은 치면 터진다 */
   const HOLES = [[4, 4], [8.5, 4], [13, 4], [4, 7], [8.5, 7], [13, 7], [4, 10], [8.5, 10], [13, 10]];
   AI.arcMole = function (e, dt) {
     const M = e.mole; if (!M) return;
@@ -219,8 +262,8 @@
     }
     if (M.t > M.up) { e.dead = true; M.h.busy = false; G.fx.dust(e.x, e.y, 3); }
   };
-  game('mole', { name: '젤리 두더지', kind: 'kill', time: 60, dmg: 0.5, par: 50, medals: [45, 65, 85], fmt: (v) => v + '마리', prizeName: '뿅망치 부적', start: [8.5, 8.6],
-    how: '아홉 구멍에서 젤리가 잠깐 튀어나온다. 들어가기 전에 쳐라 (+1, 금 젤리 +3). [r]검붉은 폭탄 젤리[/]는 치면 터지고 -3. 보라 가시 젤리는 튀어나오며 가시를 뿜는다(★2부터), ★5부터는 구멍 위에 서 있으면 문다.',
+  game('mole', { name: '몬스터 두더지', kind: 'kill', time: 60, dmg: 0.5, par: 50, medals: [45, 65, 85], fmt: (v) => v + '마리', prizeName: '뿅망치 부적', start: [8.5, 8.6],
+    how: '아홉 구멍에서 그 마을 몬스터가 잠깐 튀어나온다. 들어가기 전에 쳐라 (+1, 금빛 +3). [r]검붉은 폭탄[/]은 치면 터지고 -3. 보라 가시는 튀어나오며 가시를 뿜는다(★2부터), ★5부터는 구멍 위에 서 있으면 문다.',
     setup(R) {
       R.score = 0; R.popT = 1.2;
       R.holes = HOLES.map(([tx, ty]) => ({ x: tx * TS + 8, y: ty * TS + 12, busy: false }));
@@ -234,9 +277,9 @@
       const free = R.holes.filter((h) => !h.busy); if (!free.length) return;
       const h = pick(free), r = rnd();
       const kind = r < 0.1 ? 'gold' : R.D >= 1 && r < 0.24 + R.D * 0.015 ? 'bomb' : R.D >= 2 && r < 0.36 + R.D * 0.015 ? 'spike' : 'normal';
-      const e = foe(R, 'slime', h.x, h.y, { ai: 'arcMole', quiet: true });
+      const e = foe(R, R.K.mole, h.x, h.y, { ai: 'arcMole', quiet: true });
       e.maxHp = e.hp = 1; h.busy = true;
-      e.col = kind === 'gold' ? '#ffd84a' : kind === 'bomb' ? '#5a2a3a' : kind === 'spike' ? '#b86aff' : '#6ad86a';
+      e.col = kind === 'gold' ? '#ffd84a' : kind === 'bomb' ? '#5a2a3a' : kind === 'spike' ? '#b86aff' : e.col;
       e.mole = { kind, h, t: 0, D: R.D, up: Math.max(0.5, 1.25 - R.D * 0.06 - R.el * 0.005) * (kind === 'gold' ? 0.7 : 1) };
       e.noContact = !(R.D >= 5 && kind === 'normal');
       G.fx.dust(h.x, h.y, 4); sfx('pop');
@@ -286,15 +329,11 @@
       const [x, y] = edgeSpot();
       const hunter = rnd() < 0.16 + R.D * 0.02;
       if (hunter) {
-        const e = foe(R, pick(R.D >= 4 ? ['bandit', 'wolf', 'knight'] : ['bandit', 'wolf', 'boar']), x, y);
+        const e = foe(R, pick(R.K.mobs[1]), x, y);
         e.onDieFn = () => { R.score += 2; float(e.x, e.y - 22, '+2', '#ffe066', true); };
         return;
       }
-      const pool = ['slime', 'slime', 'bat', 'boar'];
-      if (R.D >= 2) pool.push('wolf');
-      if (R.D >= 3) pool.push('bigslime');
-      if (R.D >= 5) pool.push('golem', 'crab');
-      const type = pick(pool);
+      const type = pick(R.K.seek);
       const e = foe(R, type, x, y, { ai: 'arcSeek' });
       e.seekMul = (type === 'golem' ? 0.9 : 0.8) + R.D * 0.04; e.cdmg = type === 'golem' ? 4 : R.D >= 5 ? 3 : 2;
       e.onDieFn = () => { R.score += 1; float(e.x, e.y - 22, '+1', '#c8ffb8'); };
@@ -337,7 +376,7 @@
       R.bigT -= dt; if (R.bigT <= 0) { R.bigT = 7; const [x, y] = randSpot(10, 70); coin(R, x, y, 5, Math.max(2.4, 3.6 - R.D * 0.1)); sfx('white'); }
       R.ghosts = R.ghosts.filter((e) => !e.dead);
       const gn = Math.min(5, 1 + Math.floor(R.D / 3) + Math.floor(R.el / 20));
-      if (R.ghosts.length < gn) { const [x, y] = edgeSpot(); const e = foe(R, 'ghost', x, y, { ai: 'arcChase', hpMul: 400 }); e.chase = 22 + R.D * 2.5; e.noKill = true; e.atk = Math.max(1, Math.round(e.atk * 0.5)); R.ghosts.push(e); }
+      if (R.ghosts.length < gn) { const [x, y] = edgeSpot(); const e = foe(R, R.K.chase, x, y, { ai: 'arcChase', hpMul: 400 }); e.chase = 22 + R.D * 2.5; e.noKill = true; e.atk = Math.max(1, Math.round(e.atk * 0.5)); R.ghosts.push(e); }
       if (R.D >= 3) {
         R.spikeT -= dt;
         if (R.spikeT <= 0) { R.spikeT = Math.max(1.1, 3 - R.D * 0.15); const p = W().player; const [x, y] = rnd() < 0.5 && p ? [p.x, p.y] : randSpot(10); G.bosses.warnCircle(x, y, 18, 0.8, () => { G.fx.shards(x, y - 4, 10, '#c8c8d8'); sfx('thunk'); G.bosses.hitCircle(x, y, 18, 2 + Math.floor(R.D / 3)); }, 'rgba(200,200,220,0.4)'); }
@@ -386,7 +425,6 @@
   });
 
   /* 6. 챔피언 도전 — 정예 도전자를 차례로 꺾는다 */
-  const CHAMP = ['boar', 'bandit', 'wolf', 'bigslime', 'crab', 'knight', 'golem', 'mage', 'shade', 'hollow', 'bomber'];
   game('champ', { name: '챔피언 도전', kind: 'duel', time: 90, dmg: 1, par: 12, medals: [8, 14, 20], fmt: (v) => v + '승', prizeName: '챔피언 벨트', start: [8.5, 9.5],
     how: '정예 도전자가 하나씩(★5부터 넷째 판부터 둘씩) 나온다. 판마다 더 단단하다. 90초 동안 몇 명을 꺾을까.',
     setup(R) { R.score = 0; R.round = 0; R.nextT = 1.0; R.champs = []; },
@@ -396,9 +434,9 @@
       R.nextT -= dt; if (R.nextT > 0) return;
       R.round++; R.nextT = 1.2;
       const n = R.D >= 5 && R.round >= 4 ? 2 : 1;
-      const top = Math.min(CHAMP.length, 4 + Math.floor(R.D / 2) + Math.floor(R.round / 2)), lo = Math.min(top - 3, Math.floor(R.D / 3));
+      const CP = R.K.champ, top = Math.min(CP.length, 2 + Math.floor(R.round / 2));
       for (let i = 0; i < n; i++) {
-        const type = CHAMP[lo + Math.floor(rnd() * (top - lo))];
+        const type = CP[Math.floor(rnd() * top)];
         const x = n === 1 ? 8.5 * TS + 8 : (i ? 12 : 5) * TS + 8;
         const e = foe(R, type, x, py(4), { hpMul: 1.2 + R.round * 0.22 });
         if (G.foes.makeElite) { G.foes.makeElite(e, R.round < 4 && G.foes.AFFIX ? [pick(Object.keys(G.foes.AFFIX).filter((k2) => k2 !== 'summon'))] : null); e.elite = 'arc'; }
@@ -490,7 +528,7 @@
       if (R.D >= 2) {
         R.harT -= dt;
         const want = Math.min(3, Math.floor(R.D / 3) + 1);
-        if (R.harT <= 0 && foes().length < want) { R.harT = 4; const [x, y] = edgeSpot(); const e = foe(R, pick(R.D >= 6 ? ['slime', 'bat', 'wolf'] : ['slime', 'bat']), x, y); e.atk = Math.max(1, Math.round(e.atk * 0.5)); }
+        if (R.harT <= 0 && foes().length < want) { R.harT = 4; const [x, y] = edgeSpot(); const e = foe(R, pick(R.K.mobs[0]), x, y); e.atk = Math.max(1, Math.round(e.atk * 0.5)); }
       }
       // 지금 밟은 발판
       let cur = -1;
@@ -541,7 +579,7 @@
       const s = S(), run = s.arcadeRun;
       if (!run || !GAMES[run.g]) { RUN = null; return; }
       const Gm = GAMES[run.g], D = run.D || 0;
-      const R = RUN = { G: Gm, gid: run.g, town: run.town, D, ET: Math.min(11, D), hpMul: 1.4 + D * 0.04, atkMul: 1 + D * 0.03,
+      const R = RUN = { G: Gm, gid: run.g, town: run.town, K: ROSTER[run.town] || ROSTER.green, D, ET: Math.min(11, D), hpMul: 1.4 + D * 0.04, atkMul: (Gm.kind === 'kill' ? 0.8 : 1) + D * 0.03,
         t: Gm.time, el: 0, ready: 1.6, score: 0, over: false, ents: [], hits: 0 };
       Gm.setup(R, Wd);
       G.cine.area(Gm.name, Gm.time + '초 · ' + STARS(D) + (Gm.dmg < 1 ? ' · 피해 절반' : ''));
@@ -590,7 +628,7 @@
     for (const e of W().ents) if (e.kind === 'warn' || (e.owner === 'foe' && e.kind !== 'foe')) e.dead = true;
     const Gm = R.G, bonus = Gm.finishBonus ? Gm.finishBonus(R, why) : 0;
     const score = Math.max(0, R.score + bonus);
-    const perf = Math.min(2.5, score / Gm.par), cost = costOf(R.D);
+    const perf = Math.min(2.5, score / parAt(Gm, R.D)), cost = costOf(R.D);
     const half = why === 'down' || why === 'fail';
     const gap = Math.max(0, s.lv - EXP_LV[Math.min(10, R.D)]), ek = U.clamp(1 - gap / 15, 0.15, 1);
     let gold = Math.round(cost * 2.4 * perf * (1 + R.D * 0.08)), exp = Math.round(G.data.expNext(s.lv) * 0.06 * perf * (1 + R.D * 0.12) * ek);
@@ -604,6 +642,20 @@
       if (score > old) { if (R.gid === 'lvup') s.flags.arcade_best = score; else s.flags['arc:best:' + R.gid] = score; }
       if (score > oldHere) s.flags['arc:best:' + R.gid + ':' + R.town] = score;
       if (gold > 0 || exp > 0) { c.gold(gold); c.exp(exp); await c.narr('오락기가 동전을 토해 냈다. [y]' + gold + '골드[/] · 빛 알갱이 ' + exp); }
+      // 이 오락기의 경품: 선반(한 번씩) · 뽑기(판마다)
+      const RS = R.K;
+      for (let k2 = 0; k2 < 3; k2++) {
+        if (perf < SHELF_AT[k2] || f(shelfFlag(R.town, k2))) continue;
+        c.flag(shelfFlag(R.town, k2)); c.sfx('learn');
+        const [id, n] = RS.shelf[k2];
+        await c.narr('[y]' + cabName(R.town) + ' ' + SHELF_NAME[k2] + '[/] — 경품 칸이 열렸다.'); await c.getItem(id, n);
+      }
+      const chance = U.clamp(perf * 0.5, 0.1, 0.9) * (half ? 0.5 : 1);
+      if (rnd() < chance) {
+        const tot = RS.pool.reduce((a, q) => a + q[2], 0); let r2 = rnd() * tot, got = RS.pool[0];
+        for (const q of RS.pool) { r2 -= q[2]; if (r2 <= 0) { got = q; break; } }
+        c.sfx('item'); await c.narr('경품 뽑기 — 당첨!'); await c.getItem(got[0], got[1]);
+      }
       // 메달
       for (let k2 = 0; k2 < 3; k2++) {
         const fl = MEDAL_FLAG(R.gid, k2);
@@ -674,5 +726,5 @@
       for (const [x, y, title, text] of list) Wd.add(new G.props.Spot({ x: px(x), y: py(y) + 2, verb: title + '을 읽는다', text: async (c) => { await c.narr('[y]' + title + '[/]\n' + text); if (!f('book:' + title)) { c.flag('book:' + title); c.exp(30); } } }));
     });
   }
-  G.arcade = { Arcade, GAMES, CABS, run: () => RUN, end: (why) => RUN && end(RUN, why || 'time') };
+  G.arcade = { Arcade, GAMES, CABS, ROSTER, run: () => RUN, end: (why) => RUN && end(RUN, why || 'time') };
 })();
