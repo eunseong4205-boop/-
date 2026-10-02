@@ -23,6 +23,8 @@
 
   /* ───────── 자리 ───────── */
   const GATE = { tower: { x: 156, y: 192 }, crater: { x: 369, y: 174 }, origin: { x: 111, y: 288 } };
+  /** 낡은 굴 자물쇠: 열쇠를 어디서 얻는지 알려 준다 (예전: 「열쇠가 필요하다」뿐이라 어디서 얻는지 알 길이 없었다) */
+  const ORIGIN_MSG = () => '낡은 굴. 자물쇠 옆에 「Lv.1」. [y]옛 오락기 열쇠[/]가 필요하다 — 오락기 「무한으로 렙업하기」 은메달(메달 점수 200) 또는 무한의 탑 10층' + (S().lv < 10 ? '(Lv 10부터)' : '') + '. [r]안은 위험도 ★10[/]';
   OW.poi.inf_tower = GATE.tower; OW.poi.sec_crater = GATE.crater; OW.poi.sec_origin = GATE.origin;
   OW.hooks.push((m) => {
     const G0 = GATE.tower, h0 = m.hgt[m.i(G0.x, G0.y + 3)];
@@ -31,7 +33,7 @@
     for (let y = G0.y + 2; y < G0.y + 5; y++) for (const x of [G0.x + 1]) { const i = m.i(x, y); m.ter[i] = T.STONE; m.obj[i] = 0; }
     ST.cave(m, { x: GATE.crater.x, y: GATE.crater.y, id: 'crater_gate', to: 'sec_crater', col: '#4a3a6a', rx: 9, ry: 4, ground: T.ASH, cond: () => f('secret:crater'), msg: '구덩이 바닥의 굴이 식은 별똥별 돌에 막혀 있다. 별이 떨어지는 밤이라면…' });
     for (const [dx, dy] of [[-6, 2], [7, 1], [-4, 4], [5, 4]]) { const i = m.i(GATE.crater.x + dx, GATE.crater.y + dy); if (!m.solidExtra[i]) m.obj[i] = O.CRYSTAL; }
-    ST.cave(m, { x: GATE.origin.x, y: GATE.origin.y, id: 'origin_gate', to: 'sec_origin', col: '#5a8a4a', rx: 6, ry: 3, cond: () => f('secret:origin') || !!S().inv.key_origin, msg: '낡은 굴. 자물쇠 옆에 누군가 「Lv.1」이라고 새겨 두었다. 안에서 옛 오락기 소리가 난다. 열쇠가 필요하다.' });
+    ST.cave(m, { x: GATE.origin.x, y: GATE.origin.y, id: 'origin_gate', to: 'sec_origin', col: '#5a8a4a', rx: 6, ry: 3, cond: () => f('secret:origin') || !!S().inv.key_origin, msg: ORIGIN_MSG });
   });
   ST.onMap('world', (m, Wd) => {
     const P = G.props;
@@ -40,8 +42,10 @@
       if (night() && !f('secret:crater')) { c.flag('secret:crater'); c.sfx('white'); c.shake(3, 0.4); await c.narr('하늘에서 빛줄기 하나가 곧장 구덩이로 떨어졌다. 쿵 — 굴을 막던 돌이 산산이 부서졌다.\n[y]별똥별 구덩이가 열렸다.[/]'); return; }
       await c.narr(f('secret:crater') ? '별똥별 구덩이. 바닥에서 아직 별 조각이 반짝인다.' : '움푹 꺼진 구덩이. 사막 사람들은 「별이 쉬어 가는 자리」라고 부른다.\n[s]밤이면 가끔 별이 떨어진다고 한다.[/]');
     } }));
-    Wd.add(new P.Sign({ x: px(GATE.origin.x - 2), y: py(GATE.origin.y + 3), look: 'stone', text: '낡은 팻말.\n「무한으로 렙업하기 — 여기서 시작」\n그 아래 누가 덧써 놓았다: 「무한으로 렙업하자!!」' }));
+    Wd.add(new P.Sign({ x: px(GATE.origin.x - 2), y: py(GATE.origin.y + 3), look: 'stone', text: '낡은 팻말.\n「무한으로 렙업하기 — 여기서 시작」\n그 아래 누가 덧써 놓았다: 「무한으로 렙업하자!!」\n[s]더 아래, 작은 글씨: 「열쇠는 오락기 속에 — 렙업하기 은메달. 아니면 끝없는 탑의 열 번째 층.」[/]' }));
   });
+
+  ST.onMap('sec_origin', () => { S().flags['secret:origin'] = true; });
 
   /* ═════════ 숨은 던전 1: 별똥별 구덩이 ═════════ */
   const def = (id, Dn) => G.dungeon.def(id, Dn);

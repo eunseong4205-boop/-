@@ -183,7 +183,7 @@
   /* 1. 무한으로 렙업하기 — 몰려오는 몬스터를 잡을수록 Lv */
   const LVVAL = { slime: 1, bat: 1, boar: 2, bandit: 2, crab: 2, bigslime: 3, wolf: 3, knight: 3, mage: 3, ghost: 3, bomber: 3, shade: 4 };
   game('lvup', { name: '무한으로 렙업하기', kind: 'kill', time: 60, dmg: 0.5, par: 160, medals: [100, 200, 300], fmt: (v) => 'Lv.' + v, prizeName: '렙업 머리띠',
-    how: '몰려오는 몬스터를 잡을수록 Lv이 오른다 (젤리 · 박쥐 +1, 멧돼지 · 도적 +2, 큰 것 +3, 정예 +3 더). 시간이 갈수록 빨리, 세게 몰려온다.',
+    how: '몰려오는 몬스터를 잡을수록 Lv이 오른다 (젤리 · 박쥐 +1, 멧돼지 · 도적 +2, 큰 것 +3, 정예 +3 더). 시간이 갈수록 빨리, 세게 몰려온다. [y]은메달: 옛 오락기 열쇠[/](그린 남서쪽 낡은 굴).',
     setup(R) { R.score = 1; R.spawnT = 0.4; },
     adopt(R, e) { e.onDieFn = () => { R.score += 1; float(e.x, e.y - 24, '렙업! Lv.' + R.score); sfx('levelup'); }; },
     tick(R, dt) {

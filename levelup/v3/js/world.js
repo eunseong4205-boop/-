@@ -96,7 +96,7 @@
     W.lastTx = tx; W.lastTy = ty;
     for (const w of m.warps || []) {
       if (tx < w.x || ty < w.y || tx >= w.x + (w.w || 1) || ty >= w.y + (w.h || 1)) continue;
-      if (w.cond && !w.cond()) { if (w.msg) { G.ui.toast(typeof w.msg === 'function' ? w.msg() : w.msg, 'bad'); const [ux, uy] = U.DV[p.dir]; p.x -= ux * 6; p.y -= uy * 6; } continue; }
+      if (w.cond && !w.cond()) { if (w.msg) { G.ui.toast(typeof w.msg === 'function' ? w.msg() : w.msg, 'bad', 'warp:' + (w.id || w.to)); const [ux, uy] = U.DV[p.dir]; p.x -= ux * 6; p.y -= uy * 6; } continue; }
       if (G.game.useWarp) G.game.useWarp(w);
       return;
     }
