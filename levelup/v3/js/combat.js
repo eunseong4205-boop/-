@@ -271,7 +271,7 @@
         const p = Wd.player;
         if (p && !p.dead && U.dist(this.x, this.y, p.x, p.y - 8) < 7 + this.r) {
           const was = p.inv;
-          if (hurtPlayer(p, this.dmg, this, {}) && this.onHitPlayer) this.onHitPlayer(p);
+          if (C.hurtPlayer(p, this.dmg, this, {}) && this.onHitPlayer) this.onHitPlayer(p);
           if (!this.dead && !(this.owner === 'player')) { if (was <= 0 || p.state !== 'roll') this.die(); }
           return true;
         }
@@ -357,7 +357,7 @@
     G.fx.sparks(x, y, 30, '#ffb84a', 160); G.fx.ring(x, y, '#ffe8a8', R, 0.4, 3); G.fx.dust(x, y, 14);
     for (const e of foes()) if (U.dist(x, y, e.x, e.y - 8) < R + (e.r || 8)) { const [nx, ny] = U.norm(e.x - x, e.y - y); damage(e, 8 * (power || 1), { src: 'bomb', kx: nx, ky: ny, power: 1.6, el: 'bomb', unblockable: true, stun: 0.6 }); }
     const p = Wd.player;
-    if (p && U.dist(x, y, p.x, p.y - 8) < R) hurtPlayer(p, 4, { x, y }, {});
+    if (p && U.dist(x, y, p.x, p.y - 8) < R) C.hurtPlayer(p, 4, { x, y }, {});
     for (let ty = Math.floor((y - R) / TS); ty <= Math.floor((y + R) / TS); ty++) for (let tx = Math.floor((x - R) / TS); tx <= Math.floor((x + R) / TS); tx++) {
       if (U.dist(x, y, tx * TS + 8, ty * TS + 8) > R + 8) continue;
       cutAt(m, tx, ty, 'bomb');
