@@ -280,6 +280,7 @@
     return false;
   }
   function checkRegion(dt) {
+    if (ST.regionVeil) return ST.regionVeil(dt);   // 날씨 장막 (48_explore): 순간 이동 대신 바람 · 비 · 눈이 되민다
     const Wd = W(), m = Wd.map, p = Wd.player;
     if (!m || !m.overworld || !p || G.script.running) return;
     const tx = Math.floor(p.x / TS), ty = Math.floor(p.y / TS);

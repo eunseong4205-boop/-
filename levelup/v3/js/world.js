@@ -146,6 +146,8 @@
     if (G.combat && G.combat.drawAim) { try { G.combat.drawAim(g, cx, cy); } catch (_) { /* 무시 */ } }
     if (G.fx) G.fx.drawOver(g, cx, cy);
     if (G.light) G.light.draw(g, cx, cy);
+    // 덧그림: 지역 날씨 장막 등 (빛 위에)
+    if (W.overlays) for (const f of W.overlays) { try { f(g, cx, cy, v); } catch (err) { if (!W.ovErr) { W.ovErr = true; console.error('[overlay]', err); } } }
   }
 
   Object.assign(W, { load, add, remove, propBlock, snap, update, render, shake, hitstop, slowmo });

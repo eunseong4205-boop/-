@@ -103,13 +103,14 @@
       title.textContent = (m.name || '던전') + (m.curFloor ? ' — ' + m.curFloor : '') + (s.flags['dmap:' + m.dungeon] ? ' · 지도 있음' : '') + (s.flags['dcomp:' + m.dungeon] ? ' · 나침반 있음' : '');
     } else {
       cv = worldCanvas();
+      if (ST.mapExtras) { try { ST.mapExtras(cv, 2); } catch (_) { /* 무시 */ } }
       title.textContent = '이리스 대륙' + (m && !m.overworld && m.name ? ' — 지금: ' + m.name : '');
     }
     cv.style.cssText = 'width:min(100%, ' + (m && m.dungeon ? cv.width * 2 : 900) + 'px);height:auto;image-rendering:pixelated;border:1px solid #4a4260;border-radius:4px;background:#08060e';
     wrap.appendChild(title); wrap.appendChild(cv);
     const legend = document.createElement('div'); legend.style.cssText = 'font-size:11px;color:#a8a0c0;display:flex;gap:14px;flex-wrap:wrap;justify-content:center';
     legend.innerHTML = m && m.dungeon ? '<span><b style="color:#ff3a5a">■</b> 나</span><span><b style="color:#ffe08a">□</b> 지금 방</span><span><b style="color:#6ae07a">■</b> 정리한 방</span><span><b style="color:#ffd84a">■</b> 남은 상자</span><span><b style="color:#ff4a6a">☠</b> 주인</span>'
-      : '<span><b style="color:#ff3a5a">●</b> 나</span><span><b style="color:#ffd84a">◎</b> 목표</span><span><b style="color:#8ad8ff">◆</b> 빛의 이정표</span><span>어두운 곳 — 아직 갈 수 없는 땅</span>';
+      : '<span><b style="color:#ff3a5a">●</b> 나</span><span><b style="color:#ffd84a">◎</b> 목표</span><span><b style="color:#8ad8ff">◆</b> 빛의 이정표</span><span><b style="color:#ffd84a">◆</b> 찾은 이야기</span><span><b style="color:#e8e0c8">■</b> 찾은 곳</span><span>어두운 곳 — 아직 갈 수 없는 땅</span>';
     wrap.appendChild(legend);
     const goal = ST.goalText && ST.goalText();
     if (goal) { const gd = document.createElement('div'); gd.style.cssText = 'font-size:12px;color:#f0cc6e;max-width:60ch;text-align:center;line-height:1.6'; gd.textContent = '목표 — ' + goal; wrap.appendChild(gd); }

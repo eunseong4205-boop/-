@@ -264,7 +264,7 @@
       if (P.id === 'sophie' && ST.after('c7') && !f('gift:sophie')) { await c.say(npc, '엄마가 또 빵을 보냈어. 이번엔 네 몫이래.', { face: 'happy' }); c.flag('gift:sophie'); await c.getItem('food_corn'); return; }
       const rt = ST.route();
       let t = P.route && P.route[rt] && ST.after(P.routeFrom || 'c4') ? P.route[rt] : ST.lines(P.lines || {});
-      if (!t) t = '…오늘도 렙업!';
+      if (!t) t = G.talk && G.talk.greet ? G.talk.greet(npc.look) : '…오늘도 렙업!';
       c.flag('met:tw_' + P.id);
       for (const l of String(t).split('||')) await c.say(npc, l.trim());
     };
@@ -291,7 +291,7 @@
           const E = C.outer || { x0: C.x, y0: C.y, x1: C.x + C.w, y1: C.y + C.h };
           const sx = k % 2 ? E.x1 - 3 - k : E.x0 + 3 + k, sy = k % 3 === 0 ? C.y - 2 : k % 3 === 1 ? C.y + C.h + 1 : C.plaza.y + 3;
           const [x, y] = OW.near(m, sx, sy, (xx, yy, t) => t === OW.PLAN[n].pave || t === OW.PLAN[n].lane || t === T.PLAZA, 14);
-          ST.person('world', { id: 'tw_' + P.id, name: P.name, look, x, y, dir: 'down', wander: 2, talk: folkTalk(P), mark: folkMark(P) });
+          ST.person('world', { id: 'tw_' + P.id, name: P.name, look, x, y, dir: 'down', wander: 2, talk: folkTalk(P), mark: folkMark(P), lines: P.lines || {} });
           return;
         }
         const w = hm.w, h = hm.h;
@@ -302,7 +302,7 @@
         hm.doorAt = ST.house(m, opts);
         const px = rw >> 1, py = 4 + (rh > 9 ? 1 : 0);
         if (P.note) { ST.onMap(hid, (mm, Wd) => { Wd.add(new G.props.Sign({ x: (px + 1) * TS + 8, y: (py + 1) * TS + 12, text: P.note, anyDir: true })); }); return; }
-        ST.person(hid, { id: 'tw_' + P.id, name: P.name, look, x: px, y: py + 1, dir: 'down', wander: 1, talk: folkTalk(P), mark: folkMark(P) });
+        ST.person(hid, { id: 'tw_' + P.id, name: P.name, look, x: px, y: py + 1, dir: 'down', wander: 1, talk: folkTalk(P), mark: folkMark(P), lines: P.lines || {} });
       });
       // 남는 집: 문이 잠긴 집
       for (let k = list.length; k < homes.length; k++) {

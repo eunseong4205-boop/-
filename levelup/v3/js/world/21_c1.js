@@ -292,7 +292,7 @@
     await c.fade(true, { sec: 0.5 });
     for (const e of [gr, cs, k1, k2, lyra]) e.dead = true;
     noah.dead = true;
-    await c.warp('g_noah', px(5), py(6), 'up', { noFade: true });
+    await c.warp('g_noah', px(5), py(7), 'up', { noFade: true });   // (5,6)은 의자 자리 — 의자 위에 놓여 움직이지 못하던 것
     await c.wait(0.2);
     await c.fade(false, { sec: 0.8 });
     c.music('sad');

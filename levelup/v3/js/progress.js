@@ -21,7 +21,7 @@
   /* ───────── 능력치 ───────── */
   const STATS = [
     { id: 'str', name: '힘', col: '#ff8a6a', desc: '검 피해 · 넉백. 무거운 검을 든다.' },
-    { id: 'vit', name: '체력', col: '#ff6a8a', desc: '최대 체력(3점마다 ¼칸) · 받는 피해 조금 줄임.' },
+    { id: 'vit', name: '체력', col: '#ff6a8a', desc: '6점마다 하트 한 칸 · 받는 피해 조금 줄임.' },
     { id: 'sta', name: '기력', col: '#8ae07a', desc: '최대 기력 · 기력 회복 · 구르기 부담.' },
     { id: 'int', name: '지력', col: '#8ab8ff', desc: '마법 피해 · 최대 MP · 필살 게이지.' },
     { id: 'dex', name: '솜씨', col: '#ffe066', desc: '활 피해 · 치명타 · 시위 당기는 속도.' },

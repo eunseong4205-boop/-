@@ -78,7 +78,7 @@
         this.foes = [];
         const tb = OW.TABLE[this.reg] || OW.TABLE.green;
         for (let i = 0; i < this.n; i++) { const a = (i / this.n) * Math.PI * 2; const t = tb[Math.floor(U.hash(this.key + i) % tb.length)][0]; const e = G.foes.spawn(t === 'octo' ? 'slime' : t, this.x + Math.cos(a) * 30, this.y + Math.sin(a) * 20, { tier: this.tier, elite: i === 0 ? true : undefined, noElite: i !== 0 }); e.aggro = true; this.foes.push(e); }
-        G.ui.toast('몬스터 둥지다!', 'bad'); if (G.audio) G.audio.sfx('encounter');
+        G.ui.toast('뼈 무더기 사이에서 무언가 깨어난다 — 몬스터 둥지다!', 'bad'); if (G.audio) G.audio.sfx('encounter');
       }
       if (this.foes && this.foes.length && this.foes.every((e) => e.dead)) {
         S().flags[this.key] = true; this.dead = true;
@@ -107,7 +107,8 @@
     for (const s of STOPS) if (Math.abs(s.x - x0) < 13 && Math.abs(s.y - y0) < 13) return false;
     return true;
   }
-  const TYPES = [['camp', 3], ['sign', 2], ['shrine', 2], ['peddler', 1.3], ['ruin', 1.5], ['cart', 1.2], ['well', 1], ['nest', 1.6], ['riddle', 0.9], ['lookout', 0.7]];
+  // 아무 데나 튀어나오던 싸움 자리(수레 매복 · 둥지 · 폐허)는 줄이고, 쉬어 가는 자리를 남긴다 (길 밖의 이야기는 48_explore)
+  const TYPES = [['camp', 3], ['sign', 2], ['shrine', 2], ['peddler', 1.2], ['ruin', 1.1], ['cart', 0.6], ['well', 1.1], ['nest', 0.9], ['riddle', 0.9], ['lookout', 0.8]];
   function pickType(r, last) { for (let k = 0; k < 4; k++) { let s = TYPES.reduce((a, t) => a + t[1], 0) * ((r * 7919 + k * 0.37) % 1); for (const [t, w] of TYPES) { s -= w; if (s <= 0) { if (t !== last) return t; break; } } } return 'camp'; }
 
   OW.hooks.push((m) => {
@@ -115,7 +116,7 @@
     // 1) 길 따라
     let last = null;
     for (const poly of OW.roadPaths || []) {
-      let acc = 0, gap = 18 + rnd() * 16;
+      let acc = 0, gap = 30 + rnd() * 16;
       for (let k = 0; k < poly.length - 1; k++) {
         const [ax, ay] = poly[k], [bx, by] = poly[k + 1];
         const L = Math.hypot(bx - ax, by - ay); if (!L) continue;
@@ -132,21 +133,21 @@
           }
           if (!ok) continue;
           const reg = OW.regName[m.i(cx, cy)];
-          acc = 0; gap = 22 + rnd() * 14; last = type;
+          acc = 0; gap = 38 + rnd() * 22; last = type;
           STOPS.push({ type, x: cx, y: cy, reg, tier: OW.TIERS[reg] || 0, id: type + ':' + cx + ',' + cy, road: true });
         }
       }
     }
     // 2) 들판
-    const CELLW = 24;
+    const CELLW = 32;
     for (let gy = 0; gy < m.h / CELLW; gy++) for (let gx = 0; gx < m.w / CELLW; gx++) for (let tries = 0; tries < 4; tries++) {
-      if (tries === 0 && rnd() > 0.8) break;
+      if (tries === 0 && rnd() > 0.65) break;
       const cx = Math.floor(gx * CELLW + 4 + rnd() * (CELLW - 8)), cy = Math.floor(gy * CELLW + 4 + rnd() * (CELLW - 8));
       if (!m.inb(cx, cy) || OW.sea[m.i(cx, cy)]) continue;
       let nearRoad = false; for (let dy = -6; dy <= 6 && !nearRoad; dy += 2) for (let dx = -6; dx <= 6; dx += 2) if (m.inb(cx + dx, cy + dy) && OW.roadTiles[m.i(cx + dx, cy + dy)]) { nearRoad = true; break; }
       if (nearRoad) continue;
       const reg = OW.regName[m.i(cx, cy)];
-      const type = U.pick(['grove', 'stones', 'crystal', 'grave', 'nest', 'ruin', 'camp'], rnd());
+      const type = U.pick(['grove', 'grove', 'stones', 'crystal', 'grave', 'grave', 'nest', 'ruin', 'camp'], rnd());
       if (!okArea(m, cx - 3, cy - 2, 6, 5)) continue;
       STOPS.push({ type, x: cx, y: cy, reg, tier: OW.TIERS[reg] || 0, id: type + ':' + cx + ',' + cy });
       break;

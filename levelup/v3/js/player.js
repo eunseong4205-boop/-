@@ -62,7 +62,7 @@
         this.walkFace = n;
         if (!aimX || aimX.src === 'touch') { this.face = n; this.dir = U.dir4(ax, ay, this.dir); }
         const P = TL.PROP[m.groundAt(this.x, this.y - 2)];
-        const sp = this.speed * (P.slow || 1) * (this.swimming ? 0.7 : 1) * (0.35 + 0.65 * mag) * (this.slowMul || 1);
+        const sp = this.speed * (P.slow || 1) * (this.swimming ? 0.7 : 1) * (0.35 + 0.65 * mag) * (this.slowMul || 1) * (this.veilMul || 1);
         const r = E.move(m, this, n[0] * sp * dt, n[1] * sp * dt);
         this.vx = n[0] * sp; this.vy = n[1] * sp;
         this.walkT += dt * (sp / 60);
@@ -102,7 +102,7 @@
       if (mag < 0.05) { this.vx = 0; this.vy = 0; return; }
       const n = U.norm(ax, ay);
       const P = TL.PROP[m.groundAt(this.x, this.y - 2)] || {};
-      const sp = this.speed * K * (P.slow || 1) * (this.swimming ? 0.7 : 1) * (0.35 + 0.65 * mag) * (this.slowMul || 1) * (this.actMoveMul || 1);
+      const sp = this.speed * K * (P.slow || 1) * (this.swimming ? 0.7 : 1) * (0.35 + 0.65 * mag) * (this.slowMul || 1) * (this.actMoveMul || 1) * (this.veilMul || 1);
       E.move(m, this, n[0] * sp * dt, n[1] * sp * dt);
       this.vx = n[0] * sp; this.vy = n[1] * sp;
       this.walkT += dt * (sp / 60); this.actWalk = 0.12;

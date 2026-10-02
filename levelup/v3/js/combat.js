@@ -453,6 +453,19 @@
     }
     return best;
   }
+  /** 화살로 맞히는 퍼즐 (눈 스위치 · 표적): 숨은 눈은 빼고 */
+  function puzzleTarget(p, a0, range, cone) {
+    let best = null, bs = 1e9;
+    for (const e of W().ents) {
+      if (e.dead || e.hidden || !e.shotHit || e.foe) continue;
+      if (!(e.kind === 'eye' && !e.on) && !(e.aimable && (!e.aimable.call || e.aimable()))) continue;
+      if (e.constructor && e.constructor.name === 'SecretEye') continue;
+      const dd = U.dist(p.x, p.y - 9, e.x, e.y - 8); if (dd > range || dd < 14) continue;
+      const da = Math.abs(U.angDiff(a0, U.angle(e.x - p.x, e.y - 8 - (p.y - 9)))); if (da > cone) continue;
+      const sc = dd * 0.4 + da * 120; if (sc < bs) { bs = sc; best = e; }
+    }
+    return best;
+  }
   function aimFor(p, kind) {
     const ex = explicitAim(p);
     if (ex) return { a: U.angle(ex.x, ex.y), src: ex.src };
@@ -460,6 +473,9 @@
     const st = (S() && S().settings) || {};
     if (st.autoAim !== false) {
       const R = AIMR[kind] || AIMR.skill, t = autoTarget(p, a0, R[0], R[1]);
+      // 활 · 주문: 바라보는 쪽의 눈 스위치(화살로 맞히는 퍼즐)도 겨눈다 — 둘레의 적보다 바라보는 쪽에 더 가까우면 그쪽
+      const pz = kind === 'bow' || kind === 'magic' ? puzzleTarget(p, a0, 190, 0.42) : null;
+      if (pz && (!t || Math.abs(U.angDiff(a0, U.angle(pz.x - p.x, pz.y - 8 - (p.y - 9)))) + 0.12 < Math.abs(U.angDiff(a0, U.angle(t.x - p.x, t.y - (t.h || 16) / 2 - (p.y - 9)))))) return { a: U.angle(pz.x - p.x, pz.y - 8 - (p.y - 9)), src: 'auto', target: pz };
       if (t) return { a: U.angle(t.x - p.x, t.y - (t.h || 16) / 2 - (p.y - 9)), src: 'auto', target: t };
     }
     return { a: a0, src: 'face' };

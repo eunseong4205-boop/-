@@ -187,7 +187,8 @@
   function setTab(id) { const M = UI.modal; if (!M) return; M.tab = id; M.sel = 0; M.sub = null; sfx('page'); refresh(); M.body.scrollTop = 0; }
   function refresh() {
     const M = UI.modal; if (!M) return;
-    if (M.tabsEl) [...M.tabsEl.children].forEach((b) => b.classList.toggle('on', b.dataset.tab === M.tab));
+    if (M.tabsEl) [...M.tabsEl.children].forEach((b) => { b.classList.toggle('on', b.dataset.tab === M.tab); const tt = M.o.tabs.find((x) => x.id === b.dataset.tab), n = tt && tt.badge ? tt.badge() : 0; b.classList.toggle('badge', !!n); b.dataset.n = n ? (n > 99 ? '99+' : String(n)) : ''; });
+    if (M.tabsEl && M.tabsEl.scrollWidth > M.tabsEl.clientWidth) { const on = M.tabsEl.querySelector('.on'); if (on) { const l = on.offsetLeft - M.tabsEl.offsetLeft, r = l + on.offsetWidth; if (l < M.tabsEl.scrollLeft) M.tabsEl.scrollLeft = l - 8; else if (r > M.tabsEl.scrollLeft + M.tabsEl.clientWidth) M.tabsEl.scrollLeft = r - M.tabsEl.clientWidth + 8; } }
     const t = M.o.tabs ? M.o.tabs.find((x) => x.id === M.tab) : null;
     M.body.innerHTML = '';
     if (t) t.render(M.body, M); else if (M.o.render) M.o.render(M.body, M);
@@ -274,15 +275,15 @@
       tabs: [
         { id: 'bag', name: '가방', render: tabBag },
         { id: 'gear', name: '장비', render: tabGear },
-        { id: 'stat', name: '성장', render: (b) => { tabStats(b); tabTree(b); } },
+        { id: 'stat', name: '성장', render: (b) => { tabStats(b); tabTree(b); }, badge: () => S().pts || 0 },
         { id: 'skills', name: '스킬', render: tabSkills },
         { id: 'tools', name: '도구', render: tabTools },
         { id: 'quest', name: '부탁', render: tabQuest },
-        { id: 'book', name: '수첩', render: tabBook },
+        { id: 'book', name: '수첩', render: tabBook, badge: () => (G.lib ? G.lib.unread(S()) : 0) },
         { id: 'map', name: '지도', render: tabMap },
         { id: 'opt', name: '설정', render: tabOpt },
       ],
-      foot: () => { const s = S(); return '<span>Lv ' + s.lv + '</span><span' + (s.pts > 0 ? ' style="color:var(--gold)"' : '') + '>성장 점수 ' + (s.pts || 0) + '</span><span>' + G.prog.diff().name + '</span><span>' + U.fmtTime(s.t) + '</span>'; },
+      foot: () => { const s = S(); return '<span>Lv ' + s.lv + '</span><span' + (s.pts > 0 ? ' style="color:var(--gold)"' : '') + '>성장 점수 ' + (s.pts || 0) + '</span><span>' + G.prog.diff().name + '</span><span>' + U.fmtTime(s.t) + '</span><span class="khint">Q · E 탭 · Esc 닫기</span>'; },
     });
     void D;
   }
@@ -440,7 +441,7 @@
     const next = (id) => { const s2 = JSON.parse(JSON.stringify(s)); s2.stats[id] = (s2.stats[id] || 0) + 1; return G.st.derive(s2); };
     const effect = {
       str: (a, b) => ['검 피해 ×' + (1 + P.soft(a.stats.str, 0.04)).toFixed(2), '×' + (1 + P.soft(b.stats.str, 0.04)).toFixed(2)],
-      vit: (a, b) => ['하트 ' + a.hpMax / 4 + '칸 · 받는 피해 ' + (Math.round(a.def * 1000) / 10) + '%', (b.hpMax > a.hpMax ? '하트 +¼칸 · ' : '') + '피해 ' + (Math.round(b.def * 1000) / 10) + '%'],
+      vit: (a, b) => { const v = a.stats.vit, left = 6 - (v % 6); return ['하트 ' + a.hpMax / 4 + '칸 · 받는 피해 ' + (Math.round(a.def * 1000) / 10) + '%', (b.hpMax > a.hpMax ? '하트 +1칸! · ' : '다음 하트까지 ' + left + '점 · ') + '피해 ' + (Math.round(b.def * 1000) / 10) + '%']; },
       sta: (a, b) => ['기력 ' + Math.round(a.stamMax) + ' · 회복 ×' + a.stamRegen.toFixed(2), '기력 ' + Math.round(b.stamMax)],
       int: (a, b) => ['마법 ×' + a.magMul.toFixed(2) + ' · MP ' + a.mpMax, '×' + b.magMul.toFixed(2) + ' · MP ' + b.mpMax],
       dex: (a, b) => ['활 ' + a.bowAtk.toFixed(1) + ' · 치명타 ' + Math.round(a.crit * 100) + '%', '활 ' + b.bowAtk.toFixed(1) + ' · ' + Math.round(b.crit * 100) + '%'],
@@ -459,7 +460,7 @@
         const couldBefore = new Set(Object.keys(s.inv).filter((k) => G.data.ITEMS[k] && G.data.ITEMS[k].req && P.reqOk(s, G.data.ITEMS[k].req)));
         s.pts--; s.stats[st.id] = base + 1; sfx('skill');
         for (const k of Object.keys(s.inv)) { const it = G.data.ITEMS[k]; if (it && it.req && !couldBefore.has(k) && P.reqOk(s, it.req)) toast('이제 ' + gname(it) + '을(를) 다룰 수 있다!', 'gold'); }
-        if (st.id === 'vit') { const d2 = G.st.derive(s); if (Math.floor((base + 1) / 3) > Math.floor(base / 3)) s.hp = Math.min(d2.hpMax, s.hp + 1); }
+        if (st.id === 'vit') { const d2 = G.st.derive(s); if (d2.hpMax > d.hpMax) { s.hp = Math.min(d2.hpMax, s.hp + (d2.hpMax - d.hpMax)); toast('하트가 한 칸 늘었다!', 'good'); sfx('heart'); } }
         if (st.id === 'int') s.mp = Math.min(G.st.derive(s).mpMax, s.mp + 3);
         refresh();
       });
@@ -608,8 +609,78 @@
     sec(body, '끝낸 부탁 ' + done.length);
     for (const k of done) body.appendChild(row({ name: '[s]' + Q[k].name + '[/]', desc: Q[k].after || '', dim: true }));
   }
-  function tabBook(body) {
-    const s = S(), T = G.data.TRUTHS || {}, B = G.data.BOOKS || {};
+  /* ───────── 수첩: 일지 · 사람 · 서재 · 발견 · 진실 (+ 책 읽기) ───────── */
+  let bookSub = 'log';
+  const BOOK_SUBS = [['log', '일지'], ['people', '사람'], ['lib', '서재'], ['disc', '발견'], ['truth', '진실']];
+  const REG_ORDER = ['green', 'red', 'amber', 'blue', 'yellow', 'purple', 'mist', 'rainbow', 'white', 'gray', 'black', 'colorful'];
+  function tabBook(body, M) {
+    const s = S();
+    if (M && M.sub && M.sub.read) { bookReader(body, M); return; }
+    const unread = G.lib ? G.lib.unread(s) : 0;
+    const bar = document.createElement('div'); bar.className = 'subtabs'; bar.dataset.cols = String(BOOK_SUBS.length);
+    for (const [id, nm] of BOOK_SUBS) {
+      const b = document.createElement('button'); b.className = 'chip nav' + (bookSub === id ? ' on' : '');
+      b.innerHTML = esc(nm) + (id === 'lib' && unread ? ' <i class="dot">' + unread + '</i>' : '');
+      b.addEventListener('click', () => { if (bookSub === id) return; bookSub = id; sfx('page'); const Mm = UI.modal; if (Mm) Mm.sel = BOOK_SUBS.findIndex((x) => x[0] === id); refresh(); });
+      bar.appendChild(b);
+    }
+    body.appendChild(bar);
+    ({ log: bookLog, people: bookPeople, lib: bookLib, disc: bookDisc, truth: bookTruth })[bookSub](body, s);
+  }
+  const openRead = (id) => { const M = UI.modal; if (!M) return; M.sub = { read: id, page: 0, back: M.sel }; M.sel = 2; sfx('page'); refresh(); M.body.scrollTop = 0; };
+  function bookLog(body, s) {
+    sec(body, '지금 할 일');
+    const goal = G.story && G.story.goalText ? G.story.goalText() : '';
+    note(body, goal ? markup(goal) : '마음 가는 대로.');
+    sec(body, '일지 ' + s.log.length);
+    if (!s.log.length) note(body, '아직 적은 것이 없다.');
+    for (const l of s.log.slice(0, 60)) { const d = document.createElement('div'); d.className = 'logline'; d.innerHTML = '<i>' + esc(U.fmtTime(l.t || 0)) + '</i><span>' + markup(l.text) + '</span>'; body.appendChild(d); }
+  }
+  function bookPeople(body, s) {
+    const met = G.cast ? G.cast.met() : [];
+    sec(body, '만난 사람 ' + met.length);
+    if (!met.length) note(body, '아직 이야기를 나눈 사람이 없다.');
+    for (const c of met) body.appendChild(row({ name: c.name, desc: c.note ? c.note(s) : c.desc, v: s.bond[c.id] ? '♥'.repeat(Math.min(5, s.bond[c.id])) : '' }));
+  }
+  function bookLib(body, s) {
+    const L = G.data.LIBRARY || {}, B = G.data.BOOKS || {};
+    const [got, all] = G.lib ? G.lib.count(s) : [0, 0];
+    const head = document.createElement('div'); head.className = 'card libhead';
+    head.innerHTML = '<b>서재</b><span>' + got + ' / ' + all + '권</span><small>블루 대도서관의 서가 · 마을 집 책장 · 들판에서 찾은 글이 여기 꽂힌다. 처음 들어선 땅의 길잡이 글도.</small>';
+    body.appendChild(head);
+    for (const [cat, cname] of (G.lib ? G.lib.CATS : [])) {
+      const list = Object.values(L).filter((e) => e.cat === cat);
+      const have = list.filter((e) => s.lib && s.lib[e.id]);
+      sec(body, cname + ' ' + have.length + ' / ' + list.length);
+      if (!have.length) { note(body, markup('[s]아직 한 권도 없다.[/]')); continue; }
+      for (const e of have) body.appendChild(row({ name: (s.libNew && s.libNew[e.id] ? '[y]● [/]' : '') + e.title, desc: e.by || '', v: e.pages.length + '쪽', onClick: () => openRead(e.id) }));
+    }
+    const books = Object.keys(s.books || {}).filter((k) => B[k]);
+    if (books.length) { sec(body, '찾은 기록 ' + books.length); for (const k of books) body.appendChild(row({ name: B[k].name, desc: B[k].short || '', v: B[k].pages.length + '쪽', onClick: () => openRead('B:' + k) })); }
+  }
+  function bookDisc(body, s) {
+    if (!G.explore) { note(body, '아직 찾은 곳이 없다.'); return; }
+    const [got, all] = G.explore.count();
+    const head = document.createElement('div'); head.className = 'card libhead';
+    head.innerHTML = '<b>발견</b><span>' + got + ' / ' + all + '곳</span><small>길 밖으로 걸어 처음 닿은 곳. 지도에 점으로 남는다. ◆는 작은 이야기 — 밤에만, 무언가를 가졌을 때만 풀리는 것도 있다.</small>';
+    body.appendChild(head);
+    const by = G.explore.byRegion(), NM = (G.ow && G.ow.SHORT) || {};
+    for (const reg of REG_ORDER) {
+      const list = by[reg]; if (!list) continue;
+      const found = list.filter((q) => q.found);
+      if (!found.length && !(G.story.regionOpen && G.story.regionOpen(reg))) continue;
+      sec(body, (NM[reg] || reg) + ' ' + found.length + ' / ' + list.length);
+      if (!found.length) { note(body, '아직 찾은 곳이 없다. 길에서 벗어나 걸어 보자.'); continue; }
+      found.sort((a, b) => (a.pl.tale ? 0 : 1) - (b.pl.tale ? 0 : 1));
+      for (const q of found) {
+        const st = q.state, tl = !!q.pl.tale;
+        const badge = !tl ? '' : st === 'done' ? '[g]끝맺음[/]' : st === 'more' ? '[y]이어지는 중[/]' : '[s]아직[/]';
+        body.appendChild(row({ name: (tl ? '◆ ' : '') + q.pl.name, desc: q.pl.blurb + (tl && st !== 'done' && q.hint ? ' — [y]' + q.hint + '[/]' : ''), v: badge, dim: tl && st === 'done' }));
+      }
+    }
+  }
+  function bookTruth(body, s) {
+    const T = G.data.TRUTHS || {};
     sec(body, '마음의 기울기');
     const r = s.route, tot = Math.max(1, r.dawn + r.order + r.night);
     const bars = document.createElement('div'); bars.className = 'card';
@@ -617,16 +688,28 @@
     body.appendChild(bars);
     if (G.story && G.story.routeNote) note(body, markup(G.story.routeNote()));
     sec(body, '진실의 조각 ' + Object.keys(s.truth).length + ' / ' + Object.keys(T).length);
-    for (const k of Object.keys(T)) { const have = !!s.truth[k]; body.appendChild(row({ name: have ? T[k].name : '???', desc: have ? T[k].text : T[k].hint, dim: !have, onClick: have && T[k].long ? () => { closeModal(); G.script.run(async (c) => { for (const l of T[k].long) await c.narr(l); }); } : null })); }
+    for (const k of Object.keys(T)) { const have = !!s.truth[k]; body.appendChild(row({ name: have ? T[k].name : '???', desc: have ? T[k].text : T[k].hint, dim: !have, v: have && T[k].long ? T[k].long.length + '쪽' : '', onClick: have && T[k].long ? () => openRead('T:' + k) : null })); }
     if (Object.keys(s.abyss).length) { sec(body, '심연 ' + Object.keys(s.abyss).length, 'abyss'); note(body, '들여다본 어둠. 너무 많이 알면, 그만큼 무거워진다.'); }
-    const met = G.cast ? G.cast.met() : [];
-    sec(body, '만난 사람 ' + met.length);
-    for (const c of met) body.appendChild(row({ name: c.name, desc: c.note ? c.note(s) : c.desc, v: s.bond[c.id] ? '♥'.repeat(Math.min(5, s.bond[c.id])) : '' }));
-    const books = Object.keys(s.books).filter((k) => B[k]);
-    if (books.length) { sec(body, '읽은 글 ' + books.length); for (const k of books) body.appendChild(row({ name: B[k].name, desc: B[k].short || '', onClick: () => { closeModal(); G.script.run(async (c) => { for (const l of B[k].pages) await c.narr(l); }); } })); }
-    sec(body, '일지');
-    if (!s.log.length) note(body, '아직 적은 것이 없다.');
-    for (const l of s.log.slice(0, 40)) { const d = document.createElement('div'); d.className = 'note'; d.style.margin = '4px 0'; d.innerHTML = '· ' + markup(l.text); body.appendChild(d); }
+  }
+  /** 책 읽기: 쪽 넘기기 (← → · 단추) */
+  function bookReader(body, M) {
+    const s = S(), id = M.sub.read;
+    let title = '', by = '', pages = [];
+    if (id.startsWith('B:')) { const b = (G.data.BOOKS || {})[id.slice(2)]; if (b) { title = b.name; by = b.short || ''; pages = b.pages; } }
+    else if (id.startsWith('T:')) { const t = (G.data.TRUTHS || {})[id.slice(2)]; if (t) { title = t.name; by = '진실의 조각'; pages = t.long || [t.text]; } }
+    else { const e = (G.data.LIBRARY || {})[id]; if (e) { title = e.title; by = e.by; pages = e.pages; if (G.lib) G.lib.seen(s, id); } }
+    if (!pages.length) { M.sub = null; refresh(); return; }
+    const pg = U.clamp(M.sub.page || 0, 0, pages.length - 1); M.sub.page = pg;
+    const card = document.createElement('div'); card.className = 'card reader';
+    card.innerHTML = '<h4>『' + esc(title) + '』</h4>' + (by ? '<small class="by">' + esc(by) + '</small>' : '') + '<div class="page">' + markup(pages[pg]).replace(/\n/g, '<br>') + '</div><div class="pn">' + (pg + 1) + ' / ' + pages.length + '</div>';
+    body.appendChild(card);
+    const nav = document.createElement('div'); nav.className = 'readnav'; nav.dataset.cols = '3';
+    const mk = (label, dis, fn) => { const b = document.createElement('button'); b.className = 'btn nav' + (dis ? '' : ' pri'); b.textContent = label; if (dis) b.disabled = true; b.addEventListener('click', () => { if (!dis) fn(); }); nav.appendChild(b); };
+    mk('◀ 앞 쪽', pg <= 0, () => { M.sub.page = pg - 1; sfx('page'); refresh(); });
+    const back = document.createElement('button'); back.className = 'btn nav'; back.textContent = '목록으로'; back.addEventListener('click', () => { const sel = M.sub.back || 0; M.sub = null; M.sel = sel; sfx('cancel'); refresh(); }); nav.appendChild(back);
+    mk('다음 쪽 ▶', pg >= pages.length - 1, () => { M.sub.page = pg + 1; sfx('page'); refresh(); });
+    body.appendChild(nav);
+    note(body, markup('[s]← → 로 고르고 확인으로 넘긴다 · 취소(Esc)는 목록으로[/]'));
   }
   function tabMap(body) {
     if (G.story && G.story.drawWorldMap) { G.story.drawWorldMap(body); return; }

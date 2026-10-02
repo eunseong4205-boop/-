@@ -41,7 +41,8 @@
     const st = s.stats || {};
     const stat = (k) => Math.max(0, (st[k] || 0) + sum(k));
     const STR = stat('str'), VIT = stat('vit'), STA = stat('sta'), INT = stat('int'), DEX = stat('dex');
-    const hpMax = (s.hearts + (sk('sv_heart') ? 1 : 0)) * 4 + Math.floor(VIT / 3);
+    // 체력(VIT)은 6점마다 하트 한 칸을 통째로 (예전: 3점마다 ¼칸 — 빈 하트 칸이 ¼만 차 보이던 것)
+    const hpMax = (s.hearts + (sk('sv_heart') ? 1 : 0) + Math.floor(VIT / 6)) * 4;
     const low = hpMax > 0 ? 1 - U.clamp(s.hp / hpMax, 0, 1) : 0;
     const rage = (sum('berserk') && s.hp < hpMax / 2 ? 1 + sum('berserk') : 1) * (sk('sv_adren') ? 1 + 0.4 * low : 1);
     const soft = P ? P.soft : (v, k) => v * k;

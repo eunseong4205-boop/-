@@ -346,3 +346,44 @@ button.stat small.fx { color: var(--paper-dim); }
 .skill2.can { box-shadow: inset 0 0 0 1px rgba(110, 231, 176, .7), 0 0 10px rgba(110, 231, 176, .15); }
 .skill2.shut { opacity: .42; } .skill2.lock { opacity: .72; }
 @media (max-width: 560px) { .trow { grid-template-columns: 1fr; } .trow .trh { display: flex; gap: 8px; justify-content: flex-start; padding: 3px 8px; } .guide { flex-direction: column; } .guide .pts { width: 100%; } }
+
+/* ── 메뉴 다듬기: 넓은 화면에서는 가운데로 · 터치는 크게 · 탭 알림 ── */
+.m-body { padding-inline: max(14px, calc((100% - 980px) / 2)); }
+.m-tab { position: relative; }
+.m-tab.badge::after { content: attr(data-n); position: absolute; top: -3px; right: -2px; min-width: 14px; height: 14px; padding: 0 3px; border-radius: 7px; font-size: 9px; line-height: 14px; text-align: center; color: #1a1208; background: #ff8a6a; box-shadow: 0 0 0 1px #0b0914; }
+.m-foot .khint { color: var(--muted); opacity: .7; }
+@media (pointer: coarse) {
+  .m-tab { padding: 9px 14px 10px; font-size: 13px; }
+  .row { min-height: 44px; }
+  .m-foot .khint { display: none; }
+}
+@media (max-width: 520px) { .m-foot { flex-wrap: wrap; gap: 4px 10px; } }
+/* 수첩 */
+.subtabs { display: flex; flex-wrap: wrap; gap: 6px; margin: 2px 0 10px; }
+.subtabs .chip { cursor: pointer; padding: 6px 13px 7px; font-size: 12px; border-radius: 14px; }
+.subtabs .chip.sel { box-shadow: inset 0 0 0 1px var(--gold), 0 0 10px rgba(240, 204, 110, .25); }
+.subtabs .chip.on { color: var(--ink); background: linear-gradient(180deg, var(--gold-l), var(--gold) 55%, #d4a84a); }
+.subtabs .dot { font-style: normal; display: inline-block; min-width: 15px; padding: 0 4px; margin-left: 3px; border-radius: 8px; font-size: 10px; background: #ff8a6a; color: #1a1208; }
+.libhead { display: grid; grid-template-columns: 1fr auto; gap: 2px 10px; align-items: baseline; }
+.libhead b { font-family: var(--disp); font-weight: normal; font-size: 15px; color: var(--gold); }
+.libhead span { font-variant-numeric: tabular-nums; color: var(--paper-dim); font-size: 12px; }
+.libhead small { grid-column: 1 / -1; color: var(--muted); font-size: 11px; line-height: 1.5; word-break: keep-all; }
+.logline { display: grid; grid-template-columns: 4.2em 1fr; gap: 8px; font-size: 12px; line-height: 1.6; color: var(--paper-dim); padding: 3px 0; word-break: keep-all; }
+.logline i { font-style: normal; color: var(--muted); font-variant-numeric: tabular-nums; font-size: 11px; }
+.reader { max-width: 62ch; margin: 6px auto 10px; padding: 16px 18px 12px; background: linear-gradient(180deg, rgba(255, 244, 214, .07), rgba(255, 244, 214, .02)); }
+.reader h4 { font-family: var(--disp); font-weight: normal; font-size: 17px; margin: 0 0 2px; color: var(--gold); text-wrap: balance; }
+.reader .by { display: block; color: var(--muted); font-size: 11px; margin-bottom: 12px; }
+.reader .page { font-size: 14px; line-height: 1.95; color: var(--paper); word-break: keep-all; min-height: 6.5em; }
+.reader .pn { text-align: right; font-size: 11px; color: var(--muted); margin-top: 10px; font-variant-numeric: tabular-nums; }
+.readnav { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; max-width: 62ch; margin: 0 auto 8px; }
+.readnav .btn { padding: 9px 0 10px; text-align: center; }
+.readnav .btn.sel { box-shadow: inset 0 0 0 1px var(--gold), 0 0 12px rgba(240, 204, 110, .35); }
+/* 세로 휴대폰: 메뉴 탭을 두 줄로 — 옆으로 밀지 않아도 다 보이게 */
+@media (max-width: 480px) {
+  .m-tabs { flex-wrap: wrap; justify-content: center; overflow-x: visible; gap: 4px 3px; padding: 6px 8px 4px; }
+  .m-tab { padding: 7px 10px 8px; }
+}
+/* 세로 휴대폰: 메뉴 · 가게 창은 조작판까지 덮어 화면 전체를 쓴다 (예전: 게임 화면 58% 안에 갇혀 비좁던 것) */
+@media (orientation: portrait) {
+  html.touch #modal { position: fixed; inset: 0; z-index: 60; padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+}
