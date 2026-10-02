@@ -422,7 +422,22 @@
     }
     blockBox() { return this.isOpen ? null : { x: this.bx, y: this.by, w: this.bw2, h: this.bh2 }; }
     get solid() { return !this.isOpen; } set solid(v) { /* 계산값 */ }
-    update(dt) { this.t += dt; const want = this.isOpen ? 1 : 0; if (want !== this.last) { if (this.last != null) { sfx(want ? 'door' : 'block'); G.fx.dust(this.bx + this.bw2 / 2, this.by + this.bh2, 4); } this.last = want; } this.anim = U.approach(this.anim, want, dt * 5); }
+    update(dt) {
+      this.t += dt; const want = this.isOpen ? 1 : 0; if (want !== this.last) { if (this.last != null) { sfx(want ? 'door' : 'block'); G.fx.dust(this.bx + this.bw2 / 2, this.by + this.bh2, 4); } this.last = want; } this.anim = U.approach(this.anim, want, dt * 5);
+      // 열쇠를 가진 채 자물쇠 문을 밀면 저절로 연다 (J를 몰라도 막히지 않게)
+      if (!want && (this.kind2 === 'key' || this.kind2 === 'big')) {
+        const p = G.world.player, s = S();
+        const has = this.kind2 === 'big' ? !!s.bigkeys[this.did] : (s.keys[this.did] || 0) > 0;
+        if (has && p && (p.pushT || 0) > 0.18 && !p.dead) {
+          const cx = this.bx + this.bw2 / 2, cy = this.by + this.bh2 / 2, dx = cx - p.x, dy = cy - (p.y - 4);
+          const near = Math.abs(dx) < this.bw2 / 2 + 12 && Math.abs(dy) < this.bh2 / 2 + 14;
+          if (near && (p.vx || 0) * dx + (p.vy || 0) * dy > 0) this.use(p);
+        } else if (!has && this.kind2 === 'big' && p && (p.pushT || 0) > 0.4 && !(this.hintT > this.t)) {
+          const dx = this.bx + this.bw2 / 2 - p.x, dy = this.by + this.bh2 / 2 - (p.y - 4);
+          if (Math.abs(dx) < this.bw2 / 2 + 12 && Math.abs(dy) < this.bh2 / 2 + 14) { this.hintT = this.t + 6; G.ui.toast('[r]큰 자물쇠[/] — 이 던전 어딘가 [y]붉은 큰 상자[/]에 큰 열쇠가 있다 (지도에서 붉은 표시)', 'bad', 'bigdoor'); }
+        }
+      }
+    }
     canUse(p) { return !this.isOpen && (this.kind2 === 'key' || this.kind2 === 'big') && U.dist(p.x, p.y, this.x, this.y) < 30; }
     get label() { return '연다'; }
     use() {

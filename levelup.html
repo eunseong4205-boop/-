@@ -8466,14 +8466,21 @@ button.stat small.fx { color: var(--paper-dim); }
 
   /** 상자: item(아이템 id) · gold · 열쇠. big이면 큰 열쇠가 있어야 열린다 */
   class Chest extends Prop {
-    constructor(o) { super(Object.assign({ bw: 14, bh: 8, shadowW: 8, big: false }, o)); this.opened = flag(this.key); if (this.hiddenUntil && !flag(this.hiddenUntil)) this.hidden = true; }
+    constructor(o) {
+      super(Object.assign({ bw: 14, bh: 8, shadowW: 8, big: false }, o)); this.opened = flag(this.key); if (this.hiddenUntil && !flag(this.hiddenUntil)) this.hidden = true;
+      // 큰 열쇠가 든 상자는 크고 붉게 보이지만 잠겨 있지 않다 (예전: 큰 상자라서 큰 열쇠가 있어야 열려 — 큰 열쇠를 영영 못 얻던 것)
+      this.keyChest = this.item === 'key_big';
+      if (this.keyChest) { this.big = true; this.col = this.col || '#b83a3a'; }
+      // 큰 열쇠로 잠근 보물 상자는 두지 않는다 — 귀한 것은 빛깔로 (영웅 보라 · 전설 금빛)
+      else if (this.big) { this.big = false; const it = G.data.ITEMS[this.item]; const gr = it && it.grade || 0; if (!this.col) this.col = gr >= 5 ? '#d8a020' : gr >= 4 ? '#7a4ab8' : gr >= 3 ? '#3a6ab8' : null; }
+    }
     update(dt) { this.t += dt; if (this.hidden && this.hiddenUntil && flag(this.hiddenUntil)) { this.hidden = false; this.appear = 0.8; sfx('puzzle'); G.fx.glow(this.x, this.y - 6, '#fff2a8', 18); } if (this.appear > 0) this.appear -= dt; }
     reveal() { if (this.hidden && this.revealKey) { S().flags[this.revealKey] = true; this.hiddenUntil = this.revealKey; } }
     canUse(p) { return !this.opened && !this.hidden && (p.dir === 'up' || this.anyDir); }
     get label() { return '연다'; }
     use(p) {
       const s = S(), m = W().map;
-      if (this.big && m.dungeon && !s.bigkeys[m.dungeon]) { G.ui.toast('큰 열쇠가 있어야 열린다', 'bad'); sfx('buzz'); return; }
+      if (this.big && !this.keyChest && m.dungeon && !s.bigkeys[m.dungeon]) { G.ui.toast('큰 열쇠로 잠긴 상자 — 이 던전의 큰 열쇠가 있어야 열린다', 'bad'); sfx('buzz'); return; }
       this.opened = true; setFlag(this.key);
       sfx('chest');
       G.script.run(async (c) => { await c.getItem(this.item, this.n || 1, { chest: this }); });
@@ -8484,6 +8491,12 @@ button.stat small.fx { color: var(--paper-dim); }
       this.drawImg(g, cx, cy, ART.chest(this.opened, this.big, this.col), 1);
       g.globalAlpha = 1;
       if (!this.opened && Math.sin(this.t * 2) > 0.95) { g.fillStyle = '#fff'; g.fillRect(Math.round(this.x - cx + 4), Math.round(this.y - cy - 12), 1, 1); }
+      // 큰 열쇠 상자: 뚜껑에 열쇠 문양 + 반짝임
+      if (this.keyChest && !this.opened) {
+        const x = Math.round(this.x - cx), y = Math.round(this.y - cy - 14);
+        g.fillStyle = '#ffe066'; g.fillRect(x - 4, y, 3, 3); g.fillRect(x - 1, y + 1, 6, 1); g.fillRect(x + 3, y + 2, 1, 1); g.fillStyle = '#ff5a6a'; g.fillRect(x - 3, y + 1, 1, 1);
+        if (Math.sin(this.t * 3.2) > 0.7) { g.globalAlpha = 0.5; g.fillStyle = '#fff2a8'; g.fillRect(x - 9, y - 4, 1, 3); g.fillRect(x - 10, y - 3, 3, 1); g.globalAlpha = 1; }
+      }
     }
   }
 
@@ -15471,7 +15484,22 @@ button.stat small.fx { color: var(--paper-dim); }
     }
     blockBox() { return this.isOpen ? null : { x: this.bx, y: this.by, w: this.bw2, h: this.bh2 }; }
     get solid() { return !this.isOpen; } set solid(v) { /* 계산값 */ }
-    update(dt) { this.t += dt; const want = this.isOpen ? 1 : 0; if (want !== this.last) { if (this.last != null) { sfx(want ? 'door' : 'block'); G.fx.dust(this.bx + this.bw2 / 2, this.by + this.bh2, 4); } this.last = want; } this.anim = U.approach(this.anim, want, dt * 5); }
+    update(dt) {
+      this.t += dt; const want = this.isOpen ? 1 : 0; if (want !== this.last) { if (this.last != null) { sfx(want ? 'door' : 'block'); G.fx.dust(this.bx + this.bw2 / 2, this.by + this.bh2, 4); } this.last = want; } this.anim = U.approach(this.anim, want, dt * 5);
+      // 열쇠를 가진 채 자물쇠 문을 밀면 저절로 연다 (J를 몰라도 막히지 않게)
+      if (!want && (this.kind2 === 'key' || this.kind2 === 'big')) {
+        const p = G.world.player, s = S();
+        const has = this.kind2 === 'big' ? !!s.bigkeys[this.did] : (s.keys[this.did] || 0) > 0;
+        if (has && p && (p.pushT || 0) > 0.18 && !p.dead) {
+          const cx = this.bx + this.bw2 / 2, cy = this.by + this.bh2 / 2, dx = cx - p.x, dy = cy - (p.y - 4);
+          const near = Math.abs(dx) < this.bw2 / 2 + 12 && Math.abs(dy) < this.bh2 / 2 + 14;
+          if (near && (p.vx || 0) * dx + (p.vy || 0) * dy > 0) this.use(p);
+        } else if (!has && this.kind2 === 'big' && p && (p.pushT || 0) > 0.4 && !(this.hintT > this.t)) {
+          const dx = this.bx + this.bw2 / 2 - p.x, dy = this.by + this.bh2 / 2 - (p.y - 4);
+          if (Math.abs(dx) < this.bw2 / 2 + 12 && Math.abs(dy) < this.bh2 / 2 + 14) { this.hintT = this.t + 6; G.ui.toast('[r]큰 자물쇠[/] — 이 던전 어딘가 [y]붉은 큰 상자[/]에 큰 열쇠가 있다 (지도에서 붉은 표시)', 'bad', 'bigdoor'); }
+        }
+      }
+    }
     canUse(p) { return !this.isOpen && (this.kind2 === 'key' || this.kind2 === 'big') && U.dist(p.x, p.y, this.x, this.y) < 30; }
     get label() { return '연다'; }
     use() {
@@ -29220,6 +29248,66 @@ button.stat small.fx { color: var(--paper-dim); }
     return r;
   };
 
+  /* ═════════ 큰 열쇠의 방: 어디서 · 어떻게 나오는지 알려 주고, 막히지 않게 ═════════
+     · 큰 열쇠 상자가 있는 방에 처음 들어서면: 「큰 열쇠가 이 방에 있다 — 적을 모두 쓰러뜨리면 / 퍼즐을 풀면 상자가 나타난다」
+     · 숨은 큰 열쇠 상자 자리에는 바닥에 희미한 열쇠 문양(어디에 나타날지 보이게)
+     · 「방 정리」 방: 남은 적이 둘 · 하나가 되면 알림. 방 밖(벽 너머)으로 밀려나거나 벽에 박혀 4초 넘게 못 나오는 적은 쓰러진 것으로 친다
+       (예전: 그런 적 하나 때문에 방이 끝나지 않아 큰 열쇠 상자가 영영 나타나지 않을 수 있었다) */
+  const keyRoom = (did, k) => { const D2 = DUN[did]; const R2 = D2 && D2.rooms[k]; const pr = R2 && (R2.props || []).find((x) => x[0] === 'chest' && x[3] && x[3].item === 'key_big'); return pr || null; };
+  const HOW = { clear: '적을 모두 쓰러뜨리면', waves: '몰려오는 적을 끝까지 막아 내면', plates: '발판을 모두 누르면', torches: '횃불을 모두 밝히면', order: '발판을 차례대로 밟으면', flag: '방의 장치를 풀면' };
+  const ctlUp2 = G.dungeon.RoomCtl.prototype.update;
+  G.dungeon.RoomCtl.prototype.update = function (dt, Wd) {
+    const r = ctlUp2.apply(this, arguments);
+    const p = Wd.player; if (!p) return r;
+    const s = S(), R = this.R, solved = !!s.flags[this.flagClear];
+    // 1) 큰 열쇠의 방 안내
+    if (this.active && !this.keyTold && !G.script.running) {
+      this.keyTold = true;
+      const kr = keyRoom(this.did, this.k);
+      if (kr && !(s.bigkeys && s.bigkeys[this.did])) {
+        const hid = kr[3].hidden, how = hid && !solved ? (hid === true ? (HOW[R.solve && R.solve.type] || '이 방을 풀면') : '숨은 장치를 찾으면') : null;
+        C().after(0.6, () => G.ui.toast('[y]큰 열쇠[/]가 이 방에 있다' + (how ? ' — ' + how + ' 상자가 나타난다' : ' — 붉은 큰 상자를 열자'), 'gold'));
+      }
+    }
+    // 2) 방 정리: 남은 적 알림 · 갇힌 적 정리
+    if (solved && this.leftWas > 0) { this.leftWas = 0; const el = document.querySelector('[data-key="left:' + this.did + '"]'); if (el) el.remove(); }
+    if (this.active && R.solve && (R.solve.type === 'clear' || R.solve.type === 'waves') && !solved && this.foes.length) {
+      const RW2 = this.RW, RH2 = this.RH, m = Wd.map;
+      for (const e of this.foes) {
+        if (e.dead || e.boss) continue;
+        const tx = Math.floor(e.x / TS), ty = Math.floor((e.y - 2) / TS);
+        const out = tx < this.x0 + 1 || tx > this.x0 + RW2 - 2 || ty < this.y0 + 1 || ty > this.y0 + RH2 - 2;
+        const stuck = !e.fly && !e.noClip && m.inb(tx, ty) && !m.boxFree(e.x - (e.bw || 8) / 2, e.y - (e.bh || 6), e.bw || 8, e.bh || 6, e.z || 0, e);
+        if (out || stuck) { e.lostT = (e.lostT || 0) + dt; if (e.lostT > 4) { e.hp = 0; e.dead = true; G.fx.glow(e.x, e.y - 8, '#b8a8ff', 8); } }
+        else e.lostT = 0;
+      }
+      const left = this.foes.filter((e) => !e.dead).length;
+      if (left !== this.leftWas) {
+        if (this.leftWas != null && left > 0 && left <= 2 && keyRoom(this.did, this.k)) G.ui.toast('남은 적 ' + left, '', 'left:' + this.did);
+        else if (left === 0) { const el = document.querySelector('[data-key="left:' + this.did + '"]'); if (el) el.remove(); }
+        this.leftWas = left;
+      }
+    }
+    return r;
+  };
+  /** 숨은 큰 열쇠 상자 자리: 바닥의 희미한 열쇠 문양 */
+  class KeyMark extends G.ent.Ent {
+    constructor(o) { super(Object.assign({ kind: 'keymark', solid: false, sortBias: -30, shadow: false }, o)); }
+    update(dt) { this.t += dt; if (!this.chest || this.chest.dead || !this.chest.hidden || this.chest.opened) this.dead = true; }
+    draw(g, cx, cy) {
+      const x = Math.round(this.x - cx), y = Math.round(this.y - cy - 4), a = 0.38 + Math.sin(this.t * 2.4) * 0.16;
+      g.save(); g.globalAlpha = a; g.strokeStyle = '#ffe066'; g.lineWidth = 1;
+      g.strokeRect(x - 10.5, y - 7.5, 21, 12);
+      g.fillStyle = '#ffe066'; g.fillRect(x - 5, y - 3, 4, 4); g.fillRect(x - 1, y - 2, 8, 2); g.fillRect(x + 5, y, 2, 2); g.fillRect(x + 2, y, 1, 2);
+      if (Math.sin(this.t * 1.7) > 0.93) { g.globalAlpha = 0.8; g.fillRect(x + 8, y - 9, 1, 3); g.fillRect(x + 7, y - 8, 3, 1); }
+      g.restore();
+    }
+  }
+  G.story.enterHooks.push((m) => {
+    if (!m || !m.dungeon) return;
+    C().after(0.05, () => { const Wd = W(); for (const e of Wd.ents) if (e instanceof G.props.Chest && e.keyChest && e.hidden && !e.opened) Wd.add(new KeyMark({ x: e.x, y: e.y, chest: e })); });
+  });
+
   /* ═════════ 고원 굴: 방 다섯 + 숨은 방 · 작은 열쇠 → 큰 열쇠 → 굴의 주인 ═════════ */
   const RARE_BY = {
     hl_green: 'art_moonslash', hl_red: 'fc_coral', hl_blue: 'tome_poison', hl_amber: 'bw_bone',
@@ -29838,11 +29926,13 @@ button.stat small.fx { color: var(--paper-dim); }
     const X0 = pad + lab;
     // 층 이름 (왼쪽)
     if (lab) { g.font = "11px 'Galmuri11', sans-serif"; g.textAlign = 'left'; const rows = {}; for (const k of keys) { const fl = m.rooms[k].floor; if (fl && (s.flags['room:' + did + ':' + k] || hasMap)) rows[RP(k)[1]] = fl; } for (const [ry, fl] of Object.entries(rows)) { g.fillStyle = '#c8b8e8'; g.fillText(fl, 4, pad + ry * ch + ch / 2 + 4); } }
-    // 문 (이어진 방 사이 선) · 계단 (점선)
+    // 문 (이어진 방 사이 선) · 계단 (점선). 멀리 떨어진 층으로 가는 계단은 선 대신 양쪽 방에 같은 번호 「↕n」
+    const farSt = {}; let stN = 0;
     for (const dw of m.doorways || []) {
       const seenA = s.flags['room:' + did + ':' + dw.a], seenB = s.flags['room:' + did + ':' + dw.b];
       if (!hasMap && !(seenA || seenB)) continue;
       const [ax, ay] = RP(dw.a), [bx, by] = RP(dw.b);
+      if (dw.stair && Math.abs(ax - bx) + Math.abs(ay - by) > 1) { stN++; (farSt[dw.a] = farSt[dw.a] || []).push(stN); (farSt[dw.b] = farSt[dw.b] || []).push(stN); continue; }
       g.strokeStyle = dw.stair ? '#b8a0e8' : '#6a6080'; g.lineWidth = dw.stair ? 2 : 3;
       if (dw.stair) g.setLineDash([3, 3]);
       g.beginPath(); g.moveTo(X0 + ax * cw + cw / 2, pad + ay * ch + ch / 2); g.lineTo(X0 + bx * cw + cw / 2, pad + by * ch + ch / 2); g.stroke();
@@ -29857,11 +29947,14 @@ button.stat small.fx { color: var(--paper-dim); }
       g.fillStyle = k === cur ? '#6a5a98' : seen ? '#3a3458' : '#241f36'; g.fillRect(x, y, w, h);
       g.strokeStyle = k === cur ? '#ffe08a' : '#8a80a8'; g.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1);
       if (s.flags[did + ':' + k + ':clear']) { g.fillStyle = '#6ae07a'; g.fillRect(x + 3, y + 3, 3, 3); }
+      if (farSt[k]) { const t = '↕' + farSt[k].join(','); let fs = 9; g.textAlign = 'left'; do { g.font = fs + "px 'Galmuri11', sans-serif"; } while (g.measureText(t).width > w - 12 && --fs > 6); g.fillStyle = '#b8a0e8'; g.fillText(t, x + 9, y + 10); }
       const R = m.rooms[k].R;
       if (hasComp && R.boss) { g.fillStyle = s.flags[did + ':boss'] ? '#6a6080' : '#ff4a6a'; g.font = "12px 'Galmuri11', sans-serif"; g.textAlign = 'center'; g.fillText(s.flags[did + ':boss'] ? '✓' : '☠', x + w / 2, y + h / 2 + 4); }
       if (hasComp) {
-        const left = (R.props || []).filter((pr) => pr[0] === 'chest' && !s.flags[did + ':chest:' + k + ':' + pr[1] + ',' + pr[2]]).length;
-        for (let i = 0; i < left; i++) { g.fillStyle = '#ffd84a'; g.fillRect(x + w - 7 - i * 5, y + h - 7, 4, 4); }
+        const leftL = (R.props || []).filter((pr) => pr[0] === 'chest' && !s.flags[did + ':chest:' + k + ':' + pr[1] + ',' + pr[2]]);
+        // 큰 열쇠 상자는 붉은 열쇠 표시로 (아직 큰 열쇠가 없을 때)
+        leftL.sort((a, b) => (b[3] && b[3].item === 'key_big' ? 1 : 0) - (a[3] && a[3].item === 'key_big' ? 1 : 0));
+        leftL.forEach((pr, i) => { const kb = pr[3] && pr[3].item === 'key_big'; if (kb && !(s.bigkeys && s.bigkeys[did])) { g.fillStyle = '#ffe066'; g.fillRect(x + w - 9 - i * 5, y + h - 9, 6, 6); g.fillStyle = '#d83a4a'; g.fillRect(x + w - 8 - i * 5, y + h - 8, 4, 4); } else if (!kb) { g.fillStyle = '#ffd84a'; g.fillRect(x + w - 7 - i * 5, y + h - 7, 4, 4); } });
       }
       if (k === cur && p) { const px = x + ((p.x / TS) % RW) / RW * w, py = y + ((p.y / TS) % RH) / RH * h; g.fillStyle = '#fff'; g.fillRect(px - 2, py - 2, 4, 4); g.fillStyle = '#ff3a5a'; g.fillRect(px - 1, py - 1, 2, 2); }
     }
@@ -29884,7 +29977,7 @@ button.stat small.fx { color: var(--paper-dim); }
     cv.style.cssText = 'width:min(100%, ' + (m && m.dungeon ? cv.width * 2 : 900) + 'px);height:auto;image-rendering:pixelated;border:1px solid #4a4260;border-radius:4px;background:#08060e';
     wrap.appendChild(title); wrap.appendChild(cv);
     const legend = document.createElement('div'); legend.style.cssText = 'font-size:11px;color:#a8a0c0;display:flex;gap:14px;flex-wrap:wrap;justify-content:center';
-    legend.innerHTML = m && m.dungeon ? '<span><b style="color:#ff3a5a">■</b> 나</span><span><b style="color:#ffe08a">□</b> 지금 방</span><span><b style="color:#6ae07a">■</b> 정리한 방</span><span><b style="color:#ffd84a">■</b> 남은 상자</span><span><b style="color:#ff4a6a">☠</b> 주인</span>'
+    legend.innerHTML = m && m.dungeon ? '<span><b style="color:#ff3a5a">■</b> 나</span><span><b style="color:#ffe08a">□</b> 지금 방</span><span><b style="color:#6ae07a">■</b> 정리한 방</span><span><b style="color:#ffd84a">■</b> 남은 상자</span><span><b style="color:#d83a4a">■</b> 큰 열쇠 상자</span><span><b style="color:#ff4a6a">☠</b> 주인</span><span><b style="color:#b8a0e8">↕1</b> 같은 번호끼리 이어진 계단</span>'
       : '<span><b style="color:#ff3a5a">●</b> 나</span><span><b style="color:#ffd84a">◎</b> 목표</span><span><b style="color:#8ad8ff">◆</b> 빛의 이정표</span><span><b style="color:#ffd84a">◆</b> 찾은 이야기</span><span><b style="color:#e8e0c8">■</b> 찾은 곳</span><span>어두운 곳 — 아직 갈 수 없는 땅</span>';
     wrap.appendChild(legend);
     const goal = ST.goalText && ST.goalText();

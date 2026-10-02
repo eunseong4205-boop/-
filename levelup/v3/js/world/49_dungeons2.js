@@ -222,6 +222,66 @@
     return r;
   };
 
+  /* ═════════ 큰 열쇠의 방: 어디서 · 어떻게 나오는지 알려 주고, 막히지 않게 ═════════
+     · 큰 열쇠 상자가 있는 방에 처음 들어서면: 「큰 열쇠가 이 방에 있다 — 적을 모두 쓰러뜨리면 / 퍼즐을 풀면 상자가 나타난다」
+     · 숨은 큰 열쇠 상자 자리에는 바닥에 희미한 열쇠 문양(어디에 나타날지 보이게)
+     · 「방 정리」 방: 남은 적이 둘 · 하나가 되면 알림. 방 밖(벽 너머)으로 밀려나거나 벽에 박혀 4초 넘게 못 나오는 적은 쓰러진 것으로 친다
+       (예전: 그런 적 하나 때문에 방이 끝나지 않아 큰 열쇠 상자가 영영 나타나지 않을 수 있었다) */
+  const keyRoom = (did, k) => { const D2 = DUN[did]; const R2 = D2 && D2.rooms[k]; const pr = R2 && (R2.props || []).find((x) => x[0] === 'chest' && x[3] && x[3].item === 'key_big'); return pr || null; };
+  const HOW = { clear: '적을 모두 쓰러뜨리면', waves: '몰려오는 적을 끝까지 막아 내면', plates: '발판을 모두 누르면', torches: '횃불을 모두 밝히면', order: '발판을 차례대로 밟으면', flag: '방의 장치를 풀면' };
+  const ctlUp2 = G.dungeon.RoomCtl.prototype.update;
+  G.dungeon.RoomCtl.prototype.update = function (dt, Wd) {
+    const r = ctlUp2.apply(this, arguments);
+    const p = Wd.player; if (!p) return r;
+    const s = S(), R = this.R, solved = !!s.flags[this.flagClear];
+    // 1) 큰 열쇠의 방 안내
+    if (this.active && !this.keyTold && !G.script.running) {
+      this.keyTold = true;
+      const kr = keyRoom(this.did, this.k);
+      if (kr && !(s.bigkeys && s.bigkeys[this.did])) {
+        const hid = kr[3].hidden, how = hid && !solved ? (hid === true ? (HOW[R.solve && R.solve.type] || '이 방을 풀면') : '숨은 장치를 찾으면') : null;
+        C().after(0.6, () => G.ui.toast('[y]큰 열쇠[/]가 이 방에 있다' + (how ? ' — ' + how + ' 상자가 나타난다' : ' — 붉은 큰 상자를 열자'), 'gold'));
+      }
+    }
+    // 2) 방 정리: 남은 적 알림 · 갇힌 적 정리
+    if (solved && this.leftWas > 0) { this.leftWas = 0; const el = document.querySelector('[data-key="left:' + this.did + '"]'); if (el) el.remove(); }
+    if (this.active && R.solve && (R.solve.type === 'clear' || R.solve.type === 'waves') && !solved && this.foes.length) {
+      const RW2 = this.RW, RH2 = this.RH, m = Wd.map;
+      for (const e of this.foes) {
+        if (e.dead || e.boss) continue;
+        const tx = Math.floor(e.x / TS), ty = Math.floor((e.y - 2) / TS);
+        const out = tx < this.x0 + 1 || tx > this.x0 + RW2 - 2 || ty < this.y0 + 1 || ty > this.y0 + RH2 - 2;
+        const stuck = !e.fly && !e.noClip && m.inb(tx, ty) && !m.boxFree(e.x - (e.bw || 8) / 2, e.y - (e.bh || 6), e.bw || 8, e.bh || 6, e.z || 0, e);
+        if (out || stuck) { e.lostT = (e.lostT || 0) + dt; if (e.lostT > 4) { e.hp = 0; e.dead = true; G.fx.glow(e.x, e.y - 8, '#b8a8ff', 8); } }
+        else e.lostT = 0;
+      }
+      const left = this.foes.filter((e) => !e.dead).length;
+      if (left !== this.leftWas) {
+        if (this.leftWas != null && left > 0 && left <= 2 && keyRoom(this.did, this.k)) G.ui.toast('남은 적 ' + left, '', 'left:' + this.did);
+        else if (left === 0) { const el = document.querySelector('[data-key="left:' + this.did + '"]'); if (el) el.remove(); }
+        this.leftWas = left;
+      }
+    }
+    return r;
+  };
+  /** 숨은 큰 열쇠 상자 자리: 바닥의 희미한 열쇠 문양 */
+  class KeyMark extends G.ent.Ent {
+    constructor(o) { super(Object.assign({ kind: 'keymark', solid: false, sortBias: -30, shadow: false }, o)); }
+    update(dt) { this.t += dt; if (!this.chest || this.chest.dead || !this.chest.hidden || this.chest.opened) this.dead = true; }
+    draw(g, cx, cy) {
+      const x = Math.round(this.x - cx), y = Math.round(this.y - cy - 4), a = 0.38 + Math.sin(this.t * 2.4) * 0.16;
+      g.save(); g.globalAlpha = a; g.strokeStyle = '#ffe066'; g.lineWidth = 1;
+      g.strokeRect(x - 10.5, y - 7.5, 21, 12);
+      g.fillStyle = '#ffe066'; g.fillRect(x - 5, y - 3, 4, 4); g.fillRect(x - 1, y - 2, 8, 2); g.fillRect(x + 5, y, 2, 2); g.fillRect(x + 2, y, 1, 2);
+      if (Math.sin(this.t * 1.7) > 0.93) { g.globalAlpha = 0.8; g.fillRect(x + 8, y - 9, 1, 3); g.fillRect(x + 7, y - 8, 3, 1); }
+      g.restore();
+    }
+  }
+  G.story.enterHooks.push((m) => {
+    if (!m || !m.dungeon) return;
+    C().after(0.05, () => { const Wd = W(); for (const e of Wd.ents) if (e instanceof G.props.Chest && e.keyChest && e.hidden && !e.opened) Wd.add(new KeyMark({ x: e.x, y: e.y, chest: e })); });
+  });
+
   /* ═════════ 고원 굴: 방 다섯 + 숨은 방 · 작은 열쇠 → 큰 열쇠 → 굴의 주인 ═════════ */
   const RARE_BY = {
     hl_green: 'art_moonslash', hl_red: 'fc_coral', hl_blue: 'tome_poison', hl_amber: 'bw_bone',
