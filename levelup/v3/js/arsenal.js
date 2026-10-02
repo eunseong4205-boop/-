@@ -227,7 +227,7 @@
       start(p) {
         const d = G.st.derive(S()), Wd = W(), v = Wd.view;
         const cx = Wd.rcx + v.w / 2, cy = Wd.rcy + v.h / 2 + 10;
-        C.spellFx.gravity({ x: cx - p.face[0] * 52, y: cy - p.face[1] * 40, z: p.z }, d, Math.atan2(p.face[1], p.face[0]), d.magMul * 1.6);
+        C.spellFx.gravity({ x: cx - p.face[0] * 52, y: cy - p.face[1] * 40, z: p.z }, d, Math.atan2(p.face[1], p.face[0]), d.magMul * 2.8);   // 영웅 등급에 맞게 (1.6 → 2.8)
         p.spx.dur = 0.4;
       },
       update(p) { return p.spx.t >= p.spx.dur; }, draw: 'cast',

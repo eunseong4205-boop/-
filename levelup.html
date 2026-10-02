@@ -10807,7 +10807,7 @@ button.stat small.fx { color: var(--paper-dim); }
       start(p) {
         const d = G.st.derive(S()), Wd = W(), v = Wd.view;
         const cx = Wd.rcx + v.w / 2, cy = Wd.rcy + v.h / 2 + 10;
-        C.spellFx.gravity({ x: cx - p.face[0] * 52, y: cy - p.face[1] * 40, z: p.z }, d, Math.atan2(p.face[1], p.face[0]), d.magMul * 1.6);
+        C.spellFx.gravity({ x: cx - p.face[0] * 52, y: cy - p.face[1] * 40, z: p.z }, d, Math.atan2(p.face[1], p.face[0]), d.magMul * 2.8);   // 영웅 등급에 맞게 (1.6 → 2.8)
         p.spx.dur = 0.4;
       },
       update(p) { return p.spx.t >= p.spx.dur; }, draw: 'cast',
@@ -13290,7 +13290,7 @@ button.stat small.fx { color: var(--paper-dim); }
         addFx({ x: p.x, y: p.y, life: 1.45, sortBias: 40, tick(dt) {
           const pl = W().player; this.x = pl.x; this.y = pl.y; this.a = U.angle(pl.face[0], pl.face[1]);
           tk -= dt; if (tk > 0) return; tk = 0.1;
-          for (let i = 0; i < 5; i++) { const a = this.a + (i - 2) * 0.22, x1 = pl.x + Math.cos(a) * 160, y1 = pl.y - 9 + Math.sin(a) * 136; for (const e of onLine(pl.x, pl.y - 9, x1, y1, 6)) spHit(e, d.bowAtk * 0.5 * d.specialMul, { src: 'arrow', w: 'bow', el: 'light' }); }
+          for (let i = 0; i < 5; i++) { const a = this.a + (i - 2) * 0.22, x1 = pl.x + Math.cos(a) * 160, y1 = pl.y - 9 + Math.sin(a) * 136; for (const e of onLine(pl.x, pl.y - 9, x1, y1, 6)) spHit(e, d.bowAtk * 0.3 * d.specialMul, { src: 'arrow', w: 'bow', el: 'light' }); }
         }, paint(g, cx, cy) { const x = this.x - cx, y = this.y - cy - 9, f = Math.min(1, this.t * 6, (this.life - this.t) * 5), a0 = this.a || 0; g.save(); for (let i = 0; i < 5; i++) { const a = a0 + (i - 2) * 0.22, x1 = x + Math.cos(a) * 160, y1 = y + Math.sin(a) * 136; g.globalAlpha = 0.45 * f; g.strokeStyle = COL[i]; g.lineWidth = 6; g.beginPath(); g.moveTo(x, y); g.lineTo(x1, y1); g.stroke(); g.globalAlpha = 0.9 * f; g.strokeStyle = '#ffffff'; g.lineWidth = 1; g.beginPath(); g.moveTo(x, y); g.lineTo(x1, y1); g.stroke(); } g.restore(); } });
         sfx('beam'); if (G.light && G.light.flare) G.light.flare(p.x, p.y, 120, 3, '#c8f0ff');
       },
@@ -13301,7 +13301,7 @@ button.stat small.fx { color: var(--paper-dim); }
         p.spx.dur = 0.4; const d = sd(); let n = 0;
         addFx({ x: p.x, y: p.y, life: 3.1, sortBias: 60, tick(dt) {
           this.tk = (this.tk || 0) - dt;
-          if (this.tk <= 0 && n < 12) { this.tk = 0.25; n++; const list = C.foes().filter(onScreen); if (list.length) { const e = list[Math.floor(Math.random() * list.length)]; C.bolts.push({ x0: e.x + (Math.random() - 0.5) * 30, y0: e.y - 130, x1: e.x, y1: e.y - 8, t: 0 }); for (const f of C.foes()) if (U.dist(f.x, f.y, e.x, e.y) < 22) spHit(f, (4 + S().lv * 0.25) * d.magMul * 1.6 * d.specialMul, { src: 'spell', w: 'magic', el: 'bolt', stun: 0.5 }); W().shake(2, 0.1); sfx('bolt'); } }
+          if (this.tk <= 0 && n < 12) { this.tk = 0.25; n++; const list = C.foes().filter(onScreen); if (list.length) { const e = list[Math.floor(Math.random() * list.length)]; C.bolts.push({ x0: e.x + (Math.random() - 0.5) * 30, y0: e.y - 130, x1: e.x, y1: e.y - 8, t: 0 }); for (const f of C.foes()) if (U.dist(f.x, f.y, e.x, e.y) < 22) spHit(f, (4 + S().lv * 0.25) * d.magMul * 0.55 * d.specialMul, { src: 'spell', w: 'magic', el: 'bolt', stun: 0.5 }); W().shake(2, 0.1); sfx('bolt'); } }
         }, paint(g) { const v = W().view, f = Math.min(1, this.t * 4, (this.life - this.t) * 4); g.save(); g.globalAlpha = 0.25 * f; g.fillStyle = '#1a2440'; g.fillRect(0, 0, v.w, v.h); g.globalAlpha = 0.55 * f; g.strokeStyle = '#a8c8e8'; g.lineWidth = 1; for (let i = 0; i < 40; i++) { const x = (i * 37 + this.t * 300) % v.w, y = (i * 53 + this.t * 900) % v.h; g.beginPath(); g.moveTo(x, y); g.lineTo(x - 3, y + 8); g.stroke(); } g.restore(); } });
         sfx('thunder');
       },
@@ -13575,16 +13575,16 @@ button.stat small.fx { color: var(--paper-dim); }
      목표: 한 번 쓸 때 한 적에게 일반 3 · 고급 4.5 · 희귀 6.5 · 영웅 9 · 전설 14 (둘레를 넓게 치는 것은 ×0.7, 무리 전체 몫은 등급 몫 ×3까지)
      재사용 대기도 등급마다 3~4 · 4~7 · 6~12 · 10~18 · 22~28초 — 쟀던 값에서 모자라거나 넘치는 만큼 배율로 고친다 */
   const BAL = {
-    a_dash: 1.01, a_lunge2: 1.5, a_upper: 1.26, a_break: 1.42, a_cross: 1.58, a_spin3: 1.11, a_cyclone: 2.6, a_flash2: 2.02, a_storm2: 0.78, a_wave: 2.6, a_quake2: 1.7, a_phantom: 1.19, a_heaven: 2.6,
+    a_dash: 1.01, a_lunge2: 1.5, a_upper: 1.26, a_break: 1.42, a_cross: 1.58, a_spin3: 1.11, a_cyclone: 2.6, a_flash2: 2.02, a_storm2: 0.78, a_wave: 2.6, a_quake2: 1.7, a_phantom: 1.19, a_heaven: 3.4,
     a_draw: 0.9, a_tornado: 1.23, a_crescent: 2.6, a_blades: 1.19, a_judgment: 0.81,
     a_fan: 1.09, a_quick: 0.88, a_hop: 1.33, a_leap: 2.08, a_firearrow: 1.71, a_icearrow: 2.22, a_blast: 0.91, a_snare: 2.6, a_rain: 0.72, a_homing: 1.17, a_ricochet: 2.38, a_pierce: 1.31, a_barrage: 1.03, a_snipe2: 0.79, a_comet: 1.81,
-    a_scatter: 1.96, a_volley2: 0.94, a_mine: 1.47, a_gale: 1.8, a_sunrain: 2.6,
+    a_scatter: 1.96, a_volley2: 0.94, a_mine: 1.47, a_gale: 1.8, a_sunrain: 5,
     a_nova: 1.07, a_sparks: 1.42, a_drain: 2.01, a_frostring: 2.6, a_chain: 2.19, a_well: 1.52, a_orbs: 0.76, a_meteor3: 1.98, a_clone: 1.15, a_starfall: 2.56,
     a_lance: 1.75, a_vine: 1.13, a_tidal: 2.6, a_eclipse: 0.59,
   };
   // 필살기 (게이지 한 번에 한 적 몫: 일반 8 · 고급 10 · 희귀 13 · 영웅 17 · 전설 24, 무리 전체는 그 3배 남짓까지)
-  const BAL_SP = { flash: 0.8, whirl: 0.91, rain: 2.19, triple: 1.2, flame: 3, frost: 3, shadow: 3, starshot: 2.12, thunder: 3, meteor: 3, dance: 1.53, judge: 2.46, moonslash: 2.34, quakeblade: 3, thousand: 1.66, bombarrow: 3, galaxy: 0.75, nova: 3, blackhole: 2.93, genesis: 2.37,
-    skysplit: 1.29, bladestorm: 0.64, oblivion: 0.9, arrowwall: 0.61, phoenix: 2.37, skyfall: 1.01, aurora: 0.46, tempest: 0.3, glacier: 2.32, supernova: 0.47 };
+  const BAL_SP = { flash: 0.8, whirl: 0.91, rain: 2.19, triple: 1.2, flame: 3, frost: 4.2, shadow: 3, starshot: 2.12, thunder: 3, meteor: 8, dance: 1.53, judge: 2.46, moonslash: 2.34, quakeblade: 3, thousand: 1.66, bombarrow: 3, galaxy: 0.75, nova: 3, blackhole: 1, genesis: 2.37,
+    skysplit: 1.29, bladestorm: 0.64, oblivion: 0.9, arrowwall: 0.61, phoenix: 2.37, skyfall: 1.01, aurora: 1, tempest: 1, glacier: 2.32, supernova: 0.47 };
   const sk0 = SN.skillMul;   // 스킬 피해 배율 길목: stance가 DO에 넘기는 k
   const DO0 = Object.assign({}, DO);
   for (const id of Object.keys(DO)) { const f = DO[id]; DO[id] = function (p, s, d, m, k) { return f.call(this, p, s, d, m, k * (BAL[id] || 1)); }; }
