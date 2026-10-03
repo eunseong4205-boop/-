@@ -193,7 +193,18 @@
     for (const k of Object.keys(tbl || {})) { const i = ORD.indexOf(k); if (i >= 0 && i <= cur && (best == null || i > ORD.indexOf(best))) best = k; }
     return typeof (best ? tbl[best] : tbl && tbl.default) === 'function';
   }
+  /* 가게 · 여관 · 대장간 주인: 장마다 다른 말이 그 지역의 장(c3 …)부터만 있어서, 지역이 먼저 열리면(산사태를 치우면 블루가 열린다 …)
+     말을 걸어도 아무 말이 없거나 잡담만 했다 — 쉬지도 사지도 못했다. 가장 이른 장사 말을 기본으로 둔다 */
+  const SERVICE = /\.(shop|rest|forge)\(/;
+  function keeperDefault(sp) {
+    const tbl = sp && sp.lines;
+    if (!tbl || typeof tbl !== 'object' || tbl.default != null) return;
+    let first = null;
+    for (const k of Object.keys(tbl)) { const i = ORD.indexOf(k); if (i >= 0 && typeof tbl[k] === 'function' && SERVICE.test(String(tbl[k])) && (first == null || i < ORD.indexOf(first))) first = k; }
+    if (first) tbl.default = tbl[first];
+  }
   function wrapFolk(sp) {
+    keeperDefault(sp);
     if (sp._talk2 || !sp.talk) return;
     sp._talk2 = true;
     const orig = sp.talk;
