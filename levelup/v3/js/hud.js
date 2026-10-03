@@ -81,6 +81,8 @@
     const barW = 64;
     if (Object.keys(s.spells).length) {
       bar(g, 7, y, barW, 3, s.mp / d.mpMax, '#4a8aff', '#8ac8ff', '#14203a');
+      // 쉬는 동안(MP를 1.5초 쓰지 않으면) 더 빨리 찬다 — 막대 위로 빛이 흐른다
+      if (d.mpCalm && s.mp < d.mpMax) { const fw = Math.max(2, Math.round(barW * s.mp / d.mpMax)); g.fillStyle = 'rgba(220,240,255,0.85)'; g.fillRect(7 + Math.floor((performance.now() / 25) % fw), y, 2, 3); }
       y += 5;
     }
     // ── 필살 ──

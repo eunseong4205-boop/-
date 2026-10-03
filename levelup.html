@@ -8978,6 +8978,8 @@ button.stat small.fx { color: var(--paper-dim); }
     const barW = 64;
     if (Object.keys(s.spells).length) {
       bar(g, 7, y, barW, 3, s.mp / d.mpMax, '#4a8aff', '#8ac8ff', '#14203a');
+      // 쉬는 동안(MP를 1.5초 쓰지 않으면) 더 빨리 찬다 — 막대 위로 빛이 흐른다
+      if (d.mpCalm && s.mp < d.mpMax) { const fw = Math.max(2, Math.round(barW * s.mp / d.mpMax)); g.fillStyle = 'rgba(220,240,255,0.85)'; g.fillRect(7 + Math.floor((performance.now() / 25) % fw), y, 2, 3); }
       y += 5;
     }
     // ── 필살 ──
@@ -9633,15 +9635,15 @@ button.stat small.fx { color: var(--paper-dim); }
     body.appendChild(row({ icon: G.hud.icon('special'), name: '필살기 — ' + gname(spc), desc: gradeLabel(spc) + ' · ' + spc.desc + ' (익힌 것 ' + Object.keys(s.specials).length + ' / ' + Object.keys(G.data.SPECIALS).length + ')', onClick: () => { M.sub = 'special'; M.sel = 0; sfx('select'); refresh(); } }));
     sec(body, '능력치');
     const dl = document.createElement('dl'); dl.className = 'kv card';
-    const kv = [['하트', (d.hpMax / 4) + '칸'], ['검 공격', d.atk.toFixed(1) + (d.el ? ' (' + { fire: '불', ice: '얼음', light: '빛', bolt: '번개', poison: '독', dark: '어둠' }[d.el] + ')' : '')], ['활 공격', d.bowAtk.toFixed(1)], ['마법 배율', '×' + d.magMul.toFixed(2)], ['치명타', Math.round(d.crit * 100) + '%'], ['받는 피해', Math.round(d.def * 100 * G.prog.diff().hurt) + '%'], ['MP', Math.floor(s.mp) + ' / ' + d.mpMax], ['기력', Math.round(d.stamMax)], ['구르기 무적', d.rollIframes.toFixed(2) + '초']];
+    const kv = [['하트', (d.hpMax / 4) + '칸'], ['검 공격', d.atk.toFixed(1) + (d.el ? ' (' + { fire: '불', ice: '얼음', light: '빛', bolt: '번개', poison: '독', dark: '어둠' }[d.el] + ')' : '')], ['활 공격', d.bowAtk.toFixed(1)], ['마법 배율', '×' + d.magMul.toFixed(2)], ['치명타', Math.round(d.crit * 100) + '%'], ['받는 피해', Math.round(d.def * 100 * G.prog.diff().hurt) + '%'], ['MP', Math.floor(s.mp) + ' / ' + d.mpMax], ['MP 회복', (d.mpRegen || 0).toFixed(1) + '/초' + (d.mpCalm ? ' (쉬는 중)' : '')], ['화살', s.ammo.arrows + ' / ' + s.ammo.arrowsMax + (d.arrowRet ? ' · 회수 ' + Math.round(d.arrowRet * 100) + '%' : '')], ['기력', Math.round(d.stamMax)], ['구르기 무적', d.rollIframes.toFixed(2) + '초']];
     dl.innerHTML = kv.map(([a, b]) => '<dt>' + a + '</dt><dd>' + b + '</dd>').join('');
     body.appendChild(dl);
   }
   /* ── 성장: 안내 카드 · 능력치 · 재능 나무 (갈래 탭) ── */
   const STYLE = {
-    sword: { name: '검', stat: 'str', tree: '검술', col: '#ff8a6a', why: '힘을 올리면 검 피해가 커지고 무거운 검을 든다. 체력을 곁들이면 앞에 서서 버틴다.', side: 'vit' },
-    bow: { name: '활', stat: 'dex', tree: '궁술', col: '#ffe066', why: '솜씨를 올리면 활 피해 · 치명타 · 시위 속도가 오른다. 기력을 곁들이면 구르며 쏜다.', side: 'sta' },
-    magic: { name: '마법', stat: 'int', tree: '마법', col: '#8ab8ff', why: '지력을 올리면 마법 피해 · MP · 필살 게이지가 오른다. 체력을 곁들이면 덜 쓰러진다.', side: 'vit' },
+    sword: { name: '검', stat: 'str', tree: '검술', col: '#ff8a6a', why: '장점: 가장 세고 자원이 들지 않으며 휘두르면 여럿을 함께 벤다. 단점: 붙어서 싸워야 해서 맞기 쉽다. 힘을 올리면 검 피해가 커지고 무거운 검을 든다. 체력을 곁들이면 앞에 서서 버틴다.', side: 'vit' },
+    bow: { name: '활', stat: 'dex', tree: '궁술', col: '#ffe066', why: '장점: 멀리서 안전하게, 멀수록 아프다. 다 모은 화살은 두 배 반 · 꿰뚫는다. 단점: 화살이 든다 — 맞힌 화살은 쓰러뜨린 자리에서 줍고, 10개 밑이면 저절로 깎는다. 솜씨를 올리면 활 피해 · 치명타 · 시위 속도 · 화살 회수가 오른다. 기력을 곁들이면 구르며 쏜다.', side: 'sta' },
+    magic: { name: '마법', stat: 'int', tree: '마법', col: '#8ab8ff', why: '장점: 여럿을 한꺼번에 · 얼리고 태우고 기절시킨다. 단점: MP가 든다 — 저절로 차고, 1.5초 쉬면 더 빨리 찬다. 한 적만 상대할 땐 검보다 약하다. 지력을 올리면 마법 피해 · MP · MP 회복이 오른다. 체력을 곁들이면 덜 쓰러진다.', side: 'vit' },
   };
   /** 지금 무엇으로 싸우는가: 능력치에 가장 많이 쓴 쪽, 비기면 든 무기 */
   function styleOf(s) {
@@ -9668,8 +9670,8 @@ button.stat small.fx { color: var(--paper-dim); }
       str: (a, b) => ['검 피해 ×' + (1 + P.soft(a.stats.str, 0.04)).toFixed(2), '×' + (1 + P.soft(b.stats.str, 0.04)).toFixed(2)],
       vit: (a, b) => { const v = a.stats.vit, left = 6 - (v % 6); return ['하트 ' + a.hpMax / 4 + '칸 · 받는 피해 ' + (Math.round(a.def * 1000) / 10) + '%', (b.hpMax > a.hpMax ? '하트 +1칸! · ' : '다음 하트까지 ' + left + '점 · ') + '피해 ' + (Math.round(b.def * 1000) / 10) + '%']; },
       sta: (a, b) => ['기력 ' + Math.round(a.stamMax) + ' · 회복 ×' + a.stamRegen.toFixed(2), '기력 ' + Math.round(b.stamMax)],
-      int: (a, b) => ['마법 ×' + a.magMul.toFixed(2) + ' · MP ' + a.mpMax, '×' + b.magMul.toFixed(2) + ' · MP ' + b.mpMax],
-      dex: (a, b) => ['활 ' + a.bowAtk.toFixed(1) + ' · 치명타 ' + Math.round(a.crit * 100) + '%', '활 ' + b.bowAtk.toFixed(1) + ' · ' + Math.round(b.crit * 100) + '%'],
+      int: (a, b) => ['마법 ×' + a.magMul.toFixed(2) + ' · MP ' + a.mpMax + ' · 회복 ' + (a.mpRegenNat || 0).toFixed(2) + '/초', '×' + b.magMul.toFixed(2) + ' · MP ' + b.mpMax + ' · ' + (b.mpRegenNat || 0).toFixed(2) + '/초'],
+      dex: (a, b) => ['활 ' + a.bowAtk.toFixed(1) + ' · 치명타 ' + Math.round(a.crit * 100) + '% · 회수 ' + Math.round((a.arrowRet || 0) * 100) + '%', '활 ' + b.bowAtk.toFixed(1) + ' · ' + Math.round(b.crit * 100) + '% · ' + Math.round((b.arrowRet || 0) * 100) + '%'],
     };
     for (const st of P.STATS) {
       const base = s.stats[st.id] || 0, bonus = d.stats[st.id] - base, rec = st.id === SY.stat || st.id === SY.side;
@@ -31683,6 +31685,139 @@ button.stat small.fx { color: var(--paper-dim); }
   if (G.skills2 && G.skills2.placeLate) G.skills2.placeLate();
 
   G.balance = { PTS: 4, NEW_TIER_HP: NEW };
+})();
+
+/* js/world/99_weapons.js */
+/* 세 무기의 장단점 — 검 · 활 · 마법을 같은 잣대로 (진짜 키 입력으로 잰 초당 피해 · 자원 소모)
+   예전: 같은 등급 장비 · 같은 투자에서 활 51~72%, 마법은 MP가 저절로 차지 않아 3~5초 쏟고 나면 끝.
+     활은 화살 30개가 연사로 5초, 쓰러뜨려도 8% 확률로 5개 — 사실상 쓸 수 없었다.
+   · 검  — 가장 세고 자원이 들지 않는다. 대신 붙어서 싸워야 한다(맞는다). 휘두르면 여럿을 함께 벤다.  (그대로)
+   · 활  — 멀리서 안전하게, 멀수록 아프다(세 칸 밖부터 열두 칸까지 최대 +20%). 화살이 든다.
+           피해 ×1.15(스킬 · 필살기 포함), 다 모은 화살 ×2 → ×2.5 · 한 적을 꿰뚫고 · 모으는 시간 -0.1초
+           맞힌 화살은 적에 박혀 쓰러뜨리면 돌아온다(50% + 솜씨 1.2%마다, 최대 80%), 화살이 더 자주 떨어지고(솜씨만큼 많이),
+           화살이 10개 밑이면 저절로 깎는다(솜씨가 높을수록 빨리), 가게에 화살 30개 묶음
+   · 마법 — 여럿을 한꺼번에 · 얼리고 태우고 기절시킨다. MP가 든다.
+           MP가 저절로 찬다: 초당 2.5 + 지력 × 0.25 (20 넘는 지력은 반), 1.5초 동안 MP를 쓰지 않으면 ×1.6
+           주문 MP ×0.75 안팎, 기본 주문 피해 ×1.15 (스킬 · 필살기는 그대로 — 이미 같은 잣대로 맞춰 둠) */
+(function () {
+  'use strict';
+  const G = globalThis.G;
+  const D = G.data, C = G.combat, U = G.u, P = G.prog;
+  const S = () => G.state, W = () => G.world;
+
+  const K = {
+    BOW: 1.15, CHARGE: 1.25, FAR: 0.2, FAR_FROM: 48, FAR_TO: 200, DRAW: 0.1,
+    RET: 0.5, RET_DEX: 0.012, RET_MAX: 0.8,
+    DROP: 0.18, DROP_LOW: 0.17, DROP_HELD: 0.1,
+    FLOOR: 10, FLETCH: 4, FLETCH_DEX: 0.08, FLETCH_MIN: 1.5,
+    MP_BASE: 2.5, MP_INT: 0.25, CALM_AT: 1.5, CALM: 1.6,
+    SPELL: 1.15,
+  };
+  const WB = { lastSpend: -99, prevMp: null, fletchT: 0 };
+  const now = () => (W() ? W().t : 0);
+  const soft = P ? P.soft : (v, k) => v * k;
+  const retRate = (dex) => Math.min(K.RET_MAX, K.RET + dex * K.RET_DEX);
+
+  /* ── 주문 MP: 공격 주문 ×0.75, 돕는 주문 ×0.85 안팎 ── */
+  const COST = { fire: 6, ice: 8, bolt: 12, wind: 7, poison: 8, quake: 17, gravity: 20, blizzard: 23, meteor: 30, heal: 17, light: 10, barrier: 15, blink: 10 };
+  for (const [id, mp] of Object.entries(COST)) if (D.SPELLS[id]) D.SPELLS[id].mp = mp;
+
+  /* ── 능력치 ── */
+  const der0 = G.st.derive;
+  G.st.derive = function (s) {
+    const d = der0.apply(this, arguments);
+    if (!s || !d.stats) return d;
+    d.bowAtk *= K.BOW;
+    d.draw = Math.max(0.12, d.draw - K.DRAW);
+    const calm = now() - WB.lastSpend > K.CALM_AT;
+    d.mpRegenNat = K.MP_BASE + soft(d.stats.int, K.MP_INT);
+    d.mpCalm = calm;
+    d.mpRegenGear = d.mpRegen || 0;
+    d.mpRegen = d.mpRegenGear + d.mpRegenNat * (calm ? K.CALM : 1);
+    d.arrowRet = retRate(d.stats.dex);
+    d.fletch = Math.max(K.FLETCH_MIN, K.FLETCH - d.stats.dex * K.FLETCH_DEX);
+    return d;
+  };
+
+  /* ── 활: 다 모은 화살 · 박히는 화살 ── */
+  const shoot0 = C.onShoot;
+  C.onShoot = function (o) {
+    o = (shoot0 ? shoot0.apply(this, arguments) : null) || o;
+    if (!o || o.owner === 'foe' || o.foe || o.proc || o.src !== 'arrow') return o;
+    if (o.charged && !o.skill && !o.heavy) { o.dmg *= K.CHARGE; o.pierce = Math.max(o.pierce || 0, 1); }
+    return o;
+  };
+  const mod0 = C.dmgMod;
+  C.dmgMod = function (e, info, amt) {
+    let k = mod0 ? mod0.apply(this, arguments) : 1;
+    if (k === 0) return 0;
+    if (info.src === 'arrow' && !info.proc) {
+      if (info.travel) k *= 1 + K.FAR * U.clamp((info.travel - K.FAR_FROM) / (K.FAR_TO - K.FAR_FROM), 0, 1);
+      // 맞힌 화살은 처음 맞힌 적에 박힌다 (쓰러뜨리면 돌아온다) — 한 화살은 한 번만, 스킬 화살 · 저절로 돌아오는 화살은 빼고
+      const sh = info.shot;
+      if (sh && sh.kind === 'arrow' && !sh.skill && sh.owner === 'player' && !sh.ret && !sh.stuckIn) { sh.stuckIn = true; e.arrowsIn = (e.arrowsIn || 0) + 1; }
+    }
+    if (info.src === 'spell' && !info.skill && !info.proc) k *= K.SPELL;
+    return k;
+  };
+  const xd0 = C.extraDrop;
+  C.extraDrop = function (e) {
+    if (xd0) xd0.apply(this, arguments);
+    const s = S(); if (!s || !s.tools.bow) return;
+    const A = s.ammo, d = G.st.derive(s);
+    // 박힌 화살 회수
+    if (e.arrowsIn > 0) {
+      const n = Math.floor(e.arrowsIn * d.arrowRet + Math.random());
+      e.arrowsIn = 0;
+      if (n > 0 && C.spawnPickup) { const pk = C.spawnPickup(e.x, e.y, 'arrow', n); if (pk) pk.life = 30; }
+    }
+    // 화살 더 자주 (화살통이 비어 갈수록 · 활을 든 동안)
+    if (A.arrows < A.arrowsMax) {
+      const held = G.stance && G.stance.cur && G.stance.cur(s) === 'bow';
+      const ch = K.DROP + (A.arrows < A.arrowsMax / 3 ? K.DROP_LOW : 0) + (held ? K.DROP_HELD : 0);
+      if (Math.random() < ch && C.spawnPickup) C.spawnPickup(e.x + 4, e.y + 2, 'arrow', 3 + Math.floor(d.stats.dex / 8));
+    }
+  };
+
+  /* ── 화살 줍기: 멀리서 쏘는 무기라 더 넓게 끌어당기고(36px) 오래 남는다 ── */
+  if (C.Pickup) {
+    const pu0 = C.Pickup.prototype.update;
+    C.Pickup.prototype.update = function (dt, Wd) {
+      const p = Wd && Wd.player;
+      if (this.what === 'arrow' && p && !p.dead && this.t > 0.35) {
+        const dd = U.dist(this.x, this.y, p.x, p.y - 4);
+        if (dd < 36 && dd >= 14) { const [nx, ny] = U.norm(p.x - this.x, p.y - 4 - this.y); const sp = 90 + (36 - dd) * 5; this.vx = nx * sp; this.vy = ny * sp; }
+      }
+      return pu0.apply(this, arguments);
+    };
+  }
+
+  /* ── 매 프레임: MP를 쓴 때 · 화살 깎기 ── */
+  const up0 = C.update;
+  C.update = function (dt) {
+    const r = up0 ? up0.apply(this, arguments) : undefined;
+    const s = S(), p = W() && W().player;
+    if (!s || !p) return r;
+    if (WB.prevMp != null && s.mp < WB.prevMp - 0.05) WB.lastSpend = now();
+    WB.prevMp = s.mp;
+    if (s.tools.bow && s.ammo.arrows < Math.min(K.FLOOR, s.ammo.arrowsMax) && !(G.script && G.script.running) && dt > 0) {
+      WB.fletchT += dt;
+      const every = G.st.derive(s).fletch;
+      if (WB.fletchT >= every) { WB.fletchT = 0; s.ammo.arrows++; }
+    } else WB.fletchT = 0;
+    return r;
+  };
+
+  /* ── 가게: 화살 30개 묶음 (10개짜리를 파는 곳마다) ── */
+  D.ITEMS.arrows30 = { id: 'arrows30', type: 'ammo', name: '화살 30개', ammo: 'arrows', n: 30, price: 110, desc: '화살 30개 묶음. 열 개씩 사는 것보다 조금 싸다.' };
+  for (const sh of Object.values(D.SHOPS)) { const i = sh.items.indexOf('arrows10'); if (i >= 0 && !sh.items.includes('arrows30')) sh.items.splice(i + 1, 0, 'arrows30'); }
+
+  /* ── 안내 글 ── */
+  for (const st of P.STATS) {
+    if (st.id === 'int') st.desc = '마법 피해 · 최대 MP · MP 회복 · 필살 게이지.';
+    if (st.id === 'dex') st.desc = '활 피해 · 치명타 · 시위 속도 · 화살 회수.';
+  }
+  G.wbal = { K, WB, COST, retRate };
 })();
 
 /* js/game.js */

@@ -408,15 +408,15 @@
     body.appendChild(row({ icon: G.hud.icon('special'), name: '필살기 — ' + gname(spc), desc: gradeLabel(spc) + ' · ' + spc.desc + ' (익힌 것 ' + Object.keys(s.specials).length + ' / ' + Object.keys(G.data.SPECIALS).length + ')', onClick: () => { M.sub = 'special'; M.sel = 0; sfx('select'); refresh(); } }));
     sec(body, '능력치');
     const dl = document.createElement('dl'); dl.className = 'kv card';
-    const kv = [['하트', (d.hpMax / 4) + '칸'], ['검 공격', d.atk.toFixed(1) + (d.el ? ' (' + { fire: '불', ice: '얼음', light: '빛', bolt: '번개', poison: '독', dark: '어둠' }[d.el] + ')' : '')], ['활 공격', d.bowAtk.toFixed(1)], ['마법 배율', '×' + d.magMul.toFixed(2)], ['치명타', Math.round(d.crit * 100) + '%'], ['받는 피해', Math.round(d.def * 100 * G.prog.diff().hurt) + '%'], ['MP', Math.floor(s.mp) + ' / ' + d.mpMax], ['기력', Math.round(d.stamMax)], ['구르기 무적', d.rollIframes.toFixed(2) + '초']];
+    const kv = [['하트', (d.hpMax / 4) + '칸'], ['검 공격', d.atk.toFixed(1) + (d.el ? ' (' + { fire: '불', ice: '얼음', light: '빛', bolt: '번개', poison: '독', dark: '어둠' }[d.el] + ')' : '')], ['활 공격', d.bowAtk.toFixed(1)], ['마법 배율', '×' + d.magMul.toFixed(2)], ['치명타', Math.round(d.crit * 100) + '%'], ['받는 피해', Math.round(d.def * 100 * G.prog.diff().hurt) + '%'], ['MP', Math.floor(s.mp) + ' / ' + d.mpMax], ['MP 회복', (d.mpRegen || 0).toFixed(1) + '/초' + (d.mpCalm ? ' (쉬는 중)' : '')], ['화살', s.ammo.arrows + ' / ' + s.ammo.arrowsMax + (d.arrowRet ? ' · 회수 ' + Math.round(d.arrowRet * 100) + '%' : '')], ['기력', Math.round(d.stamMax)], ['구르기 무적', d.rollIframes.toFixed(2) + '초']];
     dl.innerHTML = kv.map(([a, b]) => '<dt>' + a + '</dt><dd>' + b + '</dd>').join('');
     body.appendChild(dl);
   }
   /* ── 성장: 안내 카드 · 능력치 · 재능 나무 (갈래 탭) ── */
   const STYLE = {
-    sword: { name: '검', stat: 'str', tree: '검술', col: '#ff8a6a', why: '힘을 올리면 검 피해가 커지고 무거운 검을 든다. 체력을 곁들이면 앞에 서서 버틴다.', side: 'vit' },
-    bow: { name: '활', stat: 'dex', tree: '궁술', col: '#ffe066', why: '솜씨를 올리면 활 피해 · 치명타 · 시위 속도가 오른다. 기력을 곁들이면 구르며 쏜다.', side: 'sta' },
-    magic: { name: '마법', stat: 'int', tree: '마법', col: '#8ab8ff', why: '지력을 올리면 마법 피해 · MP · 필살 게이지가 오른다. 체력을 곁들이면 덜 쓰러진다.', side: 'vit' },
+    sword: { name: '검', stat: 'str', tree: '검술', col: '#ff8a6a', why: '장점: 가장 세고 자원이 들지 않으며 휘두르면 여럿을 함께 벤다. 단점: 붙어서 싸워야 해서 맞기 쉽다. 힘을 올리면 검 피해가 커지고 무거운 검을 든다. 체력을 곁들이면 앞에 서서 버틴다.', side: 'vit' },
+    bow: { name: '활', stat: 'dex', tree: '궁술', col: '#ffe066', why: '장점: 멀리서 안전하게, 멀수록 아프다. 다 모은 화살은 두 배 반 · 꿰뚫는다. 단점: 화살이 든다 — 맞힌 화살은 쓰러뜨린 자리에서 줍고, 10개 밑이면 저절로 깎는다. 솜씨를 올리면 활 피해 · 치명타 · 시위 속도 · 화살 회수가 오른다. 기력을 곁들이면 구르며 쏜다.', side: 'sta' },
+    magic: { name: '마법', stat: 'int', tree: '마법', col: '#8ab8ff', why: '장점: 여럿을 한꺼번에 · 얼리고 태우고 기절시킨다. 단점: MP가 든다 — 저절로 차고, 1.5초 쉬면 더 빨리 찬다. 한 적만 상대할 땐 검보다 약하다. 지력을 올리면 마법 피해 · MP · MP 회복이 오른다. 체력을 곁들이면 덜 쓰러진다.', side: 'vit' },
   };
   /** 지금 무엇으로 싸우는가: 능력치에 가장 많이 쓴 쪽, 비기면 든 무기 */
   function styleOf(s) {
@@ -443,8 +443,8 @@
       str: (a, b) => ['검 피해 ×' + (1 + P.soft(a.stats.str, 0.04)).toFixed(2), '×' + (1 + P.soft(b.stats.str, 0.04)).toFixed(2)],
       vit: (a, b) => { const v = a.stats.vit, left = 6 - (v % 6); return ['하트 ' + a.hpMax / 4 + '칸 · 받는 피해 ' + (Math.round(a.def * 1000) / 10) + '%', (b.hpMax > a.hpMax ? '하트 +1칸! · ' : '다음 하트까지 ' + left + '점 · ') + '피해 ' + (Math.round(b.def * 1000) / 10) + '%']; },
       sta: (a, b) => ['기력 ' + Math.round(a.stamMax) + ' · 회복 ×' + a.stamRegen.toFixed(2), '기력 ' + Math.round(b.stamMax)],
-      int: (a, b) => ['마법 ×' + a.magMul.toFixed(2) + ' · MP ' + a.mpMax, '×' + b.magMul.toFixed(2) + ' · MP ' + b.mpMax],
-      dex: (a, b) => ['활 ' + a.bowAtk.toFixed(1) + ' · 치명타 ' + Math.round(a.crit * 100) + '%', '활 ' + b.bowAtk.toFixed(1) + ' · ' + Math.round(b.crit * 100) + '%'],
+      int: (a, b) => ['마법 ×' + a.magMul.toFixed(2) + ' · MP ' + a.mpMax + ' · 회복 ' + (a.mpRegenNat || 0).toFixed(2) + '/초', '×' + b.magMul.toFixed(2) + ' · MP ' + b.mpMax + ' · ' + (b.mpRegenNat || 0).toFixed(2) + '/초'],
+      dex: (a, b) => ['활 ' + a.bowAtk.toFixed(1) + ' · 치명타 ' + Math.round(a.crit * 100) + '% · 회수 ' + Math.round((a.arrowRet || 0) * 100) + '%', '활 ' + b.bowAtk.toFixed(1) + ' · ' + Math.round(b.crit * 100) + '% · ' + Math.round((b.arrowRet || 0) * 100) + '%'],
     };
     for (const st of P.STATS) {
       const base = s.stats[st.id] || 0, bonus = d.stats[st.id] - base, rec = st.id === SY.stat || st.id === SY.side;
