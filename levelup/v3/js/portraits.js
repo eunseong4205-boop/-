@@ -555,7 +555,12 @@
   function resolve(who) {
     if (!who) return null;
     if (who === 'hero') return G.story && G.story.heroLook ? G.story.heroLook(G.state) : { gender: G.state.gender };
-    if (typeof who === 'string') { const c = G.cast && G.cast.get(who); return c ? c.look : null; }
+    if (typeof who === 'string') {
+      const c = G.cast && G.cast.get(who); if (c) return c.look;
+      // 인물 목록에 없는 id: 지금 지도에 있는 그 사람의 모습으로
+      const e = G.world && G.world.ents && G.world.ents.find((x) => x.cid === who && x.look && !x.dead);
+      return e ? e.look : null;
+    }
     if (who.cid && G.cast && G.cast.get(who.cid)) return G.cast.get(who.cid).look;
     if (who.look) return who.look;
     return who;

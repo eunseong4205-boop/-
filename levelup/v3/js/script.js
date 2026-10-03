@@ -26,6 +26,12 @@
     if (x === 'hero' || x === 'me') return W().player;
     return W().ents.find((e) => e.cid === x && !e.dead) || null;
   }
+  /** 이름으로 곁의 사람 찾기 (이름만 넘긴 말 · 고르기에 얼굴을 붙이려고) — 지금 지도에서 주인공과 가장 가까운 그 이름의 사람 */
+  function byName(name) {
+    const p = W().player; let best = null, bd = 1e9;
+    for (const e of W().ents) { if (!e.npc || e.dead || e.hidden || e.name !== name || !e.look) continue; const d = p ? Math.hypot(e.x - p.x, e.y - p.y) : 0; if (d < bd) { bd = d; best = e; } }
+    return best && bd < 260 ? best : null;
+  }
 
   /** 대사 속 인물을 곁에 세운다: 빈 자리를 찾아 먼지 한 번과 함께 나타나고, 장면이 끝나면 걸어 나간다 */
   function arrive(c, cid, opt) {
@@ -71,6 +77,8 @@
       async say(w, text, opt) {
         opt = opt || {};
         let e = who(w);
+        // 이름만 넘긴 말(가게 주인 · 마을 사람)은 곁에 선 그 사람의 얼굴로
+        if (!e && w == null && opt.name && !/narr|sys|remote/.test(opt.style || '')) e = byName(opt.name);
         // 말하는 사람이 지도에 없으면 곁으로 불러 세운다 (방송 · 편지 · 목소리는 opt.remote)
         const remote = opt.remote || /^\((방송|편지|목소리|통신|기록|녹음)/.test(text || '');
         if (!e && !remote && typeof w === 'string' && w !== 'hero' && w !== 'me') e = arrive(c, w, opt);
@@ -80,7 +88,9 @@
         if (e && e !== W().player && e.npc && !opt.noTurn) { const p = W().player; e.dir = U.dir4(p.x - e.x, p.y - e.y, e.dir); }
         if (e && opt.face && e.npc) e.mood = opt.face === 'smile' ? 'smile' : opt.face === 'sad' ? 'sad' : opt.face === 'angry' ? 'angry' : opt.face === 'shock' ? 'shock' : null;
         if (e && e.npc) e.talking = true;
-        const r = await G.ui.say({ who: cid || (e && e.look ? e : null), ent: e, name: opt.name || (e ? e.name : cid ? G.cast && G.cast.name(cid) : null), text, face: opt.face, style: opt.style, shake: opt.shake, auto: opt.auto });
+        // 이야기 인물 목록에 없는 id(집 안 주민 tw_… 등)는 얼굴을 그 사람의 모습으로 그린다 — id만 넘기면 얼굴 칸이 비었다
+        const inCast = !!(cid && G.cast && G.cast.get(cid));
+        const r = await G.ui.say({ who: inCast ? cid : (e && e.look ? e : cid), ent: e, name: opt.name || (e ? e.name : cid ? G.cast && G.cast.name(cid) : null), text, face: opt.face, style: opt.style, shake: opt.shake, auto: opt.auto });
         if (e && e.npc) { e.talking = false; if (!opt.keepMood) e.mood = null; }
         return r;
       },
@@ -89,7 +99,11 @@
       sys(text) { return G.ui.say({ text, style: 'sys' }); },
       /** 고르기: opts = ['…', {t, tag, if, sub}] → 고른 번호 (조건으로 빠진 것도 원래 번호) */
       async choice(prompt, opts, o) {
-        if (prompt) await G.ui.say({ who: (o && o.who) || null, name: o && o.name, text: prompt, style: o && o.style, keep: true });
+        // 고르기 앞의 말도 얼굴을: who가 없고 이름만 있으면 곁에 선 그 사람으로
+        let fw = (o && o.who) || null;
+        if (!fw && o && o.name && !/narr|sys|remote/.test(o.style || '')) { const e2 = byName(o.name); if (e2) fw = e2.cid && G.cast && G.cast.get(e2.cid) ? e2.cid : e2; }
+        else if (typeof fw === 'string' && !(G.cast && G.cast.get(fw))) { const e2 = who(fw); if (e2 && e2.look) fw = e2; }
+        if (prompt) await G.ui.say({ who: fw, name: o && o.name, text: prompt, style: o && o.style, keep: true });
         const list = opts.map((x, i) => (typeof x === 'string' ? { t: x, i } : Object.assign({ i }, x))).filter((x) => x.if == null || x.if);
         const k = await G.ui.choose(list);
         G.ui.closeDialog();
