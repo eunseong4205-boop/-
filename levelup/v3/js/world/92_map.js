@@ -100,7 +100,7 @@
   ST.drawWorldMap = function (body) {
     const s = S(), m = G.world.map;
     const wrap = document.createElement('div');
-    wrap.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:8px;padding:6px 0';
+    wrap.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:6px;padding:2px 0 6px';
     const title = document.createElement('div'); title.style.cssText = 'font-size:13px;color:#e8d8a8;letter-spacing:.1em';
     let cv;
     if (m && m.dungeon) {
@@ -113,6 +113,14 @@
     }
     cv.style.cssText = 'width:min(100%, ' + (m && m.dungeon ? cv.width * 2 : 900) + 'px);height:auto;image-rendering:pixelated;border:1px solid #4a4260;border-radius:4px;background:#08060e';
     wrap.appendChild(title); wrap.appendChild(cv);
+    // 낮은 화면(휴대폰 가로)에서 지도가 창 아래로 잘려 위쪽만 보였다 → 창 높이에 맞춰 지도 전체가 한 번에 보이게
+    const fit = () => {
+      const h = body.clientHeight; if (!h || !cv.isConnected) return;
+      const room = h - title.offsetHeight - 14;
+      const ar = cv.width / cv.height;
+      if (room > 120 && body.clientWidth / ar > room) { cv.style.width = Math.floor(room * ar) + 'px'; cv.style.maxWidth = '100%'; }
+    };
+    requestAnimationFrame(fit);
     const legend = document.createElement('div'); legend.style.cssText = 'font-size:11px;color:#a8a0c0;display:flex;gap:14px;flex-wrap:wrap;justify-content:center';
     legend.innerHTML = m && m.dungeon ? '<span><b style="color:#ff3a5a">■</b> 나</span><span><b style="color:#ffe08a">□</b> 지금 방</span><span><b style="color:#6ae07a">■</b> 정리한 방</span><span><b style="color:#ffd84a">■</b> 남은 상자</span><span><b style="color:#d83a4a">■</b> 큰 열쇠 상자</span><span><b style="color:#ff4a6a">☠</b> 주인</span><span><b style="color:#b8a0e8">↕1</b> 같은 번호끼리 이어진 계단</span>'
       : '<span><b style="color:#ff3a5a">●</b> 나</span><span><b style="color:#ffd84a">◎</b> 목표</span><span><b style="color:#8ad8ff">◆</b> 빛의 이정표</span><span><b style="color:#ffd84a">◆</b> 찾은 이야기</span><span><b style="color:#e8e0c8">■</b> 찾은 곳</span><span>어두운 곳 — 아직 갈 수 없는 땅</span>';

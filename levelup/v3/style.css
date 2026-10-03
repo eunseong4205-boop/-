@@ -384,6 +384,17 @@ button.stat small.fx { color: var(--paper-dim); }
   .m-tabs { flex-wrap: wrap; justify-content: center; overflow-x: visible; gap: 4px 3px; padding: 6px 8px 4px; }
   .m-tab { padding: 7px 10px 8px; }
 }
+/* 휴대폰 가로: 메뉴 · 지도 · 가게 창이 조작판(조이스틱 · 버튼)보다 아래에 깔려, 버튼이 지도를 가리고 손가락을 가로채고 「닫기」까지 덮었다 → 창을 맨 위로 */
+html.touch #modal { z-index: 60; }
+/* 휴대폰 가로(화면이 낮다): 창 머리 · 탭을 얇게 — 지도 · 목록이 위로 올라와 한 화면에 더 들어온다 */
+@media (orientation: landscape) and (max-height: 520px) {
+  .m-head { padding: 5px 14px 4px; }
+  .m-title { font-size: 15px; }
+  .m-tabs { padding: 4px 12px 3px; }
+  .m-tab { padding: 4px 11px 5px; }
+  .m-body { padding-top: 4px; }
+  .m-foot { padding: 4px 14px; }
+}
 /* 세로 휴대폰: 메뉴 · 가게 창은 조작판까지 덮어 화면 전체를 쓴다 (예전: 게임 화면 58% 안에 갇혀 비좁던 것) */
 @media (orientation: portrait) {
   html.touch #modal { position: fixed; inset: 0; z-index: 60; padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }

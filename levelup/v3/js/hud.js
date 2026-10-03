@@ -108,8 +108,7 @@
     // ── 오른쪽 위: 골드 · 열쇠 · 작은 지도 ──
     const rx = w - 6;
     const mm = drawMini(g, w, h);
-    let ry = mm ? mm.y + mm.h + 4 : 5;
-    if (touch()) ry = Math.max(ry, 34);
+    let ry = mm ? mm.y + mm.h + 4 : topRight();
     if (s.gold !== H.lastGold) { H.goldShow = 2; H.lastGold = s.gold; }
     const gs = String(s.gold);
     g.drawImage(icon('coin'), rx - X.digitsWidth(gs) - 16, ry - 1);
@@ -224,12 +223,27 @@
   function txt(g, s, x, y, col) { g.fillStyle = '#0b0914'; g.fillText(s, x + 1, y + 1); g.fillText(s, x, y + 1); g.fillStyle = col; g.fillText(s, x, y); }
 
   /* ───────── 작은 지도 (넓은 지도에서만) ───────── */
+  /** 오른쪽 위 맨 윗줄: 휴대폰은 시스템 버튼(지도 · 메뉴)이 오른쪽 위에 있으면 바로 그 아래, 아래에 있으면(세로 화면) 맨 위
+      (예전엔 휴대폰이면 늘 40 — 가로 화면에선 버튼 아래로 한참 비었고, 세로 화면에선 버튼이 아래인데도 내려와 있었다) */
+  let topCache = 5, topAt = -1;
+  function topRight() {
+    if (!touch()) return 5;
+    const now = G.world ? G.world.t : 0;
+    if (topAt >= 0 && Math.abs(now - topAt) < 0.5) return topCache;
+    topAt = now;
+    const sb = document.getElementById('sysbtns'), cv = document.getElementById('cv');
+    if (!sb || !cv) return (topCache = 40);
+    const r = sb.getBoundingClientRect(), c = cv.getBoundingClientRect();
+    if (!r.height || !c.height || r.top > c.top + c.height / 2 || r.left + r.width < c.left + c.width / 2) return (topCache = 5);
+    const k = cv.height / c.height;   // 캔버스 픽셀 / 화면 픽셀
+    return (topCache = U.clamp(Math.ceil((r.bottom - c.top) * k) + 3, 5, 40));
+  }
   function drawMini(g, w) {
     const W = G.world, m = W.map, s = G.state;
     if (!m || !m.minimap || s.settings.minimap === false) return null;
     if (!m.miniImg) buildMini(m);
     const mw = 64, mh = 44;
-    const x = w - mw - 6, y = touch() ? 40 : 5;
+    const x = w - mw - 6, y = topRight();
     const p = W.player;
     const ptx = p.x / TS, pty = p.y / TS;
     const sc = m.miniScale || 1; // 칸당 픽셀
