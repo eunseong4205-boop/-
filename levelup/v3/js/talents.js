@@ -101,7 +101,7 @@
     const had = Object.keys(s.skills || {});
     if (had.includes('tl_pouch')) { s.ammo.arrowsMax = Math.max(30, s.ammo.arrowsMax - 10); s.ammo.bombsMax = Math.max(10, s.ammo.bombsMax - 10); s.ammo.arrows = Math.min(s.ammo.arrows, s.ammo.arrowsMax); s.ammo.bombs = Math.min(s.ammo.bombs, s.ammo.bombsMax); }
     const back = ref0.apply(this, arguments);
-    for (const id of had) { const k = SK.find((x) => x.id === id); if (k && k.act && s.askills) { delete s.askills[k.act]; for (const w in s.wskill || {}) if (s.wskill[w] === k.act) delete s.wskill[w]; } }
+    for (const id of had) { const k = SK.find((x) => x.id === id); if (k && k.act && s.askills) { delete s.askills[k.act]; for (const t of [s.wskill, s.wskill2]) for (const w in t || {}) if (t[w] === k.act) delete t[w]; } }
     return back;
   };
 
@@ -196,7 +196,7 @@
   C.freeTool = (k) => k === 'bomb' && sk('tl_master') && Math.random() < 0.3;
   C.toolUsed = function (k, p, obj) {
     const s = S();
-    if (sk('tl_engineer') && SN) { const id = SN.equipped(s, SN.cur(s)); if (id && SN.ST.cd[id] > 0) SN.ST.cd[id] = Math.max(0, SN.ST.cd[id] - 2); }
+    if (sk('tl_engineer') && SN) for (const id of SN.equippedAll(s, SN.cur(s))) if (SN.ST.cd[id] > 0) SN.ST.cd[id] = Math.max(0, SN.ST.cd[id] - 2);
     if (k === 'bomb' && sk('tl_bomber') && obj) for (const [dx, dy] of [[-18, 6], [18, 6]]) C.after(0.15, () => { const b = new obj.constructor({ x: obj.x + dx, y: obj.y + dy, fuse: (obj.fuse || 1.6) + 0.2, power: (obj.power || 1) * 0.6 }); W().add(b); });
     if (k === 'mirror' && sk('tl_mirror') && p) { p.reflectT = 2; G.fx.ring(p.x, p.y - 8, '#d8b0ff', 20, 0.4, 2); }
   };

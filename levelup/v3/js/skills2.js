@@ -476,7 +476,7 @@
   SN.onSwap = function (p, s, from, to) {
     if (onSwap0) onSwap0.apply(this, arguments);
     if (has('tr_ready')) { p.readyT = 2; if (to === 'sword') p.frenzyT = Math.max(p.frenzyT || 0, 2); }
-    if (has('tr_relay')) { const id = SN.equipped(s, from); if (id && SN.ST.cd[id] > 0) SN.ST.cd[id] = Math.max(0, SN.ST.cd[id] - 1.5); }
+    if (has('tr_relay')) for (const id of SN.equippedAll(s, from)) if (SN.ST.cd[id] > 0) SN.ST.cd[id] = Math.max(0, SN.ST.cd[id] - 1.5);
     if (has('tr_roll') && p.state === 'roll') { p.inv = Math.max(p.inv, 0.3) + 0.3; p.stamina = Math.min(p.staminaMax, p.stamina + 15); G.fx.ring(p.x, p.y - 8, '#8ad8ff', 14, 0.25, 1); }
     if (has('tr_surge') && W().t - TR.surgeAt > 4) {
       TR.surgeAt = W().t; const d = G.st.derive(s), a = U.angle(p.face[0], p.face[1]), x = p.x + Math.cos(a) * 30, y = p.y + Math.sin(a) * 24;

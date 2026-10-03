@@ -40,7 +40,7 @@
     if (sk('tr_flow') && p.t - (ST.flowAt || -9) > 1.5) { ST.flowAt = p.t; p.stamina = Math.min(p.staminaMax, p.stamina + 10); s.mp = Math.min(d.mpMax, s.mp + 4); }
     if (sk('tr_guard') && p.t - (ST.guardAt || -9) > 3) { ST.guardAt = p.t; p.inv = Math.max(p.inv, 0.3); G.fx.glow(p.x, p.y - 10, '#8ad8ff', 16, 30); }
     if (sk('tr_charge') && p.t - (ST.chargeAt || -9) > 1) { ST.chargeAt = p.t; C.addSpecial(4 + fx(s, 'swapSp')); }
-    if (sk('tr_cool')) { const k = equipped(s, to); if (k && ST.cd[k] > 0) ST.cd[k] *= 0.7; }
+    if (sk('tr_cool')) for (const k of equippedAll(s, to)) if (ST.cd[k] > 0) ST.cd[k] *= 0.7;
     const chime = fx(s, 'swapSp'); if (chime && !sk('tr_charge') && p.t - (ST.chargeAt || -9) > 1) { ST.chargeAt = p.t; C.addSpecial(chime); }
     if (G.stance.onSwap) G.stance.onSwap(p, s, from, to);
   }
@@ -89,26 +89,38 @@
   };
   D.ASKILLS = ASK;
   const FIRST = { sword: 'a_dash', bow: 'a_fan', magic: 'a_nova' };
-  function equipped(s, w) { const k = s.wskill && s.wskill[w]; return k && s.askills && s.askills[k] ? k : null; }
+  // 스킬 칸은 무기마다 둘: 1번 [L] · 2번 [U] (재사용 대기는 스킬마다 따로)
+  const SLOT_KEY = { 1: 'L', 2: 'U' };
+  function equipped(s, w, slot) { const t = slot === 2 ? s.wskill2 : s.wskill; const k = t && t[w]; return k && s.askills && s.askills[k] ? k : null; }
+  const equippedAll = (s, w) => [equipped(s, w, 1), equipped(s, w, 2)].filter(Boolean);
+  /** 그 무기의 칸에 끼운다 — 다른 칸에 같은 스킬이 있으면 서로 바꾼다 */
+  function setSlot(s, w, slot, id) {
+    s.wskill = s.wskill || {}; s.wskill2 = s.wskill2 || {};
+    const mine = slot === 2 ? s.wskill2 : s.wskill, other = slot === 2 ? s.wskill : s.wskill2;
+    if (other[w] === id) { other[w] = mine[w]; if (!other[w]) delete other[w]; }
+    if (id) mine[w] = id; else delete mine[w];
+  }
   /** 스킬 하나를 익힌다 (처음 익힌 것은 그 무기에 바로 끼운다) */
   function learn(s, id, quiet) {
-    s.askills = s.askills || {}; s.wskill = s.wskill || {};
+    s.askills = s.askills || {}; s.wskill = s.wskill || {}; s.wskill2 = s.wskill2 || {};
     if (s.askills[id]) return false;
     s.askills[id] = true;
-    const w = ASK[id].w; if (!equipped(s, w)) s.wskill[w] = id;
-    if (!quiet && G.ui) G.ui.toast('스킬: [y]' + ASK[id].name + '[/] — ' + WNAME[w] + '을 들고 [L]', 'gold');
+    const w = ASK[id].w; let slot = 0;
+    if (!equipped(s, w, 1)) { s.wskill[w] = id; slot = 1; } else if (!equipped(s, w, 2)) { s.wskill2[w] = id; slot = 2; }
+    if (!quiet && G.ui) G.ui.toast('스킬: [y]' + ASK[id].name + '[/] — ' + (slot ? WNAME[w] + '을 들고 [' + SLOT_KEY[slot] + ']' : '성장 › 스킬에서 끼운다'), 'gold');
     return true;
   }
-  G.stance = { ASK, WEAPONS, WNAME, WCOL, avail, cur, learn, equipped, ST };
+  G.stance = { ASK, WEAPONS, WNAME, WCOL, avail, cur, learn, equipped, equippedAll, setSlot, SLOT_KEY, ST };
   const cdMul = (s, w) => Math.max(0.3, Math.max(0.4, 1 - fx(s, 'cd') - fx(s, 'cd_' + w)) * (G.stance.cdK ? G.stance.cdK(s, w) : 1));
   const skillMul = (s, w) => 1 + fx(s, 'skill_' + w) + fx(s, 'skill');
   const skillAct = {
     input(p, m) {
-      if (!I.pressed('magic')) return false;
+      const slot = I.pressed('magic') ? 1 : I.pressed('skill2') ? 2 : 0;
+      if (!slot) return false;
       const s = S();
       if (BUSY.has(p.state) || p.carry || p.swapT > 0) return true;
-      const w = cur(s), id = equipped(s, w);
-      if (!id) { sfx('buzz'); G.fx.float(p.x, p.y - 30, WNAME[w] + ' 스킬 없음', '#c8c0d8'); return true; }
+      const w = cur(s), id = equipped(s, w, slot);
+      if (!id) { sfx('buzz'); G.fx.float(p.x, p.y - 30, WNAME[w] + ' 스킬 ' + slot + '번 칸이 비었다', '#c8c0d8'); return true; }
       const A = ASK[id];
       // 등급 요구치 (능력치 · 레벨)
       if (A.req && !G.prog.reqOk(s, A.req)) { sfx('buzz'); G.fx.float(p.x, p.y - 30, '필요: ' + G.prog.reqText(s, A.req).replace(/\[\/?r\]/g, ''), '#ff8a96', { life: 0.8 }); return true; }
@@ -398,9 +410,24 @@
       if (cdl > 0) { const k = Math.min(1, cdl / (A.cd || 1)); g.fillStyle = 'rgba(0,0,20,0.6)'; g.fillRect(lx + 1, sy + 1 + Math.round(19 * (1 - k)), 19, Math.round(19 * k)); X2.digits(g, Math.ceil(cdl), lx + 20 - X2.digitsWidth(String(Math.ceil(cdl))), sy + 15, '#ffffff'); }
     }
     key('L', lx);
+    // U: 둘째 스킬 — L 칸 바로 위에
+    const id2 = equipped(s, wc, 2), A2 = id2 ? ASK[id2] : null, uy = sy - 30;
+    {
+      const GR2 = A2 && G.prog.GRADES[A2.grade || 1];
+      g.fillStyle = 'rgba(11,9,20,0.92)'; g.fillRect(lx, uy, 21, 21);
+      g.strokeStyle = A2 ? (A2.req && !G.prog.reqOk(s, A2.req) ? '#ff6a7a' : GR2.col) : 'rgba(157,147,182,0.25)'; g.lineWidth = 1; g.strokeRect(lx + 0.5, uy + 0.5, 20, 20);
+      if (A2) {
+        g.drawImage(H.icon(A2.icon), lx + 3, uy + 3);
+        const rk2 = G.stance.rank ? G.stance.rank(s, id2) : 1;
+        for (let i = 0; i < rk2; i++) { g.fillStyle = '#ffe066'; g.fillRect(lx + 3 + i * 3, uy + 18, 2, 2); }
+        const cd2 = ST.cd[id2] || 0;
+        if (cd2 > 0) { const k = Math.min(1, cd2 / (A2.cd || 1)); g.fillStyle = 'rgba(0,0,20,0.6)'; g.fillRect(lx + 1, uy + 1 + Math.round(19 * (1 - k)), 19, Math.round(19 * k)); X2.digits(g, Math.ceil(cd2), lx + 20 - X2.digitsWidth(String(Math.ceil(cd2))), uy + 15, '#ffffff'); }
+      }
+      g.fillStyle = '#f0cc6e'; g.fillRect(lx + 1, uy - 7, 7, 7); g.fillStyle = '#0b0914'; g.font = "8px 'Galmuri11', monospace"; g.fillText('U', lx + 2, uy - 1);
+    }
     // 무기 이름 · 스킬 이름 (작게)
     g.font = "8px 'Galmuri11', monospace"; g.textAlign = 'right';
-    const lab = WNAME[wc] + (A ? ' · ' + A.name : '');
+    const lab = WNAME[wc] + (A ? ' · ' + A.name : '') + (A2 ? ' · ' + A2.name : '');
     g.fillStyle = 'rgba(11,9,20,0.7)'; const tw = g.measureText(lab).width; g.fillRect(jx - 6 - tw, sy + 6, tw + 4, 10);
     g.fillStyle = WCOL[wc]; g.fillText(lab, jx - 4, sy + 14); g.textAlign = 'left';
     return r;
@@ -414,11 +441,15 @@
     let short = false;
     if (id && !cdl) { const c = ASK[id].cost || {}, p = W().player; short = (c.st && p && p.stamina < c.st * 0.6) || (c.ar && s.ammo.arrows < c.ar) || (c.mp && s.mp < c.mp); }
     set('magic', id ? (cdl > 0 ? cdl + '초' : ASK[id].name) : '스킬 없음', !id || cdl > 0 || short, false, '✸');
+    const id2 = equipped(s, wc, 2), cd2 = id2 ? Math.ceil(ST.cd[id2] || 0) : 0;
+    let short2 = false;
+    if (id2 && !cd2) { const c = ASK[id2].cost || {}, p = W().player; short2 = (c.st && p && p.stamina < c.st * 0.6) || (c.ar && s.ammo.arrows < c.ar) || (c.mp && s.mp < c.mp); }
+    set('skill2', id2 ? (cd2 > 0 ? cd2 + '초' : ASK[id2].name) : '스킬 2', !id2 || cd2 > 0 || short2, false, '✷');
   };
 
   /* ───────── 기록: 예전 기록에도 새 칸 ───────── */
   const mig0 = G.prog.migrate;
-  G.prog.migrate = function (s) { s = mig0.apply(this, arguments); if (!s.weapon) s.weapon = 'sword'; s.askills = s.askills || {}; s.wskill = s.wskill || {}; s.specialBy = s.specialBy || {}; return s; };
+  G.prog.migrate = function (s) { s = mig0.apply(this, arguments); if (!s.weapon) s.weapon = 'sword'; s.askills = s.askills || {}; s.wskill = s.wskill || {}; s.wskill2 = s.wskill2 || {}; s.specialBy = s.specialBy || {}; return s; };
   const fresh0 = G.st.fresh;
-  G.st.fresh = function () { const s = fresh0.apply(this, arguments); s.weapon = 'sword'; s.askills = {}; s.wskill = {}; s.specialBy = {}; return s; };
+  G.st.fresh = function () { const s = fresh0.apply(this, arguments); s.weapon = 'sword'; s.askills = {}; s.wskill = {}; s.wskill2 = {}; s.specialBy = {}; return s; };
 })();

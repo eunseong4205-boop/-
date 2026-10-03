@@ -49,6 +49,7 @@ html.touch #touch { display: block; position: absolute; inset: 0; pointer-events
 .tb.b { right: 84px; bottom: 0; background: radial-gradient(circle at 38% 30%, #d8e8ff, #5a8aff 34%, #2440b0 74%, #0e1650); }
 .tb.x { right: 88px; bottom: 70px; }
 .tb.y { right: 40px; bottom: 124px; }
+.tb.k2 { right: 108px; bottom: 138px; width: 46px; height: 46px; }
 .tb.r { right: 150px; bottom: 26px; width: 48px; height: 48px; }
 .tb.s { right: 150px; bottom: 96px; width: 52px; height: 52px; opacity: .35; }
 .tb.s.ready { opacity: 1; background: radial-gradient(circle at 38% 30%, #fff8d8, #ffcc4a 40%, #c87a10 80%); box-shadow: 0 0 0 1px #000, inset 0 0 0 1px #fff, 0 0 22px rgba(255, 210, 90, .8); animation: pulse 1s ease-in-out infinite; }

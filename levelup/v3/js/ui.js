@@ -486,7 +486,7 @@
     if (!SN) return;
     const cur = SN.cur(s), have = SN.avail(s);
     if (!skillW || !SN.WEAPONS.includes(skillW)) skillW = cur;
-    note(body, markup('지금 든 무기: [y]' + SN.WNAME[cur] + '[/] — [y]K[/]로 바꿔 든다. 무기마다 [y]스킬(L)[/] 하나와 [y]필살기(O)[/] 하나를 골라 둔다. 스킬은 쓸수록 [y]숙련 ★[/]이 오른다(★마다 피해 +8% · 대기 -5%).'));
+    note(body, markup('지금 든 무기: [y]' + SN.WNAME[cur] + '[/] — [y]K[/]로 바꿔 든다. 무기마다 [y]스킬 둘(L · U)[/]과 [y]필살기(O)[/] 하나를 골라 둔다. 스킬은 쓸수록 [y]숙련 ★[/]이 오른다(★마다 피해 +8% · 대기 -5%).'));
     // 무기 탭
     const tabs = document.createElement('div'); tabs.className = 'ttabs';
     for (const w of SN.WEAPONS) {
@@ -499,23 +499,27 @@
     body.appendChild(tabs);
     const w = skillW, own = have.includes(w), d = G.st.derive(s);
     if (!own) note(body, markup('[s]아직 ' + SN.WNAME[w] + '이 없다 — 스킬은 미리 익혀 둘 수 있다.[/]'));
-    const on = SN.equipped(s, w);
+    const on = SN.equipped(s, w, 1), on2 = SN.equipped(s, w, 2);
     const list = Object.keys(SN.ASK).filter((k) => SN.ASK[k].w === w);
+    note(body, markup('스킬 칸 둘 — [y]L[/](오른쪽 단추) · [y]U[/](R · Shift+오른쪽 단추 · 휴대폰 ✷). 지금: L ' + (on ? '[y]' + SN.ASK[on].name + '[/]' : '[s]비었다[/]') + ' · U ' + (on2 ? '[y]' + SN.ASK[on2].name + '[/]' : '[s]비었다[/]') + '\n[s]익힌 스킬을 누르면 L에 끼우고 원래 L의 스킬은 U로. 끼운 스킬을 누르면 L ↔ U를 바꾼다.[/]'));
     for (let g = 1; g <= 5; g++) {
       const lg = list.filter((k) => (SN.ASK[k].grade || 1) === g); if (!lg.length) continue;
       const GR = P.GRADES[g];
       sec(body, GR.name + ' 스킬' + (SKL && SKL.GREQ[g] ? ' — 필요 ' + P.STAT_NAME[{ sword: 'str', bow: 'dex', magic: 'int' }[w]] + ' ' + SKL.GREQ[g].s + ' · Lv ' + SKL.GREQ[g].lv : ''));
       for (const k of lg) {
-        const A = SN.ASK[k], got = !!(s.askills && s.askills[k]), ok = P.reqOk(s, A.req), eq = on === k;
+        const A = SN.ASK[k], got = !!(s.askills && s.askills[k]), ok = P.reqOk(s, A.req), eq = on === k, eq2 = on2 === k;
         const rk = SKL ? SKL.rank(s, k) : 1, nx = SKL && got ? G.stance.nextRank && G.stance.nextRank(s, k) : null;
         const cost = [A.cost.st ? '기력 ' + A.cost.st : '', A.cost.ar ? '화살 ' + A.cost.ar : '', A.cost.mp ? 'MP ' + Math.round(A.cost.mp * d.mpCost) : '', A.cost.mpX ? 'MP 주문×' + A.cost.mpX : ''].filter(Boolean).join(' · ');
         const src = SKL ? SKL.sources(k) : [];
         const stars = got ? ' [y]' + '★'.repeat(rk) + '[/][s]' + '☆'.repeat(5 - rk) + '[/]' : '';
         const tail = got ? (ok ? (nx ? ' — 숙련 ' + ((s.askUse && s.askUse[k]) || 0) + '회, 다음 ★까지 ' + nx + '번' : ' — 숙련 끝(★5)') : ' — [r]필요: ' + P.reqText(s, A.req).replace(/\[\/?r\]/g, '') + '[/]') : ' — [s]얻는 곳: ' + (src.length ? src.join(' · ') : '아직 알려지지 않았다') + '[/]' + (A.req && !ok ? ' · [r]필요 ' + P.reqText(s, A.req).replace(/\[\/?r\]/g, '') + '[/]' : '');
-        body.appendChild(row({ icon: G.hud.icon(A.icon || k), name: (eq ? '[y]◆[/] ' : '') + (got ? '[g' + g + ']' : '[s]') + A.name + '[/]' + stars, v: cost + ' · ' + A.cd + '초', desc: A.desc + tail, dim: !got || !ok, onClick: () => {
+        body.appendChild(row({ icon: G.hud.icon(A.icon || k), name: (eq ? '[y]◆L[/] ' : eq2 ? '[y]◆U[/] ' : '') + (got ? '[g' + g + ']' : '[s]') + A.name + '[/]' + stars, v: cost + ' · ' + A.cd + '초', desc: A.desc + tail, dim: !got || !ok, onClick: () => {
           if (!got) { toast(src.length ? '얻는 곳: ' + src[0] : '아직 익히지 못했다', 'bad'); sfx('buzz'); return; }
           if (!ok) { toast('아직 다룰 수 없다: ' + P.reqText(s, A.req).replace(/\[\/?r\]/g, ''), 'bad'); sfx('buzz'); return; }
-          s.wskill = s.wskill || {}; s.wskill[w] = k; sfx('equip'); toast(SN.WNAME[w] + ' 스킬: ' + A.name, 'gold'); refresh();
+          // 안 낀 것 → L (원래 L은 U로) · L의 것 → U · U의 것 → L
+          if (eq) SN.setSlot(s, w, 2, k); else if (eq2) SN.setSlot(s, w, 1, k); else { const old = on; SN.setSlot(s, w, 1, k); if (old) SN.setSlot(s, w, 2, old); }
+          const a1 = SN.equipped(s, w, 1), a2 = SN.equipped(s, w, 2);
+          sfx('equip'); toast(SN.WNAME[w] + ' 스킬 — L ' + (a1 ? SN.ASK[a1].name : '없음') + ' · U ' + (a2 ? SN.ASK[a2].name : '없음'), 'gold'); refresh();
         } }));
       }
     }
@@ -738,7 +742,7 @@
     body.appendChild(row({ name: '타이틀로', desc: '기록하지 않은 것은 사라진다.', onClick: () => { closeModal(); G.game.toTitle(); } }));
     sec(body, '조작');
     const k = document.createElement('div'); k.className = 'keys card';
-    k.innerHTML = [['WASD · 방향키', '이동 (방향키 조준 모드면 방향키 = 겨눠 공격)'], ['마우스', '겨누기 (360°) · 왼쪽 단추 공격 · 오른쪽 스킬 · 바퀴 무기 바꾸기'], ['J · Z · Enter', '든 무기로 공격 · 말 걸기 (검: 길게 눌렀다 떼면 회전 베기 / 활: 누른 채 조준, 떼면 쏜다 / 마법: 고른 주문, 누르고 있으면 이어서)'], ['걸으며 공격', '공격 · 스킬 · 필살기 동안에도 걷는다. 겨누는 쪽은 따로 (직접 겨누지 않으면 바라보는 쪽의 적을 자동으로)'], ['Space · X', '구르기 (기력)'], ['K · C', '무기 바꾸기 (검 → 활 → 마법)'], ['L · V', '든 무기의 스킬 (재사용 대기)'], ['I · B', '도구 (폭탄 · 갈고리 · 등불 …)'], ['O · F', '든 무기의 필살기 (게이지 가득)'], ['Q · E', '메뉴 탭 넘기기'], ['Esc · Tab', '메뉴'], ['M', '지도'], ['턱을 밀기', '뛰어내리기']].map(([a, b]) => '<kbd>' + a + '</kbd><span>' + b + '</span>').join('');
+    k.innerHTML = [['WASD · 방향키', '이동 (방향키 조준 모드면 방향키 = 겨눠 공격)'], ['마우스', '겨누기 (360°) · 왼쪽 단추 공격 · 오른쪽 스킬 1 · Shift+오른쪽 · 옆 단추 스킬 2 · 바퀴 무기 바꾸기'], ['J · Z · Enter', '든 무기로 공격 · 말 걸기 (검: 길게 눌렀다 떼면 회전 베기 / 활: 누른 채 조준, 떼면 쏜다 / 마법: 고른 주문, 누르고 있으면 이어서)'], ['걸으며 공격', '공격 · 스킬 · 필살기 동안에도 걷는다. 겨누는 쪽은 따로 (직접 겨누지 않으면 바라보는 쪽의 적을 자동으로)'], ['Space · X', '구르기 (기력)'], ['K · C', '무기 바꾸기 (검 → 활 → 마법)'], ['L · V', '든 무기의 스킬 1 (재사용 대기)'], ['U · R', '든 무기의 스킬 2 (무기마다 스킬 둘 — 성장 › 스킬에서 끼운다)'], ['I · B', '도구 (폭탄 · 갈고리 · 등불 …)'], ['O · F', '든 무기의 필살기 (게이지 가득)'], ['Q · E', '메뉴 탭 넘기기'], ['Esc · Tab', '메뉴'], ['M', '지도'], ['턱을 밀기', '뛰어내리기']].map(([a, b]) => '<kbd>' + a + '</kbd><span>' + b + '</span>').join('');
     body.appendChild(k);
   }
 
@@ -942,7 +946,7 @@
     const bg = UI.titleBg; if (bg) el.appendChild(bg);
     el.insertAdjacentHTML('beforeend', '<div class="t-logo" style="font-size:24px"><small>조작</small>이렇게 움직인다</div>');
     const k = document.createElement('div'); k.className = 'keys card'; k.style.maxWidth = '420px';
-    k.innerHTML = [['이동', 'WASD · 방향키 / 왼쪽 스틱'], ['겨누기 (360°)', '마우스 · 오른쪽 스틱 / 휴대폰은 공격 · 스킬 · 필살 버튼을 누른 채 끌기 — 걸으면서 따로 겨눈다. 겨누지 않으면 바라보는 쪽의 적을 자동으로'], ['공격 · 말 걸기', 'J · Z · Enter · 마우스 왼쪽 / 빨간 버튼 — 지금 든 무기로 (검: 길게 눌렀다 떼면 회전 베기 · 활: 누른 채 조준 · 마법: 고른 주문)'], ['구르기', 'Space · X / 파란 버튼 — 적의 공격 직전에 구르면 완벽 회피'], ['무기 바꾸기', 'K · C / ⇄ 버튼 — 검 → 활 → 마법. 하나만 손에 든다'], ['스킬', 'L · V / ✸ 버튼 — 든 무기의 스킬 (기력 · 화살 · MP, 재사용 대기)'], ['도구', 'I · B (폭탄 · 갈고리 · 등불 …)'], ['필살기', 'O · F — 든 무기의 필살기 (게이지가 가득 찼을 때)'], ['바꾸기', 'Q · E / ⇄'], ['메뉴 · 지도', 'Esc · Tab / M'], ['높은 곳', '낮은 쪽 턱을 밀면 뛰어내린다. 오를 때는 계단으로']].map(([a, b]) => '<kbd>' + a + '</kbd><span>' + b + '</span>').join('');
+    k.innerHTML = [['이동', 'WASD · 방향키 / 왼쪽 스틱'], ['겨누기 (360°)', '마우스 · 오른쪽 스틱 / 휴대폰은 공격 · 스킬 · 필살 버튼을 누른 채 끌기 — 걸으면서 따로 겨눈다. 겨누지 않으면 바라보는 쪽의 적을 자동으로'], ['공격 · 말 걸기', 'J · Z · Enter · 마우스 왼쪽 / 빨간 버튼 — 지금 든 무기로 (검: 길게 눌렀다 떼면 회전 베기 · 활: 누른 채 조준 · 마법: 고른 주문)'], ['구르기', 'Space · X / 파란 버튼 — 적의 공격 직전에 구르면 완벽 회피'], ['무기 바꾸기', 'K · C / ⇄ 버튼 — 검 → 활 → 마법. 하나만 손에 든다'], ['스킬', 'L · V / ✸ 버튼 — 스킬 1, U · R / ✷ 버튼 — 스킬 2. 무기마다 둘을 끼운다 (기력 · 화살 · MP, 재사용 대기는 따로)'], ['도구', 'I · B (폭탄 · 갈고리 · 등불 …)'], ['필살기', 'O · F — 든 무기의 필살기 (게이지가 가득 찼을 때)'], ['바꾸기', 'Q · E / ⇄'], ['메뉴 · 지도', 'Esc · Tab / M'], ['높은 곳', '낮은 쪽 턱을 밀면 뛰어내린다. 오를 때는 계단으로']].map(([a, b]) => '<kbd>' + a + '</kbd><span>' + b + '</span>').join('');
     el.appendChild(k);
     const m = document.createElement('div'); m.className = 't-menu';
     const back = document.createElement('button'); back.className = 't-btn pri'; back.textContent = '돌아가기'; back.addEventListener('click', () => title());

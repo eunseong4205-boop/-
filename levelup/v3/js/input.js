@@ -5,15 +5,15 @@
   const G = globalThis.G;
   const U = G.u;
 
-  const ACTIONS = ['up', 'down', 'left', 'right', 'attack', 'dodge', 'bow', 'magic', 'tool', 'special', 'menu', 'map', 'cycle', 'cycleL', 'confirm', 'cancel', 'aimfire'];
+  const ACTIONS = ['up', 'down', 'left', 'right', 'attack', 'dodge', 'bow', 'magic', 'tool', 'special', 'menu', 'map', 'cycle', 'cycleL', 'confirm', 'cancel', 'aimfire', 'skill2'];
   const KEYS = {
     ArrowUp: ['up'], KeyW: ['up'], ArrowDown: ['down'], KeyS: ['down'], ArrowLeft: ['left'], KeyA: ['left'], ArrowRight: ['right'], KeyD: ['right'],
     KeyJ: ['attack', 'confirm'], KeyZ: ['attack', 'confirm'], Enter: ['attack', 'confirm'], NumpadEnter: ['attack', 'confirm'],
     Space: ['dodge', 'confirm'], KeyX: ['dodge', 'cancel'],
-    KeyK: ['bow'], KeyC: ['bow'], KeyL: ['magic'], KeyV: ['magic'], KeyI: ['tool'], KeyB: ['tool'], KeyO: ['special'], KeyF: ['special'],
+    KeyK: ['bow'], KeyC: ['bow'], KeyL: ['magic'], KeyV: ['magic'], KeyI: ['tool'], KeyB: ['tool'], KeyO: ['special'], KeyF: ['special'], KeyU: ['skill2'], KeyR: ['skill2'],
     KeyQ: ['cycleL'], KeyE: ['cycle'], Escape: ['menu', 'cancel'], Tab: ['menu'], Backspace: ['cancel'], KeyM: ['map'],
   };
-  const PAD = { 0: ['attack', 'confirm'], 1: ['dodge', 'cancel'], 2: ['bow'], 3: ['magic'], 4: ['cycleL'], 5: ['tool'], 6: ['cycle'], 7: ['special'], 8: ['map'], 9: ['menu'], 12: ['up'], 13: ['down'], 14: ['left'], 15: ['right'] };
+  const PAD = { 0: ['attack', 'confirm'], 1: ['dodge', 'cancel'], 2: ['bow'], 3: ['magic'], 4: ['cycleL'], 5: ['tool'], 6: ['cycle'], 7: ['special'], 8: ['map'], 9: ['menu'], 10: ['skill2'], 11: ['skill2'], 12: ['up'], 13: ['down'], 14: ['left'], 15: ['right'] };
 
   const I = {
     st: {}, raw: { key: {}, touch: {}, pad: {}, arrow: {}, mouse: {} }, latch: {},
@@ -58,14 +58,17 @@
       if (!mine(e)) return;
       e.preventDefault();
       const M = I.mouse; M.x = e.clientX; M.y = e.clientY; M.t = I.now; M.used = true; M.inside = true;
-      const a = e.button === 0 ? 'attack' : e.button === 2 ? 'magic' : e.button === 1 ? 'bow' : null;
+      // 오른쪽 단추 = 스킬 1, Shift + 오른쪽 단추 · 옆 단추 = 스킬 2
+      const a = e.button === 0 ? 'attack' : e.button === 2 ? (e.shiftKey ? 'skill2' : 'magic') : e.button === 1 ? 'bow' : e.button === 3 || e.button === 4 ? 'skill2' : null;
       if (!a) return;
       I.raw.mouse[a] = true; I.latch[a] = true; I.lastSource = 'mouse';
       try { cv.setPointerCapture(e.pointerId); } catch (_) { /* 무시 */ }
     });
-    const up = (e) => { if (e.pointerType !== 'mouse') return; const a = e.button === 0 ? 'attack' : e.button === 2 ? 'magic' : e.button === 1 ? 'bow' : null; if (a) I.raw.mouse[a] = false; else I.raw.mouse = {}; };
+    const up = (e) => { if (e.pointerType !== 'mouse') return; if (e.button === 2) { I.raw.mouse.magic = false; I.raw.mouse.skill2 = false; return; } const a = e.button === 0 ? 'attack' : e.button === 1 ? 'bow' : e.button === 3 || e.button === 4 ? 'skill2' : null; if (a) I.raw.mouse[a] = false; else I.raw.mouse = {}; };
     cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', () => { I.raw.mouse = {}; });
     cv.addEventListener('contextmenu', (e) => e.preventDefault());
+    // 옆 단추(스킬 2)가 브라우저 뒤로 가기 · 앞으로 가기가 되지 않게
+    for (const ev of ['mouseup', 'mousedown', 'auxclick']) cv.addEventListener(ev, (e) => { if (e.button === 3 || e.button === 4) e.preventDefault(); });
     let wheelAt = -9;
     cv.addEventListener('wheel', (e) => { e.preventDefault(); if (I.now - wheelAt > 0.18) { wheelAt = I.now; I.latch.bow = true; } }, { passive: false });
   }
@@ -134,7 +137,7 @@
     // 버튼: data-act="attack" 등. 여러 손가락을 동시에 쓸 수 있다.
     // 공격 · 스킬 · 필살 버튼은 누른 채 끌면 그쪽으로 겨눈다 (360°).
     // 공격은 누르는 순간 나가고(끌면 다음 베기 · 활 조준이 따라온다), 스킬 · 필살은 뗄 때 나간다 — 톡 치면 자동 조준, 끌었다 떼면 끈 쪽으로
-    const AIMABLE = { attack: 'now', magic: 'release', special: 'release' };
+    const AIMABLE = { attack: 'now', magic: 'release', skill2: 'release', special: 'release' };
     document.querySelectorAll('[data-act]').forEach((b) => {
       const acts = b.dataset.act.split(' ');
       const mode = AIMABLE[acts[0]] || null;
