@@ -45,34 +45,37 @@
     if (n === 4) GM.acc = 0;
     draw();
   }
+  // 한 갈래가 오류를 내도 나머지(그리기 · 조작 · 이야기)는 계속 돈다: 예전에는 한 곳의 오류가 매 프레임 그리기까지 멈춰 화면이 굳었다
+  const errSeen = {};
+  function safe(name, fn) { try { fn(); } catch (e) { if (!errSeen[name]) { errSeen[name] = 1; console.error('[' + name + ']', e); } } }
   function tick(dt) {
-    I.update(dt);
-    if (G.script && G.script.update) G.script.update(dt);
+    safe('input', () => I.update(dt));
+    if (G.script && G.script.update) safe('script', () => G.script.update(dt));
     if (GM.scene === 'play') {
-      if (G.ui && G.ui.update) G.ui.update(dt);
-      const paused = G.ui.paused && G.ui.paused();
+      if (G.ui && G.ui.update) safe('ui', () => G.ui.update(dt));
+      let paused = false; safe('paused', () => { paused = !!(G.ui.paused && G.ui.paused()); });
       if (!paused) {
-        W.update(dt);
-        if (G.combat) G.combat.update(dt);
+        safe('world', () => W.update(dt));
+        if (G.combat) safe('combat', () => G.combat.update(dt));
         if (G.state) G.state.t += dt;
-        if (G.ow && G.ow.tick) G.ow.tick(dt);
-        if (G.story && G.story.tick) G.story.tick(dt);
-        trackPos(dt);
+        if (G.ow && G.ow.tick) safe('ow', () => G.ow.tick(dt));
+        if (G.story && G.story.tick) safe('story', () => G.story.tick(dt));
+        safe('pos', () => trackPos(dt));
       }
-      if (G.interact) G.interact.update();
-      if (G.cine && G.cine.update) G.cine.update(dt);
-      if (G.hud && G.hud.update) G.hud.update(dt);
-    } else if (GM.scene === 'title' && G.ui && G.ui.titleUpdate) G.ui.titleUpdate(dt);
+      if (G.interact) safe('interact', () => G.interact.update());
+      if (G.cine && G.cine.update) safe('cine', () => G.cine.update(dt));
+      if (G.hud && G.hud.update) safe('hud', () => G.hud.update(dt));
+    } else if (GM.scene === 'title' && G.ui && G.ui.titleUpdate) safe('title', () => G.ui.titleUpdate(dt));
   }
   function draw() {
     const cv = $('cv'), g = cv.getContext('2d');
     g.imageSmoothingEnabled = false;
     W.ctx = g;
     if (GM.scene === 'play' && W.map) {
-      W.render(g);
-      if (G.cine && G.cine.draw) G.cine.draw(g, W.view.w, W.view.h);
-      if (G.hud && G.hud.draw) G.hud.draw(g, W.view.w, W.view.h);
-    } else if (G.ui && G.ui.titleDraw) G.ui.titleDraw(g, cv.width, cv.height);
+      safe('render', () => W.render(g));
+      if (G.cine && G.cine.draw) safe('cine.draw', () => G.cine.draw(g, W.view.w, W.view.h));
+      if (G.hud && G.hud.draw) safe('hud.draw', () => G.hud.draw(g, W.view.w, W.view.h));
+    } else if (G.ui && G.ui.titleDraw) safe('title.draw', () => G.ui.titleDraw(g, cv.width, cv.height));
     else { g.fillStyle = '#05040a'; g.fillRect(0, 0, cv.width, cv.height); }
     if (GM.debug) { g.fillStyle = '#fff'; g.font = "8px 'Galmuri11'"; g.fillText(GM.fps + 'fps', 4, cv.height - 4); }
   }
@@ -109,8 +112,8 @@
     const p = new G.Player({ x, y });
     p.look = G.story && G.story.heroLook ? G.story.heroLook(s) : { gender: s.gender === 'girl' ? 'girl' : 'boy', hair: s.gender === 'girl' ? 'long' : 'spiky', hc: '#6a4a3a', top: 'tunic', tc: '#3aa84a', eye: '#4a9a6a' };
     p.actions = G.combat.actions;
-    p.behindWeapon = () => { if (p.dir === 'up') G.combat.drawWeapon(W.ctx, p, W.rcx, W.rcy); };
-    p.onDraw = () => { if (p.dir !== 'up') G.combat.drawWeapon(W.ctx, p, W.rcx, W.rcy); };
+    p.behindWeapon = () => { if (G.gear && p.dir !== 'up') G.gear.drawCarry(W.ctx, p, W.rcx, W.rcy); if (p.dir === 'up') G.combat.drawWeapon(W.ctx, p, W.rcx, W.rcy); };
+    p.onDraw = () => { if (G.gear && p.dir === 'up') G.gear.drawCarry(W.ctx, p, W.rcx, W.rcy); if (p.dir !== 'up') G.combat.drawWeapon(W.ctx, p, W.rcx, W.rcy); };
     return p;
   }
 
@@ -178,6 +181,7 @@
   function continueGame(save) {
     G.state = G.prog ? G.prog.migrate(Object.assign(G.st.fresh(), save, { settings: Object.assign(G.st.fresh().settings, save.settings || {}) })) : save;
     W.player = null;
+    if (G.audio) { G.audio.unlock(); G.audio.applySettings(); }
     const s = G.state;
     const r = s.map ? s : s.respawn;
     try { goto(r.map || 'world', r.x, r.y, 'down', { fresh: true }); }
@@ -189,13 +193,38 @@
     G.audio && G.audio.sfx('faint');
     W.slowmo(0.3, 0.8);
     await G.script.wait(1.4);
-    const r = await G.ui.gameOver();
+    // 쓰러짐의 대가: 레벨은 그대로, 이번 레벨에서 모은 경험(빛 알갱이)은 0으로
     const s = G.state, d = G.st.derive(s);
+    const lost = Math.floor(s.exp || 0); s.exp = 0; s.expLost = (s.expLost || 0) + lost;
+    const r = await G.ui.gameOver({ lost, lv: s.lv });
     if (r === 'title') { toTitle(); return; }
     s.hp = Math.min(d.hpMax, 12); s.mp = Math.max(s.mp, d.mpMax * 0.5);
-    const rp = s.respawn || { map: 'world', x: (G.ow.towns.green.x + 17) * 16 + 8, y: (G.ow.towns.green.y + 12) * 16 + 12 };
+    const rp = respawnPoint(s);
     p.setState('idle'); p.inv = 2;
-    G.script.run(async (c) => { await c.fade(true, { sec: 0.01 }); goto(rp.map, rp.x, rp.y, 'down'); await c.wait(0.3); await c.fade(false, { sec: 0.6 }); c.toast('빛이 다시 몸을 채웠다', 'good'); });
+    G.script.run(async (c) => { await c.fade(true, { sec: 0.01 }); goto(rp.map, rp.x, rp.y, 'down'); await c.wait(0.3); await c.fade(false, { sec: 0.6 }); c.toast('빛이 다시 몸을 채웠다', 'good'); if (lost > 0) c.toast('쓰러진 대가 — 경험 ' + lost + '을 잃었다 (Lv.' + s.lv + ' 그대로)', 'bad'); });
+  }
+  /** 쓰러진 뒤 깨어날 곳: 던전이면 그 던전 입구, 들판이면 쓰러진 자리에서 가장 가까운 불 켠 이정표나 열린 마을.
+      (예전에는 마지막으로 만진 이정표, 없으면 늘 첫 마을이라 넓은 대륙 반대편에서 깨어나곤 했다) */
+  function respawnPoint(s) {
+    const m = W.map, p = W.player, TS = 16;
+    if (m && m.dungeon && m.entry && G.dungeon.DUN[m.dungeon]) return { map: m.id, x: m.entry.x, y: m.entry.y };
+    let wx = null, wy = null;
+    if (m && m.overworld && p) { wx = p.x / TS; wy = p.y / TS; }
+    else if (s.lastWorld && s.lastWorld.x != null) { wx = s.lastWorld.x; wy = s.lastWorld.y; }
+    const cands = [];
+    const world = G.build.get('world');
+    for (const [n, t] of Object.entries(G.ow.towns || {})) {
+      if (!t.plaza || (G.story.regionOpen && !G.story.regionOpen(n))) continue;
+      let [x, y] = [t.plaza.x, t.plaza.y + 2];
+      if (world.blocked(x, y, {})) { const q = G.ow.near(world, x, y, null, 6); if (q && q[0] != null) [x, y] = q; }
+      cands.push({ map: 'world', x: x * TS + 8, y: y * TS + 12 });
+    }
+    for (const w of Object.values(s.waystones || {})) if (w && w.map === 'world') cands.push({ map: 'world', x: w.x, y: w.y });
+    if (s.respawn && s.respawn.map === 'world') cands.push(s.respawn);
+    if (wx == null || !cands.length) return s.respawn || cands[0] || { map: 'world', x: (G.ow.towns.green.x + 17) * TS + 8, y: (G.ow.towns.green.y + 12) * TS + 12 };
+    let best = cands[0], bd = 1e18;
+    for (const c of cands) { const d = (c.x / TS - wx) ** 2 + (c.y / TS - wy) ** 2; if (d < bd) { bd = d; best = c; } }
+    return best;
   }
   function toTitle() {
     G.script.queue.length = 0;
@@ -214,7 +243,7 @@
   }
 
   function boot(hot) {
-    I.bindTouch();
+    I.bindTouch(); if (I.bindMouse) I.bindMouse();
     if (G.combat) G.combat.makeIcons();
     if (G.ui && G.ui.bindTap) G.ui.bindTap();
     addEventListener('resize', resize);

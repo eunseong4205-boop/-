@@ -21,6 +21,28 @@
     return g || null;
   };
   ST.goalText = function () { const g = ST.goal(); return g ? g.text : ''; };
+  /** 다른 지도로 들어가는 길이 문이 아닌 곳(무한호처럼): ST.entries[지도] = () => ({ map, x, y }) 또는 { via: 거쳐 가는 지도 } */
+  ST.entries = {};
+  /** 목표를 지금 지도 위의 자리로 옮겨 본다: 목표가 다른 지도에 있으면 그리로 가는 문(대륙이면 그 집 문 · 무한호, 실내 · 던전이면 출구) */
+  ST.goalOn = function (mapId) {
+    const g = ST.goal(); if (!g || !g.map || g.map === mapId) return g;
+    let m; try { m = G.build.get(mapId); } catch (e) { return null; }
+    if (!m) return null;
+    const ok = (w) => { try { return !w.cond || w.cond(); } catch (e) { return false; } };
+    const at = (x, y) => Object.assign({}, g, { map: mapId, x, y, via: true });
+    const door = (mm, to) => (mm.warps || []).find((w) => w.to === to && ok(w));
+    // 목표 지도로 들어가는 자리(대륙 쪽): 문, 따로 적어 둔 길, 거쳐 가는 지도의 문 — 두 단계까지
+    const entry = (to, depth) => {
+      const e = ST.entries[to];
+      if (e && typeof e === 'function') { const r = e(); if (r && r.map === mapId) return [r.x, r.y]; }
+      const w = door(m, to); if (w) return [w.x, w.y + (w.exit || w.dir === 'down' ? -1 : 1)];
+      if (e && e.via && depth < 3) return entry(e.via, depth + 1);
+      return null;
+    };
+    const r = entry(g.map, 0); if (r) return at(r[0], r[1]);
+    if (!m.overworld) { const w = (m.warps || []).find((w2) => (w2.exit || w2.to === 'world') && ok(w2)); if (w) return at(w.x, w.y - 1); }
+    return null;
+  };
   ST.routeNote = function () {
     const r = S().route; const tot = r.dawn + r.order + r.night;
     if (!tot) return '아직 어느 쪽에도 기울지 않았다.';
@@ -46,7 +68,7 @@
     spawnPeople(m, Wd);
     // 동료
     for (const f of ST.followers()) Wd.add(new Follower(f));
-    if (ST.decorate[m.id]) for (const fn of ST.decorate[m.id]) fn(m, Wd, S());
+    if (ST.decorate[m.id]) for (const fn of ST.decorate[m.id]) ST.safe(fn, [m, Wd, S()], 'map ' + m.id);
   };
   /** 이야기가 바뀌어 사람들이 오가야 할 때: 지금 지도의 사람들을 다시 세운다 */
   ST.refreshPeople = function () {
@@ -250,11 +272,22 @@
   };
   let lastOk = null, pushT = 0;
   ST.onTick = ST.onTick || [];
+  function nearOpen(tx, ty, r) {
+    for (let d = 1; d <= r; d++) for (let dy = -d; dy <= d; dy++) for (let dx = -d; dx <= d; dx++) {
+      if (Math.max(Math.abs(dx), Math.abs(dy)) !== d) continue;
+      if (ST.regionOpen(G.ow.regionOf(tx + dx, ty + dy))) return true;
+    }
+    return false;
+  }
   function checkRegion(dt) {
+    if (ST.regionVeil) return ST.regionVeil(dt);   // 날씨 장막 (48_explore): 순간 이동 대신 바람 · 비 · 눈이 되민다
     const Wd = W(), m = Wd.map, p = Wd.player;
     if (!m || !m.overworld || !p || G.script.running) return;
-    const n = G.ow.regionOf(Math.floor(p.x / TS), Math.floor(p.y / TS));
+    const tx = Math.floor(p.x / TS), ty = Math.floor(p.y / TS);
+    const n = G.ow.regionOf(tx, ty);
     if (ST.regionOpen(n)) { if (p.state !== 'jump' && p.state !== 'fall') lastOk = { x: p.x, y: p.y, z: p.z }; return; }
+    // 경계에서 몇 칸은 들어설 수 있다: 경계 위의 일(산사태 바위 · 문 앞 등)을 열린 쪽에서 마칠 수 있게
+    if (nearOpen(tx, ty, 4)) return;
     if (!lastOk) return;
     p.x = lastOk.x; p.y = lastOk.y; p.z = lastOk.z; p.kx = p.ky = 0; if (p.state === 'roll') p.setState('idle');
     pushT -= dt;
@@ -266,14 +299,19 @@
   ST.cave = function (m, o) {
     const x = o.x, y = o.y, base = m.hgt[m.i(x, y + 1)];
     const rx = o.rx || 7, ry = o.ry || 4;
+    // 다른 입구와 그 앞길은 언덕으로 덮지 않는다 (가까이 놓인 두 동굴이 서로를 묻던 것)
+    const near = (xx, yy) => (m.warps || []).some((w) => xx >= w.x - 2 && xx <= w.x + (w.w || 1) + 1 && yy >= w.y - 1 && yy <= w.y + 4);
     for (let yy = y - ry * 2; yy <= y; yy++) for (let xx = x - rx; xx <= x + rx + 1; xx++) {
-      if (!m.inb(xx, yy)) continue;
+      if (!m.inb(xx, yy) || near(xx, yy)) continue;
       const d = Math.hypot((xx - x - 0.5) / rx, (yy - (y - ry)) / (ry + 0.5));
       if (d < 1 && m.hgt[m.i(xx, yy)] <= base) { m.hgt[m.i(xx, yy)] = base + (o.h || 1); const t = m.ter[m.i(xx, yy)]; if (t === T.WATER || t === T.DEEP || t === T.CLIFF || t === T.STAIRS || t === T.BRIDGE) m.ter[m.i(xx, yy)] = o.ground || T.GRASS; m.obj[m.i(xx, yy)] = o.cover && d < 0.8 && G.u.noise2(xx, yy, 7) > 0.4 ? o.cover : 0; }
     }
     G.gen.caveMouth(m, x, y, 2);
+    // 입구는 언덕 발치(아래 땅과 같은 높이)에 판다: 언덕 위에 두면 앞 칸이 절벽 면이 되어 걸어서 닿지 못한다
+    // 언덕이 두 층 이상이면 면이 여러 줄이 되니, 입구 아래 줄들도 절벽 면에서 뺀다
+    for (const xx of [x, x + 1]) { m.hgt[m.i(xx, y)] = base; for (let k = 1; k < (o.h || 1); k++) m.noCliff.add(m.i(xx, y + k)); }
     G.build.placeBuilding(m, { special: 'cave', tx: x, ty: y, w: 2, h: 1, to: o.to, id: o.id, col: o.col || '#6e5640', cond: o.cond, msg: o.msg });
-    for (let yy = y + 1; yy < y + (o.path || 3); yy++) for (const xx of [x, x + 1]) { const i = m.i(xx, yy); if (m.ter[i] === T.CLIFF || m.ter[i] === T.STAIRS) continue; m.ter[i] = m.ter[i] === T.WATER || m.ter[i] === T.DEEP ? T.BRIDGE : (o.road || T.DIRT); m.obj[i] = 0; m.hgt[i] = base; }
+    for (let yy = y + 1; yy < y + (o.path || 3); yy++) for (const xx of [x, x + 1]) { const i = m.i(xx, yy); if (m.ter[i] === T.CLIFF || m.ter[i] === T.STAIRS) { m.ter[i] = T.STAIRS; m.obj[i] = 0; continue; } m.ter[i] = m.ter[i] === T.WATER || m.ter[i] === T.DEEP ? T.BRIDGE : (o.road || T.DIRT); m.obj[i] = 0; m.hgt[i] = base; }
     return { x, y };
   };
   /** 장(章)마다 다른 말: { c1: [...], c3: [...] } → 지금 장 이하에서 가장 늦은 것 */
@@ -301,18 +339,24 @@
   };
 
   /* ───────── 매 프레임 ───────── */
+  // 갈고리 하나가 오류를 내도 나머지(이야기 진행 · 수련 판정 …)는 계속 돈다. 오류는 갈고리마다 한 번만 남긴다
+  const failed = new WeakSet();
+  ST.safe = function (f, args, tag) {
+    try { return f.apply(null, args); }
+    catch (e) { if (!failed.has(f)) { failed.add(f); console.error('[story ' + (tag || 'hook') + ']', e); } }
+  };
   ST.tick = function (dt) {
-    if (ST.onTick) for (const f of ST.onTick) f(dt);
+    if (ST.onTick) for (const f of ST.onTick) ST.safe(f, [dt], 'tick');
   };
   ST.onTick = [checkRegion];
   ST.onKill = function (e) {
     const s = S(); s.kills = (s.kills || 0) + 1;
-    if (ST.killHooks) for (const f of ST.killHooks) f(e, s);
+    if (ST.killHooks) for (const f of ST.killHooks) ST.safe(f, [e, s], 'kill');
   };
   ST.killHooks = [];
-  ST.onLevel = function (lv) { if (ST.levelHooks) for (const f of ST.levelHooks) f(lv); };
+  ST.onLevel = function (lv) { if (ST.levelHooks) for (const f of ST.levelHooks) ST.safe(f, [lv], 'level'); };
   ST.levelHooks = [];
-  ST.onEnter = function (m) { if (ST.enterHooks) for (const f of ST.enterHooks) f(m); };
+  ST.onEnter = function (m) { if (ST.enterHooks) for (const f of ST.enterHooks) ST.safe(f, [m], 'enter'); };
   ST.enterHooks = [];
   /** 지역 단계 이상으로 적이 강해지지 않게 (장에 맞춰) */
   ST.foeScale = function () { return 0; };

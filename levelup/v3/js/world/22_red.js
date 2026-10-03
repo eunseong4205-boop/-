@@ -22,7 +22,9 @@
       if (!f('d2:boss')) return { text: '황금 광산 깊은 곳으로. 폭탄을 찾아 막힌 길을 열자.', map: 'world', x: MINE.x, y: MINE.y };
       if (!f('c2_extractor')) return { text: '두더지왕이 지키던 문 너머, 광산 가장 깊은 방으로.', map: 'd2' };
       if (!f('c2_done')) return { text: '볼칸에게 돌아가자.', map: 'world', x: X0 + 5, y: Y0 + 6 };
-      return { text: '블루 가는 길의 산사태를 폭탄으로 치우고 블루 항구로.', map: 'world', ...OW.pt(136, 196) };
+      // 산사태를 치우기 전에는 표시가 바위 앞(열린 쪽)을 가리킨다: 블루 항구는 아직 닫힌 땅이라 그쪽만 가리키면 헤맨다
+      if (!f('slide_clear') && ST.RED.slideAt) return { text: '블루 가는 길의 산사태를 폭탄으로 치우자. (도구 버튼으로 폭탄을 놓는다)', map: 'world', x: ST.RED.slideAt[0] - 2, y: ST.RED.slideAt[1] };
+      return { text: '산사태가 치워졌다. 블루 항구로.', map: 'world', ...OW.pt(136, 196) };
     } });
   ST.closedMsg.blue = '찍… 블루 가는 길은 산사태로 막혔대. 폭탄이라도 있으면 몰라.';
 
@@ -75,6 +77,13 @@
     const m = G.world.map; if (!m || !m.overworld) return;
     const [sx, sy] = ST.RED.slideAt;
     let left = 0; for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 2; dx++) if (m.O(sx + dx, sy + dy) === O.BOULDER) left++;
+    const R0 = ST.RED; if (R0.slideN == null || left > R0.slideN) R0.slideN = left;
+    // 절반을 부수면 나머지는 저절로 무너진다 (경계 너머 바위까지 폭탄이 닿지 않던 것)
+    if (left > 0 && left <= R0.slideN / 2) {
+      for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 2; dx++) if (m.O(sx + dx, sy + dy) === O.BOULDER) { m.setO(sx + dx, sy + dy, 0); G.fx.dust((sx + dx) * TS + 8, (sy + dy) * TS + 10, 8); }
+      G.world.shake(4, 0.5); if (G.audio) G.audio.sfx('rock');
+      left = 0;
+    }
     if (left === 0) { S().flags.slide_clear = true; S().flags['open:blue'] = true; G.ui.toast('산사태가 치워졌다 — 블루 항구로 가는 길이 열렸다!', 'gold'); if (G.audio) G.audio.jingle('secret'); }
   });
 
@@ -148,7 +157,7 @@
     await c.say(n, '…날은 안 건드렸다. 이 검은 내 모루가 감당 못 해. 손잡이만 감았다. 덜 미끄러울 거다.', { face: 'closed' });
     await c.say(n, '하나 더. 레드 사람은 불을 다룬다. 손바닥에 열을 모아 던지는 법이다. 네 할미가 나한테 가르친 걸 돌려주는 거다.', { face: 'normal' });
     G.st.learnSpell(S(), 'fire'); c.sfx('fire'); c.flash('#ff8a3a', 0.4);
-    await c.say(null, '[r]화염구[/]를 배웠다! (마법 버튼 · MP 8) 풀과 얼음을 태우고, 횃불에 불을 붙인다.', { style: 'sys' });
+    await c.say(null, '[r]화염구[/]를 배웠다! ([K]로 마법을 들고 공격 버튼 · MP 8) 풀과 얼음을 태우고, 횃불에 불을 붙인다.', { style: 'sys' });
     c.exp(40);
     c.flag('c2_done'); c.quest('main', 'on');
     await c.say(n, '가라. 레드 사람은 인사를 길게 안 한다.', { face: 'angry' });
@@ -248,9 +257,9 @@
   }
 
   // 레드 주민들
-  ST.folk('world', { name: '대장장이 견습', folk: 'smith', x: X0 + 8, y: Y0 + 8, wander: 10, barks: ['땅! 땅! 땅!'], lines: { c2: ['볼칸 아저씨는 망치 소리로 사람을 알아봐. 너는… 아직 소리가 없대.', '레드 사람은 인사가 짧아. 오늘도 렙업!'], c3: ['광산이 풀려서 쇠가 다시 들어와. 망치가 신났어.'] } });
+  ST.folk('world', { name: '대장장이 견습', folk: 'smith', x: X0 + 8, y: Y0 + 8, wander: 10, barks: ['땅! 땅! 땅!'], lines: { c2: ['볼칸 아저씨는 망치 소리로 사람을 알아봐. 너는… 아직 소리가 없대.', '레드 사람은 인사가 짧아. 「왔어?」 그게 다야.'], c3: ['광산이 풀려서 쇠가 다시 들어와. 망치가 신났어.'] } });
   ST.folk('world', { name: '광부의 아내', folk: 'farmerw', x: X0 + 16, y: Y0 + 16, wander: 16, lines: { c2: ['우리 남편이 광산에 들어간 지 석 달째야. 편지 한 장이 없어.', '기사들이 그러는데, 빛을 조금만 짜면 금이 더 나온대. 사람이 레몬도 아니고.'], c3: () => S().flags.c2_route ? '남편이 돌아왔어! 머리는 하얘졌지만… 돌아왔어.' : '…' } });
-  ST.folk('world', { name: '떠돌이 상인', folk: 'merchant', x: X0 + 14, y: Y0 + 11, lines: { c2: ['블루 가는 길이 막혀서 물건이 안 들어와. 옐로 금화만 잔뜩 쌓였지.'], c3: ['길이 뚫렸다! 오늘도 렙업!'] } });
+  ST.folk('world', { name: '떠돌이 상인', folk: 'merchant', x: X0 + 14, y: Y0 + 11, lines: { c2: ['블루 가는 길이 막혀서 물건이 안 들어와. 옐로 금화만 잔뜩 쌓였지.'], c3: ['길이 뚫렸다! 이제 블루 물건이 다시 들어와.'] } });
 
   // 아스텔 박사 (관측소)
   ST.person('r_obs', { id: 'astel', x: 7, y: 4, dir: 'right', talk: async (c, n) => {

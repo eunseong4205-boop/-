@@ -29,6 +29,8 @@
   function propBlock(x, y, w, h, who) {
     for (const e of W.ents) {
       if (e === who || !e.solid || e.dead || !e.blockBox) continue;
+      // 사람은 주인공이 계속 밀면 비켜 준다 (다리 · 문 앞 · 좁은 길에서 영영 막히지 않게)
+      if (e.npc && e.passT > 0 && who && who === W.player) continue;
       const b = e.blockBox();
       if (b && x < b.x + b.w && x + w > b.x && y < b.y + b.h && y + h > b.y) return true;
     }
@@ -68,12 +70,15 @@
   function slowmo(f, sec) { W.slow = f; W.slowT = sec; }
 
   /* ───────── 갱신 ───────── */
+  // 존재 하나가 오류를 내도 다른 존재 · 카메라 · 문 판정은 계속 돈다 (종류마다 한 번만 남긴다)
+  const entErrSeen = {};
+  function entErr(e, err) { const k = (e && (e.kind || (e.constructor && e.constructor.name))) || '?'; if (!entErrSeen[k]) { entErrSeen[k] = 1; console.error('[ent ' + k + ']', err); } }
   function update(dt) {
     if (W.stopT > 0) { W.stopT -= dt; updateCam(dt); G.fx && G.fx.update(dt * 0.2); return; }
     if (W.slowT > 0) { W.slowT -= dt; dt *= W.slow; if (W.slowT <= 0) W.slow = 1; }
     W.t += dt;
     if (!W.paused) {
-      for (const e of W.ents.slice()) if (!e.dead && e.update) e.update(dt, W);
+      for (const e of W.ents.slice()) if (!e.dead && e.update) { try { e.update(dt, W); } catch (err) { entErr(e, err); } }
       W.ents = W.ents.filter((e) => !e.dead || e === W.player);
     }
     if (G.fx) G.fx.update(dt);
@@ -93,7 +98,7 @@
     W.lastTx = tx; W.lastTy = ty;
     for (const w of m.warps || []) {
       if (tx < w.x || ty < w.y || tx >= w.x + (w.w || 1) || ty >= w.y + (w.h || 1)) continue;
-      if (w.cond && !w.cond()) { if (w.msg) { G.ui.toast(typeof w.msg === 'function' ? w.msg() : w.msg, 'bad'); const [ux, uy] = U.DV[p.dir]; p.x -= ux * 6; p.y -= uy * 6; } continue; }
+      if (w.cond && !w.cond()) { if (w.msg) { G.ui.toast(typeof w.msg === 'function' ? w.msg() : w.msg, 'bad', 'warp:' + (w.id || w.to)); const [ux, uy] = U.DV[p.dir]; p.x -= ux * 6; p.y -= uy * 6; } continue; }
       if (G.game.useWarp) G.game.useWarp(w);
       return;
     }
@@ -120,6 +125,7 @@
     // 바닥에 붙는 것 (그림자 · 떨어진 물건 · 효과)
     for (const e of W.ents) if (!e.dead && !e.hidden && e.drawShadow && e.x > cx - 60 && e.x < cx + v.w + 60 && e.y > cy - 20 && e.y < cy + v.h + 60) e.drawShadow(g, cx, cy);
     if (G.fx) G.fx.drawUnder(g, cx, cy);
+    if (G.gear && G.gear.drawUnder) { try { G.gear.drawUnder(g, cx, cy); } catch (_) { /* 무시 */ } }
     // y 정렬: 서 있는 사물 + 존재
     const list = [];
     m.collect(list, tx0, ty0, tx1, ty1 + 3);
@@ -127,7 +133,7 @@
     for (const e of W.ents) if (!e.dead && !e.hidden && e.draw && e.x > x0 && e.x < x1 && e.y > y0 && e.y < y1) list.push({ y: e.y + (e.sortBias || 0), ent: e });
     list.sort((a, b) => a.y - b.y);
     for (const it of list) {
-      if (it.ent) it.ent.draw(g, cx, cy);
+      if (it.ent) { try { it.ent.draw(g, cx, cy); } catch (err) { entErr(it.ent, err); } }
       else {
         // 플레이어가 큰 나무 뒤에 있으면 잎을 조금 비친다
         const p = W.player;
@@ -139,8 +145,11 @@
       }
     }
     if (G.combat && G.combat.drawBolts) G.combat.drawBolts(g, cx, cy);
+    if (G.combat && G.combat.drawAim) { try { G.combat.drawAim(g, cx, cy); } catch (_) { /* 무시 */ } }
     if (G.fx) G.fx.drawOver(g, cx, cy);
     if (G.light) G.light.draw(g, cx, cy);
+    // 덧그림: 지역 날씨 장막 등 (빛 위에)
+    if (W.overlays) for (const f of W.overlays) { try { f(g, cx, cy, v); } catch (err) { if (!W.ovErr) { W.ovErr = true; console.error('[overlay]', err); } } }
   }
 
   Object.assign(W, { load, add, remove, propBlock, snap, update, render, shake, hitstop, slowmo });

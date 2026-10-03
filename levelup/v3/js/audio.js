@@ -5,6 +5,7 @@
   const A = { ctx: null, cur: null, curId: null, queued: null };
   let master, mGain, sGain, noiseBuf;
   const waves = {};
+  let lastKey = '';
 
   function unlock() {
     if (!A.ctx) {
@@ -19,13 +20,32 @@
       noiseBuf = A.ctx.createBuffer(1, A.ctx.sampleRate, A.ctx.sampleRate);
       const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
       applySettings();
-      if (A.queued !== null) { const q = A.queued; A.queued = null; music(q); }
     }
-    if (A.ctx.state === 'suspended') A.ctx.resume();
+    else { const st = (G.state && G.state.settings) || {}; if ([st.vol, st.music, st.sfx].join('|') !== lastKey && !A.cur) applySettings(); }
+    // iOS 사파리는 손짓 안에서 실제로 소리를 한 번 내야 풀린다 — 들리지 않는 아주 짧은 버퍼
+    if (A.ctx.state !== 'running') {
+      try { const b = A.ctx.createBuffer(1, 1, 22050), s = A.ctx.createBufferSource(); s.buffer = b; s.connect(A.ctx.destination); s.start(0); } catch (_) { /* 무시 */ }
+    }
+    if (A.ctx.state !== 'running' && A.ctx.resume) {
+      const p = A.ctx.resume();
+      if (p && p.then) p.then(flushQueued, () => {}); else flushQueued();
+    } else flushQueued();
+  }
+  function flushQueued() {
+    if (A.queued !== null && A.queued !== undefined && A.ctx && A.ctx.state === 'running') { const q = A.queued; A.queued = null; music(q); }
+  }
+  /* 소리가 나지 않던 것: 예전에는 새 게임 「시작한다」에서만 오디오를 깨웠다. 이어하기 · 키보드 · 휴대폰 버튼으로 들어오면
+     오디오가 한 번도 켜지지 않았고, 탭을 다녀오거나 휴대폰이 잠들면 멈춘 채였다 → 모든 손짓에서 깨우고, 돌아오면 다시 */
+  const GESTURES = ['pointerdown', 'pointerup', 'touchstart', 'touchend', 'mousedown', 'keydown', 'click'];
+  function onGesture() { unlock(); }
+  if (typeof window !== 'undefined' && window.addEventListener) {
+    for (const ev of GESTURES) window.addEventListener(ev, onGesture, { capture: true, passive: true });
+    document.addEventListener('visibilitychange', () => { if (!document.hidden && A.ctx && A.ctx.state !== 'running') { try { A.ctx.resume(); } catch (_) { /* 무시 */ } } });
   }
   function applySettings() {
     if (!A.ctx) return;
     const st = (G.state && G.state.settings) || { music: true, sfx: true, vol: 0.7 };
+    lastKey = [st.vol, st.music, st.sfx].join('|');
     master.gain.value = st.vol == null ? 0.7 : st.vol;
     mGain.gain.value = st.music ? 0.32 : 0;
     sGain.gain.value = st.sfx ? 0.55 : 0;
@@ -69,6 +89,7 @@
   const lastSfx = {};
   function sfx(name) {
     if (!A.ctx || !G.state || !G.state.settings.sfx) return;
+    if (A.ctx.state === 'suspended') { try { A.ctx.resume(); } catch (_) { /* 무시 */ } }
     const now = A.ctx.currentTime;
     if (lastSfx[name] && now - lastSfx[name] < 0.03) return;
     lastSfx[name] = now;
@@ -173,6 +194,13 @@
       case 'wind': noise(t, 1.2, 0.08, null, null, 700); break;
       case 'heartbeat': osc('sine', 60, t, 0.1, 0.35, null, { to: 40, slide: 0.1 }); osc('sine', 60, t + 0.22, 0.1, 0.25, null, { to: 40, slide: 0.1 }); break;
       case 'impact': noise(t, 0.3, 0.45, null, null, 400); osc('sq50', 80, t, 0.3, 0.2, null, { to: 30, slide: 0.3 }); break;
+      case 'barrier': [79, 86, 91].forEach((m, i) => osc('sine', hz(m), t + i * 0.03, 0.22, 0.08, null, { r: 0.25 })); noise(t, 0.12, 0.12, null, 4500); break;
+      case 'dash': noise(t, 0.12, 0.26, null, 1600); osc('sq12', 300, t, 0.1, 0.06, null, { to: 900, slide: 0.1 }); break;
+      case 'discover': [76, 83, 88, 95].forEach((m, i) => osc('sine', hz(m), t + i * 0.07, 0.35, 0.08, null, { r: 0.4 })); osc('triangle', hz(52), t, 0.5, 0.15, null, { r: 0.4 }); break;
+      case 'book': noise(t, 0.06, 0.12, null, 4200); noise(t + 0.09, 0.07, 0.1, null, 3600); osc('sine', hz(84), t + 0.12, 0.2, 0.05, null, { r: 0.2 }); break;
+      case 'slash': noise(t, 0.09, 0.3, null, 2000); osc('sq25', 880, t, 0.06, 0.07, null, { to: 220, slide: 0.06 }); break;
+      case 'whoosh': noise(t, 0.18, 0.18, null, null, 1600); break;
+      case 'learn': [72, 79, 84, 91, 96].forEach((m, i) => osc('sq25', hz(m), t + i * 0.05, 0.1, 0.09)); osc('sine', hz(60), t, 0.5, 0.12, null, { r: 0.4 }); break;
       case 'crystal': [96, 103, 108].forEach((m, i) => osc('sine', hz(m), t + i * 0.08, 0.6, 0.06, null, { r: 0.6 })); break;
     }
   }
@@ -294,7 +322,7 @@
     return chans;
   }
   function music(id) {
-    if (!A.ctx) { A.queued = id; return; }
+    if (!A.ctx || A.ctx.state !== 'running') { A.queued = id; if (!id && A.cur) stop(); if (A.ctx && A.ctx.state === 'suspended') { try { A.ctx.resume().then(flushQueued, () => {}); } catch (_) { /* 무시 */ } } return; }
     if (id === A.curId && A.cur) return;
     stop();
     A.curId = id;

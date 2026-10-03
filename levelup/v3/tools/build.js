@@ -7,7 +7,7 @@ const fs = require('fs');
 const path = require('path');
 const V3 = path.resolve(__dirname, '..');
 const ROOT = path.resolve(V3, '..');
-const ORDER = ['util', 'input', 'gfx', 'tiles', 'objs', 'map', 'ent', 'fx', 'world', 'player', 'sprites', 'portraits', 'data', 'progress', 'state', 'light', 'combat', 'specials', 'enemies', 'bosses', 'monsters', 'props', 'hud', 'ui', 'cine', 'script', 'arsenal', 'gen', 'audio', 'music'];
+const ORDER = ['util', 'input', 'gfx', 'tiles', 'objs', 'map', 'ent', 'fx', 'world', 'player', 'sprites', 'portraits', 'data', 'progress', 'state', 'light', 'combat', 'specials', 'enemies', 'bosses', 'monsters', 'props', 'hud', 'ui', 'cine', 'script', 'arsenal', 'stance', 'talents', 'skills', 'gear', 'skills2', 'gen', 'audio', 'music'];
 const TITLE = '무한렙업 대모험';
 const read = (p) => fs.readFileSync(p, 'utf8');
 function fonts() {
@@ -30,6 +30,9 @@ const css = fonts() + '\n' + read(path.join(V3, 'style.css'));
 const body = read(path.join(V3, 'body.html'));
 const js = scripts();
 if (js.indexOf('</script') >= 0) throw new Error('스크립트 안에 </script 가 있다');
+// 문법 검사: 한 파일이라도 깨지면 게임 전체가 열리지 않으니 쓰기 전에 막는다
+try { new (require('vm').Script)(js, { filename: 'bundle' }); }
+catch (e) { console.error('문법 오류 — 빌드 중단:\n' + (e.stack || e.message).split('\n').slice(0, 5).join('\n')); process.exit(1); }
 const frag = '<title>' + TITLE + '</title>\n<style>\n' + css + '\n</style>\n' + body + '\n<script>\n' + js + '\n</script>\n';
 const full = '<!doctype html>\n<html lang="ko">\n<head>\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">\n<meta name="theme-color" content="#0b0914">\n' +
   '<title>' + TITLE + '</title>\n<style>\n' + css + '\n</style>\n</head>\n<body>\n' + body + '\n<script>\n' + js + '\n</script>\n</body>\n</html>\n';

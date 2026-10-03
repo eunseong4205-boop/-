@@ -389,11 +389,11 @@
   ST.person('world', { name: '고철상 러스크', folk: 'mech', x: X0 + 24, y: Y0 + 14, dir: 'down', mark: () => (!f('rusk_done') ? '?' : null), talk: async (c, n) => {
     const got = S().gears || 0;
     if (f('rusk_done')) { await c.say(n, '고철 의자 여덟 개. 이제 여관에 손님이 앉을 데가 있어. 색은 없지만 튼튼해.', { face: 'happy' }); return; }
-    if (got >= 8) { S().gears -= 8; await c.say(n, '녹슨 톱니 여덟 개! 이거면 의자 하나 뚝딱이지. 고마워! 값이야. 고철 시장에선 고철로 셈하는데, 너한텐 이걸로.', { face: 'happy' }); c.flag('rusk_done'); await c.getItem('heartpiece'); c.gold(300); return; }
+    if (got >= 8) { S().gears -= 8; delete S().inv.gear_rust; await c.say(n, '녹슨 톱니 여덟 개! 이거면 의자 하나 뚝딱이지. 고마워! 값이야. 고철 시장에선 고철로 셈하는데, 너한텐 이걸로.', { face: 'happy' }); c.flag('rusk_done'); await c.getItem('heartpiece'); c.gold(300); return; }
     await c.say(n, '고철 팝니다, 고철 삽니다. 러스크야.||부탁 하나 하자. 드론이 떨어뜨리는 [y]녹슨 톱니[/] 여덟 개만 구해 줘. 의자가 하나 모자라거든. (' + got + '/8)', { face: 'normal' });
     c.flag('rusk_q');
   } });
-  ST.killHooks.push((e, s) => { if (e.type === 'drone' && s.flags.rusk_q && !s.flags.rusk_done) { s.gears = (s.gears || 0) + 1; G.ui.toast('녹슨 톱니 ' + Math.min(8, s.gears) + '/8', 'good'); } });
+  ST.killHooks.push((e, s) => { if (e.type === 'drone' && s.flags.rusk_q && !s.flags.rusk_done) { s.gears = (s.gears || 0) + 1; s.inv.gear_rust = Math.min(8, s.gears); G.ui.toast('녹슨 톱니 ' + Math.min(8, s.gears) + '/8', 'good'); } });
   ST.folk('world', { name: '공장 일꾼', folk: 'miner', x: X0 + 10, y: Y0 + 9, wander: 20, lines: { c8: ['색? 그런 거 없어도 쇠는 잘 녹아. …우리 딸은 빨간 게 뭐냐고 물어. 대답을 못 해.', '볼트 영감이 요즘 이상해. 공방 불이 밤새 켜져 있어. 망치 소리는 안 나고.'], c9: '볼트 영감이 탑 도면을 불태웠어! 난로에. 그날 밤 공방에서 노랫소리가 났대. 볼트가? 설마.' } });
   ST.folk('world', { name: '회색 아이', folk: 'kid', x: X0 + 16, y: Y0 + 16, wander: 20, lines: { c8: [(girl() ? '누나' : '형') + ' 옷은 왜 그 색이야? 그게 초록이야? 만져 봐도 돼? …따뜻하지는 않네.', '은빛 왕국 폐허엔 가지 마. 밤에 왕이 운대. 배고프다고.'], c9: '하늘이 조금 파래졌어! 진짜야! 아침에 한 칸만큼!' } });
   ST.folk('world', { name: '늙은 광부', folk: 'miner', x: RUIN.x + 9, y: RUIN.y + 3, lines: { c8: ['우리 할아버지의 할아버지의… 아무튼 그 할아버지가 612년에 광맥을 캤대. 왕이 마시는 걸 봤대.', '「그릇이 되려는 자는 먼저 굶는 법을 배워야 한다.」 광부들 말이야. 무슨 뜻인지는 나도 몰라.'] } });

@@ -75,9 +75,10 @@
     for (const [a, b] of W.merge || []) (Dn.merge = Dn.merge || []).push([K(a), K(b)]);
     Dn.floors = Dn.floors || {};
     for (const r of W.rooms) Dn.floors[K(r.k)] = W.name;
-    // 큰 열쇠는 구역 끝으로. 원래 상자에는 다른 것을.
+    // 큰 열쇠는 구역 끝으로. 원래 상자에는 다른 것을. (49_dungeons2가 다시 본 던전으로 되돌린다 — 자리를 적어 둔다)
     const hr = Dn.rooms[host];
     const ch = (hr.props || []).find((pr) => pr[0] === 'chest' && pr[3] && pr[3].item === 'key_big');
+    Dn.deepHost = host; Dn.deepEntry = K(W.entry); Dn.deepFinal = K(W.final); Dn.deepKeyChest = ch || null;
     const fin = Dn.rooms[K(W.final)];
     fin.props = fin.props || [];
     if (ch) { ch[3] = Object.assign({}, ch[3], { item: W.consolation || 'potion_r', big: false }); fin.props.push(['chest', 7, 5, { item: 'key_big', big: true, hidden: !W.finalOpen }]); }

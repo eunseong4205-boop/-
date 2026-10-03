@@ -70,14 +70,21 @@
 
   /** 상자: item(아이템 id) · gold · 열쇠. big이면 큰 열쇠가 있어야 열린다 */
   class Chest extends Prop {
-    constructor(o) { super(Object.assign({ bw: 14, bh: 8, shadowW: 8, big: false }, o)); this.opened = flag(this.key); if (this.hiddenUntil && !flag(this.hiddenUntil)) this.hidden = true; }
+    constructor(o) {
+      super(Object.assign({ bw: 14, bh: 8, shadowW: 8, big: false }, o)); this.opened = flag(this.key); if (this.hiddenUntil && !flag(this.hiddenUntil)) this.hidden = true;
+      // 큰 열쇠가 든 상자는 크고 붉게 보이지만 잠겨 있지 않다 (예전: 큰 상자라서 큰 열쇠가 있어야 열려 — 큰 열쇠를 영영 못 얻던 것)
+      this.keyChest = this.item === 'key_big';
+      if (this.keyChest) { this.big = true; this.col = this.col || '#b83a3a'; }
+      // 큰 열쇠로 잠근 보물 상자는 두지 않는다 — 귀한 것은 빛깔로 (영웅 보라 · 전설 금빛)
+      else if (this.big) { this.big = false; const it = G.data.ITEMS[this.item]; const gr = it && it.grade || 0; if (!this.col) this.col = gr >= 5 ? '#d8a020' : gr >= 4 ? '#7a4ab8' : gr >= 3 ? '#3a6ab8' : null; }
+    }
     update(dt) { this.t += dt; if (this.hidden && this.hiddenUntil && flag(this.hiddenUntil)) { this.hidden = false; this.appear = 0.8; sfx('puzzle'); G.fx.glow(this.x, this.y - 6, '#fff2a8', 18); } if (this.appear > 0) this.appear -= dt; }
     reveal() { if (this.hidden && this.revealKey) { S().flags[this.revealKey] = true; this.hiddenUntil = this.revealKey; } }
     canUse(p) { return !this.opened && !this.hidden && (p.dir === 'up' || this.anyDir); }
     get label() { return '연다'; }
     use(p) {
       const s = S(), m = W().map;
-      if (this.big && m.dungeon && !s.bigkeys[m.dungeon]) { G.ui.toast('큰 열쇠가 있어야 열린다', 'bad'); sfx('buzz'); return; }
+      if (this.big && !this.keyChest && m.dungeon && !s.bigkeys[m.dungeon]) { G.ui.toast('큰 열쇠로 잠긴 상자 — 이 던전의 큰 열쇠가 있어야 열린다', 'bad'); sfx('buzz'); return; }
       this.opened = true; setFlag(this.key);
       sfx('chest');
       G.script.run(async (c) => { await c.getItem(this.item, this.n || 1, { chest: this }); });
@@ -88,6 +95,12 @@
       this.drawImg(g, cx, cy, ART.chest(this.opened, this.big, this.col), 1);
       g.globalAlpha = 1;
       if (!this.opened && Math.sin(this.t * 2) > 0.95) { g.fillStyle = '#fff'; g.fillRect(Math.round(this.x - cx + 4), Math.round(this.y - cy - 12), 1, 1); }
+      // 큰 열쇠 상자: 뚜껑에 열쇠 문양 + 반짝임
+      if (this.keyChest && !this.opened) {
+        const x = Math.round(this.x - cx), y = Math.round(this.y - cy - 14);
+        g.fillStyle = '#ffe066'; g.fillRect(x - 4, y, 3, 3); g.fillRect(x - 1, y + 1, 6, 1); g.fillRect(x + 3, y + 2, 1, 1); g.fillStyle = '#ff5a6a'; g.fillRect(x - 3, y + 1, 1, 1);
+        if (Math.sin(this.t * 3.2) > 0.7) { g.globalAlpha = 0.5; g.fillStyle = '#fff2a8'; g.fillRect(x - 9, y - 4, 1, 3); g.fillRect(x - 10, y - 3, 3, 1); g.globalAlpha = 1; }
+      }
     }
   }
 
@@ -368,6 +381,12 @@
       if (this.barkT > 0) this.barkT -= dt;
       const p = Wd.player;
       const near = p && U.dist(p.x, p.y, this.x, this.y) < 40;
+      // 주인공이 0.3초 넘게 몸으로 밀면 잠깐 지나가게 해 준다 — 사람 하나 때문에 길이 막히지 않게
+      if (this.passT > 0) this.passT -= dt;
+      if (p && Math.abs(p.x - this.x) < 13 && Math.abs(p.y - this.y) < 10 && (p.state === 'walk' || p.state === 'roll')) {
+        this.pushT = (this.pushT || 0) + dt;
+        if (this.pushT > 0.3) { if (!(this.passT > 0) && Math.random() < 0.35 && G.cine && G.cine.bubble && !G.script.running) G.cine.bubble(this, U.pick(['앗, 지나가요', '어이쿠', '먼저 가요']), { life: 1.2 }); this.passT = 0.8; }
+      } else if (this.pushT > 0) this.pushT = Math.max(0, this.pushT - dt * 2);
       if (near && this.lookAt !== false && !this.busy) { this.dir = U.dir4(p.x - this.x, p.y - this.y, this.dir); if (this.state === 'walk') this.state = 'idle'; }
       else if (this.wanderR && !this.busy) {
         this.aT -= dt;
@@ -428,7 +447,15 @@
   /* ───────── 상호작용 ───────── */
   const IA = { hint: null };
   function candidates(p) {
-    const [ux, uy] = U.DV[p.dir];
+    const e0 = candidatesDir(p, U.DV[p.dir]);
+    if (e0) return e0;
+    // 마우스 · 스틱으로 다른 쪽을 겨누고 있을 때: 마지막으로 걸어온 쪽 앞의 것도 (말 걸려고 다가갔는데 겨눈 쪽만 보던 것)
+    const wf = p.walkFace;
+    if (wf && U.dir4(wf[0], wf[1], p.dir) !== p.dir) return candidatesDir(p, U.DV[U.dir4(wf[0], wf[1], p.dir)]);
+    return null;
+  }
+  function candidatesDir(p, dv) {
+    const [ux, uy] = dv;
     const fx = p.x + ux * 12, fy = p.y - 4 + uy * 10;
     let best = null, bd = 99;
     for (const e of W().ents) {

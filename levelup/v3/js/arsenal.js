@@ -227,7 +227,7 @@
       start(p) {
         const d = G.st.derive(S()), Wd = W(), v = Wd.view;
         const cx = Wd.rcx + v.w / 2, cy = Wd.rcy + v.h / 2 + 10;
-        C.spellFx.gravity({ x: cx - p.face[0] * 52, y: cy - p.face[1] * 40, z: p.z }, d, Math.atan2(p.face[1], p.face[0]), d.magMul * 1.6);
+        C.spellFx.gravity({ x: cx - p.face[0] * 52, y: cy - p.face[1] * 40, z: p.z }, d, Math.atan2(p.face[1], p.face[0]), d.magMul * 2.8);   // 영웅 등급에 맞게 (1.6 → 2.8)
         p.spx.dur = 0.4;
       },
       update(p) { return p.spx.t >= p.spx.dur; }, draw: 'cast',
@@ -295,7 +295,8 @@
   add('mg_siphon', T('마법', 5, 'mg_blood', '피의 영창', 4, 'MP가 모자라면 체력으로 건다 (MP 10 = 하트 ¼칸).', { gate: 'mg5', need: { int: 16 } }));
 
   /* ═════════ 가게 · 상자에 놓기 ═════════ */
-  const SHOP = D.SHOPS, put = (id, list) => { if (SHOP[id]) for (const k of list) if (!SHOP[id].items.includes(k)) SHOP[id].items.push(k); };
+  // 이야기 쪽(world)이 가게 목록을 새로 만들기도 해서(무지개 노점 등) 98_balance가 마지막에 한 번 더 놓는다
+  const LATE_A = [], SHOP = D.SHOPS, put = (id, list) => { LATE_A.push([id, list]); if (SHOP[id]) for (const k of list) if (!SHOP[id].items.includes(k)) SHOP[id].items.push(k); };
   put('green', ['fc_twig']);
   put('red', ['sw_axe', 'fc_ember', 'art_moonslash']);
   put('blue', ['sw_rapier', 'fc_coral', 'tome_poison']);
@@ -307,7 +308,7 @@
   put('black', ['sw_twin', 'bw_moon', 'fc_moon', 'tome_gravity']);
   put('colorful', ['art_blackhole']);
   // 영웅 · 전설: 던전 깊은 곳 · 숨은 곳 · 다시 도전 보상 (world/40_trials.js · 41_secrets.js)
-  G.arsenal = { TOP: { sword: ['sw_blood', 'sw_sky'], bow: ['bw_seeker', 'bw_heaven'], focus: ['fc_star', 'fc_origin'], spell: ['tome_blizzard'], art: ['art_thousand', 'art_galaxy', 'art_genesis'] } };
+  G.arsenal = { placeLate() { for (const [id, list] of LATE_A) { const sh = D.SHOPS[id]; if (sh) for (const k of list) if (!sh.items.includes(k)) sh.items.push(k); } }, TOP: { sword: ['sw_blood', 'sw_sky'], bow: ['bw_seeker', 'bw_heaven'], focus: ['fc_star', 'fc_origin'], spell: ['tome_blizzard'], art: ['art_thousand', 'art_galaxy', 'art_genesis'] } };
 
   /* ═════════ 아이콘 ═════════ */
   const H = G.hud, ic0 = H.icon, X = G.gfx, ICO = {};

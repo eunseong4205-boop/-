@@ -81,6 +81,8 @@
     const barW = 64;
     if (Object.keys(s.spells).length) {
       bar(g, 7, y, barW, 3, s.mp / d.mpMax, '#4a8aff', '#8ac8ff', '#14203a');
+      // 쉬는 동안(MP를 1.5초 쓰지 않으면) 더 빨리 찬다 — 막대 위로 빛이 흐른다
+      if (d.mpCalm && s.mp < d.mpMax) { const fw = Math.max(2, Math.round(barW * s.mp / d.mpMax)); g.fillStyle = 'rgba(220,240,255,0.85)'; g.fillRect(7 + Math.floor((performance.now() / 25) % fw), y, 2, 3); }
       y += 5;
     }
     // ── 필살 ──
@@ -242,7 +244,7 @@
       if (mx < x || my < y || mx > x + mw || my > y + mh) continue;
       g.fillStyle = mk.col || '#8ad8ff'; g.fillRect(Math.round(mx) - 1, Math.round(my) - 1, 2, 2);
     }
-    const goal = G.story && G.story.goal && G.story.goal();
+    const goal = G.story && (G.story.goalOn ? G.story.goalOn(m.id) : G.story.goal && G.story.goal());   // 다른 지도의 목표는 그리로 가는 문을
     if (goal && goal.map === m.id) {
       let gx = x + goal.x * sc - sx, gy = y + goal.y * sc - sy;
       const inside = gx >= x && gy >= y && gx <= x + mw && gy <= y + mh;
@@ -292,20 +294,27 @@
     if (H.btnT <= 0 && touch()) { H.btnT = 0.25; syncButtons(); }
   }
   const btnCache = {};
+  /** 휴대폰 버튼 한 개: 글자 · 그림 · 흐림 (바뀐 때만 고친다) */
+  function setBtn(act, label, dim, ready, glyph) {
+    const key = act + label + dim + ready + (glyph || '');
+    if (btnCache[act] === key) return;
+    btnCache[act] = key;
+    const el = document.querySelector('.tb[data-act="' + act + '"]');
+    if (!el) return;
+    el.querySelector('small').textContent = label;
+    if (glyph) el.querySelector('i').textContent = glyph;
+    el.style.opacity = dim ? '0.28' : '';
+    if (act === 'special') el.classList.toggle('ready', !!ready);
+  }
   function syncButtons() {
     const s = G.state;
-    const set = (act, label, dim, ready) => {
-      const key = act + label + dim + ready;
-      if (btnCache[act] === key) return;
-      btnCache[act] = key;
-      const el = document.querySelector('.tb[data-act="' + act + '"]');
-      if (!el) return;
-      el.querySelector('small').textContent = label;
-      el.style.opacity = dim ? '0.28' : '';
-      if (act === 'special') el.classList.toggle('ready', !!ready);
-    };
-    set('bow', s.tools.bow ? '활 ' + s.ammo.arrows : '활', !s.tools.bow);
-    set('magic', s.spell ? G.data.SPELLS[s.spell].name : '마법', !s.spell || s.mp < (s.spell ? G.data.SPELLS[s.spell].mp : 99));
+    const set = setBtn;
+    // 공격 · 바꾸기 · 스킬 버튼은 든 무기를 따른다 (stance.js)
+    if (H.weaponButtons) H.weaponButtons(set);
+    else {
+      set('bow', s.tools.bow ? '활 ' + s.ammo.arrows : '활', !s.tools.bow);
+      set('magic', s.spell ? G.data.SPELLS[s.spell].name : '마법', !s.spell || s.mp < (s.spell ? G.data.SPELLS[s.spell].mp : 99));
+    }
     set('tool', s.tool ? G.data.ITEMS[s.tool].name + (s.tool === 'bomb' ? ' ' + s.ammo.bombs : '') : '도구', !s.tool);
     set('special', s.special >= 100 ? '필살!' : Math.floor(s.special) + '%', false, s.special >= 100);
   }

@@ -336,6 +336,7 @@
       if (d > range) return false;
       if (!this.fly && Math.abs((p.z || 0) - (this.z || 0)) > 0 && !p.onStairs && !this.onStairs) return false;
       if (G.state && G.st.derive(G.state).stealth && d > range * 0.5) return false;
+      if (p.cloakT > 0 && d > 16) return false;   // 그림자 걸음
       const n = Math.ceil(d / 10);
       for (let i = 1; i < n; i++) { const k = i / n; if (!m.shotFree(U.lerp(this.x, p.x, k), U.lerp(this.y - 6, p.y - 6, k), Math.max(this.z, p.z))) return false; }
       return true;

@@ -21,11 +21,21 @@
     if (o) { const d = OB.DEF[o]; if (d && d.solid && !(d.cut || d.lift === 1)) return false; }
     return true;
   }
+  /** 끝까지 가면 걸을 수 있는 칸: 칼 · 장갑 · 폭탄 · 불 · 물갈퀴를 다 가졌을 때 */
+  function passAll(m, i) {
+    const p = PROP[m.ter[i]];
+    if (!p || p.h) return false;
+    if (p.s && !p.d) return false;
+    if (m.solidExtra[i]) return false;
+    const o = m.obj[i];
+    if (o) { const d = OB.DEF[o]; if (d && d.solid && !(d.cut || d.lift || d.bomb || ((d.burn || d.melt) && !d.big))) return false; }
+    return true;
+  }
   /** 걸음으로 이어진 칸 무리 (같은 높이 · 계단) */
-  function label(m) {
+  function label(m, pass) {
     const N = m.w * m.h, Wd = m.w, Hh = m.h;
     const comp = new Int32Array(N).fill(-1), ok = new Uint8Array(N), size = [];
-    for (let i = 0; i < N; i++) ok[i] = passI(m, i) ? 1 : 0;
+    for (let i = 0; i < N; i++) ok[i] = (pass || passI)(m, i) ? 1 : 0;
     const st = new Int32Array(N); let nc = 0;
     for (let i0 = 0; i0 < N; i0++) {
       if (!ok[i0] || comp[i0] >= 0) continue;
@@ -73,8 +83,8 @@
     return out;
   }
   /** 이 지도의 「돌아갈 수 있는 곳」: mains(칸 목록)에서 거꾸로 닿는 무리 · 거기서 뛰어내려 닿는 무리 */
-  function analyze(m, mains, links) {
-    const L = label(m), J = jumps(m, L);
+  function analyze(m, mains, links, pass) {
+    const L = label(m, pass), J = jumps(m, L);
     const addE = (a, b) => { if (a < 0 || b < 0 || a === b) return; let s = J.get(a); if (!s) J.set(a, s = new Set()); s.add(b); };
     for (const [a, b] of links || []) { const ca = L.comp[m.i(a[0], a[1])], cb = L.comp[m.i(b[0], b[1])]; addE(ca, cb); addE(cb, ca); }
     const rev = new Map();
@@ -140,6 +150,134 @@
     return { fixed, left: A ? A.sinks.length : 0, A };
   }
 
+  /* ───────── 들판의 문 · 동굴 앞길: 끝까지 가도 닿지 못하는 입구는 길을 낸다 ───────── */
+  // 마을에서 걸어 · 뛰어내려 닿는 무리(fwd) 중 돌아올 수 있는(good) 땅
+  function fwdGood(m, pass) {
+    const A = analyze(m, mainsOf(m), linksOf(m), pass);
+    const fwd = new Uint8Array(A.L.nc), q = [];
+    for (const [x, y] of mainsOf(m)) { if (!m.inb(x, y)) continue; const c = A.L.comp[m.i(x, y)]; if (c >= 0 && !fwd[c]) { fwd[c] = 1; q.push(c); } }
+    while (q.length) { const c = q.pop(); const out = A.J.get(c); if (out) for (const b2 of out) if (!fwd[b2]) { fwd[b2] = 1; q.push(b2); } }
+    A.fwd = fwd;
+    return A;
+  }
+  /** 가장 싼 길(다익스트라)로 s0에서 ok 칸까지 낸다: 사물 치우기 3 · 절벽/높이 바꿈 → 계단 5 · 물 → 다리 12 · 벽 · 건물 · 깊은 구덩이는 못 지난다 */
+  function carvePath(m, s0, ok, maxD, allow) {
+    const N = m.w * m.h, dist = new Float32Array(N).fill(1e9), prev = new Int32Array(N).fill(-1);
+    dist[s0] = 0; const open = [[0, s0]];
+    let hit = -1;
+    while (open.length) {
+      let bi = 0; for (let k = 1; k < open.length; k++) if (open[k][0] < open[bi][0]) bi = k;
+      const [d, i] = open[bi]; open[bi] = open[open.length - 1]; open.pop();
+      if (d > dist[i]) continue;
+      if (i !== s0 && ok(i)) { hit = i; break; }
+      if (d > maxD) break;
+      const x = i % m.w, y = (i / m.w) | 0;
+      for (const [dx, dy] of D4) {
+        const nx = x + dx, ny = y + dy; if (!m.inb(nx, ny)) continue;
+        const j = m.i(nx, ny), t = m.ter[j], P2 = PROP[t];
+        if (m.solidExtra[j] || t === T.WALL || t === T.VOID || (P2 && P2.h && t !== T.WATER)) continue;
+        if ((warpAtTile(m, nx, ny) && j !== s0)) continue;
+        if (allow && !allow(j)) continue;
+        let c = 1;
+        const o = m.obj[j]; if (o && OB.DEF[o] && OB.DEF[o].solid && !passAll(m, j)) c += 3;
+        if (t === T.CLIFF) c += 5; else if (m.hgt[j] !== m.hgt[i] && t !== T.STAIRS && m.ter[i] !== T.STAIRS) c += 5;
+        if (t === T.WATER || t === T.DEEP) c += 12;
+        if (d + c < dist[j]) { dist[j] = d + c; prev[j] = i; open.push([d + c, j]); }
+      }
+    }
+    if (hit < 0) return false;
+    const path = []; for (let k = hit; k >= 0; k = prev[k]) path.push(k);
+    for (let k = 0; k < path.length; k++) {
+      const i = path[k], t = m.ter[i];
+      const o = m.obj[i]; if (o && OB.DEF[o] && OB.DEF[o].solid) m.obj[i] = 0;
+      if (t === T.WATER || t === T.DEEP) m.ter[i] = T.BRIDGE;
+      const nb = [path[k - 1], path[k + 1]].filter((v) => v != null);
+      if (t === T.CLIFF || nb.some((j) => m.hgt[j] !== m.hgt[i] && m.ter[j] !== T.STAIRS)) m.ter[i] = T.STAIRS;
+    }
+    (m.sanCarved = m.sanCarved || []).push(path);
+    return true;
+  }
+  function fixApproaches(m) {
+    let A = fwdGood(m, passAll), carved = 0;
+    const ok = (i) => { const c = A.L.comp[i]; return c >= 0 && A.good[c] && A.fwd[c]; };
+    for (const w of m.warps || []) {
+      if (w.exit) continue;
+      const ax = w.x, ay = w.y + 1;
+      if (!m.inb(ax, ay)) continue;
+      let reach = false; for (let k = 0; k < (w.w || 1); k++) if (m.inb(w.x + k, ay) && ok(m.i(w.x + k, ay))) reach = true;
+      if (reach) continue;
+      if (!carvePath(m, m.i(ax, ay), ok, 400)) { console.warn('입구 앞길을 낼 수 없다', w.to, w.x, w.y); continue; }
+      carved++;
+      A = fwdGood(m, passAll);
+    }
+    if (carved && m.dirtyAll) m.dirtyAll();
+    return carved;
+  }
+  /** 마을끼리: 첫 마을(그린)에서 걸어 가고 걸어 돌아올 수 있는 땅에 모든 마을 광장을 잇는다
+   *  (하늘섬처럼 마을에서 뛰어내려 대륙으로 갈 수는 있어도 대륙에서 걸어 올라올 수는 없던 곳).
+   *  지역은 이야기 차례대로 열리므로, 그 마을이 열리는 때까지 열린 땅만으로 잇는다 */
+  const OPEN_RANK = { green: 0, red: 1, blue: 2, amber: 2, yellow: 3, purple: 4, mist: 4, rainbow: 5, white: 6, gray: 7, black: 8, colorful: 9 };
+  function connectTowns(m) {
+    if (!m.overworld || !G.ow || !G.ow.towns || !G.ow.towns.green || !G.ow.regName) return 0;
+    const RN = G.ow.regName, rank = (i) => { const r = OPEN_RANK[RN[i]]; return r == null ? 99 : r; };
+    const towns = Object.entries(G.ow.towns).filter(([id, t]) => t.plaza);
+    let carved = 0;
+    for (let k = 0; k <= 9; k++) {
+      const pass = (mm, i) => rank(i) <= k && passAll(mm, i);
+      const failed = new Set();
+      for (let round = 0; round < 6; round++) {
+        const A = analyze(m, mainsOf(m), linksOf(m), pass);
+        const onTile = (p) => { for (let r = 0; r <= 3; r++) for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) { const x = p.x + dx, y = p.y + dy; if (m.inb(x, y) && A.L.comp[m.i(x, y)] >= 0) return m.i(x, y); } return -1; };
+        const i0 = onTile(G.ow.towns.green.plaza); if (i0 < 0) return carved;
+        const c0 = A.L.comp[i0], fw = new Uint8Array(A.L.nc), bk = new Uint8Array(A.L.nc);
+        const rev = new Map(); for (const [a, set] of A.J) for (const b of set) { let r = rev.get(b); if (!r) rev.set(b, r = new Set()); r.add(a); }
+        for (const [mark, G2] of [[fw, A.J], [bk, rev]]) { const q = [c0]; mark[c0] = 1; while (q.length) { const c = q.pop(); const out = G2.get(c); if (out) for (const b of out) if (!mark[b]) { mark[b] = 1; q.push(b); } } }
+        const core = (i) => { const c = A.L.comp[i]; return c >= 0 && fw[c] && bk[c]; };
+        const bad = towns.find(([id, t]) => { if (failed.has(id)) return false; const i = onTile(t.plaza); return i >= 0 && rank(i) === k && !core(i); });
+        if (!bad) break;
+        if (carvePath(m, onTile(bad[1].plaza), core, 900, (j) => rank(j) <= k)) { carved++; console.info('마을 사이 길', bad[0], '열리는 차례', k); }
+        else { failed.add(bad[0]); console.warn('마을 사이 길을 낼 수 없다', bad[0]); }
+      }
+    }
+    if (carved && m.dirtyAll) m.dirtyAll();
+    return carved;
+  }
+  /** 한쪽으로만 가는 곳: 그 장까지 열린 땅에서 그린 마을로부터 걸어 · 뛰어내려 닿지만 걸어 돌아올 수 없는 무리
+   *  (절벽 아래 웅덩이 땅인데 다른 출구가 아직 닫힌 지역 쪽뿐인 곳 등) → 돌아오는 길(계단 · 다리)을 낸다.
+   *  지역은 이야기 차례대로 열리므로 열리는 차례마다, 그때 열린 땅만으로 */
+  function fixTraps(m) {
+    if (!m.overworld || !G.ow || !G.ow.towns || !G.ow.towns.green || !G.ow.regName) return 0;
+    const RN = G.ow.regName, rank = (i) => { const r = OPEN_RANK[RN[i]]; return r == null ? 99 : r; };
+    let carved = 0;
+    for (let k = 0; k <= 9; k++) {
+      const pass = (mm, i) => rank(i) <= k && passAll(mm, i);
+      const failed = new Set();
+      for (let round = 0; round < 4; round++) {
+        const A = analyze(m, mainsOf(m), linksOf(m), pass), L = A.L;
+        const p0 = G.ow.towns.green.plaza; let i0 = -1;
+        for (let r = 0; r <= 3 && i0 < 0; r++) for (let dy = -r; dy <= r && i0 < 0; dy++) for (let dx = -r; dx <= r && i0 < 0; dx++) { const x = p0.x + dx, y = p0.y + dy; if (m.inb(x, y) && L.comp[m.i(x, y)] >= 0) i0 = m.i(x, y); }
+        if (i0 < 0) return carved;
+        const c0 = L.comp[i0], fw = new Uint8Array(L.nc), bk = new Uint8Array(L.nc);
+        const rev = new Map(); for (const [a, set] of A.J) for (const b of set) { let r = rev.get(b); if (!r) rev.set(b, r = new Set()); r.add(a); }
+        for (const [mark, G2] of [[fw, A.J], [bk, rev]]) { const q = [c0]; mark[c0] = 1; while (q.length) { const c = q.pop(); const out = G2.get(c); if (out) for (const b of out) if (!mark[b]) { mark[b] = 1; q.push(b); } } }
+        const core = (i) => { const c = L.comp[i]; return c >= 0 && fw[c] && bk[c]; };
+        // 덫 무리마다 한 칸 (닫힌 지역 쪽이 아닌, 가장 가운데에 가까운 칸)
+        const first = new Map();
+        for (let i = 0; i < L.comp.length; i++) { const c = L.comp[i]; if (c < 0 || !fw[c] || bk[c] || failed.has(c) || first.has(c)) continue; if (warpAtTile(m, i % m.w, (i / m.w) | 0)) continue; first.set(c, i); }
+        if (!first.size) break;
+        let n = 0;
+        for (const [c, i] of first) {
+          if (carvePath(m, i, core, 900, (j) => rank(j) <= k)) { carved++; n++; console.info('한쪽 길 덫에 돌아오는 길', i % m.w, (i / m.w) | 0, '열리는 차례', k); }
+          else { failed.add(c); console.warn('덫에서 돌아오는 길을 낼 수 없다', i % m.w, (i / m.w) | 0, '차례', k); }
+        }
+        if (!n) break;
+      }
+    }
+    if (carved && m.dirtyAll) m.dirtyAll();
+    return carved;
+  }
+  function warpAtTile(m, x, y) { for (const w of m.warps || []) if (x >= w.x && y >= w.y && x < w.x + (w.w || 1) && y < w.y + (w.h || 1)) return w; return null; }
+
   /* ───────── 지도마다 한 번: 짓자마자 고친다 ───────── */
   function mainsOf(m) {
     const out = [];
@@ -163,6 +301,9 @@
     if (m && !checked.has(m) && !m.indoor && (m.overworld || m.dungeon || m.entry)) {
       checked.add(m);
       try {
+        if (m.overworld) m.sanTowns = connectTowns(m);
+        if (m.overworld) m.sanTraps = fixTraps(m);
+        if (m.overworld) m.sanPaths = fixApproaches(m);
         const r = fixSinks(m, () => mainsOf(m), () => linksOf(m));
         m.san = r.A; m.sanFixed = r.fixed; m.sanLeft = r.left;
       } catch (e) { console.error('sanity', id, e); }
@@ -235,11 +376,86 @@
     e.x = best[0]; e.y = best[1]; if (e.home) e.home = { x: e.x, y: e.y };
     return true;
   }
+  /** 문 칸과 다가서는 칸 (픽셀 상자): 들어가는 문은 아래에서, 나가는 문은 위에서 다가선다 */
+  function doorRects(m) {
+    const out = [];
+    for (const w of m.warps || []) {
+      const down = w.exit || w.dir === 'down';
+      out.push({ x: w.x * TS, y: (down ? w.y - 1 : w.y) * TS, w: (w.w || 1) * TS, h: ((w.h || 1) + 1) * TS });
+    }
+    return out;
+  }
+  const hitR = (b, r) => b.x < r.x + r.w && b.x + b.w > r.x && b.y < r.y + r.h && b.y + b.h > r.y;
+  function clearDoors(m, Wd) {
+    const R = doorRects(m); if (!R.length) return;
+    const p = Wd.player;
+    for (const e of Wd.ents) {
+      if (e === p || e.dead || e.fly || e.script || e.follower || e.boss || e.foe || e.hidden) continue;
+      if (e.kind === 'building' || !e.solid || !e.blockBox) continue;
+      let b; try { b = e.blockBox(); } catch (err) { continue; }
+      if (!b || !R.some((r) => hitR(b, r))) continue;
+      const tx = Math.floor(e.x / TS), ty = Math.floor((e.y - 3) / TS), z0 = m.H(tx, ty);
+      const ox = e.x - (tx * TS + 8), oy = e.y - (ty * TS + 12);
+      let best = null, bd = 1e9;
+      for (let dy = -4; dy <= 4; dy++) for (let dx = -4; dx <= 4; dx++) {
+        const x = tx + dx, y = ty + dy; if (!freeTile(m, x, y) || m.H(x, y) !== z0) continue;
+        const nb = { x: b.x + dx * TS, y: b.y + dy * TS, w: b.w, h: b.h };
+        if (R.some((r) => hitR(nb, r))) continue;
+        if (Wd.propBlock(nb.x, nb.y, nb.w, nb.h, e)) continue;
+        const d = dx * dx + dy * dy + (dy < 0 ? 0.3 : 0); if (d < bd) { bd = d; best = [x, y]; }
+      }
+      if (!best) continue;
+      e.x = best[0] * TS + 8 + ox; e.y = best[1] * TS + 12 + oy; if (e.home) e.home = { x: e.x, y: e.y };
+    }
+  }
+  function reachUsables(m, Wd) {
+    if (!m.sanAll) {
+      const A0 = analyze(m, mainsOf(m), linksOf(m), passAll);
+      // 마을에서 걸어 · 뛰어내려 닿는 무리 (good은 「돌아올 수 있는」 무리라 계단 없는 고원도 들어간다)
+      const fwd = new Uint8Array(A0.L.nc), q = [];
+      for (const [x, y] of mainsOf(m)) { if (!m.inb(x, y)) continue; const c = A0.L.comp[m.i(x, y)]; if (c >= 0 && !fwd[c]) { fwd[c] = 1; q.push(c); } }
+      while (q.length) { const c = q.pop(); const out = A0.J.get(c); if (out) for (const b2 of out) if (!fwd[b2]) { fwd[b2] = 1; q.push(b2); } }
+      A0.fwd = fwd; m.sanAll = A0;
+    }
+    const A = m.sanAll, p = Wd.player, R = 30;
+    const doors = doorRects(m).map((r) => ({ x: r.x - TS, y: r.y - TS, w: r.w + TS * 2, h: r.h + TS * 2 }));
+    const goodAt = (x, y) => { if (!m.inb(x, y)) return false; const c = A.L.comp[m.i(x, y)]; return c >= 0 && A.good[c] && A.fwd[c]; };
+    const near = (tx, ty) => { for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (goodAt(tx + dx, ty + dy)) return true; return false; };
+    for (const e of Wd.ents) {
+      if (e === p || e.dead || e.fly || e.script || e.follower || e.boss || e.foe || e.kind === 'building' || !e.use) continue;
+      if (e.inWater || e.swim) continue;
+      const tx = Math.floor(e.x / TS), ty = Math.floor((e.y - 3) / TS);
+      if (near(tx, ty)) continue;
+      let best = null, bd = 1e9;
+      for (let dy = -R; dy <= R; dy++) for (let dx = -R; dx <= R; dx++) {
+        const d = dx * dx + dy * dy; if (d >= bd) continue;
+        const x = tx + dx, y = ty + dy;
+        // 둘레 5×3칸이 트인 같은 높이 땅(길목 · 다리 · 계단 · 문 앞이 아닌 곳)이고, 한 칸 안에 다른 소품이 없어야
+        // 앞에서 다가설 수 있고 지나가는 길도 막지 않는다
+        let open = true;
+        for (let yy = y - 1; yy <= y + 1 && open; yy++) for (let xx = x - 2; xx <= x + 2; xx++) {
+          if (!goodAt(xx, yy) || !freeTile(m, xx, yy) || m.H(xx, yy) !== m.H(x, y)) { open = false; break; }
+          const t = m.T(xx, yy); if (t === T.ROAD || t === T.BRIDGE || t === T.STAIRS) { open = false; break; }
+        }
+        if (!open) continue;
+        const box = { x: (x - 1) * TS, y: (y - 1) * TS, w: TS * 3, h: TS * 3 };
+        if (doors.some((r) => hitR(box, r))) continue;
+        if (Wd.propBlock(box.x, box.y, box.w, box.h, e)) continue;
+        best = [x, y]; bd = d;
+      }
+      if (!best) continue;
+      e.x = best[0] * TS + 8 + (e.x - (tx * TS + 8)); e.y = best[1] * TS + 12 + (e.y - (ty * TS + 12)); if (e.home) e.home = { x: e.x, y: e.y };
+      e.z = m.H(best[0], best[1]);
+      e.movedReach = true;
+    }
+  }
   function dedupe(Wd) {
     const byCid = new Map();
     for (const e of Wd.ents) {
       if (e.dead || !e.npc || !e.cid || e.follower) continue;
       const o = byCid.get(e.cid);
+      // 이야기가 일부러 멀리 떨어진 두 자리에 세운 사람(하늘섬 · 퍼플의 구름고래 누베처럼 오가는 길잡이)은 둘 다 남긴다
+      if (o && e.fromPeople && o.fromPeople && Math.hypot(e.x - o.x, e.y - o.y) > 20 * TS) { byCid.set(e.cid, e); continue; }
       if (o) { if (e.walker && !o.walker) { e.dead = true; continue; } o.dead = true; }   // 길 위의 사람(군상)보다 이야기 자리를 남긴다
       byCid.set(e.cid, e);
     }
@@ -247,16 +463,19 @@
   }
   // 이야기가 사람들을 다시 세울 때도 같은 사람이 둘이 되지 않게
   if (G.story && G.story.refreshPeople) { const rp0 = G.story.refreshPeople; G.story.refreshPeople = function () { const r = rp0.apply(this, arguments); try { dedupe(W()); } catch (e) { /* 무시 */ } return r; }; }
-  const pop0 = G.build.populate;
-  G.build.populate = function (m) {
-    const r = pop0.apply(this, arguments);
-    const Pp = G.props, Wd = W(), p = Wd.player;
+  /** 사람 · 소품 자리 바로잡기: 지도에 들어설 때와, 이야기가 사람들을 다시 세울 때 */
+  function placeFix(m, Wd) {
+    const Pp = G.props, p = Wd.player;
     // 같은 사람이 둘: 먼저 선 이를 지운다 · 따라오는 동료와 서 있는 본인이 겹치면 따라오는 쪽을 쉰다
     dedupe(Wd);
     for (const e of Wd.ents) {
       if (e === p || e.dead || e.fly || e.script || e.vision || e.follower) continue;
       if (e.npc || e instanceof Pp.Chest) nudge(m, e, 3);
     }
+    // 문 · 동굴 입구와 그 앞 칸을 막고 선 소품 · 사람은 옆으로 비킨다
+    clearDoors(m, Wd);
+    // 대륙: 계단 없는 고원 · 숲 속에 놓여 끝까지 가도 닿지 못할 명소 · 사람은 가까운 닿는 땅으로
+    if (m.overworld) try { reachUsables(m, Wd); clearDoors(m, Wd); } catch (e) { console.error('reachUsables', e); }
     // 앞(남쪽)에서 다가설 수 없는 상자 · 표지판은 옆이나 뒤에서도 열고 읽게
     for (const e of Wd.ents) {
       if (e.dead || e.anyDir || !(e instanceof Pp.Chest || e instanceof Pp.Sign)) continue;
@@ -268,6 +487,14 @@
     for (let a = 1; a < ppl.length; a++) for (let b = 0; b < a; b++) {
       if (Math.abs(ppl[a].x - ppl[b].x) < 12 && Math.abs(ppl[a].y - ppl[b].y) < 10) { spread(m, ppl[a], ppl); break; }
     }
+  }
+  // 이야기가 사람들을 다시 세울 때(장이 바뀔 때 등)도 같은 바로잡기
+  if (G.story && G.story.refreshPeople) { const rp1 = G.story.refreshPeople; G.story.refreshPeople = function () { const r = rp1.apply(this, arguments); try { const Wd = W(); if (Wd.map) placeFix(Wd.map, Wd); } catch (e) { console.error('placeFix', e); } return r; }; }
+  const pop0 = G.build.populate;
+  G.build.populate = function (m) {
+    const r = pop0.apply(this, arguments);
+    const Wd = W(), p = Wd.player;
+    placeFix(m, Wd);
     if (p) Wd.arrive = { map: m.id, x: p.x, y: p.y };
     return r;
   };
@@ -367,7 +594,8 @@
       // 무대(주인공 없이 다른 곳을 비추는 방)에서 이어지면: 마지막으로 걷던 대륙 자리로
       if (m && (m.stage || (m.indoor && !(m.warps || []).length))) {   // 나갈 문이 없는 방(오락기 속 등)도
         const s = S(), lw = s.lastWorld;
-        if (lw && lw.x != null) G.game.goto('world', Math.floor(lw.x) * TS + 8, Math.floor(lw.y) * TS + 12, 'down', { fresh: true });
+        if (m.id === 'arcade_room' && s.arcadeRet && s.arcadeRet.map) G.game.goto(s.arcadeRet.map, s.arcadeRet.x, s.arcadeRet.y, 'down', { fresh: true });   // 오락기 앞으로
+        else if (lw && lw.x != null) G.game.goto('world', Math.floor(lw.x) * TS + 8, Math.floor(lw.y) * TS + 12, 'down', { fresh: true });
         else { const rp = s.respawn || { map: 'world', x: (G.ow.towns.green.x + 17) * TS + 8, y: (G.ow.towns.green.y + 12) * TS + 12 }; G.game.goto(rp.map, rp.x, rp.y, 'down', { fresh: true }); }
         Wd = W(); p = Wd.player; m = Wd.map;
       }
@@ -425,5 +653,5 @@
     await c.fade(false, { sec: 0.35 });
     return done;
   }
-  G.sanity = { label, jumps, analyze, fixSinks, passI, trapped, toGood, unembed, escape, fresh, mainsOf, linksOf };
+  G.sanity = { label, jumps, analyze, fixSinks, passI, passAll, carvePath, trapped, toGood, unembed, escape, fresh, mainsOf, linksOf };
 })();

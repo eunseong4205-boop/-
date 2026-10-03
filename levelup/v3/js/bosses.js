@@ -132,7 +132,15 @@
      꽃봉오리 몸은 움직이지 않는다. 덩굴이 줄을 따라 내리친다. 눈이 열렸을 때 화살 → 봉오리가 숙인다 → 벤다 */
   def('thornqueen', { name: '가시덩굴 여왕', title: '뿌리굴의 주인 · 가시덩굴 여왕', hp: 42, atk: 3, r: 18, h: 36, col: '#d84a6a', noContact: false, exp: 60, gold: 40,
     init(e) { e.eyeOpen = false; e.vulnerable = false; },
-    guards(e, info) { if (info.src === 'arrow' || info.src === 'beam') { if (e.eyeOpen && !e.vulnerable) { e.vulnerable = true; e.stunT = 3.2; e.eyeOpen = false; sfx('shriek'); G.fx.sparks(e.x, e.y - 30, 14, '#ffe066'); G.ui.toast('봉오리가 고개를 숙였다 — 지금!', 'gold'); } return true; } if (!e.vulnerable || e.stunT <= 0) { sfx('clank'); return true; } return false; },
+    // 눈(봉오리)이 열렸을 때 화살 · 빛줄기 · 주문으로 맞히면 고개를 숙인다. 숙인 동안은 무엇으로 쳐도 들어간다 (든 무기를 바꿀 틈이 없어도 되게)
+    guards(e, info) {
+      const ranged = info.src === 'arrow' || info.src === 'beam' || info.src === 'spell' || info.src === 'shot';
+      if (ranged && e.eyeOpen && !e.vulnerable) { e.vulnerable = true; e.stunT = 4.2; e.eyeOpen = false; e.set('idle'); sfx('shriek'); G.fx.sparks(e.x, e.y - 30, 14, '#ffe066'); G.ui.toast('봉오리가 고개를 숙였다 — 지금! 칼이든 화살이든 마구 쳐라', 'gold'); return true; }
+      if (e.vulnerable && e.stunT > 0) return false;
+      if (!ranged) sfx('clank');
+      if (!e.toldEye && !e.eyeOpen) { e.toldEye = true; G.ui.toast('단단하다 — 봉오리가 [y]눈을 뜰 때[/] 멀리서 맞혀라', ''); }
+      return true;
+    },
     stunned(e) { e.vulnerable = e.stunT > 0; },
     ai(e, dt, Wd) {
       const p = Wd.player; e.vulnerable = false;

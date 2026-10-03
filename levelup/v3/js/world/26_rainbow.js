@@ -605,7 +605,7 @@
     rooms: {
       '1,3': { ter: [['pit', 1, 5, 4, 3], ['pit', 15, 5, 4, 3], ['stone', 8, 2, 4, 11]], props: [['sign', 9, 4, { text: '구름 신전\n「바람을 거스르지 마라. 바람에 실려라.」\n발밑의 구름이 뚫린 곳은 하늘이다. 떨어지면 아래층이 없다.' }], ['pot', 2, 11], ['pot', 17, 11], ['pot', 2, 3]], foes: [['wisp', 5, 9], ['wisp', 14, 9], ['bat', 9, 6]] },
       '1,2': { ter: [['pit', 1, 4, 18, 3]], props: [['fn', 9, 7, gust(9, 3, 2, 5, 'up', 80)], ['eye', 5, 2, { sets: 'd6:eye' }], ['sign', 13, 10, { text: '「눈을 뜨게 하려면 멀리서 쏴라」' }]], foes: [['bat', 4, 10], ['bat', 15, 10]] },
-      '0,2': { ter: [['pit', 6, 2, 8, 11]], props: [['post', 3, 7], ['post', 16, 4], ['chest', 2, 3, { item: 'key_small' }], ['pot', 1, 11]], foes: [['bat', 9, 5], ['bat', 10, 9]] },
+      '0,2': { ter: [['pit', 6, 2, 8, 11]], props: [['post', 5, 7], ['post', 14, 4], ['chest', 2, 3, { item: 'key_small' }], ['pot', 1, 11]], foes: [['bat', 9, 5], ['bat', 10, 9]] },
       '2,2': { props: [['crystal', 9, 8], ['cblock', 9, 3], ['cblock', 10, 3], ['cblock', 15, 3, { blue: false }], ['cblock', 16, 4, { blue: false }], ['cblock', 17, 3, { blue: false }], ['chest', 16, 3, { item: 'compass' }], ['pot', 2, 11], ['pot', 3, 11]], foes: [['wisp', 5, 6], ['wisp', 14, 9], ['mage', 9, 11]] },
       '2,1': { ter: [['pit', 1, 4, 18, 7]], props: [['fn', 14, 11, gust(14, 3, 2, 9, 'up', 85)], ['fn', 4, 3, gust(4, 3, 2, 9, 'down', 85)], ['chest', 9, 2, { item: 'heartpiece' }], ['chest', 11, 2, { item: 'map_d' }]], foes: [['wisp', 8, 11], ['wisp', 12, 11]] },
       '1,1': { solve: { type: 'clear' }, props: [['chest', 9, 5, { item: 'glove', hidden: true, col: '#e8c048' }], ['sign', 9, 10, { text: '「바위를 드는 손이 둥지로 가는 문을 연다」' }]], foes: [['golem', 9, 6], ['wisp', 4, 9], ['wisp', 15, 9]] },
@@ -864,6 +864,17 @@
   }
   /** spawn한 NPC를 대사 주인으로 쓸 때: 그대로 돌려준다 (가독성용) */
   function n0(n) { return n; }
+  // 축제 동안 대륙에 내려와 있으면: 하늘섬까지 걸어 오르는 길은 멀다 — 퍼플 마을의 누베부터 안내한다
+  const goal0 = ST.goal;
+  ST.goal = function () {
+    const g = goal0.apply(this, arguments);
+    if (!g || g.map !== 'world' || g.x == null || !f('ch:c6') || f('c6_done')) return g;
+    const Wd = G.world, m = Wd.map, p = Wd.player; if (!m || !p) return g;
+    let x = p.x / TS, y = p.y / TS;
+    if (!m.overworld) { const lw = S().lastWorld; if (!lw || lw.x == null) return g; x = lw.x; y = lw.y; }   // 실내 · 던전이면 마지막으로 밟은 들판
+    if (OW.regionOf(Math.floor(x), Math.floor(y)) === 'rainbow' || OW.regionOf(Math.floor(g.x), Math.floor(g.y)) !== 'rainbow') return g;
+    return { text: '하늘섬 무지개로 — 퍼플 마을의 구름고래 누베에게. (' + g.text + ')', map: 'world', x: OW.towns.purple.x + 16, y: OW.towns.purple.y + 4 };
+  };
 
   /* ───────── 기둥이 부러진 뒤 ───────── */
   const oldPillar = B.SPECIAL.pillar;

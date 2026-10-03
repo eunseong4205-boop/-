@@ -19,7 +19,7 @@
     goal(s) {
       if (!f('c4_goldy')) return { text: '옐로 한가운데 황금궁의 주인, 금화왕 골디를 만나자.', map: 'world', x: X0 + 19, y: Y0 + 3 };
       if (!f('c4_pika')) return { text: '대바자르에서 소매치기를 조심하자. 그늘 골목에 무언가 있다.', map: 'world', x: X0 + 5, y: Y0 + 20 };
-      if (!f('c4_yana')) return { text: '모래바다를 건널 길잡이, 여우 귀의 야나를 찾자. (오아시스 쪽)', map: 'world', ...OW.pt(274, 136) };
+      if (!f('c4_yana')) return { text: '모래바다를 건널 길잡이, 여우 귀의 야나를 찾자. (오아시스 쪽)', map: 'world', ...OW.pt(274, 129) };   // 야나가 선 자리 바로 앞
       if (!f('d4:boss')) return { text: '모래바다 서쪽, 태양 피라미드 깊은 곳의 「태양의 눈」을 가져오자.', map: 'world', x: PYR.x + 5, y: PYR.y + 3 };
       if (!f('c4_eye')) return { text: '태양의 눈을 들고 황금궁으로.', map: 'world', x: X0 + 19, y: Y0 + 3 };
       return { text: '북서쪽, 해 질 녘의 숲 퍼플로 가는 길이 열렸다.', map: 'world', x: OW.towns.purple.x + 16, y: OW.towns.purple.y + 12 };

@@ -53,10 +53,20 @@
       return rm;
     },
   });
+  // 대륙에서 정거장 · 아스트라로 가는 길은 문이 아니라 무한호 — 목표 표시가 발사대를 가리키게
+  ST.entries.station = () => (f('c10_launch') ? { map: 'world', x: PAD.x + 3, y: PAD.y + 8 } : null);
+  ST.entries.astra = { via: 'station' };
+  ST.entries.astra_core = { via: 'astra' };
   // 무한호: 발사대에서 정거장으로 (10장 뒤)
   ST.onMap('world', (m, Wd) => {
     if (!f('c10_launch')) return;
-    Wd.add(new G.props.Spot({ x: px(PAD.x + 3), y: py(PAD.y + 7), verb: '무한호에 탄다', text: async (c) => { if (await c.confirm('무한호를 타고 하늘 정거장으로 갈까?', '간다', '아직')) { await c.fade(true, { sec: 0.8 }); c.sfx('rumble'); G.game.goto('station', px(17), py(17), 'up'); await c.fade(false, { sec: 0.8 }); } } }));
+    Wd.add(new G.props.Spot({ x: px(PAD.x + 3), y: py(PAD.y + 7), verb: '무한호에 탄다', text: async (c) => {
+      if (!(await c.confirm('무한호를 타고 하늘 정거장으로 갈까?', '간다', '아직'))) return;
+      await c.fade(true, { sec: 0.8 }); c.sfx('rumble');
+      // 아직 11장이 시작되지 않았으면(발사 장면 뒤 바로 저장된 경우 등) 정거장 도착 장면부터
+      if (!f('ch:c11') && ST.startStation) { c.lock(true); await c.cinema(true); await ST.startStation(c); return; }
+      G.game.goto('station', px(17), py(17), 'up'); await c.fade(false, { sec: 0.8 });
+    } }));
   });
 
   ST.startStation = async function (c) {
@@ -136,7 +146,7 @@
       '1,2': { props: [['sign', 9, 9, { text: '「중력 구역. 구덩이는 우주다. 떨어지면 정거장이 붙잡는다 — 입구로.」' }], ['pot', 2, 11], ['pot', 17, 11]], ter: [['pit', 3, 4, 3, 3], ['pit', 14, 4, 3, 3]], foes: [['drone', 5, 8], ['drone', 14, 8], ['turret', 9, 3]] },
       '0,2': { ter: [['pit', 5, 2, 10, 11]], props: [['post', 3, 7], ['post', 16, 7], ['chest', 17, 3, { item: 'key_small' }], ['chest', 17, 11, { item: 'arrows10' }]], foes: [['drone', 10, 5], ['drone', 10, 9]] },
       '2,2': { solve: { type: 'clear' }, props: [['chest', 9, 6, { item: 'compass', hidden: true }], ['crystal', 4, 4], ['cblock', 9, 3], ['cblock', 10, 3], ['cblock', 15, 9, { blue: false }], ['cblock', 16, 9, { blue: false }]], foes: [['golem', 9, 8], ['drone', 5, 10], ['drone', 14, 10]] },
-      '1,1': { ter: [['pit', 1, 6, 18, 2]], props: [['eye', 9, 2, { sets: 'd11:eye' }], ['fn', 9, 10, { fn: (x, y, Wd) => Wd.add(new G.props.Sign({ x, y, text: '「사다리 제어 — 눈을 맞히면 다리가 뜬다」', look: 'stone', anyDir: true })) }], ['chest', 16, 3, { item: 'map_d' }]], foes: [['turret', 3, 3], ['turret', 16, 10], ['drone', 9, 4]] },
+      '1,1': { ter: [['pit', 1, 6, 18, 2]], props: [['post', 4, 4], ['post', 15, 4], ['post', 4, 10], ['post', 15, 10], ['sign', 3, 11, { text: '「구덩이 너머 말뚝 — 갈고리를 걸어 건너시오. (구르기로 뛰어넘어도 된다)」' }], ['eye', 9, 2, { sets: 'd11:eye' }], ['fn', 9, 10, { fn: (x, y, Wd) => Wd.add(new G.props.Sign({ x, y, text: '「사다리 제어 — 눈을 맞히면 다리가 뜬다」', look: 'stone', anyDir: true })) }], ['chest', 16, 3, { item: 'map_d' }]], foes: [['turret', 3, 3], ['turret', 16, 10], ['drone', 9, 4]] },
       '0,1': { props: [['chest', 9, 6, { item: 'key_big', big: true, hidden: true }], ['spot', 15, 3, { verb: '기록 화면을 본다', text: '「관리자 기록 — 984년. 방문자 1명. 이름: 카이론. 명령 변경: 방위 등급 최대. 사유 입력란: (공란)」\n공란 옆에 누가 손가락으로 쓴 먼지 글씨: 「세린」.' }]], solve: { type: 'clear' }, foes: [['golem', 6, 7], ['golem', 13, 7], ['drone', 9, 10]] },
       '2,1': { props: [['chest', 9, 6, { item: 'heartpiece' }], ['chest', 3, 11, { item: 'bombs5' }]], foes: [['drone', 6, 5], ['drone', 13, 5], ['turret', 9, 10]] },
       '1,0': { boss: true, props: [['boss', 9, 6, { type: 'core' }]] },

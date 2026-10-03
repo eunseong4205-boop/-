@@ -147,7 +147,7 @@
     rooms: {
       '1,3': { props: [['torch', 4, 4], ['torch', 15, 4], ['sign', 9, 9, { text: '묘비들에 이름이 없다. 대신 숫자가 적혀 있다.\n「허용 손실 #4,112」 「허용 손실 #4,113」 …' }]], foes: [['bat', 6, 6], ['bat', 13, 6]] },
       '1,2': { solve: { type: 'torches', flag: 'd15:torch', msg: '등잔이 모두 켜지자 무덤 하나가 열렸다' }, props: [['torch', 3, 3], ['torch', 16, 3], ['torch', 3, 11], ['torch', 16, 11]], foes: [['ghost', 9, 7], ['hollow', 5, 6]] },
-      '0,2': { props: [['veil', 18, 7, { cells: [[18, 6], [18, 7], [18, 8], [19, 6], [19, 7], [19, 8]] }], ['chest', 5, 7, { item: 'key_small' }]], foes: [['ghost', 10, 5], ['ghost', 10, 9]] },
+      '0,2': { props: [['veil', 18, 7, { cells: [[18, 6], [18, 7], [18, 8], [19, 6], [19, 7], [19, 8]] }], ['veil', 9, 1, { cells: [[9, -1], [10, -1], [9, 0], [10, 0], [9, 1], [10, 1]] }], ['chest', 5, 7, { item: 'key_small' }]], foes: [['ghost', 10, 5], ['ghost', 10, 9]] },
       '2,2': { props: [['chest', 9, 7, { item: 'tome_meteor' }], ['spot', 4, 4, { verb: '무덤을 들여다본다', text: '작은 무덤. 숫자 대신 이름이 긁혀 있다. 「유안」. 누군가 몰래 새겨 넣었다.' }]], foes: [['hollow', 6, 9], ['hollow', 13, 9], ['shade', 9, 5]] },
       '1,1': { solve: { type: 'clear' }, props: [['chest', 9, 6, { item: 'key_big', big: true, hidden: true }], ['spot', 15, 4, { verb: '장부를 읽는다', text: async (c) => { await c.narr('불에 그을린 장부. 「허용 손실」 칸이 끝없이 이어진다. 한 장 한 장, 이름을 지우고 숫자를 쓴 흔적.'); await c.narr('맨 마지막 장에만 이름이 남아 있었다. 지우다 만 것처럼. [w]세린[/]. 그 옆에 다른 손글씨: 「이 칸은 내가 지우지 못한다. — K」'); } }]], foes: [['knight', 5, 5], ['knight', 14, 5], ['hollow', 9, 10]] },
       '0,1': { props: [['chest', 9, 6, { item: 'heartpiece' }], ['torch', 4, 4], ['torch', 15, 4]], foes: [['shade', 6, 8], ['shade', 13, 8]] },
@@ -172,7 +172,7 @@
     { id: 'sec_red', region: 'red', x: 60, y: 184, name: '식지 않는 굴', how: 'heat', loot: [['art_triple'], ['heartpiece']], foes: [['wisp', 5, 5], ['wisp', 10, 5], ['golem', 7, 7]], msg: '안에서 뿜어 나오는 열기에 숨이 막힌다. 방열복이 있어야 한다.' },
     { id: 'sec_blue', region: 'blue', x: 206, y: 222, name: '밀물 동굴', how: 'swim', loot: [['bw_dragon'], ['heartpiece']], foes: [['octo', 5, 6], ['crab', 10, 6]], msg: '동굴 입구가 물에 잠겨 있다. 헤엄칠 수 있어야 한다.' },
     { id: 'sec_yellow', region: 'yellow', x: 292, y: 164, name: '모래에 묻힌 방', how: 'bomb', loot: [['sw_moon'], ['heartpiece']], foes: [['worm', 5, 6], ['bandit', 10, 6]], note: '폭탄에 모래 벽이 무너지고, 묻혀 있던 방이 드러났다.' },
-    { id: 'sec_white', region: 'white', x: 44, y: 44, name: '얼어붙은 천문대', how: 'bomb', loot: [['tome_meteor'], ['heartpiece']], foes: [['icewisp', 5, 5], ['icewisp', 10, 5], ['golem', 7, 7]], note: '얼음벽이 깨지자 둥근 천문대가 나타났다. 망원경이 별 하나를 가리킨 채 얼어 있다.' },
+    { id: 'sec_white', region: 'white', x: 30, y: 46, name: '얼어붙은 천문대', how: 'bomb', loot: [['tome_meteor'], ['heartpiece']], foes: [['icewisp', 5, 5], ['icewisp', 10, 5], ['golem', 7, 7]], note: '얼음벽이 깨지자 둥근 천문대가 나타났다. 망원경이 별 하나를 가리킨 채 얼어 있다.' },
     { id: 'sec_gray', region: 'gray', x: 40, y: 124, name: '고철 금고', how: 'bomb', loot: [['ac_vamp'], ['heartpiece']], foes: [['drone', 5, 5], ['drone', 10, 5]], note: '폭탄에 녹슨 철문이 떨어져 나갔다. 은빛 왕국 시대의 금고다.' },
     { id: 'sec_black', region: 'black', x: 292, y: 70, name: '삼킨 자의 무덤', how: 'abyss', loot: [['sw_void']], foes: [['shade', 5, 5], ['shade', 10, 5], ['hollow', 7, 7]], msg: '문이 열리지 않는다. 문에 새겨진 글씨: 「어둠을 셋 이상 들여다본 자만」.' },
     { id: 'sec_purple', region: 'purple', x: 110, y: 120, name: '거울 뒤 서재', how: 'mirror', loot: [['ac_combo'], ['heartpiece']], foes: [['mage', 5, 5], ['ghost', 10, 5]], msg: '그냥 바위벽이다. …아닌가? 무언가 비치는 것 같다.' },

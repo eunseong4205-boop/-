@@ -31,11 +31,15 @@
       if (got() < 6) {
         const n = PARTS.find((p) => !f('part:' + p.id));
         // 표시는 그 부품을 가진 사람이 있는 집 문 앞
-        const wm = G.build.get('world'), b = wm.buildings.find((bb) => bb.id === n.map);
-        return { text: '부품 모으기 (' + got() + '/6) — 다음: ' + n.name + ' (' + n.where + ')', map: 'world', x: b ? b.doorX : 289, y: b ? b.doorY : 211 };
+        const wm = G.build.get('world'), b = wm.buildings.find((bb) => bb.id === n.map || bb.to === n.map);
+        const w = !b && (wm.warps || []).find((ww) => ww.to === n.map);
+        const at = b ? { x: b.doorX, y: b.doorY } : w ? { x: w.x, y: w.y + 1 } : OW.pt(289, 211);
+        return { text: '부품 모으기 (' + got() + '/6) — 다음: ' + n.name + ' (' + n.where + ')', map: 'world', ...at };
       }
+      // 발사대 방어 중에는 공방이 아니라 발사대를 가리킨다
+      if (ST.COLORFUL.defendT != null && !f('c10_launch')) return { text: '발사대를 지켜라! 다가오는 기사단을 막는다 — 예열 ' + Math.min(100, Math.floor(ST.COLORFUL.defendT / 60 * 100)) + '%', map: 'world', x: PAD.x + 3, y: PAD.y + 9 };
       if (!f('c10_launch')) return { text: '부품이 다 모였다. 피로스 박사에게!', map: 'world', ...OW.pt(289, 211) };
-      return { text: '하늘 정거장으로.', map: 'world', x: PAD.x + 2, y: PAD.y + 6 };
+      return { text: '하늘 정거장으로. (발사대의 무한호에 탄다)', map: 'world', x: PAD.x + 3, y: PAD.y + 8 };
     } });
 
   /* ───────── 물건 ───────── */
@@ -60,7 +64,7 @@
   ST.onMap('world', (m, Wd) => {
     const P = G.props;
     Wd.add(new P.Waystone({ x: px(CT.plaza.x - 3), y: py(CT.plaza.y + 3), wid: 'w_colorful', name: '알록달록 곶' }));
-    Wd.add(new P.Sign({ x: px(PAD.x + 3), y: py(PAD.y + 9), text: '무한호 발사대\n「제412안. 이번엔 진짜다」 — 피로스\n「지난번에도 그랬다」 — 봄바' }));
+    Wd.add(new P.Sign({ x: px(PAD.x + 6), y: py(PAD.y + 9), text: '무한호 발사대\n「제412안. 이번엔 진짜다」 — 피로스\n「지난번에도 그랬다」 — 봄바' }));
     Wd.add(new P.Sign({ x: px(X0 + 12), y: py(Y0 + 21), text: '알록달록 곶 — 쾅! 소리는 성공의 소리\n「폭발은 실패가 아니다. 방향이 틀렸을 뿐이다」' }));
   });
 
@@ -244,16 +248,16 @@
     const Wd = G.world, p = Wd.player;
     let t = 0, spawnT = 0, alive = [];
     const types = ['knight', 'knight', 'bandit', 'mage', 'drone'];
-    S().duel = true;
+    S().duel = true; ST.COLORFUL.defendT = 0;
     await c.freeWhile(() => {
-      t += 1 / 60; spawnT -= 1 / 60;
+      t += 1 / 60; spawnT -= 1 / 60; ST.COLORFUL.defendT = t;
       alive = alive.filter((e) => !e.dead);
       if (spawnT <= 0 && alive.length < 6 && t < 55) { spawnT = 3.2; const side = Math.random() < 0.5 ? -1 : 1; const e = G.foes.spawn(U.pick(types), px(PAD.x + 3) + side * 150, py(PAD.y + 12) + (Math.random() - 0.5) * 60, { tier: 9 }); e.aggro = true; alive.push(e); }
       if (Math.floor(t) !== Math.floor(t - 1 / 60) && Math.floor(t) % 10 === 0 && t > 1) G.ui.toast('예열 ' + Math.min(100, Math.floor(t / 60 * 100)) + '%', 'gold');
       if (S().hp <= 1) { S().hp = G.st.derive(S()).hpMax >> 1; G.ui.toast('봄바가 물약을 던졌다!', 'good'); }
       return t >= 60;
     });
-    S().duel = false;
+    S().duel = false; ST.COLORFUL.defendT = null;
     for (const e of alive) if (!e.dead) { G.fx.shards(e.x, e.y - 8, 8, '#ffffff'); e.dead = true; }
     c.lock(true);
     await c.cinema(true);

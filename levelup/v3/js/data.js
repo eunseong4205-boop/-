@@ -46,7 +46,7 @@
   item('ac_star', { type: 'acc', name: '별의 심장', fx: { exp: 1, mpRegen: 1.5 }, desc: '스텔라가 준 부품. 빛 알갱이 두 배, MP 회복.' });
 
   /* ── 도구 (소모 · 영구) ── */
-  item('bow', { type: 'tool', name: '활', icon: 'bow', desc: '화살을 쏜다. 멀리 있는 스위치와 눈을 맞힌다.' });
+  item('bow', { type: 'tool', name: '활', icon: 'bow', desc: '[K](휴대폰: 무기 단추)로 바꿔 들고 공격 버튼으로 쏜다 — 누르고 있다 떼면 세게. 멀리 있는 스위치와 눈을 맞힌다.' });
   item('bomb', { type: 'tool', name: '폭탄', icon: 'bomb', ammo: 'bombs', desc: '금 간 벽과 바위를 부순다. 도구 버튼으로 놓는다.' });
   item('hook', { type: 'tool', name: '갈고리', icon: 'hook', desc: '말뚝과 나무에 걸어 틈을 건넌다. 적을 붙잡아 끌어온다.' });
   item('lantern', { type: 'tool', name: '등불', icon: 'lantern', desc: '어두운 곳을 밝히고 횃불에 불을 붙인다.' });

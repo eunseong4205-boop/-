@@ -39,7 +39,7 @@
       g.fillStyle = '#0a1830'; g.fillRect(x - 4, y - 4, 8, 8); g.fillStyle = '#8ad8ff'; g.beginPath(); g.moveTo(x, y - 4); g.lineTo(x + 3, y); g.lineTo(x, y + 4); g.lineTo(x - 3, y); g.closePath(); g.fill();
     }
     // 목표
-    const goal = ST.goal && ST.goal();
+    const goal = ST.goalOn ? ST.goalOn('world') : ST.goal && ST.goal();
     if (goal && goal.map === 'world') { const x = goal.x * SC + SC / 2, y = goal.y * SC + SC / 2; g.strokeStyle = '#ffd84a'; g.lineWidth = 2; g.beginPath(); g.arc(x, y, 7, 0, Math.PI * 2); g.stroke(); g.fillStyle = '#ffd84a'; g.fillRect(x - 1, y - 1, 3, 3); g.lineWidth = 1; }
     // 지금 자리
     const cm = G.world.map, p = G.world.player;
@@ -63,11 +63,13 @@
     const X0 = pad + lab;
     // 층 이름 (왼쪽)
     if (lab) { g.font = "11px 'Galmuri11', sans-serif"; g.textAlign = 'left'; const rows = {}; for (const k of keys) { const fl = m.rooms[k].floor; if (fl && (s.flags['room:' + did + ':' + k] || hasMap)) rows[RP(k)[1]] = fl; } for (const [ry, fl] of Object.entries(rows)) { g.fillStyle = '#c8b8e8'; g.fillText(fl, 4, pad + ry * ch + ch / 2 + 4); } }
-    // 문 (이어진 방 사이 선) · 계단 (점선)
+    // 문 (이어진 방 사이 선) · 계단 (점선). 멀리 떨어진 층으로 가는 계단은 선 대신 양쪽 방에 같은 번호 「↕n」
+    const farSt = {}; let stN = 0;
     for (const dw of m.doorways || []) {
       const seenA = s.flags['room:' + did + ':' + dw.a], seenB = s.flags['room:' + did + ':' + dw.b];
       if (!hasMap && !(seenA || seenB)) continue;
       const [ax, ay] = RP(dw.a), [bx, by] = RP(dw.b);
+      if (dw.stair && Math.abs(ax - bx) + Math.abs(ay - by) > 1) { stN++; (farSt[dw.a] = farSt[dw.a] || []).push(stN); (farSt[dw.b] = farSt[dw.b] || []).push(stN); continue; }
       g.strokeStyle = dw.stair ? '#b8a0e8' : '#6a6080'; g.lineWidth = dw.stair ? 2 : 3;
       if (dw.stair) g.setLineDash([3, 3]);
       g.beginPath(); g.moveTo(X0 + ax * cw + cw / 2, pad + ay * ch + ch / 2); g.lineTo(X0 + bx * cw + cw / 2, pad + by * ch + ch / 2); g.stroke();
@@ -82,11 +84,14 @@
       g.fillStyle = k === cur ? '#6a5a98' : seen ? '#3a3458' : '#241f36'; g.fillRect(x, y, w, h);
       g.strokeStyle = k === cur ? '#ffe08a' : '#8a80a8'; g.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1);
       if (s.flags[did + ':' + k + ':clear']) { g.fillStyle = '#6ae07a'; g.fillRect(x + 3, y + 3, 3, 3); }
+      if (farSt[k]) { const t = '↕' + farSt[k].join(','); let fs = 9; g.textAlign = 'left'; do { g.font = fs + "px 'Galmuri11', sans-serif"; } while (g.measureText(t).width > w - 12 && --fs > 6); g.fillStyle = '#b8a0e8'; g.fillText(t, x + 9, y + 10); }
       const R = m.rooms[k].R;
       if (hasComp && R.boss) { g.fillStyle = s.flags[did + ':boss'] ? '#6a6080' : '#ff4a6a'; g.font = "12px 'Galmuri11', sans-serif"; g.textAlign = 'center'; g.fillText(s.flags[did + ':boss'] ? '✓' : '☠', x + w / 2, y + h / 2 + 4); }
       if (hasComp) {
-        const left = (R.props || []).filter((pr) => pr[0] === 'chest' && !s.flags[did + ':chest:' + k + ':' + pr[1] + ',' + pr[2]]).length;
-        for (let i = 0; i < left; i++) { g.fillStyle = '#ffd84a'; g.fillRect(x + w - 7 - i * 5, y + h - 7, 4, 4); }
+        const leftL = (R.props || []).filter((pr) => pr[0] === 'chest' && !s.flags[did + ':chest:' + k + ':' + pr[1] + ',' + pr[2]]);
+        // 큰 열쇠 상자는 붉은 열쇠 표시로 (아직 큰 열쇠가 없을 때)
+        leftL.sort((a, b) => (b[3] && b[3].item === 'key_big' ? 1 : 0) - (a[3] && a[3].item === 'key_big' ? 1 : 0));
+        leftL.forEach((pr, i) => { const kb = pr[3] && pr[3].item === 'key_big'; if (kb && !(s.bigkeys && s.bigkeys[did])) { g.fillStyle = '#ffe066'; g.fillRect(x + w - 9 - i * 5, y + h - 9, 6, 6); g.fillStyle = '#d83a4a'; g.fillRect(x + w - 8 - i * 5, y + h - 8, 4, 4); } else if (!kb) { g.fillStyle = '#ffd84a'; g.fillRect(x + w - 7 - i * 5, y + h - 7, 4, 4); } });
       }
       if (k === cur && p) { const px = x + ((p.x / TS) % RW) / RW * w, py = y + ((p.y / TS) % RH) / RH * h; g.fillStyle = '#fff'; g.fillRect(px - 2, py - 2, 4, 4); g.fillStyle = '#ff3a5a'; g.fillRect(px - 1, py - 1, 2, 2); }
     }
@@ -103,13 +108,14 @@
       title.textContent = (m.name || '던전') + (m.curFloor ? ' — ' + m.curFloor : '') + (s.flags['dmap:' + m.dungeon] ? ' · 지도 있음' : '') + (s.flags['dcomp:' + m.dungeon] ? ' · 나침반 있음' : '');
     } else {
       cv = worldCanvas();
+      if (ST.mapExtras) { try { ST.mapExtras(cv, 2); } catch (_) { /* 무시 */ } }
       title.textContent = '이리스 대륙' + (m && !m.overworld && m.name ? ' — 지금: ' + m.name : '');
     }
     cv.style.cssText = 'width:min(100%, ' + (m && m.dungeon ? cv.width * 2 : 900) + 'px);height:auto;image-rendering:pixelated;border:1px solid #4a4260;border-radius:4px;background:#08060e';
     wrap.appendChild(title); wrap.appendChild(cv);
     const legend = document.createElement('div'); legend.style.cssText = 'font-size:11px;color:#a8a0c0;display:flex;gap:14px;flex-wrap:wrap;justify-content:center';
-    legend.innerHTML = m && m.dungeon ? '<span><b style="color:#ff3a5a">■</b> 나</span><span><b style="color:#ffe08a">□</b> 지금 방</span><span><b style="color:#6ae07a">■</b> 정리한 방</span><span><b style="color:#ffd84a">■</b> 남은 상자</span><span><b style="color:#ff4a6a">☠</b> 주인</span>'
-      : '<span><b style="color:#ff3a5a">●</b> 나</span><span><b style="color:#ffd84a">◎</b> 목표</span><span><b style="color:#8ad8ff">◆</b> 빛의 이정표</span><span>어두운 곳 — 아직 갈 수 없는 땅</span>';
+    legend.innerHTML = m && m.dungeon ? '<span><b style="color:#ff3a5a">■</b> 나</span><span><b style="color:#ffe08a">□</b> 지금 방</span><span><b style="color:#6ae07a">■</b> 정리한 방</span><span><b style="color:#ffd84a">■</b> 남은 상자</span><span><b style="color:#d83a4a">■</b> 큰 열쇠 상자</span><span><b style="color:#ff4a6a">☠</b> 주인</span><span><b style="color:#b8a0e8">↕1</b> 같은 번호끼리 이어진 계단</span>'
+      : '<span><b style="color:#ff3a5a">●</b> 나</span><span><b style="color:#ffd84a">◎</b> 목표</span><span><b style="color:#8ad8ff">◆</b> 빛의 이정표</span><span><b style="color:#ffd84a">◆</b> 찾은 이야기</span><span><b style="color:#e8e0c8">■</b> 찾은 곳</span><span>어두운 곳 — 아직 갈 수 없는 땅</span>';
     wrap.appendChild(legend);
     const goal = ST.goalText && ST.goalText();
     if (goal) { const gd = document.createElement('div'); gd.style.cssText = 'font-size:12px;color:#f0cc6e;max-width:60ch;text-align:center;line-height:1.6'; gd.textContent = '목표 — ' + goal; wrap.appendChild(gd); }
