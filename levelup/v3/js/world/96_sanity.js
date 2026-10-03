@@ -242,6 +242,40 @@
     if (carved && m.dirtyAll) m.dirtyAll();
     return carved;
   }
+  /** 한쪽으로만 가는 곳: 그 장까지 열린 땅에서 그린 마을로부터 걸어 · 뛰어내려 닿지만 걸어 돌아올 수 없는 무리
+   *  (절벽 아래 웅덩이 땅인데 다른 출구가 아직 닫힌 지역 쪽뿐인 곳 등) → 돌아오는 길(계단 · 다리)을 낸다.
+   *  지역은 이야기 차례대로 열리므로 열리는 차례마다, 그때 열린 땅만으로 */
+  function fixTraps(m) {
+    if (!m.overworld || !G.ow || !G.ow.towns || !G.ow.towns.green || !G.ow.regName) return 0;
+    const RN = G.ow.regName, rank = (i) => { const r = OPEN_RANK[RN[i]]; return r == null ? 99 : r; };
+    let carved = 0;
+    for (let k = 0; k <= 9; k++) {
+      const pass = (mm, i) => rank(i) <= k && passAll(mm, i);
+      const failed = new Set();
+      for (let round = 0; round < 4; round++) {
+        const A = analyze(m, mainsOf(m), linksOf(m), pass), L = A.L;
+        const p0 = G.ow.towns.green.plaza; let i0 = -1;
+        for (let r = 0; r <= 3 && i0 < 0; r++) for (let dy = -r; dy <= r && i0 < 0; dy++) for (let dx = -r; dx <= r && i0 < 0; dx++) { const x = p0.x + dx, y = p0.y + dy; if (m.inb(x, y) && L.comp[m.i(x, y)] >= 0) i0 = m.i(x, y); }
+        if (i0 < 0) return carved;
+        const c0 = L.comp[i0], fw = new Uint8Array(L.nc), bk = new Uint8Array(L.nc);
+        const rev = new Map(); for (const [a, set] of A.J) for (const b of set) { let r = rev.get(b); if (!r) rev.set(b, r = new Set()); r.add(a); }
+        for (const [mark, G2] of [[fw, A.J], [bk, rev]]) { const q = [c0]; mark[c0] = 1; while (q.length) { const c = q.pop(); const out = G2.get(c); if (out) for (const b of out) if (!mark[b]) { mark[b] = 1; q.push(b); } } }
+        const core = (i) => { const c = L.comp[i]; return c >= 0 && fw[c] && bk[c]; };
+        // 덫 무리마다 한 칸 (닫힌 지역 쪽이 아닌, 가장 가운데에 가까운 칸)
+        const first = new Map();
+        for (let i = 0; i < L.comp.length; i++) { const c = L.comp[i]; if (c < 0 || !fw[c] || bk[c] || failed.has(c) || first.has(c)) continue; if (warpAtTile(m, i % m.w, (i / m.w) | 0)) continue; first.set(c, i); }
+        if (!first.size) break;
+        let n = 0;
+        for (const [c, i] of first) {
+          if (carvePath(m, i, core, 900, (j) => rank(j) <= k)) { carved++; n++; console.info('한쪽 길 덫에 돌아오는 길', i % m.w, (i / m.w) | 0, '열리는 차례', k); }
+          else { failed.add(c); console.warn('덫에서 돌아오는 길을 낼 수 없다', i % m.w, (i / m.w) | 0, '차례', k); }
+        }
+        if (!n) break;
+      }
+    }
+    if (carved && m.dirtyAll) m.dirtyAll();
+    return carved;
+  }
   function warpAtTile(m, x, y) { for (const w of m.warps || []) if (x >= w.x && y >= w.y && x < w.x + (w.w || 1) && y < w.y + (w.h || 1)) return w; return null; }
 
   /* ───────── 지도마다 한 번: 짓자마자 고친다 ───────── */
@@ -268,6 +302,7 @@
       checked.add(m);
       try {
         if (m.overworld) m.sanTowns = connectTowns(m);
+        if (m.overworld) m.sanTraps = fixTraps(m);
         if (m.overworld) m.sanPaths = fixApproaches(m);
         const r = fixSinks(m, () => mainsOf(m), () => linksOf(m));
         m.san = r.A; m.sanFixed = r.fixed; m.sanLeft = r.left;

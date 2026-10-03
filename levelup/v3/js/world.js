@@ -29,6 +29,8 @@
   function propBlock(x, y, w, h, who) {
     for (const e of W.ents) {
       if (e === who || !e.solid || e.dead || !e.blockBox) continue;
+      // 사람은 주인공이 계속 밀면 비켜 준다 (다리 · 문 앞 · 좁은 길에서 영영 막히지 않게)
+      if (e.npc && e.passT > 0 && who && who === W.player) continue;
       const b = e.blockBox();
       if (b && x < b.x + b.w && x + w > b.x && y < b.y + b.h && y + h > b.y) return true;
     }

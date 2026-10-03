@@ -381,6 +381,12 @@
       if (this.barkT > 0) this.barkT -= dt;
       const p = Wd.player;
       const near = p && U.dist(p.x, p.y, this.x, this.y) < 40;
+      // 주인공이 0.3초 넘게 몸으로 밀면 잠깐 지나가게 해 준다 — 사람 하나 때문에 길이 막히지 않게
+      if (this.passT > 0) this.passT -= dt;
+      if (p && Math.abs(p.x - this.x) < 13 && Math.abs(p.y - this.y) < 10 && (p.state === 'walk' || p.state === 'roll')) {
+        this.pushT = (this.pushT || 0) + dt;
+        if (this.pushT > 0.3) { if (!(this.passT > 0) && Math.random() < 0.35 && G.cine && G.cine.bubble && !G.script.running) G.cine.bubble(this, U.pick(['앗, 지나가요', '어이쿠', '먼저 가요']), { life: 1.2 }); this.passT = 0.8; }
+      } else if (this.pushT > 0) this.pushT = Math.max(0, this.pushT - dt * 2);
       if (near && this.lookAt !== false && !this.busy) { this.dir = U.dir4(p.x - this.x, p.y - this.y, this.dir); if (this.state === 'walk') this.state = 'idle'; }
       else if (this.wanderR && !this.busy) {
         this.aT -= dt;
