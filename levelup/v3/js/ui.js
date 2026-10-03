@@ -252,6 +252,7 @@
     const it = G.data.ITEMS[id]; const H = G.hud;
     if (!it) return H.icon('none');
     if (G.gear && G.gear.icon && !it.icon) { const gi = G.gear.icon(id); if (gi) return gi; }
+    if (G.itemArt) { const ai = G.itemArt.icon(id); if (ai) return ai; }   // 잡다한 아이템 · 기술서 · 비기 두루마리의 도트 그림
     if (it.icon) return H.icon(it.icon);
     if (it.type === 'use') return H.icon(it.heal ? 'heart' : 'light');
     if (it.type === 'sword') return swordIcon(it.col);
