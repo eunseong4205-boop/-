@@ -270,6 +270,7 @@
   /* ───────── 메뉴 ───────── */
   function menu(tab) {
     if (UI.modal || G.script.running) return;
+    if (UI.menuGate && UI.menuGate(tab)) return;   // 기억 속처럼 수첩을 펴지 않는 곳 (56_shards)
     const D = G.data;
     return openModal({
       title: '비전 수첩', tab: tab || 'bag',

@@ -9694,6 +9694,7 @@ html.touch #modal { z-index: 60; }
   /* ───────── 메뉴 ───────── */
   function menu(tab) {
     if (UI.modal || G.script.running) return;
+    if (UI.menuGate && UI.menuGate(tab)) return;   // 기억 속처럼 수첩을 펴지 않는 곳 (56_shards)
     const D = G.data;
     return openModal({
       title: '비전 수첩', tab: tab || 'bag',
@@ -33096,9 +33097,13 @@ html.touch #modal { z-index: 60; }
     await c.narr('검은 유리에 손끝이 닿았다. 차갑다. 그리고 — 배가 고프다. 누군가의 배고픔이 손가락을 타고 올라온다.');
     await c.fade(true, { sec: 1 });
     ST.staging = true; MEM.cur = sh; MEM.st = {};
+    MEM.lantern = !!p0.lantern;
+    // 방 등불은 지도에 남으므로(지도는 한 번 지어 둔다) 들어올 때마다 처음 상태로
+    const rm0 = G.build.get(sh.room); rm0.lights0 = rm0.lights0 || (rm0.lights || []).slice(); rm0.lights = rm0.lights0.slice();
     G.game.goto(sh.room, px(sh.start[0]), py(sh.start[1]), sh.dir || 'up', { quiet: true });
     const p = W().player;
     p.look = sh.pov.look; p.sheet = null; p.hidden = false; p.lantern = !!sh.lantern;
+    disarm(p);
     p.beast = sh.pov.look && sh.pov.look.kind && ST.beastDraw ? ST.beastDraw(p, sh.pov.look.kind) : null;
     if (G.hud) G.hud.hidden = true;
     c.filter('memory');
@@ -33125,13 +33130,7 @@ html.touch #modal { z-index: 60; }
     c.sfx('white');
     await c.narr('[w]「' + sh.name + '」[/]\n흑점 속 목소리 하나에 이름이 붙었다.' + (nameLabel ? '\n[s]' + nameLabel + '[/]' : ''));
     await c.fade(true, { sec: 1.2 });
-    c.filter('');
-    ST.staging = false; MEM.cur = null; MEM.st = null;
-    if (G.hud) G.hud.hidden = false;
-    const r = s.stageRet || { map: 'world', x: px(99), y: py(182), dir: 'down' };
-    G.game.goto(r.map, r.x, r.y, r.dir || 'down', { quiet: true });
-    const p = W().player; p.look = ST.heroLook(s); p.sheet = null; p.hidden = false; p.beast = null;
-    delete s.stageRet;
+    backToWorld(c);
     await c.wait(0.3);
     await c.fade(false, { sec: 1 });
     const n = Object.keys(s.shards).length;
@@ -33141,6 +33140,40 @@ html.touch #modal { z-index: 60; }
     s.pts = (s.pts || 0) + 1;
     await c.say(null, '조각이 손바닥에서 녹아 사라졌다. [y]성장 점수 +1[/]', { style: 'sys' });
   }
+  /* 기억 속의 몸: 칼 · 활 · 마법 · 도구 · 구르기는 없다. J는 말 걸기 · 만지기만 */
+  const MEM_ACTS = { attack: { input(p) { if (!G.input.pressed('attack')) return false; if (G.interact && G.interact.tryAt(p)) { G.input.eat('attack'); return true; } return false; } } };
+  function disarm(p) { p.actions = MEM_ACTS; p.tryRoll = () => false; p.carry = null; }
+  function rearm(p) { p.actions = G.combat.actions; delete p.tryRoll; }
+  /** 기억에서 들판으로: 모습 · 화면 · 손을 되돌린다 (끝까지 보았든, 중간에 빠져나왔든) */
+  function backToWorld(c) {
+    const s = S();
+    c.filter('');
+    ST.staging = false; MEM.cur = null; MEM.st = null;
+    if (G.hud) G.hud.hidden = false;
+    const r = s.stageRet || { map: 'world', x: px(99), y: py(182), dir: 'down' };
+    G.game.goto(r.map, r.x, r.y, r.dir || 'down', { quiet: true });
+    const p = W().player; p.look = ST.heroLook(s); p.sheet = null; p.hidden = false; p.beast = null; p.lantern = !!MEM.lantern;
+    rearm(p);
+    delete s.stageRet;
+  }
+  /** 중간에 빠져나오기: 조각은 그 자리에 남는다 */
+  async function abort(c) {
+    const sh = MEM.cur;
+    c.lock(true);
+    await c.narr('손을 뗐다. 누군가의 숨소리가 멀어진다. ' + (sh ? sh.pov.name + '의 이야기는 아직 끝나지 않았다.' : ''));
+    await c.fade(true, { sec: 0.8 });
+    backToWorld(c);
+    await c.wait(0.2);
+    await c.fade(false, { sec: 0.8 });
+    await c.say('toria', '찍…! 너 갑자기 숨을 몰아쉬었어. 괜찮아? …조각은 그대로 있어. 나중에 다시 만져 봐도 돼.', { face: 'sad' });
+    c.lock(false);
+  }
+  // 기억 속에서 메뉴 키: 수첩 대신 「빠져나올까」
+  G.ui.menuGate = () => {
+    if (!MEM.cur) return false;
+    if (!G.script.running) G.script.run(async (c) => { const k = await c.choice('여기는 기억 속이다.', ['계속 머문다', '기억에서 빠져나온다 (조각은 그 자리에 남는다)']); if (k === 1) await abort(c); });
+    return true;
+  };
   ST.shardNames = () => Object.values(S().shards || {}).map((x) => x.name);
   // 조각 속에서 저장한 채로 다시 열면(33d_threads가 돌아갈 곳으로 보낸다) 모습 · 화면을 되돌린다
   ST.enterHooks.push((m) => { if (!m.memory && !ST.staging) { const p = W().player; if (p && G.hud && G.hud.hidden && !MEM.cur) G.hud.hidden = false; } });
@@ -33216,7 +33249,7 @@ html.touch #modal { z-index: 60; }
         await c.cinema(false);
         await leave(c, SH[1], k, '바다를 밝히던 빛은 「마렌」이라는 누나였다.');
       } },
-      { key: 'man', name: '은빛 단추의 징수인', x: 7, y: 8, dir: 'up', look: folk('guard', { tc: '#c8c8d8' }), when: null, talk: async (c, n, st) => {
+      { key: 'man', name: '은빛 단추의 징수인', x: 11, y: 8, dir: 'left', look: folk('guard', { tc: '#c8c8d8' }), when: null, talk: async (c, n, st) => {
         if (!st.talked) { await c.say(n, '…꼬마. 비켜라. 너랑은 볼일 없다.', { face: 'normal' }); return; }
         st.man = true; await c.say(n, '영주님 명이다. 빛 그물 사용료. 오늘 밤까지. 못 내면 빛으로 받는다. 전부.', { face: 'normal' });
       } },
@@ -33255,7 +33288,7 @@ html.touch #modal { z-index: 60; }
       } },
     ],
     spots: [
-      { x: 13, y: 2, dy: 6, verb: '모래 언덕 너머를 본다', when: (st) => !!st.talk, text: async (c, st) => { st.torch = true; c.sfx('rumble'); await c.narr('언덕 너머에 불빛 열둘. 흔들리며 다가온다. 횃불이다. 바람에 쇠 냄새가 섞였다.'); } },
+      { x: 11, y: 2, dy: 6, reach: 20, verb: '모래 언덕 너머를 본다', when: (st) => !!st.talk, text: async (c, st) => { st.torch = true; c.sfx('rumble'); await c.narr('언덕 너머에 불빛 열둘. 흔들리며 다가온다. 횃불이다. 바람에 쇠 냄새가 섞였다.'); } },
       { x: 2, y: 3, dy: 6, verb: '짐 냄새를 맡는다', text: async (c) => { await c.narr('대추야자. 소금. 그리고 낡은 별지도 한 장. 지도 귀퉁이에 아이 글씨: 「사이프 — 별을 그리는 아이」.'); } },
     ],
     journal: (k) => ['낙타는 소년을 태우고 달렸다.', '낙타는 무릎을 꿇어 소년을 숨겼다.', '낙타는 하늘을 보고 울었다.'][k] + ' 별지기 소년 사이프는 별이 되었고, 아무도 빛을 나눠 주지 않은 그 별은 해마다 어두워졌다.',
