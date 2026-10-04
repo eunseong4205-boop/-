@@ -72,17 +72,18 @@
     c.filter('memory');
     if (sh.music) c.music(sh.music);
     for (const npc of sh.npcs || []) {
-      const e = W().add(new G.props.NPC({ x: px(npc.x), y: py(npc.y), dir: npc.dir || 'down', look: npc.look, name: npc.name, talk: (c2, n) => npc.talk(c2, n, MEM.st), lookAt: npc.lookAt }));
+      const e = W().add(new G.props.NPC({ x: px(npc.x), y: py(npc.y), dir: npc.dir || 'down', look: npc.look, name: npc.name, talk: (c2, n) => npc.talk(c2, n, MEM.st), lookAt: npc.lookAt, mark: () => (isTarget(npc.key) ? '!' : null) }));
       e.memKey = npc.key; e.voiceOff = true;
       if (npc.state) e.state = npc.state;
     }
-    for (const sp of sh.spots || []) W().add(new G.props.Spot({ x: px(sp.x) + (sp.dx || 0), y: py(sp.y) + (sp.dy || 0), verb: sp.verb, sparkle: true, reach: sp.reach || 16, when: () => !sp.when || sp.when(MEM.st), text: (c2) => sp.text(c2, MEM.st) }));
+    for (const sp of sh.spots || []) W().add(new MemSpot({ mk: sp.mk, x: px(sp.x) + (sp.dx || 0), y: py(sp.y) + (sp.dy || 0), verb: sp.verb, reach: sp.reach || 18, when: () => !sp.when || sp.when(MEM.st), text: async (c2) => { MEM.used[sp.mk] = 1; await sp.text(c2, MEM.st); } }));
+    MEM.used = {}; MEM.idle = 0; MEM.sig = ''; MEM.age = 0;
     await c.wait(0.3);
     await c.fade(false, { sec: 1.2 });
     G.cine.area(sh.title, sh.era);
     await c.wait(1.6);
     if (sh.intro) await sh.intro(c, MEM.st);
-    await c.narr('[s](조각 속에서는 ' + sh.pov.name + '(으)로 걷는다. 말을 걸고, 만져 보자.)[/]');
+    await c.narr('[s](조각 속에서는 ' + U.josa(sh.pov.name, '으로/로') + ' 걷는다. 위의 띠가 할 일을 알려 준다 — 빛나는 것은 만져 보고, [y]![/] 표시가 뜬 사람에게는 말을 걸자. 메뉴 키로 언제든 빠져나올 수 있다.)[/]');
     c.lock(false);
   }
   async function leave(c, sh, pick, nameLabel) {
@@ -105,8 +106,9 @@
   }
   /* 기억 속의 몸: 칼 · 활 · 마법 · 도구 · 구르기는 없다. J는 말 걸기 · 만지기만 */
   const MEM_ACTS = { attack: { input(p) { if (!G.input.pressed('attack')) return false; if (G.interact && G.interact.tryAt(p)) { G.input.eat('attack'); return true; } return false; } } };
-  function disarm(p) { p.actions = MEM_ACTS; p.tryRoll = () => false; p.carry = null; }
-  function rearm(p) { p.actions = G.combat.actions; delete p.tryRoll; }
+  const NOOP = () => {};
+  function disarm(p) { p.actions = MEM_ACTS; p.tryRoll = () => false; p.carry = null; if (!p.memDraw) p.memDraw = [p.onDraw, p.behindWeapon]; p.onDraw = NOOP; p.behindWeapon = NOOP; }   // 기억 속 사람은 주인공의 검을 들고 있지 않다
+  function rearm(p) { p.actions = G.combat.actions; delete p.tryRoll; if (p.memDraw) { p.onDraw = p.memDraw[0]; p.behindWeapon = p.memDraw[1]; delete p.memDraw; } }
   /** 기억에서 들판으로: 모습 · 화면 · 손을 되돌린다 (끝까지 보았든, 중간에 빠져나왔든) */
   function backToWorld(c) {
     const s = S();
@@ -137,6 +139,57 @@
     if (!G.script.running) G.script.run(async (c) => { const k = await c.choice('여기는 기억 속이다.', ['계속 머문다', '기억에서 빠져나온다 (조각은 그 자리에 남는다)']); if (k === 1) await abort(c); });
     return true;
   };
+  /* ═════════ 기억 속 길잡이 ═════════
+     조각마다 goals: [{ text, targets: [물건 mk · 사람 key], done(st), prog(st) }] — 앞에서부터 끝나지 않은 것이 지금 할 일.
+     지금 할 일의 물건은 크게 빛나고, 사람 머리 위에는 ! . 위 가운데 띠에 할 일, 20초 넘게 아무 진척이 없으면 화살표 */
+  function goalNow() {
+    const sh = MEM.cur; if (!sh || !sh.goals) return null;
+    for (const g0 of sh.goals) if (!g0.done || !g0.done(MEM.st || {})) return g0;
+    return sh.goals[sh.goals.length - 1];
+  }
+  function isTarget(key) {
+    const g0 = goalNow(); if (!g0 || !g0.targets.includes(key)) return false;
+    const td = MEM.cur.tdone && MEM.cur.tdone[key];
+    return !(td && td(MEM.st || {}));
+  }
+  /** 기억 속 물건: 지금 볼 것은 크게 빛나고, 한 번 본 것 · 지금 쓸 수 없는 것은 빛나지 않는다 */
+  class MemSpot extends G.props.Spot {
+    draw(g, cx, cy) {
+      if (!this.canUse(W().player)) return;
+      const t = W().t, x = Math.round(this.x - cx), y = Math.round(this.y - cy - 10);
+      if (isTarget(this.mk)) {
+        const r = 5 + Math.sin(t * 4) * 1.5;
+        g.globalAlpha = 0.35; g.fillStyle = '#e8c8ff'; g.beginPath(); g.arc(x, y, r + 3, 0, Math.PI * 2); g.fill();
+        g.globalAlpha = 1; g.fillStyle = '#ffffff'; g.fillRect(x - 1, y - 3, 2, 6); g.fillRect(x - 3, y - 1, 6, 2);
+        g.fillStyle = '#c8a8ff'; g.fillRect(x, y - 5 - Math.round(Math.sin(t * 4) * 2), 1, 2);
+      } else if (!MEM.used[this.mk] && Math.sin(t * 2.5 + this.x) > 0.3) {
+        g.fillStyle = '#fff8c0'; g.fillRect(x, y, 1, 1); g.fillRect(x - 1, y + 1, 3, 1);
+      }
+    }
+  }
+  function nearestTarget() {
+    const g0 = goalNow(), p = W().player; if (!g0 || !p) return null;
+    let best = null, bd = 1e9;
+    for (const e of W().ents) {
+      if (e.dead) continue;
+      const key = e.mk || e.memKey; if (!key || !isTarget(key)) continue;
+      const d = Math.hypot(e.x - p.x, e.y - p.y); if (d < bd) { bd = d; best = e; }
+    }
+    return best && bd > 40 ? best : null;
+  }
+  ST.memIsTarget = (key) => !!MEM.cur && isTarget(key);   // 시험용
+  ST.memInfo = function () {
+    const sh = MEM.cur; if (!sh) return null;
+    const g0 = goalNow();
+    return { title: sh.pov.name, fresh: (MEM.age || 0) < 6, text: g0 ? g0.text : '', prog: g0 && g0.prog ? '(' + g0.prog(MEM.st || {}) + ')' : '', arrow: MEM.idle > 20 ? nearestTarget() : null };
+  };
+  ST.onTick.push((dt) => {
+    if (!MEM.cur) return;
+    const sig = JSON.stringify(MEM.st || {});
+    if (!G.script.running) MEM.age = (MEM.age || 0) + dt;
+    if (sig !== MEM.sig || G.script.running) { MEM.sig = sig; MEM.idle = 0; } else MEM.idle += dt;
+  });
+
   ST.shardNames = () => Object.values(S().shards || {}).map((x) => x.name);
   // 조각 속에서 저장한 채로 다시 열면(33d_threads가 돌아갈 곳으로 보낸다) 모습 · 화면을 되돌린다
   ST.enterHooks.push((m) => { if (!m.memory && !ST.staging) { const p = W().player; if (p && G.hud && G.hud.hidden && !MEM.cur) G.hud.hidden = false; } });
@@ -181,10 +234,14 @@
       await leave(c, SH[0], k, '소년은 「아우룸」이 아니라 「오루」였다.');
     } }],
     spots: [
-      { x: 9, y: 4, verb: '탁자 위 지도를 본다', text: async (c, st) => { st.map = true; await c.narr('다섯 부족의 땅에 다섯 빛깔로 금이 그어져 있다. 금마다 소년의 글씨: 「여기는 초록. 여기는 빨강. 서로 멀리.」\n지도 한가운데, 하늘 쪽에 작은 구멍이 뚫려 있다. 촛불에 그을린 구멍.'); } },
-      { x: 4, y: 2, dy: 6, verb: '창문으로 올라가 하늘을 본다', text: async (c, st) => { st.window = true; c.sfx('rumble'); await c.narr('창틀에 뛰어올랐다. 별 사이로 — 눈 하나. 검은 눈동자가 막사를 보고 있다. 소년을 보고 있다.\n털이 곤두선다. 꼬리가 두 배로 부푼다.'); } },
-      { x: 2, y: 7, verb: '상자 냄새를 맡는다', text: async (c) => { await c.narr('생선 냄새는 없다. 대신 아이 옷 냄새. 작은 망토 하나, 금실로 「오루」라고 수놓았다.'); } },
+      { mk: 'map', x: 9, y: 4, verb: '탁자 위 지도를 본다', text: async (c, st) => { st.map = true; await c.narr('다섯 부족의 땅에 다섯 빛깔로 금이 그어져 있다. 금마다 소년의 글씨: 「여기는 초록. 여기는 빨강. 서로 멀리.」\n지도 한가운데, 하늘 쪽에 작은 구멍이 뚫려 있다. 촛불에 그을린 구멍.'); } },
+      { mk: 'window', x: 4, y: 2, dy: 6, verb: '창문으로 올라가 하늘을 본다', text: async (c, st) => { st.window = true; c.sfx('rumble'); await c.narr('창틀에 뛰어올랐다. 별 사이로 — 눈 하나. 검은 눈동자가 막사를 보고 있다. 소년을 보고 있다.\n털이 곤두선다. 꼬리가 두 배로 부푼다.'); } },
+      { mk: 'box', x: 2, y: 7, verb: '상자 냄새를 맡는다', text: async (c) => { await c.narr('생선 냄새는 없다. 대신 아이 옷 냄새. 작은 망토 하나, 금실로 「오루」라고 수놓았다.'); } },
     ],
+    goals: [
+      { text: '탁자 위 지도와 창밖 하늘을 살펴보자', targets: ['map', 'window'], done: (st) => st.map && st.window },
+      { text: '금빛 소년에게 다가가자', targets: ['boy'] }],
+    tdone: { map: (st) => st.map, window: (st) => st.window },
     journal: (k) => ['고양이는 곁에 있겠다고 했다.', '고양이는 소년의 차가운 손등을 핥았다.', '고양이는 가지 말라고 등을 돌렸다.'][k] + ' 소년은 빛을 다섯으로 쪼개고 하늘로 올라가, 흑점의 첫 한 입이 되었다.',
   });
 
@@ -218,9 +275,14 @@
       } },
     ],
     spots: [
-      { x: 12, y: 6, verb: '그물을 챙긴다', text: async (c, st) => { st.net = true; c.sfx('lift'); await c.narr('그물이 무겁다. 어제 누나가 노래로 모은 고기 비늘이 그물코에 별처럼 박혀 있다.'); } },
-      { x: 4, y: 2, dy: 6, verb: '창밖 바다를 본다', text: async (c) => { await c.narr('바다가 숨을 쉰다. 누나 노래가 끝나면 파도가 한 번 쉬었다가 다시 온다. 바다도 박자를 맞춘다.'); } },
+      { mk: 'net', x: 12, y: 7, dy: -6, verb: '그물을 챙긴다', text: async (c, st) => { st.net = true; c.sfx('lift'); await c.narr('그물이 무겁다. 어제 누나가 노래로 모은 고기 비늘이 그물코에 별처럼 박혀 있다.'); } },
+      { mk: 'sea', x: 4, y: 2, dy: 6, verb: '창밖 바다를 본다', text: async (c) => { await c.narr('바다가 숨을 쉰다. 누나 노래가 끝나면 파도가 한 번 쉬었다가 다시 온다. 바다도 박자를 맞춘다.'); } },
     ],
+    goals: [
+      { text: '오두막 구석에서 그물을 챙기자', targets: ['net'], done: (st) => st.net },
+      { text: '그물을 누나 마렌에게 가져가자', targets: ['maren'], done: (st) => st.talked },
+      { text: '문 앞의 은빛 단추 사내에게 가 보자', targets: ['man'], done: (st) => st.man },
+      { text: '누나에게 돌아가자', targets: ['maren'] }],
     journal: (k) => ['탐은 누나를 숨기려 했다.', '탐은 징수인에게 덤볐다.', '탐은 누나의 손만 잡았다.'][k] + ' 누나 마렌은 노래를 부르며 바다로 들어갔고, 바다 밑의 빛은 팔백 년 동안 배가 고파졌다.',
   });
 
@@ -251,9 +313,13 @@
       } },
     ],
     spots: [
-      { x: 11, y: 2, dy: 6, reach: 20, verb: '모래 언덕 너머를 본다', when: (st) => !!st.talk, text: async (c, st) => { st.torch = true; c.sfx('rumble'); await c.narr('언덕 너머에 불빛 열둘. 흔들리며 다가온다. 횃불이다. 바람에 쇠 냄새가 섞였다.'); } },
-      { x: 2, y: 3, dy: 6, verb: '짐 냄새를 맡는다', text: async (c) => { await c.narr('대추야자. 소금. 그리고 낡은 별지도 한 장. 지도 귀퉁이에 아이 글씨: 「사이프 — 별을 그리는 아이」.'); } },
+      { mk: 'dune', x: 11, y: 2, dy: 6, reach: 20, verb: '모래 언덕 너머를 본다', when: (st) => !!st.talk, text: async (c, st) => { st.torch = true; c.sfx('rumble'); await c.narr('언덕 너머에 불빛 열둘. 흔들리며 다가온다. 횃불이다. 바람에 쇠 냄새가 섞였다.'); } },
+      { mk: 'pack', x: 2, y: 3, dy: 6, verb: '짐 냄새를 맡는다', text: async (c) => { await c.narr('대추야자. 소금. 그리고 낡은 별지도 한 장. 지도 귀퉁이에 아이 글씨: 「사이프 — 별을 그리는 아이」.'); } },
     ],
+    goals: [
+      { text: '모닥불 곁 별지기 소년에게 다가가자', targets: ['saif'], done: (st) => st.talk },
+      { text: '바람에 쇠 냄새가 섞였다 — 모래 언덕 너머를 보자', targets: ['dune'], done: (st) => st.torch },
+      { text: '소년에게 돌아가자. 횃불이 온다', targets: ['saif'] }],
     journal: (k) => ['낙타는 소년을 태우고 달렸다.', '낙타는 무릎을 꿇어 소년을 숨겼다.', '낙타는 하늘을 보고 울었다.'][k] + ' 별지기 소년 사이프는 별이 되었고, 아무도 빛을 나눠 주지 않은 그 별은 해마다 어두워졌다.',
   });
 
@@ -286,9 +352,13 @@
       } },
     ],
     spots: [
-      { x: 7, y: 2, dy: 8, verb: '은잔을 들여다본다', text: async (c, st) => { st.cup = true; await c.narr('잔 속 빛이 너를 비춘다. 비친 얼굴이 배부르게 웃고 있다. 너는 웃고 있지 않은데.\n— 거울 연못과 같은 빛이다. 원하지 않는 것을 보여 주는.'); } },
-      { x: 3, y: 6, dy: -4, verb: '서기의 책상을 본다', text: async (c) => { await c.narr('어제 날짜의 기록. 「왕께서 공주를 안고 오래 우셨다. 기록할 가치 없음.」\n「기록할 가치 없음」에 줄이 그어져 있다. 네 글씨로.'); } },
+      { mk: 'cup', x: 7, y: 2, dy: 8, verb: '은잔을 들여다본다', text: async (c, st) => { st.cup = true; await c.narr('잔 속 빛이 너를 비춘다. 비친 얼굴이 배부르게 웃고 있다. 너는 웃고 있지 않은데.\n— 거울 연못과 같은 빛이다. 원하지 않는 것을 보여 주는.'); } },
+      { mk: 'desk', x: 4, y: 6, dy: -2, reach: 20, verb: '서기의 책상을 본다', text: async (c) => { await c.narr('어제 날짜의 기록. 「왕께서 공주를 안고 오래 우셨다. 기록할 가치 없음.」\n「기록할 가치 없음」에 줄이 그어져 있다. 네 글씨로.'); } },
     ],
+    goals: [
+      { text: '서고 가운데 은잔을 들여다보고, 공주 벨라의 말을 듣자', targets: ['cup', 'bella'], done: (st) => st.cup && st.bella },
+      { text: '왕에게 가자. 기록할 시간이다', targets: ['king'] }],
+    tdone: { cup: (st) => st.cup, bella: (st) => st.bella },
     journal: (k) => ['서기는 진실을 적었다.', '서기는 「역병」이라 적고 평생 덧칠했다.', '서기는 깃펜을 내려놓았다.'][k] + ' 은빛 왕 실반은 딸 벨라 대신 하늘의 눈에 보이려고 광맥을 마셨다. 배고픔은 거기서 두 번째 한 입이 되었다.',
   });
 
@@ -317,9 +387,13 @@
       { key: 'child', name: '병실 아이', x: 2, y: 5, dir: 'right', state: 'sit', look: folk('kidg', { hc: '#d8d4d0' }), talk: async (c, n, st) => { st.child = true; await c.say(n, U.pick(['리네 언니, 엘리아 수녀님 손이 얼음 같아. 나 때문이야?', '어젯밤에 수녀님이 울었어. 소리 안 내고. 창밖 보면서.']), { face: 'sad' }); } },
     ],
     spots: [
-      { x: 11, y: 7, dy: -4, verb: '쓰다 만 편지를 읽는다', text: async (c, st) => { st.letter = true; c.sfx('page'); await c.narr('「엄마. 여긴 춥지 않아요. (거짓말이에요.) 엘리아 수녀님은 사람들 아픈 걸 손으로 가져가요. 가져간 아픔은 어디로 가냐고 물었더니, 웃기만 했어요. 엄마, 아픔은 어디로 가요?」'); } },
-      { x: 4, y: 2, dy: 6, verb: '창밖 대성당을 본다', text: async (c) => { await c.narr('눈보라 너머 대성당 종탑. 종이 세 번 울린다. 아침, 낮, 저녁. 네 번째는 아직.'); } },
+      { mk: 'letter', x: 11, y: 7, dy: -4, verb: '쓰다 만 편지를 읽는다', text: async (c, st) => { st.letter = true; c.sfx('page'); await c.narr('「엄마. 여긴 춥지 않아요. (거짓말이에요.) 엘리아 수녀님은 사람들 아픈 걸 손으로 가져가요. 가져간 아픔은 어디로 가냐고 물었더니, 웃기만 했어요. 엄마, 아픔은 어디로 가요?」'); } },
+      { mk: 'win', x: 4, y: 2, dy: 6, verb: '창밖 대성당을 본다', text: async (c) => { await c.narr('눈보라 너머 대성당 종탑. 종이 세 번 울린다. 아침, 낮, 저녁. 네 번째는 아직.'); } },
     ],
+    goals: [
+      { text: '책상 위 쓰다 만 편지를 읽고, 병실 아이의 말을 듣자', targets: ['letter', 'child'], done: (st) => st.letter && st.child },
+      { text: '엘리아 수녀에게 가자', targets: ['elia'] }],
+    tdone: { letter: (st) => st.letter, child: (st) => st.child },
     journal: (k) => ['리네는 가지 말라고 했다.', '리네는 가라고, 남은 아이들을 보겠다고 했다.', '리네는 대답 대신 손을 감쌌다.'][k] + ' 엘리아는 첫 성녀가 되어 천 명을 살렸고, 아무도 그녀에게는 빛을 나눠 주지 않았다.',
   });
 
@@ -347,10 +421,14 @@
       await leave(c, SH[5], k, '밤 속에 숨겨졌던 아이는 「노을」이었다.');
     } }],
     spots: [
-      { x: 5, y: 5, dy: -2, verb: '등불을 켠다', when: (st) => !st.l1, text: async (c, st) => { st.l1 = true; st.lamps = (st.lamps || 0) + 1; c.sfx('lamp'); G.fx.glow(W().player.x, W().player.y - 12, '#ffd86a', 14); if (W().map) (W().map.lights = W().map.lights || []).push({ x: px(5), y: py(5) - 14, r: 46, warm: 'rgba(255,200,110,0.35)' }); await c.narr('등불 하나. 아이 왼쪽에 노란 원이 생겼다. (' + st.lamps + ' / 3)'); } },
-      { x: 11, y: 5, dy: -2, verb: '등불을 켠다', when: (st) => !st.l2, text: async (c, st) => { st.l2 = true; st.lamps = (st.lamps || 0) + 1; c.sfx('lamp'); if (W().map) (W().map.lights = W().map.lights || []).push({ x: px(11), y: py(5) - 14, r: 46, warm: 'rgba(255,200,110,0.35)' }); await c.narr('등불 하나 더. 아이 오른쪽. (' + st.lamps + ' / 3)'); } },
-      { x: 8, y: 2, dy: 6, verb: '등불을 켠다', when: (st) => !st.l3, text: async (c, st) => { st.l3 = true; st.lamps = (st.lamps || 0) + 1; c.sfx('lamp'); if (W().map) (W().map.lights = W().map.lights || []).push({ x: px(8), y: py(2) - 4, r: 50, warm: 'rgba(255,200,110,0.35)' }); await c.narr('마지막 등불. 아이 뒤. 세 빛이 아이를 감쌌다. (' + st.lamps + ' / 3)'); } },
+      { mk: 'l1', x: 5, y: 5, dy: -2, verb: '등불을 켠다', when: (st) => !st.l1, text: async (c, st) => { st.l1 = true; st.lamps = (st.lamps || 0) + 1; c.sfx('lamp'); G.fx.glow(W().player.x, W().player.y - 12, '#ffd86a', 14); if (W().map) (W().map.lights = W().map.lights || []).push({ x: px(5), y: py(5) - 14, r: 46, warm: 'rgba(255,200,110,0.35)' }); await c.narr('등불 하나. 아이 왼쪽에 노란 원이 생겼다. (' + st.lamps + ' / 3)'); } },
+      { mk: 'l2', x: 11, y: 5, dy: -2, verb: '등불을 켠다', when: (st) => !st.l2, text: async (c, st) => { st.l2 = true; st.lamps = (st.lamps || 0) + 1; c.sfx('lamp'); if (W().map) (W().map.lights = W().map.lights || []).push({ x: px(11), y: py(5) - 14, r: 46, warm: 'rgba(255,200,110,0.35)' }); await c.narr('등불 하나 더. 아이 오른쪽. (' + st.lamps + ' / 3)'); } },
+      { mk: 'l3', x: 8, y: 2, dy: 6, verb: '등불을 켠다', when: (st) => !st.l3, text: async (c, st) => { st.l3 = true; st.lamps = (st.lamps || 0) + 1; c.sfx('lamp'); if (W().map) (W().map.lights = W().map.lights || []).push({ x: px(8), y: py(2) - 4, r: 50, warm: 'rgba(255,200,110,0.35)' }); await c.narr('마지막 등불. 아이 뒤. 세 빛이 아이를 감쌌다. (' + st.lamps + ' / 3)'); } },
     ],
+    goals: [
+      { text: '아이 둘레에 등불 셋을 켜자', targets: ['l1', 'l2', 'l3'], done: (st) => (st.lamps || 0) >= 3, prog: (st) => (st.lamps || 0) + ' / 3' },
+      { text: '빛나는 아이에게 가자', targets: ['kid'] }],
+    tdone: { l1: (st) => st.l1, l2: (st) => st.l2, l3: (st) => st.l3 },
     journal: (k) => ['로웬은 등불을 하나 더 켰다.', '로웬은 아이를 안고 거리를 떠났다. 밤은 그날부터 땅 전체에 내려앉았다.', '로웬은 매일 밤 등불을 켜겠다고 약속했다.'][k] + ' 숨는 법만 배운 아이 노을은 열여섯에 하늘로 올라갔다.',
   });
 
@@ -377,7 +455,7 @@
       } },
     ],
     spots: [
-      { x: 7, y: 5, dy: -3, verb: '장부의 첫 장을 짠다', when: (st) => !st.desk, text: async (c, st) => {
+      { mk: 'ledger', x: 7, y: 5, dy: -3, verb: '장부의 첫 장을 짠다', when: (st) => !st.desk, text: async (c, st) => {
         c.sfx('page');
         await c.narr('빈 장부. 첫 줄에 칸 이름을 적어야 한다. 빛을 걷다가 사람이 쓰러지면 적을 칸.');
         const k = await c.choice('칸 이름을 적는다.', ['「허용 손실」', '「빌린 빛」', '칸 이름 대신, 뒷장에 이름을 적을 자리를 만든다']);
@@ -385,12 +463,16 @@
         await c.narr(['깔끔한 글씨. 읽는 사람이 놀라지 않을 이름.', '「빌린 빛」. 언젠가 돌려줄 수 있을 것처럼 들린다.', '앞장에는 아무 이름도 적지 않았다. 뒷장 맨 위에 작게: 「여기 적히는 사람들의 이름」.'][k]);
       } },
     ],
+    goals: [
+      { text: '책상에서 장부의 첫 장을 짜자', targets: ['ledger'], done: (st) => st.desk },
+      { text: '그림자 속의 사내에게 장부를 보이자', targets: ['kairon'] }],
     journal: (k) => ['젊은 오스본은 칸 이름을 「허용 손실」이라 지었다.', '젊은 오스본은 칸 이름을 「빌린 빛」이라 지었다.', '젊은 오스본은 장부 뒷장에 이름을 적을 자리를 만들었다.'][k] + ' 983년 봄, 이천삼백열두 사람의 빛이 그 칸에 들어갔다.',
   });
 
   /* ═════════ 들판의 조각 ═════════ */
   class Shard extends G.props.Spot {
     draw(g, cx, cy) {
+      if (!this.canUse(W().player)) return;   // 아직 때가 아니거나 · 이미 녹은 조각은 보이지 않는다 (예전엔 보이는데 만져지지 않았다)
       const t = W().t, x = Math.round(this.x - cx), y = Math.round(this.y - cy - 8 + Math.sin(t * 2 + this.x) * 1.5);
       g.globalAlpha = 0.25 + Math.sin(t * 3) * 0.08; g.fillStyle = '#7a3ab8'; g.beginPath(); g.ellipse(x, y + 8, 9, 3, 0, 0, Math.PI * 2); g.fill(); g.globalAlpha = 1;
       g.fillStyle = '#0b0614'; g.beginPath(); g.moveTo(x, y - 9); g.lineTo(x + 5, y - 1); g.lineTo(x + 2, y + 6); g.lineTo(x - 4, y + 3); g.lineTo(x - 5, y - 3); g.closePath(); g.fill();
@@ -419,6 +501,34 @@
       } }));
     }
   });
+  /* ── 부탁 「검은 조각」: 토리아가 처음 알아챈 뒤부터. 남은 조각이 어느 마을 어느 쪽 들판에 있는지 ── */
+  const DIR8 = (dx, dy) => { const a = Math.atan2(dy, dx) * 180 / Math.PI; const k = Math.round(((a + 360) % 360) / 45) % 8; return ['동', '남동', '남', '남서', '서', '북서', '북', '북동'][k]; };
+  const avail = (sh) => ST.after(sh.from) && (!ST.regionOpen || ST.regionOpen(sh.region)) && !f('shard:' + sh.id);
+  G.data.QUESTS.shards = { id: 'shards', name: '검은 조각', who: '토리아',
+    desc: (s) => {
+      const got = Object.keys(s.shards || {}).length, left = SH.filter(avail);
+      const where = left.map((sh) => (OW.SHORT && OW.SHORT[sh.region] || sh.region) + ' 마을 ' + DIR8(sh.off[0], sh.off[1]) + '쪽 들판').join(' · ');
+      return '흑점에서 떨어진 검은 유리 조각. 만지면 누군가의 기억 속을 걷는다. (이름 ' + got + ' / 7)' + (where ? ' 숨소리가 들리는 곳: ' + where + ' — 지도에 ◆ 보라색으로 표시된다.' : got < 7 ? ' 다른 조각은 이야기가 더 흘러가야 나타난다.' : '');
+    },
+    after: '흑점 속 목소리 일곱에 모두 이름이 붙었다.' };
+  ST.onTick.push(() => {
+    const s = S(); if (!s || !s.quests) return;
+    const q = s.quests.shards, n = Object.keys(s.shards || {}).length;
+    if (!q && (s.flags.shard_hint || n > 0)) s.quests.shards = { st: 'on' };
+    else if (q && q.st === 'on' && n >= 7) q.st = 'done';
+  });
+  const mx0 = ST.mapExtras;
+  ST.mapExtras = function (cv, SCm) {
+    if (mx0) mx0(cv, SCm);
+    const s = S(); if (!s.quests || !s.quests.shards) return;
+    const g = cv.getContext('2d');
+    for (const sh of SH) {
+      const q = SPOT[sh.id]; if (!q || !avail(sh)) continue;
+      const x = q[0] * SCm, y = q[1] * SCm;
+      g.fillStyle = '#0a0812'; g.beginPath(); g.moveTo(x, y - 5); g.lineTo(x + 5, y); g.lineTo(x, y + 5); g.lineTo(x - 5, y); g.closePath(); g.fill();
+      g.fillStyle = '#b87aff'; g.beginPath(); g.moveTo(x, y - 3); g.lineTo(x + 3, y); g.lineTo(x, y + 3); g.lineTo(x - 3, y); g.closePath(); g.fill();
+    }
+  };
   ST.SHARDS = SH;
   // 처음 조각을 볼 만한 때에 토리아가 알려 준다 (6장 이후, 아직 하나도 안 만졌으면)
   ST.onTick && ST.onTick.push(() => {

@@ -403,3 +403,7 @@ html.touch #modal { z-index: 60; }
 @media (orientation: portrait) {
   html.touch #modal { position: fixed; inset: 0; z-index: 60; padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
 }
+
+/* 기억 속(검은 조각): 살피기 버튼 하나만 */
+#touch.mem .tb:not([data-act="attack"]) { display: none; }
+#touch.mem .sb[data-act="cycle"], #touch.mem .sb[data-act="map"] { display: none; }

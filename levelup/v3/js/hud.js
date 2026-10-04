@@ -63,7 +63,12 @@
   /* ───────── 그리기 ───────── */
   function draw(g, w, h) {
     const W = G.world, p = W.player, s = G.state;
-    if (!p || H.hidden || (G.cine && G.cine.active && G.cine.active())) { drawBoss(g, w, h); drawVignette(g, w, h); return; }
+    if (!p || H.hidden || (G.cine && G.cine.active && G.cine.active())) {
+      drawBoss(g, w, h); drawVignette(g, w, h);
+      // 기억 속(56_shards): 하트 · 지도는 숨겨도 「무엇을 할지」는 보인다 — 말 걸기 안내 · 할 일 띠 · 멈춰 있으면 방향
+      if (p && H.hidden && !(G.cine && G.cine.active && G.cine.active()) && G.story && G.story.memInfo) { const mi = G.story.memInfo(); if (mi) { drawMem(g, w, h, p, mi); drawHint(g); } }
+      return;
+    }
     const d = G.st.derive(s);
     // ── 하트 ──
     const perRow = 10;
@@ -156,6 +161,39 @@
     // 카운터 기회
     if (p.counterT > 0 && s.skills.sw_counter) { g.font = "12px 'Galmuri11', monospace"; g.textAlign = 'center'; txt(g, '반격!', Math.round(p.x - W.cam.x), Math.round(p.y - W.cam.y - 34), '#8ad8ff'); g.textAlign = 'left'; }
 
+    drawHint(g);
+
+    drawBoss(g, w, h);
+    drawVignette(g, w, h);
+    // 추위 · 더위 경고
+    if (H.env) { g.font = "12px 'Galmuri11', monospace"; txt(g, H.env.text, 7, y + 12, H.env.col); }
+  }
+  /** 기억 속 할 일 띠 (위 가운데) · 멈춰 있으면 다음 볼 것 쪽으로 화살표 */
+  function drawMem(g, w, h, p, mi) {
+    const W = G.world;
+    // 한 줄로 작게 (방 위쪽 벽의 물건을 가리지 않게) — 들어선 직후 몇 초만 제목을 덧붙인다
+    g.font = "12px 'Galmuri11', monospace"; g.textAlign = 'center';
+    const body = mi.text + (mi.prog ? ' ' + mi.prog : '');
+    let t = (mi.fresh ? mi.title + ' — ' : '◆ ') + body;
+    const maxW = touch() ? Math.floor(w * 0.6) : w - 20;   // 휴대폰: 오른쪽 위 지도 · 메뉴 버튼을 가리지 않게
+    if (g.measureText(t).width > maxW) t = '◆ ' + body;                          // 좁으면 제목을 뺀다
+    if (g.measureText(t).width > maxW) g.font = "8px 'Galmuri11', monospace";    // 그래도 넘치면 작은 글씨
+    const bw = Math.min(maxW + 12, g.measureText(t).width + 16), bx = Math.round(w / 2 - bw / 2), by = 3;
+    g.fillStyle = 'rgba(14,8,26,0.72)'; g.fillRect(bx, by, bw, 15);
+    g.fillStyle = '#b87aff'; g.fillRect(bx, by + 14, bw, 1);
+    txt(g, t, Math.round(w / 2), by + 11, mi.fresh ? '#e8d8ff' : '#f4ecdc');
+    g.textAlign = 'left';
+    if (mi.arrow) {
+      const px0 = p.x - W.rcx, py0 = p.y - W.rcy - 14, a = Math.atan2(mi.arrow.y - p.y, mi.arrow.x - p.x);
+      const r = 22 + Math.sin(W.t * 6) * 3, ax = px0 + Math.cos(a) * r, ay = py0 + Math.sin(a) * r;
+      g.save(); g.translate(Math.round(ax), Math.round(ay)); g.rotate(a);
+      g.fillStyle = '#0b0914'; g.beginPath(); g.moveTo(7, 0); g.lineTo(-5, -6); g.lineTo(-2, 0); g.lineTo(-5, 6); g.closePath(); g.fill();
+      g.fillStyle = '#e8c8ff'; g.beginPath(); g.moveTo(5, 0); g.lineTo(-4, -4); g.lineTo(-1, 0); g.lineTo(-4, 4); g.closePath(); g.fill();
+      g.restore();
+    }
+  }
+  function drawHint(g) {
+    const W = G.world;
     // ── 말 걸기 · 조사 안내 ──
     if (G.interact && G.interact.hint) {
       const ht = G.interact.hint;
@@ -169,11 +207,6 @@
       if (!touch()) { g.fillStyle = '#f0cc6e'; g.fillRect(bx + 3, hy - 9, 9, 9); g.fillStyle = '#0b0914'; g.font = "12px 'Galmuri11', monospace"; g.fillText('J', bx + 5, hy - 1); }
       g.font = "12px 'Galmuri11', monospace"; txt(g, label, bx + (touch() ? 4 : 14), hy, '#f4ecdc');
     }
-
-    drawBoss(g, w, h);
-    drawVignette(g, w, h);
-    // 추위 · 더위 경고
-    if (H.env) { g.font = "12px 'Galmuri11', monospace"; txt(g, H.env.text, 7, y + 12, H.env.col); }
   }
   function drawVignette(g, w, h) {
     const s = G.state;
@@ -331,6 +364,10 @@
     }
     set('tool', s.tool ? G.data.ITEMS[s.tool].name + (s.tool === 'bomb' ? ' ' + s.ammo.bombs : '') : '도구', !s.tool);
     set('special', s.special >= 100 ? '필살!' : Math.floor(s.special) + '%', false, s.special >= 100);
+    // 기억 속: 버튼은 하나 — 살피기(말 걸기 · 만지기). 칼 · 구르기 · 도구 · 스킬은 숨긴다
+    const mem = !!(G.story && G.story.memNow && G.story.memNow());
+    const tp = document.getElementById('touch'); if (tp && tp.classList.contains('mem') !== mem) tp.classList.toggle('mem', mem);
+    if (mem) set('attack', '살피기', false, false, '◎');
   }
   function hurt() { H.hurtT = 0.35; }
   function specialReady() { H.readyT = 1; if (G.ui && G.ui.toast) G.ui.toast('필살기 준비 — [O] 빛의 일섬', 'gold'); }

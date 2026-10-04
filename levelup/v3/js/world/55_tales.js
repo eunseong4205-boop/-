@@ -56,6 +56,8 @@
   /** 들판 물건: 빛 점 하나 + 작은 그림 */
   class Thing extends G.props.Spot {
     draw(g, cx, cy) {
+      // 주운 편지 · 담은 방울 · 잰 관측석은 사라진다 (예전엔 그대로 보였다). 대화 중에만 잠깐 막히는 것은 보인 채로
+      if (this.visible ? !this.visible() : !this.canUse(W().player)) return;
       const x = Math.round(this.x - cx), y = Math.round(this.y - cy), t = W().t;
       if (this.art) this.art(g, x, y, t);
       if (Math.sin(t * 3 + this.x) > 0.6) { g.fillStyle = this.col || '#fff8c0'; g.fillRect(x, y - 14, 1, 1); g.fillRect(x - 1, y - 13, 3, 1); }
@@ -268,7 +270,7 @@
     // 카렐의 목검 (그린 참나무 곁)
     {
       const q = spot('karel', 'green', -6, -7);
-      if (q) Wd.add(new Thing({ x: px(q[0]), y: py(q[1]), reach: 18, art: ART.sword, col: '#e8c890', verb: '꽂힌 목검을 본다', when: () => ST.after('c6') && !f('kar_done') && !G.script.running, text: async (c) => karelWay(c, q) }));
+      if (q) Wd.add(new Thing({ x: px(q[0]), y: py(q[1]), reach: 18, art: ART.sword, col: '#e8c890', verb: '꽂힌 목검을 본다', when: () => ST.after('c6') && !f('kar_done') && !G.script.running, visible: () => ST.after('c6') && !f('kar_done'), text: async (c) => karelWay(c, q) }));
     }
     // 밤의 장부 찢긴 장
     [[-9, -6], [12, -5], [3, 12]].forEach((o, i) => {
@@ -286,6 +288,17 @@
       Wd.add(new Thing({ x: px(q[0]), y: py(q[1]), reach: 16, art: ART.letter, col: '#ffe8c0', verb: '낡은 편지를 줍는다', when: () => ST.after(L.from) && !S().flags['kl:' + i] && open(L.reg), text: async (c) => readLetter(c, i) }));
     });
   });
+
+  const mx1 = ST.mapExtras;
+  ST.mapExtras = function (cv, SCm) {
+    if (mx1) mx1(cv, SCm);
+    const s = S(), g = cv.getContext('2d');
+    const dot = (key, col) => { const q = SPOTS[key]; if (!q) return; const x = q[0] * SCm, y = q[1] * SCm; g.fillStyle = '#0a0812'; g.fillRect(x - 3, y - 3, 6, 6); g.fillStyle = col; g.fillRect(x - 2, y - 2, 4, 4); };
+    if (qOn('bel_stars')) for (const st of STONES) if (!s.flags['belst:' + st.reg] && open(st.reg)) dot('belst:' + st.reg, '#a8c8ff');
+    if (qOn('mort_names')) for (let i = 0; i < 3; i++) if (!s.flags['mortp:' + i]) dot('mortp:' + i, '#b87aff');
+    if (qOn('tint_bottles')) for (const [reg, , col] of DROPS) if (!s.flags['tint:' + reg] && open(reg)) dot('tint:' + reg, col);
+    if (s.quests.kairon_letters) KL.forEach((L, i) => { if (!s.flags['kl:' + i] && ST.after(L.from) && open(L.reg)) dot('kl:' + i, '#ffe8c0'); });
+  };
 
   async function karelWay(c, q) {
     const s = S();

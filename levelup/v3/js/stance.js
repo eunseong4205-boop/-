@@ -381,7 +381,7 @@
   const draw0 = H.draw;
   H.draw = function (g, w, h) {
     const r = draw0.apply(this, arguments);
-    const s = S(), p = W().player; if (!s || !p || !G.input || I.touchMode) return r;
+    const s = S(), p = W().player; if (!s || !p || !G.input || I.touchMode || H.hidden) return r;   // HUD를 숨긴 때(기억 속 · 연출)는 무기 칸도
     const X2 = G.gfx, a = avail(s), wc = cur(s), nx = a.length > 1 ? a[(a.indexOf(wc) + 1) % a.length] : null;
     const id = equipped(s, wc), A = id ? ASK[id] : null;
     // 원래의 K · L 칸 자리를 덮어 그린다: [J 든 무기] [K 바꾸기→다음] [L 스킬] (I 도구는 그대로)
