@@ -38,7 +38,7 @@ html.touch #touch { display: block; position: absolute; inset: 0; pointer-events
 #stick.on { opacity: .9; }
 #knob { position: absolute; left: 50%; top: 50%; width: 42px; height: 42px; margin: -21px 0 0 -21px; border-radius: 50%;
   background: radial-gradient(circle at 40% 35%, #fff6d8, var(--gold) 45%, var(--gold-d)); box-shadow: 0 0 0 2px rgba(11, 9, 20, .8), 0 0 14px rgba(240, 204, 110, .45); }
-#btns { position: absolute; right: 10px; bottom: 10px; width: 218px; height: 196px; pointer-events: none; }
+#btns { position: absolute; right: max(26px, calc(env(safe-area-inset-right, 0px) + 14px)); bottom: 10px; width: 218px; height: 196px; pointer-events: none; }
 .tb { position: absolute; pointer-events: auto; width: 56px; height: 56px; border-radius: 50%; display: grid; place-content: center; text-align: center; line-height: 1; color: #fff;
   background: radial-gradient(circle at 38% 30%, rgba(255, 255, 255, .28), rgba(20, 16, 34, .55) 62%); box-shadow: 0 0 0 1px rgba(0, 0, 0, .6), inset 0 0 0 1px var(--hair), 0 4px 10px rgba(0, 0, 0, .45); opacity: .82; touch-action: none; }
 .tb i { font-style: normal; font-size: 19px; text-shadow: 0 1px 0 rgba(0, 0, 0, .6); }

@@ -49,7 +49,7 @@ html.touch #touch { display: block; position: absolute; inset: 0; pointer-events
 #stick.on { opacity: .9; }
 #knob { position: absolute; left: 50%; top: 50%; width: 42px; height: 42px; margin: -21px 0 0 -21px; border-radius: 50%;
   background: radial-gradient(circle at 40% 35%, #fff6d8, var(--gold) 45%, var(--gold-d)); box-shadow: 0 0 0 2px rgba(11, 9, 20, .8), 0 0 14px rgba(240, 204, 110, .45); }
-#btns { position: absolute; right: 10px; bottom: 10px; width: 218px; height: 196px; pointer-events: none; }
+#btns { position: absolute; right: max(26px, calc(env(safe-area-inset-right, 0px) + 14px)); bottom: 10px; width: 218px; height: 196px; pointer-events: none; }
 .tb { position: absolute; pointer-events: auto; width: 56px; height: 56px; border-radius: 50%; display: grid; place-content: center; text-align: center; line-height: 1; color: #fff;
   background: radial-gradient(circle at 38% 30%, rgba(255, 255, 255, .28), rgba(20, 16, 34, .55) 62%); box-shadow: 0 0 0 1px rgba(0, 0, 0, .6), inset 0 0 0 1px var(--hair), 0 4px 10px rgba(0, 0, 0, .45); opacity: .82; touch-action: none; }
 .tb i { font-style: normal; font-size: 19px; text-shadow: 0 1px 0 rgba(0, 0, 0, .6); }
@@ -2767,10 +2767,12 @@ html.touch #modal { z-index: 60; }
       }
       // 무기 동작 (공격 · 활 · 마법 …)이 진행 중이면 그쪽에 맡긴다 — 그동안에도 느리게 걸을 수 있다 (겨누는 쪽과 따로)
       if (this.state !== 'idle' && this.state !== 'walk' && this.state !== 'hurt') {
-        if (ctl && !this.autoMove) this.actMove(dt, m);
+        // 갈고리는 걷지 않는다 (쏘는 동안 · 끌려가는 동안 방향키에 밀려 엇나갔다)
+        if (ctl && !this.autoMove && this.state !== 'hook') this.actMove(dt, m);
         const a = this.actions[this.state];
         if (a && a.update) a.update(this, dt, m, ctl);
-        this.checkGround(m, dt);
+        // 갈고리에 끌려가는 동안은 구덩이 · 물 위를 지나간다 — 예전엔 걷기 공격을 넣으며 여기서 발밑을 재어, 말뚝에 걸어도 첫 구덩이 칸에서 떨어졌다
+        if (!(this.state === 'hook' && this.hook && this.hook.pull)) this.checkGround(m, dt);
         return;
       }
       let ax = ctl ? I.axisX : 0, ay = ctl ? I.axisY : 0;
@@ -4520,11 +4522,14 @@ html.touch #modal { z-index: 60; }
   delete D.FORGE.sw_wood;
 
   /* ───────── 난이도 ───────── */
+  /* 장마다 그 장의 던전 적(같은 레벨 · 장비)에게 몇 대 맞으면 쓰러지는가로 맞췄다 (진짜 피해 계산 경로로 잼)
+     예전 보통: 2.8~4.8대 — 2장에선 세 대 만에 쓰러져 보통이 어려웠다. 지금: 쉬움 9~17 · 보통 4~7 · 어려움 3~5 · 매우 어려움 2~3.5
+     한 단계마다 받는 피해 ×1.4쯤, 적 체력 ×1.25쯤 */
   const DIFF = [
-    { id: 0, name: '쉬움', desc: '이야기를 따라가고 싶을 때. 받는 피해가 적고 적이 무르다.', hurt: 0.65, hp: 0.85, spd: 0.92, heal: 1.4, exp: 1.2, tele: 1.25 },
-    { id: 1, name: '보통', desc: '처음이라면. 적도 방심하지 않는다 — 구르기와 방패를 쓰게 된다.', hurt: 1.25, hp: 1.15, spd: 1, heal: 1, exp: 1, tele: 1 },
-    { id: 2, name: '어려움', desc: '한 번 한 번이 싸움이다. 받는 피해 +30%, 적 체력 +20%, 회복이 드물다.', hurt: 1.65, hp: 1.4, spd: 1.07, heal: 0.75, exp: 1.1, tele: 0.85 },
-    { id: 3, name: '악몽', desc: '한 번의 실수가 무겁다. 받는 피해 거의 두 배, 적 체력 +50%, 회복이 아주 드물다.', hurt: 2.3, hp: 1.75, spd: 1.13, heal: 0.5, exp: 1.2, tele: 0.72 },
+    { id: 0, name: '쉬움', desc: '이야기를 따라가고 싶을 때. 받는 피해가 보통의 절반 남짓, 적이 무르고 하트가 자주 떨어진다.', hurt: 0.55, hp: 0.8, spd: 0.92, heal: 1.5, exp: 1.2, tele: 1.25, early: true },
+    { id: 1, name: '보통', desc: '처음이라면. 적의 공격을 읽고 구르면 넉넉히 버틴다 — 그래도 방심하면 쓰러진다.', hurt: 0.95, hp: 1.05, spd: 1, heal: 1.1, exp: 1, tele: 1, early: true },
+    { id: 2, name: '어려움', desc: '한 번 한 번이 싸움이다. 보통보다 받는 피해 +40%, 적 체력 +25%, 정예가 잦고 하트가 드물다.', hurt: 1.35, hp: 1.3, spd: 1.06, heal: 0.8, exp: 1.1, tele: 0.85 },
+    { id: 3, name: '매우 어려움', desc: '한 번의 실수가 무겁다. 보통보다 받는 피해 두 배, 적 체력 +50%, 적이 빠르고 회복이 아주 드물다.', hurt: 1.9, hp: 1.6, spd: 1.12, heal: 0.55, exp: 1.2, tele: 0.72 },
   ];
   const diff = () => DIFF[(G.state && G.state.settings && G.state.settings.diff != null) ? G.state.settings.diff : 1] || DIFF[1];
 
@@ -5019,7 +5024,13 @@ html.touch #modal { z-index: 60; }
         src.dead = true; return false;
       }
     }
-    let dq = Math.max(1, Math.round(q * d.def * (G.prog ? G.prog.diff().hurt : 1)));
+    // 난이도 배율: 피해는 ¼칸 단위 정수라 반올림하면 배율이 사라졌다(보통 ×0.95여도 2 → 2 · 3 → 3) — 남는 소수는 다음 타격으로 넘겨 평균이 배율대로
+    // 쉬움 · 보통은 하트가 적은 초반에 조금 덜 아프다 (Lv1 ×0.73 → Lv12부터 ×1)
+    const DF = G.prog ? G.prog.diff() : null;
+    const early = DF && DF.early ? Math.min(1, 0.7 + (s.lv || 1) * 0.025) : 1;
+    const exact = q * d.def * (DF ? DF.hurt : 1) * early + (C.hurtCarry || 0);
+    let dq = Math.max(1, Math.floor(exact + 1e-6));
+    C.hurtCarry = U.clamp(exact - dq, -0.99, 0.99);
     if (s.skills.sv_second && s.hp >= 2 && dq >= s.hp) dq = s.hp - 1;
     if (s.duel && dq >= s.hp) dq = Math.max(0, s.hp - 1);
     s.hp -= dq;
@@ -5677,10 +5688,29 @@ html.touch #modal { z-index: 60; }
       g.fillStyle = '#8a6a3a'; g.fillRect(x + 1, y - 8, 1, 3);
     }
   }
+  /** 갈고리를 쏠 쪽: 겨눈 쪽(마우스 · 스틱) 또는 바라보는 쪽. 그쪽 ±35° 안에 닿는 말뚝이 있으면 말뚝으로 곧장
+      (예전: 상하좌우 네 쪽으로만 나가 비스듬한 말뚝은 맞힐 수 없었다) */
+  function hookAngle(p, max) {
+    const ex = explicitAim(p);
+    const a0 = ex ? U.angle(ex.x, ex.y) : U.angle(p.face[0], p.face[1]);
+    let best = null, bs = 1e9;
+    for (const e of W().ents) {
+      if (!e.hookable || e.dead) continue;
+      const dx = e.x - p.x, dy = e.y - p.y, d = Math.hypot(dx, dy);
+      if (d < 10 || d > max - 4) continue;
+      const da = Math.abs(U.angDiff(a0, Math.atan2(dy, dx)));
+      if (da > 0.62) continue;
+      const sc = d + da * 140; if (sc < bs) { bs = sc; best = e; }
+    }
+    if (best) return Math.atan2(best.y - p.y, best.x - p.x);
+    return ex ? a0 : ANG[p.dir];
+  }
   function startHook(p, m) {
     if (p.hook) return;
-    const a = ANG[p.dir];
-    p.hook = { x: p.x, y: p.y - 8, a, d: 0, out: true, max: 160 * (C.hookMul ? C.hookMul() : 1), hit: null };
+    const max = 160 * (C.hookMul ? C.hookMul() : 1);
+    const a = hookAngle(p, max);
+    p.face = [Math.cos(a), Math.sin(a)]; p.dir = U.dir4(p.face[0], p.face[1], p.dir);
+    p.hook = { x: p.x, y: p.y - 8, a, d: 0, out: true, max, hit: null };
     p.setState('hook');
     sfx('hook');
   }
@@ -8333,7 +8363,7 @@ html.touch #modal { z-index: 60; }
     let c = m && m.dungeon ? 0.06 + t * 0.008 : 0.02 + t * 0.004;
     if (G.state.ch === 'c1' && !(m && m.dungeon)) c = 0;
     const di = G.state.settings.diff != null ? G.state.settings.diff : 1;
-    return c * [0.35, 1, 1.5, 2.1][di];
+    return c * [0.35, 0.85, 1.4, 2.0][di];   // 정예가 나올 확률 — 보통은 조금 덜
   }
   const spawn0 = F.spawn;
   F.spawn = function (type, x, y, o) {
