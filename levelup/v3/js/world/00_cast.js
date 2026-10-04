@@ -30,7 +30,7 @@
   add('volkan', { name: '볼칸 아저씨', color: '#ff9a6a', voice: 0.75, desc: '불꽃 대장간 주인. 망치 소리로 사람을 판단한다.', look: { hair: 'bald', hc: '#c8402c', beard: '#c8402c', skin: 'tan', eye: '#c85a3a', top: 'vest', tc: '#8a3a2a', bottom: 'pants', bc: '#3a2a22', build: 'broad' } });
   add('rud', { name: '루드', color: '#ff7a6a', voice: 0.95, desc: '징수 기사단 견습. 뺨의 흉터. 「숫자는 거짓말 안 해.」', look: { hair: 'spiky', hc: '#d8402a', eye: '#e8a040', eyeShape: 'sharp', scar: true, top: 'armor', tc: '#6a6a80', trim: '#c8c8d0', bottom: 'pants', bc: '#2a2a32', cape: '#5a2a2a' } });
   add('lea', { name: '레아', color: '#ffa87a', voice: 0.95, desc: '새벽단 단장. 루드의 누나. 전 징수 기사.', look: { gender: 'girl', hair: 'pony', hc: '#c8402a', eye: '#e8a040', eyeShape: 'sharp', top: 'coat', tc: '#5a3a2a', trim: '#ffd84a', bottom: 'pants', bc: '#2a2a32', acc: ['scarf'], scarfC: '#ff7a4a' } });
-  add('astel', { name: '아스텔 박사', color: '#a8c8ff', voice: 0.8, desc: '붉은 산 관측소장. 993년에 무언가를 계산하고 입을 닫았다.', look: { age: 'old', hair: 'messy', hc: '#f0f0f0', eye: '#4a6ab8', top: 'coat', tc: '#2a3a6a', trim: '#e8e8f0', bottom: 'pants', bc: '#2a2a3a', glasses: true } });
+  add('astel', { name: '아스텔 박사', color: '#a8c8ff', voice: 0.8, desc: '붉은 산 관측소장. 993년 어느 밤 관측표를 덮고 입을 닫았다.', look: { age: 'old', hair: 'messy', hc: '#f0f0f0', eye: '#4a6ab8', top: 'coat', tc: '#2a3a6a', trim: '#e8e8f0', bottom: 'pants', bc: '#2a2a3a', glasses: true } });
   add('dorgan', { name: '광부 대장 도르간', color: '#ffd870', voice: 0.72, desc: '황금 광산의 전 광부 대장.', look: { age: 'old', hair: 'short', hc: '#3a2a1a', beard: '#5a4a3a', eye: '#a8803a', top: 'vest', tc: '#6a5a3a', bottom: 'pants', bc: '#3a3a3a', hat: 'helm', hatC: '#e8c048', build: 'broad' } });
 
   /* ── 블루 ── */

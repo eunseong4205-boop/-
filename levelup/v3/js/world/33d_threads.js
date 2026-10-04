@@ -219,7 +219,7 @@
       await c.say(gr, '잡아 올까요? 흰빛 한 줌이면 탑 열 개 몫입니다.', { face: 'smirk' });
       await c.say(ka, '손대지 마라. 지켜보기만 해라. 빛이 다 자랄 때까지.', { face: 'normal' });
       await c.say(gr, '…다 자라면요?', { face: 'smirk' });
-      await c.say(ka, '그때 계산한다.', { face: 'normal' });
+      await c.say(ka, '그때 생각한다.', { face: 'normal' });
       await c.move(gr, px(8), py(10), { speed: 50 }); gr.dead = true; c.sfx('door');
       c.face(ka, 'right');
       await c.narr('수정 구슬 속, 얼음 안에서 잠든 여자. 가슴께에 검은 점 하나.');
@@ -325,7 +325,7 @@
       c.music('dread');
       await c.narr('16년 동안 한 번도 없던 일이었다.');
       c.face(ka, 'up');
-      await c.say(ka, '…조금만 더 안고 있어 줘. 조금만. 계산이 거의 끝났어.', { face: 'cry' });
+      await c.say(ka, '…조금만 더 안고 있어 줘. 조금만. 거의 다 됐어.', { face: 'cry' });
       await c.narr('구슬을 짚은 챔피언의 손끝이 검게 물들어 있었다.');
     } },
     c7: { room: 'x_study', cam: [8, 5], title: '열여섯', play: async (c) => {
@@ -344,7 +344,7 @@
       await c.say(cs, '그 아이를 수정에 넣으실 겁니까.', { face: 'angry' });
       ka.forceAnim = null;
       await c.narr('펜 소리가 멈췄다.');
-      await c.say(ka, '계산이 그렇게 나오면.', { face: 'normal' });
+      await c.say(ka, '답이 그렇게 나오면.', { face: 'normal' });
       await c.say(gr, '열. 열하나. 열둘.', { face: 'closed' });
       await c.narr('카시안이 감찰관 휘장을 책상 위에 내려놓았다.');
       await c.say(cs, '…그럼 저는 스승님의 계산에서 빠지겠습니다.', { face: 'closed' });

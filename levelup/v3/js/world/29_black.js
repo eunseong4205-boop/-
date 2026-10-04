@@ -37,7 +37,7 @@
   item('letter_orhan', { type: 'letter', name: '눈먼 등대지기의 편지', desc: '블루 등대의 루체에게.', read: '「루체. 아빠다. 검은 별 조각을 쫓다가 눈이 멀었다. 블랙 마을에서 등불지기 일을 거든다. 불 냄새로 일한다. 등불은 켜져 있니? 켜져 있으면 됐다. — 아빠」' });
   item('letter_luce', { type: 'letter', name: '루체의 답장', desc: '블랙의 아빠에게.', read: '「아빠. 불은 켜져 있어. 흰빛으로 켠 불이라 절대 안 꺼져. 그러니까 천천히 와도 돼. 대신 꼭 와. — 루체」' });
   item('fish_gold', { type: 'key', name: '황금 고등어', desc: '비늘이 금화처럼 반짝인다. 고양이가 환장한다고 한다.' });
-  G.data.BOOKS.b_ledger = { name: '허용 손실 장부 (사본)', short: '녹턴의 책상 위 두꺼운 장부', pages: ['그린 — 허용 손실 12. 레드 — 40. 블루 — 26. 옐로 — 55. 퍼플 — 9. 무지개 — 0(천년제 기둥 가동 시 300). 화이트 — 성녀 관리. 그레이 — 계산 불요. 블랙 — 녹턴 관리.', '「허용 손실: 흑점 방위를 위해 빛바램으로 잃어도 되는 사람의 수. 해마다 갱신.」 — 카이론', '맨 끝 줄, 다른 잉크로: 「예비 그릇 — 세린의 아이 (1). 계산이 틀릴 경우에 한해.」', '그 아래, 칼로 긁어낸 자국. 한 줄이 통째로 지워져 있다. 긁은 자국이 아주 오래되었다. 16년쯤.'] };
+  G.data.BOOKS.b_ledger = { name: '허용 손실 장부 (사본)', short: '녹턴의 책상 위 두꺼운 장부', pages: ['그린 — 허용 손실 12. 레드 — 40. 블루 — 26. 옐로 — 55. 퍼플 — 9. 무지개 — 0(천년제 기둥 가동 시 300). 화이트 — 성녀 관리. 그레이 — 해당 없음. 블랙 — 녹턴 관리.', '「허용 손실: 흑점 방위를 위해 빛바램으로 잃어도 되는 사람의 수. 해마다 갱신.」 — 카이론', '맨 끝 줄, 다른 잉크로: 「예비 그릇 — 세린의 아이 (1). 예측이 틀릴 경우에 한해.」', '그 아래, 칼로 긁어낸 자국. 한 줄이 통째로 지워져 있다. 긁은 자국이 아주 오래되었다. 16년쯤.'] };
 
   /* ───────── 성 그림 ───────── */
   const B = G.build, X = G.gfx, R = B.ramp, poly = B.poly, OUT = B.OUT;
@@ -117,7 +117,7 @@
       const b = buddy();
       ST.join(b);
       await c.say('toria', '찍… 아무것도 안 보여. 네 흰빛만 보여. 여기 사람들은 16년 동안 이렇게 살았대. 해를 그림으로만 봤대.', { face: 'sad' });
-      if (b === 'rud') await c.say('rud', '누나는 성문 앞에 먼저 가 있어. 화약 세 통. …계산은 끝났어. 이번엔 계산이 무서워.', { face: 'normal' });
+      if (b === 'rud') await c.say('rud', '누나는 성문 앞에 먼저 가 있어. 화약 세 통. …준비는 끝났어. 이번엔 숫자가 무서워.', { face: 'normal' });
       else if (b === 'cassian') await c.say('cassian', '녹턴. 스승님의 그림자. 나는 한 번도 그의 얼굴을 본 적이 없다. 스승님조차 그를 「녹턴」이라고만 부른다.', { face: 'normal' });
       else await c.say('lyra', '…돌아왔네요. 나는 여기서 자랐어요. 이 거리의 등불 수를 다 외워요. 스물셋. 그중 다섯은 꺼졌고요.', { face: 'closed' });
       await c.say('toria', '미드나잇이라는 고양이를 찾아야 해. 서쪽 가게래.', { face: 'normal' });
@@ -149,7 +149,7 @@
     }
     await c.say(n, '천 년 전 이야기를 해 주지. 금빛 머리의 소년이 있었네. 아우룸. 나는 그 녀석 어깨 위에 앉아 있던 고양이였고.', { face: 'closed' });
     await c.say(n, '그 녀석이 흰빛으로 전쟁을 끝낸 밤, 하늘에서 무언가가 눈을 떴네. 나는 봤지. 그 녀석 어깨 위에서.', { face: 'normal' });
-    await c.say(n, '그 녀석은 밤새 계산했어. 그리고 빛을 쪼갰네. 다섯 갈래, 다섯 빛깔. 모이지 말라고. 창세 신화는 그 녀석이 지어낸 거야. 사람들이 다시 모으지 않게.', { face: 'normal' });
+    await c.say(n, '그 녀석은 밤새 고민했어. 그리고 빛을 쪼갰네. 다섯 갈래, 다섯 빛깔. 모이지 말라고. 창세 신화는 그 녀석이 지어낸 거야. 사람들이 다시 모으지 않게.', { face: 'normal' });
     await c.say(n, '…그런데 그 녀석 자신은 이미 너무 많이 삼킨 뒤였지. 벽화의 넷째 칸을 누가 지웠는지 아나? [p]나일세.[/] 발톱으로.', { face: 'sad' });
     await c.say(n, '넷째 칸엔 이런 그림이 있었네. 소년이 하늘로 올라가, 검은 해의 첫 번째 한 입이 되는 그림.', { face: 'sad' });
     c.flag('c9_aurum'); c.abyss('aurum_truth');
@@ -180,7 +180,7 @@
   ST.person('world', { id: 'lea', x: CASTLE.x + 8, y: CASTLE.y + 5, dir: 'left', when: () => ST.after('c9') && S().flags.route_lock === 'dawn' && !f('c9_in'), mark: () => (f('c9_mid') ? '!' : null), talk: async (c, n) => {
     if (!f('c9_mid')) { await c.say(n, '쉿. 미드나잇한테 먼저 가. 성 안 구조를 알아야 해. 화약은 아껴 써야 하거든.', { face: 'smirk' }); return; }
     c.lock(true);
-    await c.say(n, '준비됐어? 세 통. 성문 경첩에 하나씩. 루드가 계산했어.', { face: 'smirk' });
+    await c.say(n, '준비됐어? 세 통. 성문 경첩에 하나씩. 루드가 재 봤어.', { face: 'smirk' });
     await c.say('rud', '폭발 반경 사 미터. 우리는 칠 미터 뒤에. …누나, 이번엔 뒤로 물러나. 진짜로.', { face: 'normal' });
     await c.say(n, '알았어, 알았어. 새벽은 온다 — 쾅!', { face: 'happy' });
     c.sfx('explode'); c.shake(8, 1.2); c.flash('#ffb84a', 0.5);
@@ -336,7 +336,7 @@
     if (Ly !== 'lyra') { await c.move(Ly, bx - 20, by + 16, { speed: 60 }); }
     c.music('dream');
     await c.say(nc, k === 1 ? '…그것도 대답하겠다. 먼저, 지운 줄부터.' : k === 2 ? '…묻지 않는군. 그래도 말하겠다. 16년 동안 대답하지 않은 것이 내가 한 일의 전부였다. 오늘은 그 일을 그만두겠다.' : '……', { face: 'sad' });
-    await c.say(nc, '지운 줄은 이랬다. 「예비 그릇 — 세린의 첫째 (1). 계산이 틀릴 경우 먼저.」', { face: 'closed' });
+    await c.say(nc, '지운 줄은 이랬다. 「예비 그릇 — 세린의 첫째 (1). 예측이 틀릴 경우 먼저.」', { face: 'closed' });
     await c.say(Ly, '……', { face: 'sad' });
     await c.say(nc, '세린에게는 아이가 둘 있었다. 첫째는 여기, 밤 속에 숨겼다. 카이론의 장부에서 지우고, 이름을 바꾸고, 노래를 가르쳤다. 둘째는 숲으로. 에벨린에게.', { face: 'normal' });
     await c.say(Ly, '…「두 개의 등불이 있었네. 하나는 하늘로, 하나는 숲으로.」 사실은 하나는 밤으로, 하나는 숲으로예요. 가사를 바꿨어요. 들킬까 봐.', { face: 'cry' });
@@ -367,13 +367,13 @@
     await c.say('kairon', '녹턴. …졌군. 16년 만에.', { face: 'closed', vision: true });
     await c.say(nc, '……카이론.', { face: 'sad' });
     await c.say('kairon', '세린의 아이. …장부를 봤군. 틀린 숫자는 없다. 흑점까지 남은 날은 아흔 일. 아스트라에서 기다리겠다. 오지 않으면 내가 끝낸다.', { face: 'normal' });
-    if (f('lyra_sister')) { await c.say('kairon', '…그 옆의 아이는 누구지. 장부에 없는 얼굴이군.', { face: 'shock' }); await c.say(Ly, '…장부에 없는 사람이에요. 그러니까 계산하지 마요.', { face: 'angry' }); await c.say('kairon', '……', { face: 'sad' }); }
+    if (f('lyra_sister')) { await c.say('kairon', '…그 옆의 아이는 누구지. 장부에 없는 얼굴이군.', { face: 'shock' }); await c.say(Ly, '…장부에 없는 사람이에요. 그러니까 세지 마요.', { face: 'angry' }); await c.say('kairon', '……', { face: 'sad' }); }
     await c.say('kairon', '…오늘도 렙업이군. 세린이 늘 하던 인사다.', { face: 'sad' });
     await c.narr('빛줄기가 거두어졌다. 밤이 다시 내려앉았다. 그런데 — 동쪽 끝 하늘이, 아주 조금, 파래져 있었다.');
     c.music('sad');
     await c.say(nc, '아스트라에 가려면 하늘 정거장을 지나야 한다. 이것을 가져가라. [y]밤의 열쇠[/]. 정거장의 문을 여는 열쇠다. 아우룸 시대부터 이 성에 있었다.', { face: 'normal' });
     await c.getItem('key_night');
-    await c.say(nc, '하늘로 가는 길은 남쪽 알록달록 곶의 피로스라는 발명가가 안다. 평생 로켓을 만든다고 한다. …카이론을 구해 다오. 그는 괴물이 아니다. 계산을 멈추면 무너질까 봐 무서운 사람이다.', { face: 'sad' });
+    await c.say(nc, '하늘로 가는 길은 남쪽 알록달록 곶의 피로스라는 발명가가 안다. 평생 로켓을 만든다고 한다. …카이론을 구해 다오. 그는 괴물이 아니다. 멈추는 순간 무너질까 봐 쉬지 못하는 사람이다.', { face: 'sad' });
     if (Ly !== 'lyra') { await c.say(Ly, '…나도 갈게요. 이번엔 멀리서 말고, 옆에서.', { face: 'smile' }); Ly.dead = true; }
     c.flag('c9_done'); c.flag('open:colorful');
     nc.dead = true;

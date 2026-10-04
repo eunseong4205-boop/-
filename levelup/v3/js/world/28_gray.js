@@ -39,7 +39,7 @@
   /* ───────── 넓은 지도 ───────── */
   OW.hooks.push((m) => {
     ST.house(m, { id: 'g_work', region: 'gray', style: 'gray', tx: X0 + 20, ty: Y0 + 2, w: 8, h: 5, name: '볼트의 공방', sign: 'shop', colors: { roof: '#4a5058' },
-      room: { w: 22, h: 13, floor: T.METAL, music: 'gray', furn: [['desk', 4, 3, { text: '설계대. 징수탑 단면도 위에 새 도면이 겹쳐 있다. 제목: 「천년포」. 여백에 작은 글씨로 계산식이 빼곡하다.' }], ['gears', 9, 2], ['gears', 12, 2], ['anvil', 16, 4], ['console', 19, 3, { text: '제어판. 녹색 불 하나가 느리게 깜빡인다. 「N-07 : 정상」.' }], ['crate', 2, 9], ['crate', 3, 9], ['barrel', 19, 9], ['shelf', 1, 2], ['clock', 14, 1, { wall: true, text: '벽시계. 9년 전 가을 세 시 십 분에 멈춰 있다. 태엽은 멀쩡하다.' }], ['desk', 7, 8, { verb: '서랍을 연다', text: async (c) => drawer(c) }]] } });
+      room: { w: 22, h: 13, floor: T.METAL, music: 'gray', furn: [['desk', 4, 3, { text: '설계대. 징수탑 단면도 위에 새 도면이 겹쳐 있다. 제목: 「천년포」. 여백에 작은 글씨로 수식이 빼곡하다.' }], ['gears', 9, 2], ['gears', 12, 2], ['anvil', 16, 4], ['console', 19, 3, { text: '제어판. 녹색 불 하나가 느리게 깜빡인다. 「N-07 : 정상」.' }], ['crate', 2, 9], ['crate', 3, 9], ['barrel', 19, 9], ['shelf', 1, 2], ['clock', 14, 1, { wall: true, text: '벽시계. 9년 전 가을 세 시 십 분에 멈춰 있다. 태엽은 멀쩡하다.' }], ['desk', 7, 8, { verb: '서랍을 연다', text: async (c) => drawer(c) }]] } });
     ST.house(m, { id: 'gy_inn', region: 'gray', style: 'gray', tx: X0 + 3, ty: Y0 + 3, w: 6, h: 4, name: '잿빛 모루 여관', sign: 'inn',
       room: { w: 14, h: 10, floor: T.WOOD, music: 'calm', furn: [['counter', 2, 3, { v: 3, bw: 44, bh: 10 }], ['stove', 8, 2], ['table', 8, 6], ['chair', 7, 7], ['chair', 10, 7], ['bed2', 12, 3, { v: '#7a7a82' }], ['bed2', 12, 6, { v: '#8a8a92' }]] } });
     ST.house(m, { id: 'gy_shop', region: 'gray', style: 'gray', tx: X0 + 3, ty: Y0 + 14, w: 5, h: 4, name: '고철 시장', sign: 'shop',
@@ -87,7 +87,7 @@
       await c.say('toria', '찍… 네 옷만 색이 있어. 나머지는 다 회색이야. 하늘도, 풀도, 사람도.', { face: 'sad' });
       await c.say('toria', '612년에 은빛 왕국이 무너질 때 땅의 색이 빠졌대. 400년이 지났는데 아직도…', { face: 'think' });
       const rt = S().flags.route_lock;
-      if (rt === 'order') await c.say(null, '카시안의 편지가 도착해 있었다. 「얼음 창고 보고서를 올렸다. 스승님의 답: 「관은 내가 놓은 것이다. 계산에 필요하다.」 …계산에 사람이 몇 명 들어가 있는지, 이제 묻지 않기로 했다. 대신 네게 묻겠다. — 카시안」', { style: 'sys' });
+      if (rt === 'order') await c.say(null, '카시안의 편지가 도착해 있었다. 「얼음 창고 보고서를 올렸다. 스승님의 답: 「관은 내가 놓은 것이다. 필요한 일이다.」 …그 「필요」에 사람이 몇 명 들어가 있는지, 이제 묻지 않기로 했다. 대신 네게 묻겠다. — 카시안」', { style: 'sys' });
       else if (rt === 'dawn') await c.say(null, '루드의 쪽지가 모루 여관 문틈에 끼워져 있었다. 「누나가 천년성 밑 수로를 찾았어. 볼트라는 사람 도면이 있으면 빨라. 그 사람, 우리 아버지를 알 거야. 광부였거든. — 루드」', { style: 'sys' });
       else await c.say(null, '여관 창틀에 까만 깃털 한 장. 「얼음 창고의 관은 천년성으로 간다. 그리고 천년성의 관은 — 하늘로. 볼트의 도면을 보면 끝이 보일 거다. — M」', { style: 'sys' });
       c.lock(false);
@@ -102,7 +102,7 @@
     if (f('d8:boss') && !f('c8_proof')) { await boltProof(c, n); return; }
     if (f('c8_mk7') && !f('c8_done')) { await boltLast(c, n); return; }
     if (f('c8_proof') && !f('c8_mk7')) { await c.say(n, '폐공장. 동쪽. …기다리게 하지 마라. 16년도 기다렸다.', { face: 'closed' }); return; }
-    await c.say(n, ST.lines({ c8: f('c8_done') ? '역류 장치. 부품은 천년성에. 끼우는 건 네 일이다. 나는 도면까지다. …틀리지 마라.' : '광맥. 남쪽 폐허. 기록을 가져와라. 느낌은 연료가 안 된다.', c10: '알록달록의 피로스 녀석, 로켓 연료 계산을 틀렸더군. 편지로 고쳐 줬다. 쓸데없는 말 빼고 세 장.' }), { face: 'normal' });
+    await c.say(n, ST.lines({ c8: f('c8_done') ? '역류 장치. 부품은 천년성에. 끼우는 건 네 일이다. 나는 도면까지다. …틀리지 마라.' : '광맥. 남쪽 폐허. 기록을 가져와라. 느낌은 연료가 안 된다.', c10: '알록달록의 피로스 녀석, 로켓 연료 배합을 틀렸더군. 고쳐서 보냈다. 녀석이 고맙다는 말은 안 하겠지.' }), { face: 'normal' });
   } });
   async function boltFirst(c, n) {
     c.lock(true);
@@ -112,7 +112,7 @@
     if (k === 1) await c.say(n, '루미에. …그 여자는 거짓말을 못 하지. 그래서 싫다.', { face: 'angry' });
     if (k === 2) await c.say(n, '「대요」. 전해 들은 말. 연료가 안 된다.', { face: 'angry' });
     await c.say(n, '탑은 내가 설계했다. 983년. 카이론의 부탁. 대륙의 빛을 모아 하늘을 지키는 탑.', { face: 'normal' });
-    await c.say(n, '지금은 그 빛을 쏠 대포를 만든다. [y]천년포[/]. 16년 치 빛으로 흑점을 쏜다. 계산은 끝났다.', { face: 'normal' });
+    await c.say(n, '지금은 그 빛을 쏠 대포를 만든다. [y]천년포[/]. 16년 치 빛으로 흑점을 쏜다. 설계는 끝났다.', { face: 'normal' });
     await c.say('toria', '엄마 노트에 그랬어요. 빛을 한곳에 모으면 안 된다고. 나눠 주라고.', { face: 'angry' });
     await c.say(n, '근거. 느낌은 연료가 안 된다. 숫자를 가져와라. 숫자라면 들어 주지.', { face: 'closed' });
     await c.say(n, '…남쪽에 은빛 왕국 폐허가 있다. 광맥 깊은 곳에 기록 보관소가 무너지지 않고 남았다. 612년의 기록이 있을 거다.', { face: 'normal' });
@@ -176,7 +176,7 @@
     if (S().truth.t_bolt) { await c.narr('비어 있는 서랍. 안쪽 바닥에 오래된 잉크 자국이 번져 있다.'); return; }
     if (!S().inv.drawer_key) { await c.narr('공방 철제 서랍. 자물쇠가 세 겹이다. 녹 하나 없이 반짝인다. 매일 닦은 모양이다.'); return; }
     await c.narr('세피아의 열쇠를 꽂자 자물쇠 세 개가 한꺼번에 풀렸다.\n서랍 안에는 봉투 하나. 겉봉에 「천년성 · 챔피언 카이론 귀하」. 우표는 붙어 있는데 소인이 없다.');
-    await c.narr('「카이론. 계산을 끝냈다. 탑들이 모은 빛을 한 점에 모으면 흑점이 온다. 과녁을 바꿔라. 탑을 멈춰라. 아내가 죽었다. 빛바램병이다. 탑 때문이다. …이 편지를 부치면 나는 틀린 사람이 된다. — 990년 가을, 볼트」');
+    await c.narr('「카이론. 다시 재 봤다. 탑들이 모은 빛을 한 점에 모으면 흑점이 온다. 과녁을 바꿔라. 탑을 멈춰라. 아내가 죽었다. 빛바램병이다. 탑 때문이다. …이 편지를 부치면 나는 틀린 사람이 된다. — 990년 가을, 볼트」');
     c.truth('t_bolt');
     await c.say('toria', '…9년 전에 다 알았어. 볼트 아저씨. 알았는데 못 부쳤어. 아내가 떠난 해에.', { face: 'sad' });
   }
@@ -231,7 +231,7 @@
         ]);
         if (k === 1) { c.abyss('ate_vein'); c.flag('ate_light'); c.heal(); c.flash('#ffffff', 0.4); await c.narr('은빛 부스러기가 손바닥으로 빨려 들어왔다. 달았다. 배고픔이 멎었다.\n…토리아가 한 걸음 물러섰다. 처음이었다.'); await c.say('toria', '…너, 방금 눈이 까맸어. 아주 잠깐.', { face: 'shock' }); }
         else { c.bond('toria', 1); await c.narr('주먹을 쥐었다. 배고픔은 멎지 않았다. 대신 토리아가 손등에 코를 댔다. 따뜻했다.'); await c.say('toria', '…배고프면 도토리 줄게. 두 개. 아니 세 개.', { face: 'smile' }); }
-        if (S().party.includes('sepia')) await c.say('sepia', '기록. 당신의 온도가 3초 동안 영하였다. …무섭다는 감정의 계산식을 찾았다. 기록하지 않겠다.', { face: 'sad' });
+        if (S().party.includes('sepia')) await c.say('sepia', '기록. 당신의 온도가 3초 동안 영하였다. …무섭다는 감정의 패턴을 찾았다. 기록하지 않겠다.', { face: 'sad' });
         c.music('gray');
         await c.cinema(false);
         c.lock(false);
@@ -326,12 +326,12 @@
           await c.say('sepia', '재생 금지 명령을… 해제한다. 나의 판단이다. 볼트가 가르쳐 준 대로. 「옳은 쪽의 숫자를 따르라.」', { face: 'normal' });
           c.stopMusic(0.5);
           await c.narr('세피아의 가슴에서 치직거리는 소리가 났다. 그리고 낮고 쉰, 다정한 여자 목소리가 공장 안에 퍼졌다.');
-          await c.narr('[s]「여보. 녹음이 되고 있는 거 맞죠? …이 로봇 참 착해요. 가만히 있네.\n나 오늘 의사 선생님한테 들었어요. 빛바램병이래요. 탑 근처 마을에 많대요.\n당신 탑 때문이라고 하면 당신은 또 계산부터 하겠죠. 계산하지 마요. 그냥 멈춰요.\n멈추는 건 틀린 게 아니에요. 멈추는 것도 계산이에요. 제일 어려운 계산.」[/]');
+          await c.narr('[s]「여보. 녹음이 되고 있는 거 맞죠? …이 로봇 참 착해요. 가만히 있네.\n나 오늘 의사 선생님한테 들었어요. 빛바램병이래요. 탑 근처 마을에 많대요.\n당신 탑 때문이라고 하면 당신은 또 숫자부터 따지겠죠. 따지지 마요. 그냥 멈춰요.\n멈추는 건 틀린 게 아니에요. 멈추는 것도 답이에요. 제일 어려운 답.」[/]');
           c.music('sad');
           await c.narr('볼트가 바닥에 주저앉았다. 강철 장갑을 벗는 데 한참 걸렸다.');
           await c.say(bo, '……9년 동안 한 번도 안 틀었다. 틀면… 내가 틀린 게 되니까.', { face: 'cry' });
           await c.say(bo, '……틀렸군. 9년 동안. 아니, 16년 동안.', { face: 'cry' });
-          await c.say(bo, '싸울 필요 없다. 증명은 끝났다. 저 목소리가 나보다 계산을 잘했다. 늘 그랬다.', { face: 'sad' });
+          await c.say(bo, '싸울 필요 없다. 증명은 끝났다. 저 목소리가 나보다 늘 한 수 앞이었다.', { face: 'sad' });
           c.bond('sepia', 2); c.bond('bolt', 2); c.flag('c8_recording');
         }
       }
@@ -359,7 +359,7 @@
       c.music('gray');
       await c.cinema(false);
       c.lock(false);
-      c.journal(f('c8_recording') ? '폐공장에서 세피아가 990년 가을의 녹음을 틀었다. 볼트의 아내 목소리. 「멈추는 것도 계산이에요.」 볼트가 울었다.' : '폐공장에서 MK-7을 쓰러뜨렸다. 볼트: 「증명 끝. 내가 틀렸다. 16년 동안.」');
+      c.journal(f('c8_recording') ? '폐공장에서 세피아가 990년 가을의 녹음을 틀었다. 볼트의 아내 목소리. 「멈추는 것도 답이에요.」 볼트가 울었다.' : '폐공장에서 MK-7을 쓰러뜨렸다. 볼트: 「증명 끝. 내가 틀렸다. 16년 동안.」');
     });
   });
   async function boltLast(c, n) {
@@ -374,9 +374,9 @@
       await c.say('sepia', f('c8_recording') ? '볼트는 울었다. 조건 충족.' : '…볼트는 아직 울지 않았다. 하지만 나는 판단했다. 조건 충족.', { face: 'smile' });
       await c.getItem('drawer_key');
     }
-    await c.say(n, '하늘로 가려면 알록달록 곶의 [y]피로스[/] 녀석을 찾아라. 로켓을 만든다더군. 반쯤 미쳤지만 계산은 반쯤 맞다.', { face: 'normal' });
-    await c.say(n, '…그런데 곶으로 가는 가장 빠른 길은 동쪽 끝, [p]영원한 밤[/]을 지난다. 사천왕 녹턴의 땅. 카이론의 그림자. 그 녀석은 계산이 필요 없다. 명령만 있으면 된다.', { face: 'closed' });
-    if (S().party.includes('sepia')) { await c.say('sepia', '나는 여기 남는다. 볼트의 계산을 돕는다. 이제 볼트는 틀릴 줄 안다. 틀릴 줄 아는 계산은 오래 걸린다.', { face: 'smile' }); ST.leave('sepia'); }
+    await c.say(n, '하늘로 가려면 알록달록 곶의 [y]피로스[/] 녀석을 찾아라. 로켓을 만든다더군. 반쯤 미쳤지만 설계는 반쯤 맞다.', { face: 'normal' });
+    await c.say(n, '…그런데 곶으로 가는 가장 빠른 길은 동쪽 끝, [p]영원한 밤[/]을 지난다. 사천왕 녹턴의 땅. 카이론의 그림자. 그 녀석은 이유가 필요 없다. 명령만 있으면 된다.', { face: 'closed' });
+    if (S().party.includes('sepia')) { await c.say('sepia', '나는 여기 남는다. 볼트의 일을 돕는다. 이제 볼트는 틀릴 줄 안다. 틀릴 줄 아는 사람의 일은 오래 걸린다. 그래도 좋다.', { face: 'smile' }); ST.leave('sepia'); }
     c.flag('c8_done'); c.flag('open:black');
     await c.cinema(false);
     c.lock(false);

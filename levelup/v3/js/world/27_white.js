@@ -92,7 +92,7 @@
     for (const [dx, dy] of [[0, 9], [31, 9], [0, 20], [31, 18], [9, 21], [22, 21]]) if (m.inb(X0 + dx, Y0 + dy) && !m.solidExtra[m.i(X0 + dx, Y0 + dy)]) m.obj[m.i(X0 + dx, Y0 + dy)] = O.PINE;
   });
   // 새벽단 은신처 실내
-  G.build.def('w_hide', { build() { const rm = G.build.room({ id: 'w_hide', region: 'white', name: '새벽단 은신처', w: 16, h: 10, floor: T.STONE, music: 'hollow', back: ['world', HIDE.x, HIDE.y + 1], furn: [['table', 7, 4, { text: '대성당 지하 지도. 「얼음 창고」에 붉은 동그라미. 옆에 루드 글씨: 「폭약 필요량 — 계산 끝」.' }], ['crate', 2, 3], ['crate', 3, 3], ['barrel', 13, 3], ['bed2', 12, 6, { v: '#8a5a3a' }], ['fireplace', 2, 7]] }); rm.dark = 0.3; return rm; } });
+  G.build.def('w_hide', { build() { const rm = G.build.room({ id: 'w_hide', region: 'white', name: '새벽단 은신처', w: 16, h: 10, floor: T.STONE, music: 'hollow', back: ['world', HIDE.x, HIDE.y + 1], furn: [['table', 7, 4, { text: '대성당 지하 지도. 「얼음 창고」에 붉은 동그라미. 옆에 루드 글씨: 「폭약 필요량 — 확인 끝」.' }], ['crate', 2, 3], ['crate', 3, 3], ['barrel', 13, 3], ['bed2', 12, 6, { v: '#8a5a3a' }], ['fireplace', 2, 7]] }); rm.dark = 0.3; return rm; } });
 
   ST.onMap('world', (m, Wd) => {
     const P = G.props;
@@ -169,20 +169,20 @@
     await c.say(n, '그건 빛을 너무 많이 쓴 사람한테 생기는 거예요. 나처럼.', { face: 'closed' });
     await c.say(n, '병동에 노아라는 아이가 있어요. 블루에서 옮겨 왔어요. 여기가 마지막 병원이거든요. 당신 이름을 불러요, 가끔.', { face: 'sad' });
     await c.say(n, '…그리고 하나 더. 말하지 않으면 당신은 모르고 천년성에 가겠죠. 그러면 안 돼요.', { face: 'normal' });
-    await c.say(n, '카이론의 계산은 이래요. 흑점이 오면, 아스트라의 수정 속 [y]세린의 그릇[/]으로는 더 막을 수 없어요. 16년 동안 닳았으니까.', { face: 'normal' });
+    await c.say(n, '카이론의 생각은 이래요. 흑점이 오면, 아스트라의 수정 속 [y]세린의 그릇[/]으로는 더 막을 수 없어요. 16년 동안 닳았으니까.', { face: 'normal' });
     await c.say(n, '[r]그래서 새 그릇이 필요해요. 세린의 아이.[/]', { face: 'sad' });
     await c.say('toria', '찍——!! 말도 안 돼! 새 그릇이라니, 수정 속에 넣는다는 거잖아! 엄마처럼!', { face: 'angry' });
     await c.say(n, '…나는 그게 사랑이라고 믿어요. 한 사람이 모두를 위해 빛나는 것. 세린이 그랬던 것처럼. 나도 매일 조금씩 그렇게 해요.', { face: 'closed' });
     await c.say(n, '그러니 여기 있어요. 대성당은 따뜻해요. 그날이 올 때까지, 내가 당신을 지킬게요.', { face: 'smile' });
     const b = buddy();
-    if (b === 'cassian') await c.say('cassian', '…스승님은 나한테 그 계산을 말씀하신 적이 없다. 단 한 번도.', { face: 'shock' });
+    if (b === 'cassian') await c.say('cassian', '…스승님은 나한테 그 이야기를 하신 적이 없다. 단 한 번도.', { face: 'shock' });
     else if (b === 'rud') await c.say('rud', '그러니까 대륙 전체를 위해서 한 명을. 계산상으로는 맞아. …계산상으로는.', { face: 'angry' });
     else await c.say('lyra', '……', { face: 'sad' });
     await c.say(n, '동쪽 얼음 예배당에 이스카라는 아이가 있어요. 눈이 보이지 않지만 빛을 봐요. 당신 빛을 한번 보여 줘요. 그 애가 당신을 어떻게 보는지, 나도 궁금해요.', { face: 'normal' });
     c.flag('c7_lumie');
     await c.cinema(false);
     c.lock(false);
-    c.journal('성녀 루미에를 만났다. 카이론의 계산: 흑점을 막으려면 세린의 그릇 대신 새 그릇 — 나를 쓴다.');
+    c.journal('성녀 루미에를 만났다. 카이론의 계획: 흑점을 막으려면 세린의 그릇 대신 새 그릇 — 나를 쓴다.');
   }
 
   /* ───────── 이스카: 눈먼 얼음 사제 ───────── */
@@ -236,7 +236,7 @@
     c.lock(true);
     await c.say(n, '얼음 창고. 16년 치 기도등 빛이 얼어 있어. 탑 수백 개 분량이야. 성녀는 그걸로 병자를 고친대. 공짜로.', { face: 'normal' });
     await c.say(n, '공짜? 그 빛은 기도한 사람들 거야. 성녀가 조금씩 떼어 먹은 거라고. 착하게 떼어 먹은 거.', { face: 'angry' });
-    await c.say('rud', '창고를 부수면 빛이 눈보라처럼 흩어져서 원래 주인들한테 돌아가. 계산해 봤어. 대부분은.', { face: 'normal' });
+    await c.say('rud', '창고를 부수면 빛이 눈보라처럼 흩어져서 원래 주인들한테 돌아가. 어림해 봤어. 대부분은.', { face: 'normal' });
     await c.say(n, '묘지 뚜껑문 얼음은 녹여 놨어. 오늘 밤에 가.', { face: 'smirk' });
     c.flag('c7_plan');
     c.lock(false);
@@ -513,7 +513,7 @@
         await c.narr('거인이 누워 있던 자리 뒤로, 푸른 얼음벽이 갈라졌다. 얼음 창고. 기도등 수천 개가 벌집처럼 박혀 빛난다.');
         const rt = S().flags.route_lock || 'order';
         const b = buddy();
-        if (b === 'rud') await c.say('rud', '…탑 삼백 개 분량. 아니, 사백. 계산이 안 끝나. 누나가 폭약을 준비해 뒀어. 신호만 하면 돼.', { face: 'shock' });
+        if (b === 'rud') await c.say('rud', '…탑 삼백 개 분량. 아니, 사백. 세다가 손가락이 모자라. 누나가 폭약을 준비해 뒀어. 신호만 하면 돼.', { face: 'shock' });
         else if (b === 'cassian') await c.say('cassian', '보고 대상이다. 규칙대로라면 전부 천년성으로 보내야 한다. …규칙대로라면.', { face: 'normal' });
         else await c.say('lyra', '절반이 비었어요. 쇠 관이 남쪽으로. 미드나잇 말이 맞았어요. 누군가 성녀님 몰래 가져가고 있어요.', { face: 'closed' });
         const k = await c.choice('얼음 창고의 빛을 어떻게 할까?', [

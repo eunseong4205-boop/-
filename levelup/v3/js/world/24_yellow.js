@@ -93,7 +93,7 @@
     await c.say(n, '나는 금화왕 골디. 사천왕 노랑의 자리. 여기선 모든 것에 값이 있다. 빛도, 이름도, 슬픔도.', { face: 'smirk' });
     const b = buddy();
     if (b === 'cassian') { await c.say('cassian', '감찰관으로서 경험 이자 장부를 요구합니다.', { face: 'normal' }); await c.say(n, '감찰? 좋아. 장부 열람료는 금화 백만. 법에 있지. 제7조. 공짜는 없어.', { face: 'smile' }); await c.say('cassian', '………', { face: 'angry' }); }
-    if (b === 'rud') { await c.say('rud', '경험 이자율 연 삼십 퍼센트. 그걸 갚느라 아이들이 빛을 팝니다. 계산해 봤어요. 합법이지만, 사람이 죽어요.', { face: 'angry' }); await c.say(n, '계산을 할 줄 아는 새벽단원이라. 드물군. 합법이면 된 거다, 꼬마.', { face: 'smirk' }); }
+    if (b === 'rud') { await c.say('rud', '경험 이자율 연 삼십 퍼센트. 그걸 갚느라 아이들이 빛을 팝니다. 따져 봤어요. 합법이지만, 사람이 죽어요.', { face: 'angry' }); await c.say(n, '셈이 되는 새벽단원이라. 드물군. 합법이면 된 거다, 꼬마.', { face: 'smirk' }); }
     if (b === 'lyra') { await c.say(n, '음유시인 리라. 네 노래는 비싸게 팔리더군. 세금 좀 내지?', { face: 'smile' }); await c.say('lyra', '노래는 공짜예요. 듣는 사람이 알아서 울거든요.', { face: 'smirk' }); }
     await c.say(n, '거래하자. 서쪽 모래바다의 [y]태양 피라미드[/]. 거기 「태양의 눈」이라는 렌즈가 있다. 빛을 한 점에 모으는 물건.', { face: 'normal' });
     await c.say(n, '그걸 가져오면 두 가지를 주지. 퍼플로 가는 국경 통행 허가. 그리고 — 네 어미 세린에 대해 내가 아는 것.', { face: 'smirk' });
@@ -212,8 +212,8 @@
       c.route('dawn', 2); c.flag('c4_route', 'dawn');
       c.sfx('explode'); c.flash('#ffe8a8', 0.5); c.shake(4, 0.4); G.fx.shards(G.world.player.x, G.world.player.y - 10, 30, '#e8c048');
       await c.say(n, '………', { face: 'shock' });
-      await c.say(n, '하. 하하하하! 탑 백 개 값을 바닥에! 흰빛, 너 진짜 계산을 못 하는구나!', { face: 'happy' });
-      await c.say(n, '…좋아. 계산 못 하는 놈한테는 이자를 못 받지. 통행 허가는 주마. 대신 다음엔 비싸게 받는다.', { face: 'smirk' });
+      await c.say(n, '하. 하하하하! 탑 백 개 값을 바닥에! 흰빛, 너 진짜 셈을 못 하는구나!', { face: 'happy' });
+      await c.say(n, '…좋아. 셈 못 하는 놈한테는 이자를 못 받지. 통행 허가는 주마. 대신 다음엔 비싸게 받는다.', { face: 'smirk' });
     } else if (k === 1) {
       c.route('order', 2); c.flag('c4_route', 'order');
       await c.say(n, '재평가? 계약서에 그런 조항은… 있군. 제12조, 「현저한 사정 변경」. 누가 이런 걸 넣었지? 아, 나구나.', { face: 'think' });

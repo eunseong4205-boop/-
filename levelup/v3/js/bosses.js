@@ -404,7 +404,7 @@
       const p = Wd.player;
       if (e.st === 'charge') { if (e.stT < 0.02) { e.telegraph(0.6); e.cv = U.norm(p.x - e.x, p.y - e.y); sfx('growl'); } if (e.stT > 0.6) { const r = e.go(e.cv[0] * 240 * dt, e.cv[1] * 240 * dt); if (U.dist(e.x, e.y, p.x, p.y) < 16) C().hurtPlayer(p, e.atk + 1, e, {}); if (r.hitX || r.hitY) { e.stunT = 2; W().shake(4, 0.3); sfx('impact'); e.set('idle'); } else if (e.stT > 1.6) e.set('idle'); } }
       if (e.st === 'slam') { e.state = 'attack'; if (e.stT < 0.02) { e.telegraph(0.7); warnCircle(e.x, e.y, 42, 0.8, () => { hitCircle(e.x, e.y, 42, e.atk); W().shake(5, 0.3); G.fx.dust(e.x, e.y, 16); G.fx.ring(e.x, e.y, '#ffd8a8', 42, 0.4, 3); sfx('impact'); }); } if (e.stT > 1.2) e.set('idle'); }
-      if (e.st === 'call') { if (e.stT < 0.02) { G.cine.bubble(e, U.pick(['세금은 목숨보다 먼저 내는 것이다.', '장부에 적힌 대로!', '기사들, 저놈을 계산에서 지워라!']), { life: 2 }); const n = e.phase2 ? 2 : 1; for (let i = 0; i < n; i++) minion(e, i ? 'bandit' : 'knight', e.x + (i ? 50 : -50), e.y + 20); } if (e.stT > 1) e.set('idle'); }
+      if (e.st === 'call') { if (e.stT < 0.02) { G.cine.bubble(e, U.pick(['세금은 목숨보다 먼저 내는 것이다.', '장부에 적힌 대로!', '기사들, 저놈을 장부에서 지워라!']), { life: 2 }); const n = e.phase2 ? 2 : 1; for (let i = 0; i < n; i++) minion(e, i ? 'bandit' : 'knight', e.x + (i ? 50 : -50), e.y + 20); } if (e.stT > 1) e.set('idle'); }
       if (e.st === 'coins') { if (e.stT < 0.02) { ring(e, e.phase2 ? 14 : 10, 110, { kind: 'rock', drawFn(g, x, y) { g.fillStyle = '#e8c048'; g.fillRect(x - 2, y - 2, 4, 4); g.fillStyle = '#fff0a8'; g.fillRect(x - 1, y - 2, 1, 1); } }); sfx('coin'); } if (e.stT > 0.8) e.set('idle'); }
     },
     gear(e, g, x, y) {

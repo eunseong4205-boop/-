@@ -305,7 +305,7 @@
     } else {
       await c.say('cassian', '검이 아직 네 것이 아니군. 괜찮다. 나도 열여섯 땐 그랬다.', { face: 'smirk' });
     }
-    await c.say('cassian', '스승님… 카이론께서는 계산을 틀린 적이 없다. 경험세도 계산이다. 대륙을 지키는.', { face: 'normal' });
+    await c.say('cassian', '스승님은 틀리신 적이 없다. 경험세도 대륙을 지키기 위한 셈이다.', { face: 'normal' });
     await c.say('cassian', '…그런데 요즘은 가끔, 계산에 사람이 몇 명 들어가 있는지 궁금하다.', { face: 'sad' });
     await c.say('cassian', '옐로로 간다면 배를 고르게 될 거다. 부두에 세 척이 있더군. 어느 배를 타든, 네가 누구 편인지 대륙이 알게 될 거다.', { face: 'normal' });
     await c.move(cs2, bx + 120, by); cs2.dead = true;

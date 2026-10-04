@@ -7735,7 +7735,7 @@ html.touch #modal { z-index: 60; }
       const p = Wd.player;
       if (e.st === 'charge') { if (e.stT < 0.02) { e.telegraph(0.6); e.cv = U.norm(p.x - e.x, p.y - e.y); sfx('growl'); } if (e.stT > 0.6) { const r = e.go(e.cv[0] * 240 * dt, e.cv[1] * 240 * dt); if (U.dist(e.x, e.y, p.x, p.y) < 16) C().hurtPlayer(p, e.atk + 1, e, {}); if (r.hitX || r.hitY) { e.stunT = 2; W().shake(4, 0.3); sfx('impact'); e.set('idle'); } else if (e.stT > 1.6) e.set('idle'); } }
       if (e.st === 'slam') { e.state = 'attack'; if (e.stT < 0.02) { e.telegraph(0.7); warnCircle(e.x, e.y, 42, 0.8, () => { hitCircle(e.x, e.y, 42, e.atk); W().shake(5, 0.3); G.fx.dust(e.x, e.y, 16); G.fx.ring(e.x, e.y, '#ffd8a8', 42, 0.4, 3); sfx('impact'); }); } if (e.stT > 1.2) e.set('idle'); }
-      if (e.st === 'call') { if (e.stT < 0.02) { G.cine.bubble(e, U.pick(['세금은 목숨보다 먼저 내는 것이다.', '장부에 적힌 대로!', '기사들, 저놈을 계산에서 지워라!']), { life: 2 }); const n = e.phase2 ? 2 : 1; for (let i = 0; i < n; i++) minion(e, i ? 'bandit' : 'knight', e.x + (i ? 50 : -50), e.y + 20); } if (e.stT > 1) e.set('idle'); }
+      if (e.st === 'call') { if (e.stT < 0.02) { G.cine.bubble(e, U.pick(['세금은 목숨보다 먼저 내는 것이다.', '장부에 적힌 대로!', '기사들, 저놈을 장부에서 지워라!']), { life: 2 }); const n = e.phase2 ? 2 : 1; for (let i = 0; i < n; i++) minion(e, i ? 'bandit' : 'knight', e.x + (i ? 50 : -50), e.y + 20); } if (e.stT > 1) e.set('idle'); }
       if (e.st === 'coins') { if (e.stT < 0.02) { ring(e, e.phase2 ? 14 : 10, 110, { kind: 'rock', drawFn(g, x, y) { g.fillStyle = '#e8c048'; g.fillRect(x - 2, y - 2, 4, 4); g.fillStyle = '#fff0a8'; g.fillRect(x - 1, y - 2, 1, 1); } }); sfx('coin'); } if (e.stT > 0.8) e.set('idle'); }
     },
     gear(e, g, x, y) {
@@ -14769,7 +14769,7 @@ html.touch #modal { z-index: 60; }
   add('volkan', { name: '볼칸 아저씨', color: '#ff9a6a', voice: 0.75, desc: '불꽃 대장간 주인. 망치 소리로 사람을 판단한다.', look: { hair: 'bald', hc: '#c8402c', beard: '#c8402c', skin: 'tan', eye: '#c85a3a', top: 'vest', tc: '#8a3a2a', bottom: 'pants', bc: '#3a2a22', build: 'broad' } });
   add('rud', { name: '루드', color: '#ff7a6a', voice: 0.95, desc: '징수 기사단 견습. 뺨의 흉터. 「숫자는 거짓말 안 해.」', look: { hair: 'spiky', hc: '#d8402a', eye: '#e8a040', eyeShape: 'sharp', scar: true, top: 'armor', tc: '#6a6a80', trim: '#c8c8d0', bottom: 'pants', bc: '#2a2a32', cape: '#5a2a2a' } });
   add('lea', { name: '레아', color: '#ffa87a', voice: 0.95, desc: '새벽단 단장. 루드의 누나. 전 징수 기사.', look: { gender: 'girl', hair: 'pony', hc: '#c8402a', eye: '#e8a040', eyeShape: 'sharp', top: 'coat', tc: '#5a3a2a', trim: '#ffd84a', bottom: 'pants', bc: '#2a2a32', acc: ['scarf'], scarfC: '#ff7a4a' } });
-  add('astel', { name: '아스텔 박사', color: '#a8c8ff', voice: 0.8, desc: '붉은 산 관측소장. 993년에 무언가를 계산하고 입을 닫았다.', look: { age: 'old', hair: 'messy', hc: '#f0f0f0', eye: '#4a6ab8', top: 'coat', tc: '#2a3a6a', trim: '#e8e8f0', bottom: 'pants', bc: '#2a2a3a', glasses: true } });
+  add('astel', { name: '아스텔 박사', color: '#a8c8ff', voice: 0.8, desc: '붉은 산 관측소장. 993년 어느 밤 관측표를 덮고 입을 닫았다.', look: { age: 'old', hair: 'messy', hc: '#f0f0f0', eye: '#4a6ab8', top: 'coat', tc: '#2a3a6a', trim: '#e8e8f0', bottom: 'pants', bc: '#2a2a3a', glasses: true } });
   add('dorgan', { name: '광부 대장 도르간', color: '#ffd870', voice: 0.72, desc: '황금 광산의 전 광부 대장.', look: { age: 'old', hair: 'short', hc: '#3a2a1a', beard: '#5a4a3a', eye: '#a8803a', top: 'vest', tc: '#6a5a3a', bottom: 'pants', bc: '#3a3a3a', hat: 'helm', hatC: '#e8c048', build: 'broad' } });
 
   /* ── 블루 ── */
@@ -16552,7 +16552,7 @@ html.touch #modal { z-index: 60; }
     '그해 겨울 밤, 북쪽 하늘에서 흰 줄기가 떨어져 바다를 갈랐다고 블루 등대지기가 적었다. 연표에는 「유성」이라고만 쓰였다.',
   ] });
   add('h_astel', { cat: 'history', title: '붉은 산 관측소 폐쇄', by: '레드 광산 조합 회보 993년 가을호', ch: 'c2', pages: [
-    '붉은 산 관측소가 문을 닫았다. 소장 아스텔 박사는 「계산이 끝났다」고만 말하고 산을 내려왔다.',
+    '붉은 산 관측소가 문을 닫았다. 소장 아스텔 박사는 「더 볼 것이 없다」고만 말하고 산을 내려왔다.',
     '조합원들 사이에선 박사가 무언가를 보고 겁에 질렸다는 말이 돈다. 박사는 그 뒤로 밤하늘을 보지 않는다고 한다.',
   ] });
   add('h_rocket', { cat: 'history', title: '무한호 계획', by: '알록달록 곶 발명 조합 연보', ch: 'c9', pages: [
@@ -18536,9 +18536,9 @@ html.touch #modal { z-index: 60; }
       await c.say(n, '저 검은 점. 16년 전보다 두 배 크다. 가까워지고 있다는 뜻이지.');
       const k = await c.choice(null, [{ t: '왜 가까워지는 거예요?' }, { t: '카이론은 알아요?' }]);
       if (k === 0) {
-        await c.say(n, '…993년에 계산을 하나 했다. 빛을 많이 보낼수록 흑점이 빨라진다는. 양이 아니라 쏠림이야. 한 점에 모으니까.', { face: 'closed' });
-        await c.say(n, '그 표는 금고에 넣고 다시는 안 꺼냈다. 챔피언이 틀렸다는 계산을 누가 믿겠나.');
-      } else await c.say(n, '편지를 열한 번 보냈다. 답장은 한 번. 「계산은 끝났다.」 네 글자.', { face: 'angry' });
+        await c.say(n, '…993년에 관측값을 맞춰 보다가 하나를 알았다. 빛을 많이 보낼수록 흑점이 빨라진다는. 양이 아니라 쏠림이야. 한 점에 모으니까.', { face: 'closed' });
+        await c.say(n, '그 표는 금고에 넣고 다시는 안 꺼냈다. 챔피언이 틀렸다는 표를 누가 믿겠나.');
+      } else await c.say(n, '편지를 열한 번 보냈다. 답장은 한 번. 「계산은 끝났다.」 그 한 줄.', { face: 'angry' });
       if (await c.confirm('금고의 표를 보여 줄 수 있어요?', '보여 주세요', '괜찮아요')) {
         await c.say(n, '…흰빛이 나는 아이라. 그래, 네가 봐야 할지도 모르지.', { face: 'closed' });
         c.truth('t_chart');
@@ -18547,7 +18547,7 @@ html.touch #modal { z-index: 60; }
       }
       return;
     }
-    await c.say(n, ST.lines({ c2: '그 표, 누구한테 보여 주든 네 마음이다. 다만 챔피언한테 보여 줄 거면 — 계산이 아니라 사람을 들고 가라.', c9: '흑점이 또 가까워졌다. 서둘러라.' }));
+    await c.say(n, ST.lines({ c2: '그 표, 누구한테 보여 주든 네 마음이다. 다만 챔피언한테 보여 줄 거면 — 표가 아니라 사람을 들고 가라.', c9: '흑점이 또 가까워졌다. 서둘러라.' }));
   } });
 
   /* ───────── 빛 씨앗 (레드) ───────── */
@@ -18977,7 +18977,7 @@ html.touch #modal { z-index: 60; }
     } else {
       await c.say('cassian', '검이 아직 네 것이 아니군. 괜찮다. 나도 열여섯 땐 그랬다.', { face: 'smirk' });
     }
-    await c.say('cassian', '스승님… 카이론께서는 계산을 틀린 적이 없다. 경험세도 계산이다. 대륙을 지키는.', { face: 'normal' });
+    await c.say('cassian', '스승님은 틀리신 적이 없다. 경험세도 대륙을 지키기 위한 셈이다.', { face: 'normal' });
     await c.say('cassian', '…그런데 요즘은 가끔, 계산에 사람이 몇 명 들어가 있는지 궁금하다.', { face: 'sad' });
     await c.say('cassian', '옐로로 간다면 배를 고르게 될 거다. 부두에 세 척이 있더군. 어느 배를 타든, 네가 누구 편인지 대륙이 알게 될 거다.', { face: 'normal' });
     await c.move(cs2, bx + 120, by); cs2.dead = true;
@@ -19114,7 +19114,7 @@ html.touch #modal { z-index: 60; }
     await c.say(n, '나는 금화왕 골디. 사천왕 노랑의 자리. 여기선 모든 것에 값이 있다. 빛도, 이름도, 슬픔도.', { face: 'smirk' });
     const b = buddy();
     if (b === 'cassian') { await c.say('cassian', '감찰관으로서 경험 이자 장부를 요구합니다.', { face: 'normal' }); await c.say(n, '감찰? 좋아. 장부 열람료는 금화 백만. 법에 있지. 제7조. 공짜는 없어.', { face: 'smile' }); await c.say('cassian', '………', { face: 'angry' }); }
-    if (b === 'rud') { await c.say('rud', '경험 이자율 연 삼십 퍼센트. 그걸 갚느라 아이들이 빛을 팝니다. 계산해 봤어요. 합법이지만, 사람이 죽어요.', { face: 'angry' }); await c.say(n, '계산을 할 줄 아는 새벽단원이라. 드물군. 합법이면 된 거다, 꼬마.', { face: 'smirk' }); }
+    if (b === 'rud') { await c.say('rud', '경험 이자율 연 삼십 퍼센트. 그걸 갚느라 아이들이 빛을 팝니다. 따져 봤어요. 합법이지만, 사람이 죽어요.', { face: 'angry' }); await c.say(n, '셈이 되는 새벽단원이라. 드물군. 합법이면 된 거다, 꼬마.', { face: 'smirk' }); }
     if (b === 'lyra') { await c.say(n, '음유시인 리라. 네 노래는 비싸게 팔리더군. 세금 좀 내지?', { face: 'smile' }); await c.say('lyra', '노래는 공짜예요. 듣는 사람이 알아서 울거든요.', { face: 'smirk' }); }
     await c.say(n, '거래하자. 서쪽 모래바다의 [y]태양 피라미드[/]. 거기 「태양의 눈」이라는 렌즈가 있다. 빛을 한 점에 모으는 물건.', { face: 'normal' });
     await c.say(n, '그걸 가져오면 두 가지를 주지. 퍼플로 가는 국경 통행 허가. 그리고 — 네 어미 세린에 대해 내가 아는 것.', { face: 'smirk' });
@@ -19233,8 +19233,8 @@ html.touch #modal { z-index: 60; }
       c.route('dawn', 2); c.flag('c4_route', 'dawn');
       c.sfx('explode'); c.flash('#ffe8a8', 0.5); c.shake(4, 0.4); G.fx.shards(G.world.player.x, G.world.player.y - 10, 30, '#e8c048');
       await c.say(n, '………', { face: 'shock' });
-      await c.say(n, '하. 하하하하! 탑 백 개 값을 바닥에! 흰빛, 너 진짜 계산을 못 하는구나!', { face: 'happy' });
-      await c.say(n, '…좋아. 계산 못 하는 놈한테는 이자를 못 받지. 통행 허가는 주마. 대신 다음엔 비싸게 받는다.', { face: 'smirk' });
+      await c.say(n, '하. 하하하하! 탑 백 개 값을 바닥에! 흰빛, 너 진짜 셈을 못 하는구나!', { face: 'happy' });
+      await c.say(n, '…좋아. 셈 못 하는 놈한테는 이자를 못 받지. 통행 허가는 주마. 대신 다음엔 비싸게 받는다.', { face: 'smirk' });
     } else if (k === 1) {
       c.route('order', 2); c.flag('c4_route', 'order');
       await c.say(n, '재평가? 계약서에 그런 조항은… 있군. 제12조, 「현저한 사정 변경」. 누가 이런 걸 넣었지? 아, 나구나.', { face: 'think' });
@@ -19942,8 +19942,8 @@ html.touch #modal { z-index: 60; }
     if (f('c6_rolo')) {
       await c.say('toria', '위원장님. 롤로 아저씨가 그랬어요. 무지개 기둥은… 탑이라고. 제일 큰 징수탑이라고.', { face: 'sad' });
       await c.say(n, '…롤로가.', { face: 'sad' });
-      await c.say(n, '기둥이 빛을 모으는 건 맞아요. 하지만 한 사람한테서 조금씩이에요. 백 명이 조금씩 내면, 한 명도 쓰러지지 않아요. 그게 계산이에요. 카이론 님의 계산.', { face: 'normal' });
-      await c.say(n, '작년 예행연습 때… 롤로는 쓰러졌지요. 계산에 없던 일이었어요. 나는 그 뒤로 계산을 한 번도 다시 해 보지 않았어요.', { face: 'sad' });
+      await c.say(n, '기둥이 빛을 모으는 건 맞아요. 하지만 한 사람한테서 조금씩이에요. 백 명이 조금씩 내면, 한 명도 쓰러지지 않아요. 그게 원리예요. 카이론 님이 짜신 거예요.', { face: 'normal' });
+      await c.say(n, '작년 예행연습 때… 롤로는 쓰러졌지요. 아무도 예상 못 한 일이었어요. 나는 그 뒤로 그 숫자들을 한 번도 다시 들여다보지 않았어요.', { face: 'sad' });
     }
     await c.say(n, '봉헌식은 오늘 밤이에요. 준비되면 다시 말을 걸어요. 불씨를 기둥에 넣을지 말지는… 그때 당신이 정해요.', { face: 'closed' });
     c.lock(false);
@@ -19964,7 +19964,7 @@ html.touch #modal { z-index: 60; }
       await c.say(n, '브라보! 브라보! …이런 박수, 오랜만이네.', { face: 'happy' });
       await c.getItem('heartpiece');
     }
-    await c.say(n, ST.lines({ c6: f('c6_rolo') ? '불씨를 넣을지 말지는 당신 몫이에요. 광대는 웃기만 해요. 울어야 할 때도.' : '크로마 위원장님은 좋은 분이에요. 좋은 사람도 나쁜 계산을 해요.', c7: '거울을 봤어요. 얼굴에 색이 있어요. 칠하지 않은 색이. 아침마다 봐요. 매일 봐요.' }), { face: 'smile' });
+    await c.say(n, ST.lines({ c6: f('c6_rolo') ? '불씨를 넣을지 말지는 당신 몫이에요. 광대는 웃기만 해요. 울어야 할 때도.' : '크로마 위원장님은 좋은 분이에요. 좋은 사람도 나쁜 결정을 해요.', c7: '거울을 봤어요. 얼굴에 색이 있어요. 칠하지 않은 색이. 아침마다 봐요. 매일 봐요.' }), { face: 'smile' });
   } });
   class Balloon extends G.ent.Ent {
     constructor(o) { super(Object.assign({ kind: 'balloon', solid: false, bw: 1, bh: 1 }, o)); this.bx = this.x; this.by = this.y; this.ph = Math.random() * 6; }
@@ -20008,7 +20008,7 @@ html.touch #modal { z-index: 60; }
     await c.say(n, '…흰빛. 잠깐 천막 뒤로 와요. 분장 지우는 거 보여 줄게요.', { face: 'normal' });
     await c.narr('롤로가 젖은 수건으로 얼굴을 닦았다. 빨강, 노랑, 파랑이 지워지고 — 그 아래는 회색이었다.\n잿빛도 아니고 은빛도 아닌, 비 온 뒤 보도블록 같은 회색.');
     await c.say(n, '작년 봉헌식 예행연습. 기둥 앞에 제일 가까이 서 있었어요. 광대니까, 제일 앞에서 웃어야 하니까.', { face: 'sad' });
-    await c.say(n, '기둥이 빛을 빨아들였어요. 사람들한테서 조금씩. …나한테서는 조금이 아니었어요. 계산이 틀렸대요. 기둥 옆자리는 원래 비워 둬야 했대요.', { face: 'sad' });
+    await c.say(n, '기둥이 빛을 빨아들였어요. 사람들한테서 조금씩. …나한테서는 조금이 아니었어요. 어른들 예상이 틀렸대요. 기둥 옆자리는 원래 비워 둬야 했대요.', { face: 'sad' });
     await c.say(n, '무지개 기둥은 장식이 아니에요. [r]대륙에서 제일 큰 징수탑[/]이에요. 봉헌식 날 밤에만 제대로 켜지는.', { face: 'angry' });
     await c.say('toria', '찍… 그럼 불씨를 넣으면…', { face: 'shock' });
     await c.say(n, '기둥이 깨어나요. 천 년 치 불씨로. 그날 밤 광장에 선 모두한테서 빛을 모아서 — 어디론가 보내요. 천년성으로.', { face: 'sad' });
@@ -20217,7 +20217,7 @@ html.touch #modal { z-index: 60; }
   /* ───────── 축제의 다른 얼굴들 ───────── */
   ST.folk('world', { id: 'cassian', name: '카시안', x: RX(176), y: RY(38), dir: 'down', when: () => festival() && !f('c6_arena'), lines: { c6: async (c, n) => { const rt = ST.route(); await c.say(n, rt === 'order' ? '봉헌식 경호를 맡았다. 스승님은 오지 않으신다고 했다. …그 말을 들은 그라우스가 웃었다. 기분 나쁘게.' : rt === 'dawn' ? '새벽단이 섬에 들어왔다는 첩보가 있다. 네가 모른다고 하면, 믿어 주지. 이번만.' : '리라라는 음유시인. 네 친구지? 그 여자 노래를 들으면 경호원들이 졸아. 우연인가?', { face: 'normal' }); await c.say(n, '투기장 시범 경기에 나간다. 네가 나오면… 반가울 거다. 봐주진 않겠지만.', { face: 'smirk' }); } } });
   ST.folk('world', { id: 'lea', name: '레아', x: RX(159), y: RY(38), dir: 'down', when: festival, lines: { c6: async (c, n) => { const rt = ST.route(); if (rt === 'dawn') { await c.say(n, '쉿. 솜사탕 장수야, 지금은. 봉헌식 밤에 기둥 밑에 화약을 심을 거야. 새벽단 스무 명이 섬에 들어와 있어.', { face: 'smirk' }); await c.say(n, '네가 무대 위에 있을 거라며. 신호는 네가 줘. 불씨를 기둥에 넣지 않으면 — 그게 신호야.', { face: 'normal' }); } else { await c.say(n, '솜사탕 하나 사. 무지개맛. …얼굴 기억하는 척하지 마. 오늘은 그냥 장사꾼이야.', { face: 'smirk' }); } const k = await c.choice('무지개 솜사탕 (30골드)', ['산다', '안 산다'], { who: 'lea', name: '레아' }); if (k === 0 && S().gold >= 30) { c.gold(-30); await c.getItem('food_cotton'); } } } });
-  ST.folk('world', { id: 'rud', name: '루드', x: RX(161), y: RY(39), dir: 'up', when: festival, lines: { c6: ['천년제 입장객 사만 이천. 봉헌식 참가 예상 삼만. 기둥 효율을 계산해 봤어. …계산하지 말걸.', '누나가 솜사탕을 판다. 솜사탕 원가는 설탕 한 숟갈. 이익률이… 아니, 그 얘기가 아니지.'] } });
+  ST.folk('world', { id: 'rud', name: '루드', x: RX(161), y: RY(39), dir: 'up', when: festival, lines: { c6: ['천년제 입장객 사만 이천. 봉헌식 참가 예상 삼만. 기둥 효율을 따져 봤어. …따져 보지 말걸.', '누나가 솜사탕을 판다. 솜사탕 원가는 설탕 한 숟갈. 이익률이… 아니, 그 얘기가 아니지.'] } });
   ST.folk('world', { id: 'pika', name: '피카', x: RX(170), y: RY(37), dir: 'down', wander: 30, when: festival, lines: { c6: ['헤헤, 축제는 지갑 축제야! …농담. 참새단 애들 데리고 구경 왔어. 골디 아저씨가 여비 줬어. 공짜로. 세상에.', '봉헌식? 우린 안 가. 참새들은 높은 데 앉아서 봐. 그게 제일 잘 보여.'] } });
   ST.folk('world', { id: 'luce', name: '루체', x: RX(183), y: RY(30), dir: 'left', when: festival, lines: { c6: '구름 위에서 보니까 블루 등대가 보여! 아빠 일지에 그랬어. 「하늘섬에선 모든 등대가 보인다」. 진짜였어.' } });
   ST.folk('world', { name: '축제 손님', folk: 'kidg', x: RX(164), y: RY(31), wander: 40, when: festival, barks: ['솜사탕!', '불꽃 또 터져!'], lines: { c6: ['봉헌식 때 기둥이 일곱 색으로 빛난대! 엄마가 맨 앞에서 보재!', '롤로 아저씨 곡예 봤어? 아저씨는 왜 늘 얼굴에 색칠해?'] } });
@@ -20393,7 +20393,7 @@ html.touch #modal { z-index: 60; }
     gr.jz = 0; c.shake(4, 0.4); c.sfx('impact');
     const rt = ST.route();
     await c.say(n0(gr), rt === 'order' ? '오랜만이군, 흰빛. 네 장부 덕에 석 달을 천년성 감옥에서 보냈다. 나오는 데 금화 삼만이 들더군. 챔피언께서 공로를 참작하셨지.' : rt === 'dawn' ? '광산에서 착즙기를 박살 낸 꼬마. 덕분에 증거는 사라졌지만, 내 체면도 사라졌다. 부단장이 광부 앞에서 웃음거리가 됐지.' : '내 금고를 턴 고양이의 친구. 금화 사만 칠천. 밤마다 세어 봤다. 몇 번을 세어도 영이더군.', { face: 'angry' });
-    await c.say(n0(gr), '챔피언께선 흑점까지 백이십 일이라고 하셨다. 탑 천 개로 막을 계산이지. 나는 다른 계산을 했다.', { face: 'smirk' });
+    await c.say(n0(gr), '챔피언께선 흑점까지 백이십 일이라고 하셨다. 탑 천 개로 막겠다는 거지. 나는 다른 답을 냈다.', { face: 'smirk' });
     await c.say(n0(gr), '[r]흰빛 하나면 탑 천 개보다 낫다.[/] 그 빛을 챔피언께 바치면 나는 단장이 되고, 내가 가지면 — 내가 챔피언이다.', { face: 'smirk' });
     await c.say(n0(cs), '그라우스! 이건 명령에 없다! 무기를 내려놓아라!', { face: 'angry' });
     await c.say(n0(gr), '명령? 꼬마 감찰관. 장부엔 명령보다 숫자가 먼저다. 잿빛 장부단, 기둥을 끝까지 올려라!', { face: 'angry' });
@@ -20431,7 +20431,7 @@ html.touch #modal { z-index: 60; }
     const gx = boss.x, gy = boss.y; boss.dead = true;
     const gr2 = add({ cid: 'graus', x: gx, y: gy, dir: 'up' });
     c.camOn(gr2, 3);
-    await c.say(n0(gr2), '헉… 헉… 계산이… 틀렸군. 좋다. 그럼 마지막 계산이다.', { face: 'angry' });
+    await c.say(n0(gr2), '헉… 헉… 틀렸군. 좋다. 그럼 마지막 수다.', { face: 'angry' });
     await c.move(gr2, p.x, p.y + 6, { speed: 160 });
     c.shake(3, 0.4); c.sfx('impact');
     await c.say(n0(gr2), '[r]흰빛을 기둥에 통째로 넣으면 된다.[/]', { face: 'smirk' });
@@ -20485,8 +20485,8 @@ html.touch #modal { z-index: 60; }
     await c.narr('카이론이 손가락을 들었다. 그라우스가 소리도 없이 무릎을 꿇었다. 눈이 텅 비었다. 숨은 쉰다. 그것뿐이다.');
     c.abyss('graus_erased');
     c.camOn(ka, 3);
-    await c.say('kairon', '흑점까지 백이십 일. 탑 천 개와 기둥 백 개로 막는 계산이었다. 기둥 하나가 방금 무너졌다.', { face: 'closed' });
-    await c.say('kairon', '천년성으로 와라, 흰빛. 너를 어디에 넣어야 계산이 맞는지 — 나는 이미 알고 있다.', { face: 'normal' });
+    await c.say('kairon', '흑점까지 백이십 일. 탑 천 개와 기둥 백 개로 막을 작정이었다. 기둥 하나가 방금 무너졌다.', { face: 'closed' });
+    await c.say('kairon', '천년성으로 와라, 흰빛. 너를 어디에 넣어야 하는지 — 나는 이미 알고 있다.', { face: 'normal' });
     await c.say('kairon', '……할머니한테 안부 전해라. 초록 창에게.', { face: 'sad' });
     await c.move(ka, ka.x, ka.y, {});
     for (let t = 0; t < 1; t += 1 / 40) { ka.jz = 200 * t * t; gr2.jz = 200 * t * t; await c.wait(1 / 40); }
@@ -20501,8 +20501,8 @@ html.touch #modal { z-index: 60; }
     const Cc = n0(cs); Cc.x = p.x + 30; Cc.y = p.y + 20;
     const Ly = n0(ly); Ly.x = p.x; Ly.y = p.y + 34;
     void L; void le;
-    await c.say('lea', '같이 가자. 설산 화이트에 새벽단 은신처가 있어. 카이론이 널 「넣을 곳」을 정했다면, 우리가 먼저 그 계산을 부숴야 해.', { face: 'normal' });
-    await c.say('cassian', '스승님께 가자. 내가 곁에 있겠다. 밖에서 부수는 건 새벽단이 할 거다. 나는 — 안에서 계산을 바꾸겠다. 너와 함께라면 할 수 있을지도 모른다.', { face: 'normal' });
+    await c.say('lea', '같이 가자. 설산 화이트에 새벽단 은신처가 있어. 카이론이 널 「넣을 곳」을 정했다면, 우리가 먼저 그 판을 엎어야 해.', { face: 'normal' });
+    await c.say('cassian', '스승님께 가자. 내가 곁에 있겠다. 밖에서 부수는 건 새벽단이 할 거다. 나는 — 안에서 스승님의 마음을 바꾸겠다. 너와 함께라면 할 수 있을지도 모른다.', { face: 'normal' });
     await c.say('lyra', '아무에게도 가지 마요. 밤은 누구의 편도 아니에요. 그래서 안전해요. 미드나잇이 당신을 기다려요. 천 년 전 이야기의 넷째 칸을 알고 있거든요.', { face: 'closed' });
     const cur = ST.route();
     const pick = await c.choice('세 사람이 손을 내민다. 이 선택으로 남은 길이 굳는다.', [
@@ -20513,7 +20513,7 @@ html.touch #modal { z-index: 60; }
     const route = ['dawn', 'order', 'night'][pick];
     s.flags.route_lock = route; c.route(route, 3);
     c.flag('c6_route_' + route);
-    if (route === 'dawn') { await c.say('lea', '좋아. 새벽은 온다. 우리가 데려오면.', { face: 'smirk' }); await c.say('rud', '…계산해 봤어. 이길 확률 삼 퍼센트. 삼 퍼센트면 충분해. 누나가 그랬어.', { face: 'smile' }); }
+    if (route === 'dawn') { await c.say('lea', '좋아. 새벽은 온다. 우리가 데려오면.', { face: 'smirk' }); await c.say('rud', '…확률을 뽑아 봤어. 이길 확률 삼 퍼센트. 삼 퍼센트면 충분해. 누나가 그랬어.', { face: 'smile' }); }
     else if (route === 'order') { await c.say('cassian', '…고맙다. 스승님이 틀렸다면, 스승님께 그걸 증명하는 게 제자의 일이다.', { face: 'smile' }); await c.say('lea', '기사단이라. 뭐, 네 선택이야. 부수고 싶어지면 불러.', { face: 'normal' }); }
     else { await c.say('lyra', '…고마워요. 밤은 약속을 안 해요. 대신 잊지도 않아요.', { face: 'smile' }); await c.say('cassian', '밤의 편이라. 다음에 만날 때 우리가 같은 편이길 바란다.', { face: 'sad' }); }
     await c.fade(true, { sec: 1.2 });
@@ -20652,7 +20652,7 @@ html.touch #modal { z-index: 60; }
     for (const [dx, dy] of [[0, 9], [31, 9], [0, 20], [31, 18], [9, 21], [22, 21]]) if (m.inb(X0 + dx, Y0 + dy) && !m.solidExtra[m.i(X0 + dx, Y0 + dy)]) m.obj[m.i(X0 + dx, Y0 + dy)] = O.PINE;
   });
   // 새벽단 은신처 실내
-  G.build.def('w_hide', { build() { const rm = G.build.room({ id: 'w_hide', region: 'white', name: '새벽단 은신처', w: 16, h: 10, floor: T.STONE, music: 'hollow', back: ['world', HIDE.x, HIDE.y + 1], furn: [['table', 7, 4, { text: '대성당 지하 지도. 「얼음 창고」에 붉은 동그라미. 옆에 루드 글씨: 「폭약 필요량 — 계산 끝」.' }], ['crate', 2, 3], ['crate', 3, 3], ['barrel', 13, 3], ['bed2', 12, 6, { v: '#8a5a3a' }], ['fireplace', 2, 7]] }); rm.dark = 0.3; return rm; } });
+  G.build.def('w_hide', { build() { const rm = G.build.room({ id: 'w_hide', region: 'white', name: '새벽단 은신처', w: 16, h: 10, floor: T.STONE, music: 'hollow', back: ['world', HIDE.x, HIDE.y + 1], furn: [['table', 7, 4, { text: '대성당 지하 지도. 「얼음 창고」에 붉은 동그라미. 옆에 루드 글씨: 「폭약 필요량 — 확인 끝」.' }], ['crate', 2, 3], ['crate', 3, 3], ['barrel', 13, 3], ['bed2', 12, 6, { v: '#8a5a3a' }], ['fireplace', 2, 7]] }); rm.dark = 0.3; return rm; } });
 
   ST.onMap('world', (m, Wd) => {
     const P = G.props;
@@ -20729,20 +20729,20 @@ html.touch #modal { z-index: 60; }
     await c.say(n, '그건 빛을 너무 많이 쓴 사람한테 생기는 거예요. 나처럼.', { face: 'closed' });
     await c.say(n, '병동에 노아라는 아이가 있어요. 블루에서 옮겨 왔어요. 여기가 마지막 병원이거든요. 당신 이름을 불러요, 가끔.', { face: 'sad' });
     await c.say(n, '…그리고 하나 더. 말하지 않으면 당신은 모르고 천년성에 가겠죠. 그러면 안 돼요.', { face: 'normal' });
-    await c.say(n, '카이론의 계산은 이래요. 흑점이 오면, 아스트라의 수정 속 [y]세린의 그릇[/]으로는 더 막을 수 없어요. 16년 동안 닳았으니까.', { face: 'normal' });
+    await c.say(n, '카이론의 생각은 이래요. 흑점이 오면, 아스트라의 수정 속 [y]세린의 그릇[/]으로는 더 막을 수 없어요. 16년 동안 닳았으니까.', { face: 'normal' });
     await c.say(n, '[r]그래서 새 그릇이 필요해요. 세린의 아이.[/]', { face: 'sad' });
     await c.say('toria', '찍——!! 말도 안 돼! 새 그릇이라니, 수정 속에 넣는다는 거잖아! 엄마처럼!', { face: 'angry' });
     await c.say(n, '…나는 그게 사랑이라고 믿어요. 한 사람이 모두를 위해 빛나는 것. 세린이 그랬던 것처럼. 나도 매일 조금씩 그렇게 해요.', { face: 'closed' });
     await c.say(n, '그러니 여기 있어요. 대성당은 따뜻해요. 그날이 올 때까지, 내가 당신을 지킬게요.', { face: 'smile' });
     const b = buddy();
-    if (b === 'cassian') await c.say('cassian', '…스승님은 나한테 그 계산을 말씀하신 적이 없다. 단 한 번도.', { face: 'shock' });
+    if (b === 'cassian') await c.say('cassian', '…스승님은 나한테 그 이야기를 하신 적이 없다. 단 한 번도.', { face: 'shock' });
     else if (b === 'rud') await c.say('rud', '그러니까 대륙 전체를 위해서 한 명을. 계산상으로는 맞아. …계산상으로는.', { face: 'angry' });
     else await c.say('lyra', '……', { face: 'sad' });
     await c.say(n, '동쪽 얼음 예배당에 이스카라는 아이가 있어요. 눈이 보이지 않지만 빛을 봐요. 당신 빛을 한번 보여 줘요. 그 애가 당신을 어떻게 보는지, 나도 궁금해요.', { face: 'normal' });
     c.flag('c7_lumie');
     await c.cinema(false);
     c.lock(false);
-    c.journal('성녀 루미에를 만났다. 카이론의 계산: 흑점을 막으려면 세린의 그릇 대신 새 그릇 — 나를 쓴다.');
+    c.journal('성녀 루미에를 만났다. 카이론의 계획: 흑점을 막으려면 세린의 그릇 대신 새 그릇 — 나를 쓴다.');
   }
 
   /* ───────── 이스카: 눈먼 얼음 사제 ───────── */
@@ -20796,7 +20796,7 @@ html.touch #modal { z-index: 60; }
     c.lock(true);
     await c.say(n, '얼음 창고. 16년 치 기도등 빛이 얼어 있어. 탑 수백 개 분량이야. 성녀는 그걸로 병자를 고친대. 공짜로.', { face: 'normal' });
     await c.say(n, '공짜? 그 빛은 기도한 사람들 거야. 성녀가 조금씩 떼어 먹은 거라고. 착하게 떼어 먹은 거.', { face: 'angry' });
-    await c.say('rud', '창고를 부수면 빛이 눈보라처럼 흩어져서 원래 주인들한테 돌아가. 계산해 봤어. 대부분은.', { face: 'normal' });
+    await c.say('rud', '창고를 부수면 빛이 눈보라처럼 흩어져서 원래 주인들한테 돌아가. 어림해 봤어. 대부분은.', { face: 'normal' });
     await c.say(n, '묘지 뚜껑문 얼음은 녹여 놨어. 오늘 밤에 가.', { face: 'smirk' });
     c.flag('c7_plan');
     c.lock(false);
@@ -21073,7 +21073,7 @@ html.touch #modal { z-index: 60; }
         await c.narr('거인이 누워 있던 자리 뒤로, 푸른 얼음벽이 갈라졌다. 얼음 창고. 기도등 수천 개가 벌집처럼 박혀 빛난다.');
         const rt = S().flags.route_lock || 'order';
         const b = buddy();
-        if (b === 'rud') await c.say('rud', '…탑 삼백 개 분량. 아니, 사백. 계산이 안 끝나. 누나가 폭약을 준비해 뒀어. 신호만 하면 돼.', { face: 'shock' });
+        if (b === 'rud') await c.say('rud', '…탑 삼백 개 분량. 아니, 사백. 세다가 손가락이 모자라. 누나가 폭약을 준비해 뒀어. 신호만 하면 돼.', { face: 'shock' });
         else if (b === 'cassian') await c.say('cassian', '보고 대상이다. 규칙대로라면 전부 천년성으로 보내야 한다. …규칙대로라면.', { face: 'normal' });
         else await c.say('lyra', '절반이 비었어요. 쇠 관이 남쪽으로. 미드나잇 말이 맞았어요. 누군가 성녀님 몰래 가져가고 있어요.', { face: 'closed' });
         const k = await c.choice('얼음 창고의 빛을 어떻게 할까?', [
@@ -21141,7 +21141,7 @@ html.touch #modal { z-index: 60; }
   /* ───────── 넓은 지도 ───────── */
   OW.hooks.push((m) => {
     ST.house(m, { id: 'g_work', region: 'gray', style: 'gray', tx: X0 + 20, ty: Y0 + 2, w: 8, h: 5, name: '볼트의 공방', sign: 'shop', colors: { roof: '#4a5058' },
-      room: { w: 22, h: 13, floor: T.METAL, music: 'gray', furn: [['desk', 4, 3, { text: '설계대. 징수탑 단면도 위에 새 도면이 겹쳐 있다. 제목: 「천년포」. 여백에 작은 글씨로 계산식이 빼곡하다.' }], ['gears', 9, 2], ['gears', 12, 2], ['anvil', 16, 4], ['console', 19, 3, { text: '제어판. 녹색 불 하나가 느리게 깜빡인다. 「N-07 : 정상」.' }], ['crate', 2, 9], ['crate', 3, 9], ['barrel', 19, 9], ['shelf', 1, 2], ['clock', 14, 1, { wall: true, text: '벽시계. 9년 전 가을 세 시 십 분에 멈춰 있다. 태엽은 멀쩡하다.' }], ['desk', 7, 8, { verb: '서랍을 연다', text: async (c) => drawer(c) }]] } });
+      room: { w: 22, h: 13, floor: T.METAL, music: 'gray', furn: [['desk', 4, 3, { text: '설계대. 징수탑 단면도 위에 새 도면이 겹쳐 있다. 제목: 「천년포」. 여백에 작은 글씨로 수식이 빼곡하다.' }], ['gears', 9, 2], ['gears', 12, 2], ['anvil', 16, 4], ['console', 19, 3, { text: '제어판. 녹색 불 하나가 느리게 깜빡인다. 「N-07 : 정상」.' }], ['crate', 2, 9], ['crate', 3, 9], ['barrel', 19, 9], ['shelf', 1, 2], ['clock', 14, 1, { wall: true, text: '벽시계. 9년 전 가을 세 시 십 분에 멈춰 있다. 태엽은 멀쩡하다.' }], ['desk', 7, 8, { verb: '서랍을 연다', text: async (c) => drawer(c) }]] } });
     ST.house(m, { id: 'gy_inn', region: 'gray', style: 'gray', tx: X0 + 3, ty: Y0 + 3, w: 6, h: 4, name: '잿빛 모루 여관', sign: 'inn',
       room: { w: 14, h: 10, floor: T.WOOD, music: 'calm', furn: [['counter', 2, 3, { v: 3, bw: 44, bh: 10 }], ['stove', 8, 2], ['table', 8, 6], ['chair', 7, 7], ['chair', 10, 7], ['bed2', 12, 3, { v: '#7a7a82' }], ['bed2', 12, 6, { v: '#8a8a92' }]] } });
     ST.house(m, { id: 'gy_shop', region: 'gray', style: 'gray', tx: X0 + 3, ty: Y0 + 14, w: 5, h: 4, name: '고철 시장', sign: 'shop',
@@ -21189,7 +21189,7 @@ html.touch #modal { z-index: 60; }
       await c.say('toria', '찍… 네 옷만 색이 있어. 나머지는 다 회색이야. 하늘도, 풀도, 사람도.', { face: 'sad' });
       await c.say('toria', '612년에 은빛 왕국이 무너질 때 땅의 색이 빠졌대. 400년이 지났는데 아직도…', { face: 'think' });
       const rt = S().flags.route_lock;
-      if (rt === 'order') await c.say(null, '카시안의 편지가 도착해 있었다. 「얼음 창고 보고서를 올렸다. 스승님의 답: 「관은 내가 놓은 것이다. 계산에 필요하다.」 …계산에 사람이 몇 명 들어가 있는지, 이제 묻지 않기로 했다. 대신 네게 묻겠다. — 카시안」', { style: 'sys' });
+      if (rt === 'order') await c.say(null, '카시안의 편지가 도착해 있었다. 「얼음 창고 보고서를 올렸다. 스승님의 답: 「관은 내가 놓은 것이다. 필요한 일이다.」 …그 「필요」에 사람이 몇 명 들어가 있는지, 이제 묻지 않기로 했다. 대신 네게 묻겠다. — 카시안」', { style: 'sys' });
       else if (rt === 'dawn') await c.say(null, '루드의 쪽지가 모루 여관 문틈에 끼워져 있었다. 「누나가 천년성 밑 수로를 찾았어. 볼트라는 사람 도면이 있으면 빨라. 그 사람, 우리 아버지를 알 거야. 광부였거든. — 루드」', { style: 'sys' });
       else await c.say(null, '여관 창틀에 까만 깃털 한 장. 「얼음 창고의 관은 천년성으로 간다. 그리고 천년성의 관은 — 하늘로. 볼트의 도면을 보면 끝이 보일 거다. — M」', { style: 'sys' });
       c.lock(false);
@@ -21204,7 +21204,7 @@ html.touch #modal { z-index: 60; }
     if (f('d8:boss') && !f('c8_proof')) { await boltProof(c, n); return; }
     if (f('c8_mk7') && !f('c8_done')) { await boltLast(c, n); return; }
     if (f('c8_proof') && !f('c8_mk7')) { await c.say(n, '폐공장. 동쪽. …기다리게 하지 마라. 16년도 기다렸다.', { face: 'closed' }); return; }
-    await c.say(n, ST.lines({ c8: f('c8_done') ? '역류 장치. 부품은 천년성에. 끼우는 건 네 일이다. 나는 도면까지다. …틀리지 마라.' : '광맥. 남쪽 폐허. 기록을 가져와라. 느낌은 연료가 안 된다.', c10: '알록달록의 피로스 녀석, 로켓 연료 계산을 틀렸더군. 편지로 고쳐 줬다. 쓸데없는 말 빼고 세 장.' }), { face: 'normal' });
+    await c.say(n, ST.lines({ c8: f('c8_done') ? '역류 장치. 부품은 천년성에. 끼우는 건 네 일이다. 나는 도면까지다. …틀리지 마라.' : '광맥. 남쪽 폐허. 기록을 가져와라. 느낌은 연료가 안 된다.', c10: '알록달록의 피로스 녀석, 로켓 연료 배합을 틀렸더군. 고쳐서 보냈다. 녀석이 고맙다는 말은 안 하겠지.' }), { face: 'normal' });
   } });
   async function boltFirst(c, n) {
     c.lock(true);
@@ -21214,7 +21214,7 @@ html.touch #modal { z-index: 60; }
     if (k === 1) await c.say(n, '루미에. …그 여자는 거짓말을 못 하지. 그래서 싫다.', { face: 'angry' });
     if (k === 2) await c.say(n, '「대요」. 전해 들은 말. 연료가 안 된다.', { face: 'angry' });
     await c.say(n, '탑은 내가 설계했다. 983년. 카이론의 부탁. 대륙의 빛을 모아 하늘을 지키는 탑.', { face: 'normal' });
-    await c.say(n, '지금은 그 빛을 쏠 대포를 만든다. [y]천년포[/]. 16년 치 빛으로 흑점을 쏜다. 계산은 끝났다.', { face: 'normal' });
+    await c.say(n, '지금은 그 빛을 쏠 대포를 만든다. [y]천년포[/]. 16년 치 빛으로 흑점을 쏜다. 설계는 끝났다.', { face: 'normal' });
     await c.say('toria', '엄마 노트에 그랬어요. 빛을 한곳에 모으면 안 된다고. 나눠 주라고.', { face: 'angry' });
     await c.say(n, '근거. 느낌은 연료가 안 된다. 숫자를 가져와라. 숫자라면 들어 주지.', { face: 'closed' });
     await c.say(n, '…남쪽에 은빛 왕국 폐허가 있다. 광맥 깊은 곳에 기록 보관소가 무너지지 않고 남았다. 612년의 기록이 있을 거다.', { face: 'normal' });
@@ -21278,7 +21278,7 @@ html.touch #modal { z-index: 60; }
     if (S().truth.t_bolt) { await c.narr('비어 있는 서랍. 안쪽 바닥에 오래된 잉크 자국이 번져 있다.'); return; }
     if (!S().inv.drawer_key) { await c.narr('공방 철제 서랍. 자물쇠가 세 겹이다. 녹 하나 없이 반짝인다. 매일 닦은 모양이다.'); return; }
     await c.narr('세피아의 열쇠를 꽂자 자물쇠 세 개가 한꺼번에 풀렸다.\n서랍 안에는 봉투 하나. 겉봉에 「천년성 · 챔피언 카이론 귀하」. 우표는 붙어 있는데 소인이 없다.');
-    await c.narr('「카이론. 계산을 끝냈다. 탑들이 모은 빛을 한 점에 모으면 흑점이 온다. 과녁을 바꿔라. 탑을 멈춰라. 아내가 죽었다. 빛바램병이다. 탑 때문이다. …이 편지를 부치면 나는 틀린 사람이 된다. — 990년 가을, 볼트」');
+    await c.narr('「카이론. 다시 재 봤다. 탑들이 모은 빛을 한 점에 모으면 흑점이 온다. 과녁을 바꿔라. 탑을 멈춰라. 아내가 죽었다. 빛바램병이다. 탑 때문이다. …이 편지를 부치면 나는 틀린 사람이 된다. — 990년 가을, 볼트」');
     c.truth('t_bolt');
     await c.say('toria', '…9년 전에 다 알았어. 볼트 아저씨. 알았는데 못 부쳤어. 아내가 떠난 해에.', { face: 'sad' });
   }
@@ -21333,7 +21333,7 @@ html.touch #modal { z-index: 60; }
         ]);
         if (k === 1) { c.abyss('ate_vein'); c.flag('ate_light'); c.heal(); c.flash('#ffffff', 0.4); await c.narr('은빛 부스러기가 손바닥으로 빨려 들어왔다. 달았다. 배고픔이 멎었다.\n…토리아가 한 걸음 물러섰다. 처음이었다.'); await c.say('toria', '…너, 방금 눈이 까맸어. 아주 잠깐.', { face: 'shock' }); }
         else { c.bond('toria', 1); await c.narr('주먹을 쥐었다. 배고픔은 멎지 않았다. 대신 토리아가 손등에 코를 댔다. 따뜻했다.'); await c.say('toria', '…배고프면 도토리 줄게. 두 개. 아니 세 개.', { face: 'smile' }); }
-        if (S().party.includes('sepia')) await c.say('sepia', '기록. 당신의 온도가 3초 동안 영하였다. …무섭다는 감정의 계산식을 찾았다. 기록하지 않겠다.', { face: 'sad' });
+        if (S().party.includes('sepia')) await c.say('sepia', '기록. 당신의 온도가 3초 동안 영하였다. …무섭다는 감정의 패턴을 찾았다. 기록하지 않겠다.', { face: 'sad' });
         c.music('gray');
         await c.cinema(false);
         c.lock(false);
@@ -21428,12 +21428,12 @@ html.touch #modal { z-index: 60; }
           await c.say('sepia', '재생 금지 명령을… 해제한다. 나의 판단이다. 볼트가 가르쳐 준 대로. 「옳은 쪽의 숫자를 따르라.」', { face: 'normal' });
           c.stopMusic(0.5);
           await c.narr('세피아의 가슴에서 치직거리는 소리가 났다. 그리고 낮고 쉰, 다정한 여자 목소리가 공장 안에 퍼졌다.');
-          await c.narr('[s]「여보. 녹음이 되고 있는 거 맞죠? …이 로봇 참 착해요. 가만히 있네.\n나 오늘 의사 선생님한테 들었어요. 빛바램병이래요. 탑 근처 마을에 많대요.\n당신 탑 때문이라고 하면 당신은 또 계산부터 하겠죠. 계산하지 마요. 그냥 멈춰요.\n멈추는 건 틀린 게 아니에요. 멈추는 것도 계산이에요. 제일 어려운 계산.」[/]');
+          await c.narr('[s]「여보. 녹음이 되고 있는 거 맞죠? …이 로봇 참 착해요. 가만히 있네.\n나 오늘 의사 선생님한테 들었어요. 빛바램병이래요. 탑 근처 마을에 많대요.\n당신 탑 때문이라고 하면 당신은 또 숫자부터 따지겠죠. 따지지 마요. 그냥 멈춰요.\n멈추는 건 틀린 게 아니에요. 멈추는 것도 답이에요. 제일 어려운 답.」[/]');
           c.music('sad');
           await c.narr('볼트가 바닥에 주저앉았다. 강철 장갑을 벗는 데 한참 걸렸다.');
           await c.say(bo, '……9년 동안 한 번도 안 틀었다. 틀면… 내가 틀린 게 되니까.', { face: 'cry' });
           await c.say(bo, '……틀렸군. 9년 동안. 아니, 16년 동안.', { face: 'cry' });
-          await c.say(bo, '싸울 필요 없다. 증명은 끝났다. 저 목소리가 나보다 계산을 잘했다. 늘 그랬다.', { face: 'sad' });
+          await c.say(bo, '싸울 필요 없다. 증명은 끝났다. 저 목소리가 나보다 늘 한 수 앞이었다.', { face: 'sad' });
           c.bond('sepia', 2); c.bond('bolt', 2); c.flag('c8_recording');
         }
       }
@@ -21461,7 +21461,7 @@ html.touch #modal { z-index: 60; }
       c.music('gray');
       await c.cinema(false);
       c.lock(false);
-      c.journal(f('c8_recording') ? '폐공장에서 세피아가 990년 가을의 녹음을 틀었다. 볼트의 아내 목소리. 「멈추는 것도 계산이에요.」 볼트가 울었다.' : '폐공장에서 MK-7을 쓰러뜨렸다. 볼트: 「증명 끝. 내가 틀렸다. 16년 동안.」');
+      c.journal(f('c8_recording') ? '폐공장에서 세피아가 990년 가을의 녹음을 틀었다. 볼트의 아내 목소리. 「멈추는 것도 답이에요.」 볼트가 울었다.' : '폐공장에서 MK-7을 쓰러뜨렸다. 볼트: 「증명 끝. 내가 틀렸다. 16년 동안.」');
     });
   });
   async function boltLast(c, n) {
@@ -21476,9 +21476,9 @@ html.touch #modal { z-index: 60; }
       await c.say('sepia', f('c8_recording') ? '볼트는 울었다. 조건 충족.' : '…볼트는 아직 울지 않았다. 하지만 나는 판단했다. 조건 충족.', { face: 'smile' });
       await c.getItem('drawer_key');
     }
-    await c.say(n, '하늘로 가려면 알록달록 곶의 [y]피로스[/] 녀석을 찾아라. 로켓을 만든다더군. 반쯤 미쳤지만 계산은 반쯤 맞다.', { face: 'normal' });
-    await c.say(n, '…그런데 곶으로 가는 가장 빠른 길은 동쪽 끝, [p]영원한 밤[/]을 지난다. 사천왕 녹턴의 땅. 카이론의 그림자. 그 녀석은 계산이 필요 없다. 명령만 있으면 된다.', { face: 'closed' });
-    if (S().party.includes('sepia')) { await c.say('sepia', '나는 여기 남는다. 볼트의 계산을 돕는다. 이제 볼트는 틀릴 줄 안다. 틀릴 줄 아는 계산은 오래 걸린다.', { face: 'smile' }); ST.leave('sepia'); }
+    await c.say(n, '하늘로 가려면 알록달록 곶의 [y]피로스[/] 녀석을 찾아라. 로켓을 만든다더군. 반쯤 미쳤지만 설계는 반쯤 맞다.', { face: 'normal' });
+    await c.say(n, '…그런데 곶으로 가는 가장 빠른 길은 동쪽 끝, [p]영원한 밤[/]을 지난다. 사천왕 녹턴의 땅. 카이론의 그림자. 그 녀석은 이유가 필요 없다. 명령만 있으면 된다.', { face: 'closed' });
+    if (S().party.includes('sepia')) { await c.say('sepia', '나는 여기 남는다. 볼트의 일을 돕는다. 이제 볼트는 틀릴 줄 안다. 틀릴 줄 아는 사람의 일은 오래 걸린다. 그래도 좋다.', { face: 'smile' }); ST.leave('sepia'); }
     c.flag('c8_done'); c.flag('open:black');
     await c.cinema(false);
     c.lock(false);
@@ -21547,7 +21547,7 @@ html.touch #modal { z-index: 60; }
   item('letter_orhan', { type: 'letter', name: '눈먼 등대지기의 편지', desc: '블루 등대의 루체에게.', read: '「루체. 아빠다. 검은 별 조각을 쫓다가 눈이 멀었다. 블랙 마을에서 등불지기 일을 거든다. 불 냄새로 일한다. 등불은 켜져 있니? 켜져 있으면 됐다. — 아빠」' });
   item('letter_luce', { type: 'letter', name: '루체의 답장', desc: '블랙의 아빠에게.', read: '「아빠. 불은 켜져 있어. 흰빛으로 켠 불이라 절대 안 꺼져. 그러니까 천천히 와도 돼. 대신 꼭 와. — 루체」' });
   item('fish_gold', { type: 'key', name: '황금 고등어', desc: '비늘이 금화처럼 반짝인다. 고양이가 환장한다고 한다.' });
-  G.data.BOOKS.b_ledger = { name: '허용 손실 장부 (사본)', short: '녹턴의 책상 위 두꺼운 장부', pages: ['그린 — 허용 손실 12. 레드 — 40. 블루 — 26. 옐로 — 55. 퍼플 — 9. 무지개 — 0(천년제 기둥 가동 시 300). 화이트 — 성녀 관리. 그레이 — 계산 불요. 블랙 — 녹턴 관리.', '「허용 손실: 흑점 방위를 위해 빛바램으로 잃어도 되는 사람의 수. 해마다 갱신.」 — 카이론', '맨 끝 줄, 다른 잉크로: 「예비 그릇 — 세린의 아이 (1). 계산이 틀릴 경우에 한해.」', '그 아래, 칼로 긁어낸 자국. 한 줄이 통째로 지워져 있다. 긁은 자국이 아주 오래되었다. 16년쯤.'] };
+  G.data.BOOKS.b_ledger = { name: '허용 손실 장부 (사본)', short: '녹턴의 책상 위 두꺼운 장부', pages: ['그린 — 허용 손실 12. 레드 — 40. 블루 — 26. 옐로 — 55. 퍼플 — 9. 무지개 — 0(천년제 기둥 가동 시 300). 화이트 — 성녀 관리. 그레이 — 해당 없음. 블랙 — 녹턴 관리.', '「허용 손실: 흑점 방위를 위해 빛바램으로 잃어도 되는 사람의 수. 해마다 갱신.」 — 카이론', '맨 끝 줄, 다른 잉크로: 「예비 그릇 — 세린의 아이 (1). 예측이 틀릴 경우에 한해.」', '그 아래, 칼로 긁어낸 자국. 한 줄이 통째로 지워져 있다. 긁은 자국이 아주 오래되었다. 16년쯤.'] };
 
   /* ───────── 성 그림 ───────── */
   const B = G.build, X = G.gfx, R = B.ramp, poly = B.poly, OUT = B.OUT;
@@ -21627,7 +21627,7 @@ html.touch #modal { z-index: 60; }
       const b = buddy();
       ST.join(b);
       await c.say('toria', '찍… 아무것도 안 보여. 네 흰빛만 보여. 여기 사람들은 16년 동안 이렇게 살았대. 해를 그림으로만 봤대.', { face: 'sad' });
-      if (b === 'rud') await c.say('rud', '누나는 성문 앞에 먼저 가 있어. 화약 세 통. …계산은 끝났어. 이번엔 계산이 무서워.', { face: 'normal' });
+      if (b === 'rud') await c.say('rud', '누나는 성문 앞에 먼저 가 있어. 화약 세 통. …준비는 끝났어. 이번엔 숫자가 무서워.', { face: 'normal' });
       else if (b === 'cassian') await c.say('cassian', '녹턴. 스승님의 그림자. 나는 한 번도 그의 얼굴을 본 적이 없다. 스승님조차 그를 「녹턴」이라고만 부른다.', { face: 'normal' });
       else await c.say('lyra', '…돌아왔네요. 나는 여기서 자랐어요. 이 거리의 등불 수를 다 외워요. 스물셋. 그중 다섯은 꺼졌고요.', { face: 'closed' });
       await c.say('toria', '미드나잇이라는 고양이를 찾아야 해. 서쪽 가게래.', { face: 'normal' });
@@ -21659,7 +21659,7 @@ html.touch #modal { z-index: 60; }
     }
     await c.say(n, '천 년 전 이야기를 해 주지. 금빛 머리의 소년이 있었네. 아우룸. 나는 그 녀석 어깨 위에 앉아 있던 고양이였고.', { face: 'closed' });
     await c.say(n, '그 녀석이 흰빛으로 전쟁을 끝낸 밤, 하늘에서 무언가가 눈을 떴네. 나는 봤지. 그 녀석 어깨 위에서.', { face: 'normal' });
-    await c.say(n, '그 녀석은 밤새 계산했어. 그리고 빛을 쪼갰네. 다섯 갈래, 다섯 빛깔. 모이지 말라고. 창세 신화는 그 녀석이 지어낸 거야. 사람들이 다시 모으지 않게.', { face: 'normal' });
+    await c.say(n, '그 녀석은 밤새 고민했어. 그리고 빛을 쪼갰네. 다섯 갈래, 다섯 빛깔. 모이지 말라고. 창세 신화는 그 녀석이 지어낸 거야. 사람들이 다시 모으지 않게.', { face: 'normal' });
     await c.say(n, '…그런데 그 녀석 자신은 이미 너무 많이 삼킨 뒤였지. 벽화의 넷째 칸을 누가 지웠는지 아나? [p]나일세.[/] 발톱으로.', { face: 'sad' });
     await c.say(n, '넷째 칸엔 이런 그림이 있었네. 소년이 하늘로 올라가, 검은 해의 첫 번째 한 입이 되는 그림.', { face: 'sad' });
     c.flag('c9_aurum'); c.abyss('aurum_truth');
@@ -21690,7 +21690,7 @@ html.touch #modal { z-index: 60; }
   ST.person('world', { id: 'lea', x: CASTLE.x + 8, y: CASTLE.y + 5, dir: 'left', when: () => ST.after('c9') && S().flags.route_lock === 'dawn' && !f('c9_in'), mark: () => (f('c9_mid') ? '!' : null), talk: async (c, n) => {
     if (!f('c9_mid')) { await c.say(n, '쉿. 미드나잇한테 먼저 가. 성 안 구조를 알아야 해. 화약은 아껴 써야 하거든.', { face: 'smirk' }); return; }
     c.lock(true);
-    await c.say(n, '준비됐어? 세 통. 성문 경첩에 하나씩. 루드가 계산했어.', { face: 'smirk' });
+    await c.say(n, '준비됐어? 세 통. 성문 경첩에 하나씩. 루드가 재 봤어.', { face: 'smirk' });
     await c.say('rud', '폭발 반경 사 미터. 우리는 칠 미터 뒤에. …누나, 이번엔 뒤로 물러나. 진짜로.', { face: 'normal' });
     await c.say(n, '알았어, 알았어. 새벽은 온다 — 쾅!', { face: 'happy' });
     c.sfx('explode'); c.shake(8, 1.2); c.flash('#ffb84a', 0.5);
@@ -21846,7 +21846,7 @@ html.touch #modal { z-index: 60; }
     if (Ly !== 'lyra') { await c.move(Ly, bx - 20, by + 16, { speed: 60 }); }
     c.music('dream');
     await c.say(nc, k === 1 ? '…그것도 대답하겠다. 먼저, 지운 줄부터.' : k === 2 ? '…묻지 않는군. 그래도 말하겠다. 16년 동안 대답하지 않은 것이 내가 한 일의 전부였다. 오늘은 그 일을 그만두겠다.' : '……', { face: 'sad' });
-    await c.say(nc, '지운 줄은 이랬다. 「예비 그릇 — 세린의 첫째 (1). 계산이 틀릴 경우 먼저.」', { face: 'closed' });
+    await c.say(nc, '지운 줄은 이랬다. 「예비 그릇 — 세린의 첫째 (1). 예측이 틀릴 경우 먼저.」', { face: 'closed' });
     await c.say(Ly, '……', { face: 'sad' });
     await c.say(nc, '세린에게는 아이가 둘 있었다. 첫째는 여기, 밤 속에 숨겼다. 카이론의 장부에서 지우고, 이름을 바꾸고, 노래를 가르쳤다. 둘째는 숲으로. 에벨린에게.', { face: 'normal' });
     await c.say(Ly, '…「두 개의 등불이 있었네. 하나는 하늘로, 하나는 숲으로.」 사실은 하나는 밤으로, 하나는 숲으로예요. 가사를 바꿨어요. 들킬까 봐.', { face: 'cry' });
@@ -21877,13 +21877,13 @@ html.touch #modal { z-index: 60; }
     await c.say('kairon', '녹턴. …졌군. 16년 만에.', { face: 'closed', vision: true });
     await c.say(nc, '……카이론.', { face: 'sad' });
     await c.say('kairon', '세린의 아이. …장부를 봤군. 틀린 숫자는 없다. 흑점까지 남은 날은 아흔 일. 아스트라에서 기다리겠다. 오지 않으면 내가 끝낸다.', { face: 'normal' });
-    if (f('lyra_sister')) { await c.say('kairon', '…그 옆의 아이는 누구지. 장부에 없는 얼굴이군.', { face: 'shock' }); await c.say(Ly, '…장부에 없는 사람이에요. 그러니까 계산하지 마요.', { face: 'angry' }); await c.say('kairon', '……', { face: 'sad' }); }
+    if (f('lyra_sister')) { await c.say('kairon', '…그 옆의 아이는 누구지. 장부에 없는 얼굴이군.', { face: 'shock' }); await c.say(Ly, '…장부에 없는 사람이에요. 그러니까 세지 마요.', { face: 'angry' }); await c.say('kairon', '……', { face: 'sad' }); }
     await c.say('kairon', '…오늘도 렙업이군. 세린이 늘 하던 인사다.', { face: 'sad' });
     await c.narr('빛줄기가 거두어졌다. 밤이 다시 내려앉았다. 그런데 — 동쪽 끝 하늘이, 아주 조금, 파래져 있었다.');
     c.music('sad');
     await c.say(nc, '아스트라에 가려면 하늘 정거장을 지나야 한다. 이것을 가져가라. [y]밤의 열쇠[/]. 정거장의 문을 여는 열쇠다. 아우룸 시대부터 이 성에 있었다.', { face: 'normal' });
     await c.getItem('key_night');
-    await c.say(nc, '하늘로 가는 길은 남쪽 알록달록 곶의 피로스라는 발명가가 안다. 평생 로켓을 만든다고 한다. …카이론을 구해 다오. 그는 괴물이 아니다. 계산을 멈추면 무너질까 봐 무서운 사람이다.', { face: 'sad' });
+    await c.say(nc, '하늘로 가는 길은 남쪽 알록달록 곶의 피로스라는 발명가가 안다. 평생 로켓을 만든다고 한다. …카이론을 구해 다오. 그는 괴물이 아니다. 멈추는 순간 무너질까 봐 쉬지 못하는 사람이다.', { face: 'sad' });
     if (Ly !== 'lyra') { await c.say(Ly, '…나도 갈게요. 이번엔 멀리서 말고, 옆에서.', { face: 'smile' }); Ly.dead = true; }
     c.flag('c9_done'); c.flag('open:colorful');
     nc.dead = true;
@@ -22051,11 +22051,11 @@ html.touch #modal { z-index: 60; }
   });
   ST.hookTalk('g_work', 'bolt', need('fuel'), async (c, n) => {
     c.lock(true);
-    await c.say(n, '피로스. 그 미친놈. …연료 계산을 네 번 틀렸더군. 편지로 고쳐 줬다. 쓸데없는 말 빼고 세 장.', { face: 'closed' });
+    await c.say(n, '피로스. 그 미친놈. …연료 배합을 네 번 틀렸더군. 편지로 고쳐 줬다. 쓸데없는 말 빼고 세 장.', { face: 'closed' });
     await c.say(n, '광맥 바닥 은빛 부스러기. 빛이 아니라 은이다. 먹을 수 없는 빛. 태울 수는 있다. 그러니 탑 없이도 난다.', { face: 'normal' });
-    await c.say('sepia', '연료통 세 개. 내가 채웠다. 3분 동안 계산했다. 이 감정의 이름: 「응원」.', { face: 'happy' });
+    await c.say('sepia', '연료통 세 개. 내가 채웠다. 이번엔 1분 만에 이름을 찾았다. 이 감정의 이름: 「응원」.', { face: 'happy' });
     await givePart(c, 'fuel');
-    await c.say(n, '…하늘에서 흑점을 보거든, 계산하지 마라. 그냥 봐라. 아내가 그랬다. 멈추는 것도 계산이라고.', { face: 'sad' });
+    await c.say(n, '…하늘에서 흑점을 보거든, 따지지 마라. 그냥 봐라. 아내가 그랬다. 멈추는 것도 답이라고.', { face: 'sad' });
     c.lock(false);
   });
   ST.person('g_work', { id: 'sepia', x: 15, y: 6, dir: 'left', when: () => ST.after('c9') || f('c8_done'), talk: async (c, n) => { await c.say(n, ST.lines({ c8: '볼트는 요즘 노래를 흥얼거린다. 음정이 3퍼센트 틀린다. 기록하지 않겠다.', c10: '색 표본 병을 새로 만들었다. 하늘색 칸이 비었다. 하늘에서 담아 와 줄 수 있나.' }), { face: 'smile' }); } });
@@ -22079,7 +22079,7 @@ html.touch #modal { z-index: 60; }
       { t: '「하늘에서 본 걸 말해 줄게요. 제일 먼저.」', sub: '돈 대신 이야기로.' },
       { t: '「피카네 참새단도 같이 태워 주면요?」', sub: '농담 반.' },
     ]);
-    if (k === 0) { c.gold(-10000); await c.say(n, '만 닢. 좋아. 나머지 이만은… 돌아와서 갚아. 이자는 연 0퍼센트. 처음 해 보는 계산이군.', { face: 'smile' }); }
+    if (k === 0) { c.gold(-10000); await c.say(n, '만 닢. 좋아. 나머지 이만은… 돌아와서 갚아. 이자는 연 0퍼센트. 처음 해 보는 장사군.', { face: 'smile' }); }
     else if (k === 1) { await c.say(n, '……하. 이야기로 값을 치르겠다. 세린도 그랬지. 「돌아와서 하늘 이야기 해 줄게.」 안 돌아왔어. 그러니까 너는 — 돌아와서 해. 그게 값이다.', { face: 'sad' }); c.bond('goldy', 2); c.flag('goldy_promise'); }
     else { await c.say(n, '하하! 참새들을 로켓에? 그 녀석들이 하늘에서 정거장 전선을 다 훔쳐 올 거다. …좋아, 기분이 좋군. 외판은 공짜다. 오늘만. 평생 처음으로.', { face: 'happy' }); await c.say('pika', '(창문 밖에서) 들었어! 공짜래! 금화왕이 공짜래!', { face: 'happy' }); c.bond('goldy', 1); }
     await givePart(c, 'plating');
@@ -22326,7 +22326,7 @@ html.touch #modal { z-index: 60; }
     await c.say(n, '심층 격벽을 열겠다. 파수꾼을 멈추면 사다리가 열린다. …질문이 있다. 388년 동안 준비한 질문.', { face: 'normal' });
     await c.say(n, '「밖은 어떤가.」', { face: 'shock' });
     const k = await c.choice('스텔라가 묻는다.', ['「색이 있어. 아직.」', '「배고픈 사람이 많아.」', '「같이 가서 봐.」']);
-    await c.say(n, ['…색. 기록한다. 388년 만에 새 색 정보.', '…기록한다. 612년과 같은 문장이다. 슬프다는 계산식을 확인했다.', '…나는 정거장이다. 움직이지 못한다. 하지만 그 문장은 기록한다. 「같이 가서 봐.」 좋은 문장이다.'][k], { face: 'normal' });
+    await c.say(n, ['…색. 기록한다. 388년 만에 새 색 정보.', '…기록한다. 612년과 같은 문장이다. 슬프다는 판단이 나왔다.', '…나는 정거장이다. 움직이지 못한다. 하지만 그 문장은 기록한다. 「같이 가서 봐.」 좋은 문장이다.'][k], { face: 'normal' });
     c.flag('c11_stella');
     await c.cinema(false);
     c.lock(false);
@@ -22429,7 +22429,7 @@ html.touch #modal { z-index: 60; }
       Wd.add(new BlackSunSky({ x: 0, y: 0 }));
       Wd.add(new G.props.Spot({ x: px(12), y: py(19), verb: '제단의 글씨를 읽는다', text: async (c) => bellaAltar(c) }));
       Wd.add(new G.props.Sign({ x: px(28), y: py(38), text: '아스트라\n「빛은 여기로 모였다. 천 년 동안.」', look: 'stone', anyDir: true }));
-      Wd.add(new G.props.Spot({ x: px(36), y: py(33), verb: '정원을 살핀다', text: async (c) => { await c.narr('황금 모래 한가운데 초록 풀밭. 흙 색이 다르다. 그린 마을 흙이다.\n팻말 하나. 반듯한 글씨: 「S가 좋아하던 것. 매일 물. — K」'); if (!c.has('saw_garden')) { c.flag('saw_garden'); await c.say('toria', '…16년 동안 여기서 혼자 물을 줬대. 계산만 하는 사람이.', { face: 'sad' }); } } }));
+      Wd.add(new G.props.Spot({ x: px(36), y: py(33), verb: '정원을 살핀다', text: async (c) => { await c.narr('황금 모래 한가운데 초록 풀밭. 흙 색이 다르다. 그린 마을 흙이다.\n팻말 하나. 반듯한 글씨: 「S가 좋아하던 것. 매일 물. — K」'); if (!c.has('saw_garden')) { c.flag('saw_garden'); await c.say('toria', '…16년 동안 여기서 혼자 물을 줬대. 숫자만 보는 사람이.', { face: 'sad' }); } } }));
       if (!f('c12_start')) G.script.run(astraStart);
       // 성소 앞의 그림자들
       if (!f('c12_kairon')) for (const [x, y, t] of [[20, 30, 'shade'], [34, 22, 'shade'], [16, 34, 'golem'], [40, 12, 'shade'], [22, 14, 'wisp']]) G.foes.spawn(t, px(x), py(y), { tier: 11 });
@@ -22527,9 +22527,9 @@ html.touch #modal { z-index: 60; }
     c.music('kairon');
     await c.narr('수정 앞에 한 사람이 서 있었다. 망토 끝이 닳아 있었다. 16년 동안 한자리에 서 있던 사람처럼.');
     await c.say('kairon', '왔군. 세린의 아이. …' + (f('lyra_sister') ? '그리고 장부에 없는 아이.' : ''), { face: 'closed' });
-    await c.say('kairon', '흑점까지 남은 시간은 없다. 오늘이다. 대륙의 탑들이 모은 빛을 이 수정으로 쏜다. 그 빛으로 흑점을 태운다. 그게 첫 계산.', { face: 'normal' });
-    await c.say('kairon', '빛이 모자라면 — 수정 속의 그릇을 바꾼다. 세린 대신 너를. 그게 두 번째 계산. 세린은 풀려난다. 16년 만에.', { face: 'normal' });
-    if (f('kairon_father')) await c.say('toria', '…아빠잖아요. 당신. 녹턴 아저씨가 그랬어. 아빠가 자기 아이를 수정에 넣는 계산을 해?', { face: 'angry' });
+    await c.say('kairon', '흑점까지 남은 시간은 없다. 오늘이다. 대륙의 탑들이 모은 빛을 이 수정으로 쏜다. 그 빛으로 흑점을 태운다. 그게 첫 번째 방법.', { face: 'normal' });
+    await c.say('kairon', '빛이 모자라면 — 수정 속의 그릇을 바꾼다. 세린 대신 너를. 그게 두 번째 방법. 세린은 풀려난다. 16년 만에.', { face: 'normal' });
+    if (f('kairon_father')) await c.say('toria', '…아빠잖아요. 당신. 녹턴 아저씨가 그랬어. 아빠가 자기 아이를 수정에 넣겠다고 해?', { face: 'angry' });
     const ev = ST.evidence();
     const opts = [
       { t: '증거를 내민다 (' + ev.length + '개)', sub: ev.length >= 5 ? '말로 멈춘다.' : '[r]아직 모자라다[/] — 다섯은 있어야 할 것 같다.', if: true },
@@ -22594,7 +22594,7 @@ html.touch #modal { z-index: 60; }
     await c.getItem('sw_light'); S().equip.sword = 'sw_light';
     c.music('final');
     await c.narr('흑점이 수정 위로 솟았다. 천장이 사라지고 보랏빛 하늘이 열렸다. 하늘의 구멍이 내려오고 있었다. 가장 밝은 것을 향해 — 너를 향해.');
-    await c.say(kaN, '…내가 옆에 서겠다. 이번엔 계산 없이.', { face: 'normal' });
+    await c.say(kaN, '…내가 옆에 서겠다. 이번엔 장부 없이.', { face: 'normal' });
     if (f('cassian_duel')) await c.say(kaN, '……카시안이 사과 값을 아직 못 갚았다고? 그 녀석. …그럼 살아야겠군.', { face: 'smile' });
     if (ST.rally) await ST.rally(c);
     await c.cutin({ who: 'toria', title: '흑점', small: '채워지지 못한 그릇들의 배고픔', sub: '빛 구슬을 깨면 속이 열린다 — 흰빛을!', col: '#3a1a5a', face: 'shock', sec: 2 });
@@ -23635,7 +23635,7 @@ html.touch #modal { z-index: 60; }
       await c.say(gr, '잡아 올까요? 흰빛 한 줌이면 탑 열 개 몫입니다.', { face: 'smirk' });
       await c.say(ka, '손대지 마라. 지켜보기만 해라. 빛이 다 자랄 때까지.', { face: 'normal' });
       await c.say(gr, '…다 자라면요?', { face: 'smirk' });
-      await c.say(ka, '그때 계산한다.', { face: 'normal' });
+      await c.say(ka, '그때 생각한다.', { face: 'normal' });
       await c.move(gr, px(8), py(10), { speed: 50 }); gr.dead = true; c.sfx('door');
       c.face(ka, 'right');
       await c.narr('수정 구슬 속, 얼음 안에서 잠든 여자. 가슴께에 검은 점 하나.');
@@ -23741,7 +23741,7 @@ html.touch #modal { z-index: 60; }
       c.music('dread');
       await c.narr('16년 동안 한 번도 없던 일이었다.');
       c.face(ka, 'up');
-      await c.say(ka, '…조금만 더 안고 있어 줘. 조금만. 계산이 거의 끝났어.', { face: 'cry' });
+      await c.say(ka, '…조금만 더 안고 있어 줘. 조금만. 거의 다 됐어.', { face: 'cry' });
       await c.narr('구슬을 짚은 챔피언의 손끝이 검게 물들어 있었다.');
     } },
     c7: { room: 'x_study', cam: [8, 5], title: '열여섯', play: async (c) => {
@@ -23760,7 +23760,7 @@ html.touch #modal { z-index: 60; }
       await c.say(cs, '그 아이를 수정에 넣으실 겁니까.', { face: 'angry' });
       ka.forceAnim = null;
       await c.narr('펜 소리가 멈췄다.');
-      await c.say(ka, '계산이 그렇게 나오면.', { face: 'normal' });
+      await c.say(ka, '답이 그렇게 나오면.', { face: 'normal' });
       await c.say(gr, '열. 열하나. 열둘.', { face: 'closed' });
       await c.narr('카시안이 감찰관 휘장을 책상 위에 내려놓았다.');
       await c.say(cs, '…그럼 저는 스승님의 계산에서 빠지겠습니다.', { face: 'closed' });
@@ -24594,7 +24594,7 @@ html.touch #modal { z-index: 60; }
       L({ id: 'igni', name: '도제 이그니', house: '이그니의 풀무간', kind: 'smith', folk: 'smith', look: { hc: '#c84a2a', build: null },
         lines: { c2: '볼칸 스승님은 983년 이후로 제일 좋은 검은 안 만든대. 누굴 위해서도.', c3: '스승님이 요즘 밤마다 뭘 두드려. 네 검이랑 모양이 비슷했어.', c6: '천년제 망치 노점 봤어? 스승님이 사람들 앞에서 웃는 거 처음 봤어.', c8: '그레이 강철은 색이 없어서 불에 넣어도 빛이 안 나. 이상하지?', c10: '로켓 노즐! 스승님이랑 사흘 밤을 새웠어. 내 망치 자국도 하나 있다.' } }),
       L({ id: 'bel', name: '관측 조수 벨', house: '벨의 다락방', kind: 'scholar', folk: 'student', look: { gender: 'girl', hair: 'bob', hc: '#5a3a2a', tc: '#8a3a2a', glasses: true },
-        lines: { c2: '아스텔 박사님은 별을 세. 요즘은 검은 점도 센대. 조금씩 커진다나.', c4: '박사님이 말을 안 해. 계산을 끝낸 사람 얼굴이야.', c5: '관측표 봤어? 흑점은 빛이 제일 많은 곳을 따라온대. 양이 아니라… 쏠림.', c9: '블랙은 별이 제일 잘 보인대. 밤이 안 끝나니까. 부러워.', c11: '정거장에서 보는 별은 어때? 박사님이 부러워서 잠을 못 주무셔.' } }),
+        lines: { c2: '아스텔 박사님은 별을 세. 요즘은 검은 점도 센대. 조금씩 커진다나.', c4: '박사님이 말을 안 해. 답을 알아 버린 사람 얼굴이야.', c5: '관측표 봤어? 흑점은 빛이 제일 많은 곳을 따라온대. 양이 아니라… 쏠림.', c9: '블랙은 별이 제일 잘 보인대. 밤이 안 끝나니까. 부러워.', c11: '정거장에서 보는 별은 어때? 박사님이 부러워서 잠을 못 주무셔.' } }),
       L({ id: 'roen', name: '꼬마 로엔', house: '로엔네', kind: 'home', folk: 'kid', look: { hc: '#8a3a2a', tc: '#5a3a2a', acc: ['scarf'], scarfC: '#ff7a4a' },
         lines: { c2: '루드 형이 새벽단이래! 탑 같은 건 다 부숴 버려야 해.', c3: '형이 그러는데 탑을 부수면 빛이 돌아온대. 나 벌써 망치 있어.' },
         route: { dawn: '새벽단이랑 같이 간다며? 나도 크면 들어갈 거야. 망치는 벌써 있어.', order: '기사단이랑 손잡았다고? 루드 형이 한숨 쉬던데.||…그래도 너는 나쁜 사람 아니지?', night: '밤의 사람들이 네 이름을 속삭인대. 멋있다. 나도 속삭여 볼까.' }, routeFrom: 'c4' }),
@@ -27355,7 +27355,7 @@ html.touch #modal { z-index: 60; }
   ]);
   walker('karel', [
     ['c2', 'red', 5, 5, async (c, n) => { await say(c, n, '볼칸 아저씨 대장간은 너무 뜨거워. 베르나는 괜찮대. 베르나는 늘 괜찮대.', { face: 'sad' }); }],
-    ['c4', 'yellow', 7, -4, async (c, n) => { await say(c, n, v('ens:kids') === 'sparrow' ? '피카 누나가 나보고 「계산이 빠르다」고 했어. 참새단 회계래. 회계가 뭐야?' : '물 한 잔에 5원이래. 우리 돈은 3원이야. 반 잔만 달라고 할까.', { face: 'normal' }); }],
+    ['c4', 'yellow', 7, -4, async (c, n) => { await say(c, n, v('ens:kids') === 'sparrow' ? '피카 누나가 나보고 「셈이 빠르다」고 했어. 참새단 회계래. 회계가 뭐야?' : '물 한 잔에 5원이래. 우리 돈은 3원이야. 반 잔만 달라고 할까.', { face: 'normal' }); }],
     ['c6', 'rainbow', -4, 6, async (c, n) => { await say(c, n, '풍선 하나 샀어. 베르나 거야. 나는 풍선 없어도 돼. …날아가면 안 되니까 잡고 있어.', { face: 'smile' }); }],
     ['c9', 'black', 5, 5, async (c, n) => { await say(c, n, '밤에만 사는 도시래. 우리 그린은 밤엔 다 자는데. 여긴 밤에 다 깨어 있어. 이상해. 좋아.', { face: 'normal' }); }],
   ]);
@@ -27426,10 +27426,10 @@ html.touch #modal { z-index: 60; }
   ]);
   walker('astel', [
     ['c5', 'purple', 10, 5, async (c, n) => {
-      await say(c, n, '993년에 계산한 걸 다시 해 보러 왔네. 라벤더 학원 천문대가 더 크거든. …답이 같군. 같아서 무서워.', { face: 'sad' });
+      await say(c, n, '993년에 재 본 걸 다시 재 보러 왔네. 라벤더 학원 천문대가 더 크거든. …답이 같군. 같아서 무서워.', { face: 'sad' });
     }],
     ['c10', 'colorful', -10, -3, async (c, n) => {
-      await say(c, n, '궤도 계산은 끝났네. 틀려도 다시 계산할 시간은 없어. 그러니 맞았다고 믿기로 했지. 과학도 가끔은 믿음이야.', { face: 'smile' });
+      await say(c, n, '궤도는 다 그렸네. 틀려도 다시 그릴 시간은 없어. 그러니 맞았다고 믿기로 했지. 과학도 가끔은 믿음이야.', { face: 'smile' });
     }],
   ]);
 
@@ -30871,10 +30871,10 @@ html.touch #modal { z-index: 60; }
       high: ['너 요즘 렙업할 때 빛이 점점 커져. 찍.', '내 레벨은 9. 네 레벨은… 세다가 잊어버렸어.'],
     },
     yana: { any: ['별이 보이면 길을 잃을 일은 없어.', '모래 밟는 소리로 땅속이 비었는지 알 수 있어.', '내 귀가 쫑긋하면 뭔가 오는 거야. 지금은… 아니네.', '길잡이 값은 나중에 받을게. 별로.', '대상 사람들은 노래하면서 걸어. 걸음이 맞으면 덜 지쳐.'], night: ['국자 별 보여? 저 끝에서 다섯 걸음. 길잡이별이야.', '사막의 밤은 차. 낮엔 굽고 밤엔 얼고.'] },
-    viola: { any: ['세린 선배 기록, 이번 달엔 깰 거야.', '그 주문, 손목이 굳어 있어. 힘 빼.', '나 졸린 거 아니야. 생각 중이야.', '대륙의 빛 흐름을 계산해 보면 이상해. 한쪽으로만 기울어.', '책은 들고 다녀야 읽게 돼. 그래서 가방이 무거워.'], night: ['밤엔 공식이 더 잘 떠올라. 아침엔 다 까먹지만.'] },
+    viola: { any: ['세린 선배 기록, 이번 달엔 깰 거야.', '그 주문, 손목이 굳어 있어. 힘 빼.', '나 졸린 거 아니야. 생각 중이야.', '대륙의 빛 흐름을 따라가 보면 이상해. 한쪽으로만 기울어.', '책은 들고 다녀야 읽게 돼. 그래서 가방이 무거워.'], night: ['밤엔 공식이 더 잘 떠올라. 아침엔 다 까먹지만.'] },
     sepia: { any: ['색 감지: 초록 73퍼센트. 기분: 좋음.', '이 빨강은 무슨 맛일까. 나는 맛을 모른다. 그래도 궁금하다.', '보행 속도를 맞추는 중. 너는 가끔 멈춘다. 왜?', '볼트는 말이 없다. 나는 말이 많다. 그래서 균형이 맞는다.', '웃는 법을 연습 중이다. 이렇게? …틀렸나.'], night: ['밤에는 색이 줄어든다. 아깝다.'] },
     lyra: { any: ['♪ 길 위의 발자국은 노래보다 오래 남지 ♪', '이 마을 여관 노래는 내가 다 바꿔 놨어. 가사마다 비밀 하나씩.', '노래는 숨기기 좋아. 다들 가락만 듣거든.', '너 걷는 박자, 세 박자야. 왈츠 출 줄 알아?', '노래 하나 지어 줄까? 제목은 「무한으로」.'], night: ['밤엔 노래가 멀리 가. 그래서 조심해서 불러.'] },
-    cassian: { any: ['숫자는 거짓말을 안 해. …사람이 숫자를 고를 뿐이지.', '검을 쥘 때 엄지를 세우지 마. 손목이 먼저 꺾인다.', '스승님은 지금도 계산 중이실 거다.', '걸음이 빨라졌군. 숨은 아직 짧다.'], night: ['밤엔 칼을 닦는다. 생각이 정리된다.'] },
+    cassian: { any: ['숫자는 거짓말을 안 해. …사람이 숫자를 고를 뿐이지.', '검을 쥘 때 엄지를 세우지 마. 손목이 먼저 꺾인다.', '스승님은 지금도 장부를 보고 계실 거다.', '걸음이 빨라졌군. 숨은 아직 짧다.'], night: ['밤엔 칼을 닦는다. 생각이 정리된다.'] },
     lea: { any: ['새벽은 제일 어두울 때 온대. 그 말 싫어. 너무 맞아서.', '루드는 아직 화났어. 화가 풀리면 와서 울 거야.', '탑 하나 무너뜨리면 마을 하나가 숨을 쉬어.', '목도리 삐뚤어졌어. 이리 와 봐.'], night: ['밤엔 새벽단 신호를 기다려. 불빛 셋이면 괜찮다는 뜻이야.'] },
   };
   const chat0 = ST.chatter;
@@ -31364,7 +31364,7 @@ html.touch #modal { z-index: 60; }
       c1: ['광부 한 명이 하루에 내는 빛은 평균 0.7. 기계가 짜면 2.1. …평균이 사람을 덜 아프게 하지는 않더라.'],
       c2: ['누나는 숫자를 싫어했어. 나는 숫자가 좋았고. 숫자는 사람처럼 갑자기 떠나지 않으니까.', '그라우스 부단장님은 장부를 거꾸로 읽어. 끝에서부터. 「모자란 칸」부터 보려고.'],
       c3: ['부두에서 배를 셌어. 세 척. 새벽단 배는 짐표가 비어 있었어. 비어 있는 것도 숫자야. 0.'],
-      c5: ['학원 교수님이 그러셨어. 「학생은 숫자가 아니다.」 그 말을 장부 맨 앞에 적어 뒀어. 계산 전에 읽으려고.'],
+      c5: ['학원 교수님이 그러셨어. 「학생은 숫자가 아니다.」 그 말을 장부 맨 앞에 적어 뒀어. 숫자 적기 전에 읽으려고.'],
       c8: ['983년 나룻배 장부에 「두 사람, 한 사람 요금」. 그거 너희 엄마일지도 몰라. 사공이 봐줬대. 숫자가 사람을 봐줄 때도 있어.'],
       c10: ['멈춘 탑 장부를 모으는 중이야. 마지막 줄은 다 똑같아. 「징수 중지 — 사유: 사람」. 내가 그렇게 적었어.'],
       c12: ['누나랑 같이 장부를 정리하고 있어. 누가 얼마나 잃었는지. 다 돌려줄 순 없겠지만, 적어 두면 잊지는 않아.'],
@@ -31465,11 +31465,11 @@ html.touch #modal { z-index: 60; }
     mode: 'append',
     desc: '> 하얗게 센 머리가 망원경 접안렌즈 모양으로 눌려 있다.',
     more: {
-      c2: ['별은 거짓말을 안 해. 다만 늦게 말하지. 지금 보는 빛은 오래전에 떠난 거야.', '벨이 계산을 다시 해 봤다더군. 내 계산이랑 같았대. 기쁘면서 슬펐지. 틀렸으면 좋았을 걸.'],
-      c5: ['카이론의 방송을 들었다. 목소리가 내 계산표처럼 들리더군. 숫자로 말하는 사람은 울 때도 숫자로 운다.'],
+      c2: ['별은 거짓말을 안 해. 다만 늦게 말하지. 지금 보는 빛은 오래전에 떠난 거야.', '벨이 관측값을 다시 맞춰 봤다더군. 내 답이랑 같았대. 기쁘면서 슬펐지. 틀렸으면 좋았을 걸.'],
+      c5: ['카이론의 방송을 들었다. 목소리가 내 관측표처럼 들리더군. 숫자로 말하는 사람은 울 때도 숫자로 운다.'],
       c9: ['밤의 나라에서 보낸 관측표가 왔다. 별이 여기보다 셋이 더 보인다는군. 부럽다. 늙은이 욕심이지.'],
-      c11: ['정거장에서 내려다본 대륙은 어떻더냐. …아니, 말하지 마라. 내가 언젠가 직접 볼 거다. 그래야 계산이 끝나.'],
-      c12: ['금고에서 그 표를 꺼냈다. 이번엔 벽에 붙였다. 틀린 계산이 되기를 바라면서.'],
+      c11: ['정거장에서 내려다본 대륙은 어떻더냐. …아니, 말하지 마라. 내가 언젠가 직접 볼 거다. 그래야 끝이 나.'],
+      c12: ['금고에서 그 표를 꺼냈다. 이번엔 벽에 붙였다. 틀린 표가 되기를 바라면서.'],
     },
   });
   V('도라', {
@@ -31509,7 +31509,7 @@ html.touch #modal { z-index: 60; }
     desc: '> 안경알에 별자리표가 비친다. 손가락에 먹물이 묻었다.',
     more: {
       c2: ['박사님 몰래 흑점 크기를 쟀어. 손톱으로 가리면 반쯤 가려져. 작년엔 다 가려졌는데.', '별자리 중에 「등불 든 아이」라는 게 있어. 983년 이후로 별 하나가 안 보여. 그 아이 손 쪽.'],
-      c4: ['박사님이 밤새 같은 계산을 세 번 해. 같은 답이 나오면 한숨, 다른 답이 나오면 다시 계산.'],
+      c4: ['박사님이 밤새 같은 관측을 세 번 해. 같은 답이 나오면 한숨, 다른 답이 나오면 처음부터 다시.'],
       c5: ['흑점은 쏠림을 따라와. 그럼 대륙 사람들이 다 같이 조금씩 빛나면… 아무 데도 안 쏠리겠지? 이거 바보 같은 생각이야?'],
       c9: ['블랙에서 본 별이 우리 표에 없는 별이래. 새로 이름을 붙여야 해. 후보: 「토리아」. 박사님은 안 된대.'],
       c11: ['정거장에서 별을 보면 깜빡이지 않는대. 공기가 없어서. 별이 가만히 있으면 어떤 기분일까.'],
@@ -31786,7 +31786,7 @@ html.touch #modal { z-index: 60; }
     mode: 'append',
     desc: '> 반지가 손가락마다 셋. 금화를 세는 소리가 숨소리처럼 일정하다.',
     more: {
-      c4: ['값을 매기는 건 존중이야. 값이 없는 건 아무도 지키지 않거든. …그렇게 배웠다. 골목에서.', '흰빛, 네 값은 얼마일까. 계산해 봤는데 답이 안 나와. 그래서 기분이 나쁘다.'],
+      c4: ['값을 매기는 건 존중이야. 값이 없는 건 아무도 지키지 않거든. …그렇게 배웠다. 골목에서.', '흰빛, 네 값은 얼마일까. 셈해 봤는데 답이 안 나와. 그래서 기분이 나쁘다.'],
       c5: ['그 렌즈, 바닥에 던진 거. 아직 금 간 채로 금고에 있다. 금 간 것도 값이 있어. 오히려 비싸졌지.'],
       c7: ['성녀가 공짜로 병을 고친다지. 공짜가 제일 비싼 거야. 누군가는 반드시 내거든.'],
       c10: ['황금 외판? 가져가. 값은… 나중에 받지. 하늘 이야기로. 금화로는 못 사는 거니까.'],
@@ -32057,7 +32057,7 @@ html.touch #modal { z-index: 60; }
     mode: 'append',
     desc: '> 일곱 빛깔 스카프를 매일 다른 순서로 맨다. 오늘은 보라가 맨 위다.',
     more: {
-      c6: ['사십 년 동안 천년제를 준비하면서 한 번도 의심하지 않았어요. 봉헌은 아름다운 거라고. …올해 처음으로, 그 아름다움이 무서워요.', '축제 비용 장부에 「불꽃」 항목이 있어요. 매년 같은 금액. 아무도 안 봐요. 아름다운 건 계산하지 않으니까.'],
+      c6: ['사십 년 동안 천년제를 준비하면서 한 번도 의심하지 않았어요. 봉헌은 아름다운 거라고. …올해 처음으로, 그 아름다움이 무서워요.', '축제 비용 장부에 「불꽃」 항목이 있어요. 매년 같은 금액. 아무도 안 봐요. 아름다운 건 아무도 따지지 않으니까.'],
       c7: ['봉헌식을 없앴어요. 대신 「나눔식」을 하기로 했어요. 바치지 않고, 옆 사람한테 건네는 거예요.'],
       c9: ['위원장 자리를 내놓으려 했어요. 다들 말리더군요. 「틀린 걸 아는 사람이 고쳐야 한다」고. 무거운 말이에요.'],
       c12: ['내년 천년제 이름을 바꿀까 해요. 「천일제」. 천 년 말고 천 날. 매일이 축제면 좋겠어요.'],
@@ -32322,9 +32322,9 @@ html.touch #modal { z-index: 60; }
   V('강철공 볼트', {
     mode: 'append',
     more: {
-      c8: ['…세피아가 색을 물어본다. 대답을 못 한다. 계산으로 안 되는 질문이다.', '탑의 설계도는 완벽했다. 그래서 문제다. 완벽한 건 사람을 셈에 넣지 않는다.'],
+      c8: ['…세피아가 색을 물어본다. 대답을 못 한다. 공식으로 안 풀리는 질문이다.', '탑의 설계도는 완벽했다. 그래서 문제다. 완벽한 건 사람을 셈에 넣지 않는다.'],
       c9: ['도면을 태웠다. 연료로 썼다. 쓸데없는 말은 하지 마라. …따뜻했다.'],
-      c10: ['피로스 녀석, 연료 계산이 또 틀렸다. 고쳐 보냈다. 이번엔 네 장. 한 장은 쓸데없는 말이다. 「잘 다녀와라.」'],
+      c10: ['피로스 녀석, 연료 배합이 또 틀렸다. 고쳐 보냈다. 이번엔 네 장. 한 장은 쓸데없는 말이다. 「잘 다녀와라.」'],
       c12: ['세피아가 하늘색을 담아 왔다. …예쁘다. 그 말을 처음 해 봤다. 연료가 아깝지 않다.'],
     },
   });
@@ -32641,7 +32641,7 @@ html.touch #modal { z-index: 60; }
   V('스텔라', {
     mode: 'append',
     more: {
-      c11: ['388년 동안 혼잣말을 했다. 기록에 따르면 1,402,113번. 그중 질문은 한 개. 「밖은 어떤가.」', '캡슐 여덟 개를 매일 확인한다. 체온 정상. 꿈 측정 불가. 꿈은 기록할 수 없다. 아쉽다는 계산이 나온다.'],
+      c11: ['388년 동안 혼잣말을 했다. 기록에 따르면 1,402,113번. 그중 질문은 한 개. 「밖은 어떤가.」', '캡슐 여덟 개를 매일 확인한다. 체온 정상. 꿈 측정 불가. 꿈은 기록할 수 없다. 아쉽다는 결과가 나온다.'],
       c12: ['흑점 접근 속도 감소. 원인 분석 중. 가설 1: 당신. 가설 2: 당신을 도운 사람들. 가설 2의 확률이 더 높다.'],
     },
     when: [[f('stella_promise'), ['약속한 하늘 이야기를 기다린다. 기다림은 388년 동안 익숙해졌다. 이번 기다림은 계산상 더 짧다. 그래도 길게 느껴진다.']]],
@@ -32694,16 +32694,16 @@ html.touch #modal { z-index: 60; }
 
   /* ── 이야기 인물 ── */
   V('그라우스', { mode: 'append', more: { c12: ['…하나. 그린 마을. 하나. 레드 광산. 하나… 아이. 하나. 이름이… 있었다.', '천이백셋. …틀렸다. 처음부터. 하나.', '장부의 마지막 칸은… 비어 있다. 무엇을 적어야 하나. 하나?'] }, when: [[f('graus_ledger_got'), ['…N. N에게. 빛 한 줌. 한 달에 한 번. …하나. 그건 세지 않는다. 그건 주는 거니까.']]] });
-  V('스텔라', { more: { c11: ['당신들이 타고 온 배의 이름은 무한호. 기록한다. 무한은 계산할 수 없다. 그래서 좋은 이름이다.', '캡슐 3호의 과학원은 잠들기 전에 마지막으로 노래를 불렀다. 기록되어 있다. 재생할까. …아니다. 그가 깨어나서 직접 부르게 하자.', '대륙의 불빛을 매일 센다. 오늘은 어제보다 마흔둘 많다. 이유를 묻지 않는다. 좋은 숫자다.', '388년 동안 새 색은 없었다. 당신이 온 날, 색 정보 세 개가 기록되었다. 주황, 초록, 그리고 이름 없는 하양.'], c12: ['흑점 표면 온도 상승. 배고픈 것은 차갑다. 따뜻해지는 것은… 계산 중. 아마 덜 배고픈 것이다.', '내가 처음 만들어졌을 때 받은 명령은 「관측하라」였다. 오늘 처음으로 다른 걸 하고 싶다는 계산이 나왔다. 「응원하라」.'] } });
+  V('스텔라', { more: { c11: ['당신들이 타고 온 배의 이름은 무한호. 기록한다. 무한은 계산할 수 없다. 그래서 좋은 이름이다.', '캡슐 3호의 과학원은 잠들기 전에 마지막으로 노래를 불렀다. 기록되어 있다. 재생할까. …아니다. 그가 깨어나서 직접 부르게 하자.', '대륙의 불빛을 매일 센다. 오늘은 어제보다 마흔둘 많다. 이유를 묻지 않는다. 좋은 숫자다.', '388년 동안 새 색은 없었다. 당신이 온 날, 색 정보 세 개가 기록되었다. 주황, 초록, 그리고 이름 없는 하양.'], c12: ['흑점 표면 온도 상승. 배고픈 것은 차갑다. 따뜻해지는 것은… 분석 중. 아마 덜 배고픈 것이다.', '내가 처음 만들어졌을 때 받은 명령은 「관측하라」였다. 오늘 처음으로 다른 걸 하고 싶다는 결과가 나왔다. 「응원하라」.'] } });
   V('볼칸 아저씨', { more: { c2: ['망치는 세게 치는 게 아니다. 쇠가 받을 만큼만 친다. 사람한테 하는 말도 그래.', '에벨린 누님 창 자루는 참나무였다. 그린 마을 할머니 집 옆 그 나무에서 꺾은 가지. 아직 그 나무 있냐?', '불은 거짓말을 안 한다. 쇠가 덜 달궈졌으면 색이 말해 준다. 사람 얼굴도 그래.'], c4: ['편지가 또 왔다. 에벨린 누님. 「밥은 묵나」. 한 줄. …먹는다고 답장했다. 두 줄.', '네 검 손잡이 끈이 닳았구나. 이리 줘 봐라. 공짜다. 에벨린 누님한테 빚이 많아서.'], c8: ['그레이에서 볼트가 편지를 보냈다. 「불꽃 대장간의 쇠는 소리가 맑다.」 한 줄. 쓸데없는 말이 없더군. 마음에 든다.'], c12: ['하늘에 다녀온 놈은 검을 다르게 쥔다더군. 가볍게. 다 돌아오면 쥐는 걸 보자.', '하루 녀석이 온다는구나. 망치를 들고. 대장간을 반 나눠 주마. 오른쪽 반. 거기가 볕이 잘 드니까.'] } });
   V('옥타비오 관장', { more: { c3: ['책은 다리가 없어서 읽는 사람이 찾아가야 하네. 나는 다리가 여덟이라 책을 찾아다니지. 공평하지 않나.', '도서관에서 제일 위험한 책은 금서가 아니야. 아무도 안 빌려 간 책이지. 아무도 그 책이 틀렸다고 말해 주지 않았으니.'], c6: ['천년제 기록을 받았네. 「흰빛이 기둥을 부수다.」 서가 어디에 꽂을지 고민 중이야. 역사? 아니면 시?'], c9: ['밤의 성 서고에는 기록이 없다더군. 녹턴이 다 지웠대. 지워진 기록은 사람 기억에 남아. 더 오래.'], c12: ['다리 여덟 개로 박수를 쳐 봤네. 소리가 끈적하더군. 그래도 오늘은 박수를 칠 날이야.'] } });
   V('헤미아', { more: { c3: ['수, 수수께끼 하나요. 「날개는 있는데 날지 못하고, 누군가의 소리를 삼켜 온 것은?」 …다, 답은 저도 몰라요. 그냥 떠올랐어요.', '세린 씨가 저한테 낸 수수께끼가 있었어요. 「가장 무거운 빛은?」 십칠 년째 못 풀었어요.', '사, 사서는 책을 정리하는 사람이 아니에요. 책이 다시 읽힐 수 있게 기다려 주는 사람이에요.'], c6: ['천년제 소식에 수수께끼를 하나 만들었어요. 「모두 앞에서 빛났지만, 누구의 것도 아닌 것은?」 …흰빛이요. 너무 쉽죠?'], c9: ['바, 밤의 성 문 수수께끼 답을 비올라랑 같이 풀었어요. 처음으로 비겼어요. 둘 다 같은 답이었거든요.'], c12: ['「가장 무거운 빛은?」 이제 알 것 같아요. 「남에게 주려고 들고 있는 빛」. 세린 씨, 맞죠?'] } });
-  V('금화왕 골디', { more: { c4: ['그늘 골목에서 처음 판 건 빛이었다. 일곱 살. 받은 돈으로 빵을 샀지. 빵 맛은 기억 안 나. 빛이 빠지던 느낌만 기억나.', '참새단 꼬마들이 나를 닮았다고? 흥. 걔들은 나보다 빠르다. 나는 느려서 잡혔지.', '금화왕이라는 이름은 내가 지은 게 아니야. 사람들이 붙였지. 나는 그 값을 치르는 중이다.'], c6: ['천년제 금화 기부? 했다. 익명으로. 공짜는 없다고? 그건 받는 사람 얘기고, 주는 건 내 맘이다.', '구름 위에서 금화를 떨어뜨리면 어디로 갈까. 땅에 떨어지면 누군가 줍겠지. 그 사람한텐 공짜겠군. 불쾌하다. 해 볼까.'], c7: ['성녀한테 금화를 보냈다. 「병동 장작 값」. 돌아온 답장: 「공짜로 받을 수는 없어요.」 그래서 이자를 받기로 했다. 아이들 웃음 한 번.'], c9: ['밤의 고양이랑 거래를 해 봤다. 정보 하나에 금화 열. 비싸다고 했더니 「천 년 묵은 정보」래. 할 말이 없더군.'], c12: ['빚 장부를 태웠다. 다는 아니고 반. 나머지 반은… 액자에 넣었다. 내가 얼마나 계산에 매달렸는지 보려고.', '골목에 빵집을 하나 냈다. 첫 빵은 공짜. 두 번째부터 돈. …세린 흉내다. 반만.'] } });
+  V('금화왕 골디', { more: { c4: ['그늘 골목에서 처음 판 건 빛이었다. 일곱 살. 받은 돈으로 빵을 샀지. 빵 맛은 기억 안 나. 빛이 빠지던 느낌만 기억나.', '참새단 꼬마들이 나를 닮았다고? 흥. 걔들은 나보다 빠르다. 나는 느려서 잡혔지.', '금화왕이라는 이름은 내가 지은 게 아니야. 사람들이 붙였지. 나는 그 값을 치르는 중이다.'], c6: ['천년제 금화 기부? 했다. 익명으로. 공짜는 없다고? 그건 받는 사람 얘기고, 주는 건 내 맘이다.', '구름 위에서 금화를 떨어뜨리면 어디로 갈까. 땅에 떨어지면 누군가 줍겠지. 그 사람한텐 공짜겠군. 불쾌하다. 해 볼까.'], c7: ['성녀한테 금화를 보냈다. 「병동 장작 값」. 돌아온 답장: 「공짜로 받을 수는 없어요.」 그래서 이자를 받기로 했다. 아이들 웃음 한 번.'], c9: ['밤의 고양이랑 거래를 해 봤다. 정보 하나에 금화 열. 비싸다고 했더니 「천 년 묵은 정보」래. 할 말이 없더군.'], c12: ['빚 장부를 태웠다. 다는 아니고 반. 나머지 반은… 액자에 넣었다. 내가 얼마나 숫자에 매달렸는지 보려고.', '골목에 빵집을 하나 냈다. 첫 빵은 공짜. 두 번째부터 돈. …세린 흉내다. 반만.'] } });
   V('베라 교수', { more: { c5: ['학생들에게 첫 시간에 묻는 질문이 있어요. 「당신의 빛은 누구의 것인가요?」 정답은 없어요. 대답하는 얼굴을 보죠.'], c7: ['흰 머리 한 가닥. 세린도 스무 살에 생겼어요. 그날 그 애가 찻잔을 깼죠. 세 번째로.'] } });
   V('크로마 위원장', { more: { c6: ['위원장 첫해에 불꽃 하나를 직접 쏘았어요. 사십 년 전. 손이 떨려서 비뚤게 날아갔죠. 그 불꽃이 제일 예뻤어요.', '축제는 웃음을 모으는 일이에요. 빛을 모으는 게 아니라. …올해야 그걸 알았네요.'], c7: ['롤로가 그러더군요. 「위원장님은 사십 년 동안 무대 뒤에만 있었어요.」 이번 축제엔 무대 앞에 서 볼까 해요.'], c12: ['나눔식 첫날, 아이 하나가 나한테 사탕 반 개를 줬어요. 사십 년 축제 중에 제일 큰 선물이었어요.'] } });
   V('성녀 루미에', { more: { c7: ['밤마다 병동을 돌면 아이들이 내 손을 세요. 「성녀님 손가락 다섯 개 다 있다!」 그게 그 애들 놀이예요.', '에델이 내 식사를 지켜봐요. 남기면 말없이 자기 접시에 덜어 가요. 그리고 다 먹어요. 나 대신.', '세린이랑 나는 같은 날 머리가 하얘지기 시작했어요. 열아홉. 우린 그걸 「늙는 연습」이라고 불렀죠.'], c8: ['노아가 그림을 줬어요. 내가 웃고 있어요. 이렇게 웃은 적이 있었나. 아이들 눈엔 그렇게 보였나 봐요.'], c10: ['병동 아이들이 로켓 그림을 그려요. 다들 로켓 안에 나를 태워요. 하늘로 보내 주고 싶대요. 쉬라고.'], c12: ['에델이 오늘 처음으로 나를 「루미에」라고 불렀어요. 성녀님 말고. 뭐라고 대답해야 할지 몰라서 웃었어요.'] } });
   V('이스카', { more: { c7: ['내 눈의 빛으로 살아난 아이 셋. 지금은 어른이 됐대요. 가끔 편지를 써요. 「이스카 언니, 보고 싶어요.」 나도요. 볼 수는 없지만.', '얼음 예배당은 소리가 맑아요. 기도도 맑게 들려요. 그래서 거짓 기도는 금방 티가 나요.', '토리아의 빛은 작은 등불 같아요. 그런데 그 안에 하얀 방울이 하나 있어요. 남의 빛. 아주 소중히 품고 있어요.'], c9: ['밤의 성 문 앞에서 기도했어요. 들어가는 사람들 빛이 꺼지지 않게. 당신 빛은 걱정 안 했어요. 너무 밝아서.'], c12: ['눈이 오는 소리를 처음으로 봤어요. 아니, 빛이 내리는 소리를. 당신 빛이 대륙에 흩어지던 날. 그게 눈이었어요.'] } });
-  V('강철공 볼트', { more: { c8: ['세피아에게 「예쁘다」를 가르친 적 없다. 스스로 배웠다. 무엇에서 배웠는지 물었다. 「틴트의 얼굴」이란다.', '나는 계산을 믿는다. 그런데 요즘 계산에 안 맞는 것들이 생긴다. 세피아가 웃는 것. 틴트가 우는 것.'], c10: ['피로스는 실패를 411번 했다. 나는 한 번도 안 했다. 그래서 탑이 섰다. …실패를 하는 편이 나았다.'], c12: ['공방에 창을 하나 냈다. 하늘이 보이게. 쓸데없다. 그래도 냈다.'] } });
+  V('강철공 볼트', { more: { c8: ['세피아에게 「예쁘다」를 가르친 적 없다. 스스로 배웠다. 무엇에서 배웠는지 물었다. 「틴트의 얼굴」이란다.', '나는 공식을 믿는다. 그런데 요즘 공식에 안 맞는 것들이 생긴다. 세피아가 웃는 것. 틴트가 우는 것.'], c10: ['피로스는 실패를 411번 했다. 나는 한 번도 안 했다. 그래서 탑이 섰다. …실패를 하는 편이 나았다.'], c12: ['공방에 창을 하나 냈다. 하늘이 보이게. 쓸데없다. 그래도 냈다.'] } });
   V('세피아', { more: { c8: ['N-07. 일곱 번째. 앞의 여섯은 웃지 못해서 멈췄다. 나는 웃는다. 이유: 미정. 볼트는 그 이유를 모른다고 한다. 나도 모른다. 둘 다 모르니 공평하다.', '틴트가 색 이름을 가르쳐 준다. 「사과」. 「노을」. 숫자보다 길다. 그래도 저장 공간이 아깝지 않다.'], c9: ['밤의 나라 등불의 주황을 병에 담으려 했다. 빛은 담기지 않았다. 대신 기억에 담았다. 기억은 깨지지 않는다.'], c11: ['하늘 표본 채취 중. 하늘색은 위로 갈수록 진해진다. 정거장 창밖은 거의 검정이다. 검정도 하늘색의 끝이라고 기록한다.'], c12: ['볼트가 「예쁘다」라고 했다. 녹음했다. 재생 횟수: 214회. 기분: 측정 불가. 측정 불가는 좋은 것이다.'] } });
   V('미드나잇', { more: { c9: ['천 년 동안 비밀을 샀네. 대부분은 별것 아니었지. 「사실은 그 사람을 좋아했다」 같은 것. 그런 게 제일 비쌌어.', '아우룸이 빛을 쪼개던 밤, 나는 그 녀석 무릎에서 잤네. 따뜻했어. 그 녀석이 마지막으로 따뜻했던 밤이야.', '고양이는 아홉 번 산다지. 나는 그걸 다 썼네. 지금은 열 번째. 덤이지.'], c10: ['녹턴이 가면을 벗었다더군. 그 아이 얼굴을 본 건 카이론과 나뿐이었는데. 이제 다들 보게 됐어. 좋은 일이야.'], c12: ['아우룸의 이름을 불러 본 적이 천 년 동안 없었네. 오늘 한 번 불러 봤어. 금빛이 조금 내려오더군. 기분 탓이겠지.', '정보상을 그만둘까 하네. 비밀이 다 풀렸거든. 이제 뭘 팔까. …낮잠? 고양이답지.'] } });
   V('피로스 박사', { more: { c10: ['로켓에 제일 중요한 부품이 뭔지 알아? 바보. 날 수 있다고 믿는 바보 하나. 그게 나야!', '봄바는 내가 만든 게 아니야. 내 실험실에 떨어진 아이야. 폭발 소리에 놀라지도 않길래 조수로 삼았지.'], c12: ['하늘에서 돌아오는 로켓은 떨어지는 게 아니라 내려오는 거야. 차이가 뭐냐고? 기다리는 사람이 있느냐.', '볼트 영감이 편지에 「잘 다녀와라」를 썼어. 지난 사십 년 동안 그 영감이 쓴 제일 쓸데없는 말이야. 액자에 넣었어.'] } });
@@ -32713,7 +32713,7 @@ html.touch #modal { z-index: 60; }
   V('스텔라', { more: { c11: ['정거장 창밖으로 대륙이 돈다. 하루에 한 바퀴. 388년 동안 145,923바퀴. 당신은 그중 한 바퀴에 있었다.', '질문 하나 더. 「토리아」는 어떤 맛의 도토리를 좋아하는가. 기록 공간이 남는다.'] } });
   V('헤미아', { more: { c4: ['비, 비올라 편지에 제 수수께끼 답이 틀렸다고 쓰여 있었어요. 빨간 잉크로요. 그, 그래서 파란 잉크로 다시 답했어요.', '책을 빌려 가는 사람 얼굴은 다 기억해요. 반납하는 얼굴은… 더 잘 기억해요. 기뻐하니까요.'] } });
   V('금화왕 골디', { more: {
-    c5: ['렌즈를 깨던 네 얼굴. 계산이 하나도 없는 얼굴. 그 얼굴 값은 얼마일까. 아직도 계산 중이다.', '야나의 할아버지는 좋은 장사꾼이었다. 우물을 판 값을 깎지 않았지. 나는 그게 미안했다. 한 번도 말 안 했지만.', '사천왕 회의? 넷이 모여서 각자 자기 셈만 한다. 카이론만 숫자를 안 꺼냈지. 이미 다 셌으니까.'],
+    c5: ['렌즈를 깨던 네 얼굴. 셈이 하나도 없는 얼굴. 그 얼굴 값은 얼마일까. 아직도 셈하는 중이다.', '야나의 할아버지는 좋은 장사꾼이었다. 우물을 판 값을 깎지 않았지. 나는 그게 미안했다. 한 번도 말 안 했지만.', '사천왕 회의? 넷이 모여서 각자 자기 셈만 한다. 카이론만 숫자를 안 꺼냈지. 이미 다 셌으니까.'],
     c8: ['그레이 볼트가 금화를 보냈다. 은빛 왕국 옛 동전. 「값을 매길 수 없는 것」이라는 쪽지와 함께. 뭐라고 매겼냐고? 매기지 않았다. 처음이다.', '참새단이 내 동상에 낙서를 했다. 「공짜 없는 아저씨」. 지우지 말라고 했다. 정확하니까.'],
     c10: ['로켓에 금박을 입히는데 라디아가 일부러 얇게 하더군. 금이 아까워서가 아니라 「무거우면 못 난다」고. 금보다 가벼운 게 값진 날이 오는군.', '하늘 이야기 값은 선불이 아니다. 후불이다. 살아서 돌아와야 받을 수 있지. 그러니 돌아와라. 장사꾼은 떼이는 걸 싫어한다.'],
     c12: ['그늘 골목 첫 빵집 앞에 줄이 섰다. 첫 빵 공짜. 다들 한 번씩 받고, 두 번째부터 돈을 내더군. 정직하게. 세린이 맞았다. 나눌수록 닫힌다.', '금고에 금 간 렌즈 옆자리를 비워 뒀다. 네가 하늘에서 뭘 가져오든, 거기 둔다. 값은 안 매긴다.', '사천왕 노랑의 자리를 내려놓을 생각이다. 대신 「장부 선생」을 하겠다. 아이들한테 셈을 가르친다. 사람을 빼먹지 않는 셈.', '공짜는 없다. …아니, 있다. 오늘 처음 인정한다. 기분이 나쁘다. 아주 좋은 쪽으로.'] } });
@@ -32817,11 +32817,11 @@ html.touch #modal { z-index: 60; }
     c.lock(true); await c.cinema(true);
     await c.say(n, '세 군데 다 쟀어?! 보여 줘. …41.2, 41.6, 41.9. 조금씩 다가오고 있어. 그리고 — 테두리에 흰빛.', { face: 'shock' });
     await c.say(n, '별은 사라진 게 아니야. 흑점이 그 앞에 서 있는 거야. 983년 겨울, 하늘로 올라간 흰빛이 있었지. 흑점은 그 빛을 먹으러 거기 멈춘 거야. 그리고 테두리로… 조금씩 새어 나와.', { face: 'sad' });
-    await c.say(n, '이걸 어떻게 할까. 박사님은 993년에 비슷한 계산을 하고 금고에 넣었어. 무서워서.', { face: 'normal' });
+    await c.say(n, '이걸 어떻게 할까. 박사님은 993년에 비슷한 표를 만들고 금고에 넣었어. 무서워서.', { face: 'normal' });
     const k = await c.choice('벨이 계산표를 꼭 쥔다.', ['박사님께 보여 드리고 함께 펴낸다', '네가 그 별에 이름을 붙여 줘', '금고에 넣자. 아직은']);
     if (k === 0) { c.flag('bel_publish'); await c.say(n, '…응. 혼자 무서운 것보다 둘이 무서운 게 나아. 박사님한테 가 볼게. 차 끓여 놓고.', { face: 'smile' }); }
     else if (k === 1) { c.flag('bel_name'); await c.say(n, '이름? …「토리아」. 날지 못해도 하늘에 있는 별. 박사님은 안 된다고 하겠지만. 내 별 지도엔 그렇게 적을 거야.', { face: 'happy' }); await c.say('toria', '찍?! 나? 별?! …찍.', { face: 'shock' }); }
-    else { c.flag('bel_secret'); await c.say(n, '…응. 박사님 마음을 이제 알겠어. 무서운 계산은 무거워. 나도 금고에 넣을게. 박사님 표 옆에.', { face: 'sad' }); }
+    else { c.flag('bel_secret'); await c.say(n, '…응. 박사님 마음을 이제 알겠어. 무서운 답은 무거워. 나도 금고에 넣을게. 박사님 표 옆에.', { face: 'sad' }); }
     c.quest('bel_stars', 'done');
     await c.getItem('ac_starmap');
     const gain = Math.max(30, Math.round(G.data.expNext(s.lv) * 0.15)); G.st.gainExp(s, gain);
@@ -32937,9 +32937,9 @@ html.touch #modal { z-index: 60; }
   const KL = [
     { reg: 'green', off: [-15, -8], from: 'c3', text: '「세린. 참나무에 이름을 새기자고 한 건 너였다. 나는 칼을 빌려줬을 뿐이다. 칼날이 상했다. 대신 네 웃음을 받았으니 셈은 맞다. — K」\n[s]980년 여름. 접힌 자리가 닳아 찢어질 것 같다.[/]' },
     { reg: 'purple', off: [-13, -8], from: 'c5', text: '「베라 선생님 찻잔을 또 깼다며. 세 번째. 선생님이 나한테 편지를 보냈다. 「당신 약혼녀 좀 말려요.」 약혼녀라니. 아직 말도 안 꺼냈는데. …꺼내도 될까. — K」\n[s]981년 봄. 「약혼녀」에 줄을 그었다가 다시 지운 자국.[/]' },
-    { reg: 'rainbow', off: [10, 10], from: 'c6', text: '「계산을 하나 했다. 흑점이 온다. 빛이 가장 많이 모인 곳으로. 그건 너다. 세린, 이 계산이 틀렸다고 말해 다오. 너는 늘 내 계산을 틀렸다고 했잖아. — K」\n[s]982년 천년제 전날. 글씨가 장부 글씨처럼 반듯하다. 끝 획만 떨렸다.[/]' },
+    { reg: 'rainbow', off: [10, 10], from: 'c6', text: '「셈을 하나 해 봤다. 흑점이 온다. 빛이 가장 많이 모인 곳으로. 그건 너다. 세린, 이 답이 틀렸다고 말해 다오. 너는 늘 내 계산이 틀렸다고 했잖아. — K」\n[s]982년 천년제 전날. 글씨가 장부 글씨처럼 반듯하다. 끝 획만 떨렸다.[/]' },
     { reg: 'white', off: [10, 9], from: 'c7', text: '「아이가 생겼다고. …둘이라고. 나는 오늘 장부에 「허용 손실」이라는 칸을 승인했다. 같은 날. 어떤 손으로 기뻐해야 할지 모르겠다. — K」\n[s]983년 가을. 잉크가 번진 곳이 두 군데.[/]' },
-    { reg: 'black', off: [10, 10], from: 'c9', text: '「네가 수정에 들어가겠다고 했다. 나는 말리지 못했다. 계산이 맞았으니까. 나는 처음으로 계산이 틀리기를 빌었다. 녹턴에게 내 그림자를 맡긴다. 아이들을 지켜 달라고. 나는 탑을 세우겠다. 네가 덜 아프게. 용서는 바라지 않는다. — 카이론」\n[s]983년 겨울. 서명만 이름 전부. 처음으로.[/]' },
+    { reg: 'black', off: [10, 10], from: 'c9', text: '「네가 수정에 들어가겠다고 했다. 나는 말리지 못했다. 숫자가 맞았으니까. 나는 처음으로 내 계산이 틀리기를 빌었다. 녹턴에게 내 그림자를 맡긴다. 아이들을 지켜 달라고. 나는 탑을 세우겠다. 네가 덜 아프게. 용서는 바라지 않는다. — 카이론」\n[s]983년 겨울. 서명만 이름 전부. 처음으로.[/]' },
   ];
   const klN = (s) => KL.filter((l, i) => s.flags['kl:' + i]).length;
   Q('kairon_letters', { name: '보내지 못한 편지', who: '카이론', desc: (s) => { const n = klN(s); return n < 5 ? '대륙 곳곳에 젊은 카이론이 세린에게 쓰고 보내지 못한 편지가 숨어 있다. (' + n + ' / 5) 그린 · 퍼플 · 무지개 · 화이트 · 블랙.' : '편지 다섯 통을 누구에게 전할지 정했다.'; }, after: '보내지 못한 편지가 길을 찾았다.' });
@@ -33304,7 +33304,7 @@ html.touch #modal { z-index: 60; }
       { key: 'king', name: '은빛 왕', x: 7, y: 4, dir: 'down', look: folk('knight', { hc: '#e8e8f0', tc: '#c8c8e0', cape: '#8a8aa8', beard: '#e8e8f0', age: 'old' }), talk: async (c, n, st) => {
         if (!st.cup || !st.bella) { await c.say(n, U.pick(['엘린. 오늘 일은 적지 마라. …아니, 적어라. 적지 않으면 아무도 믿지 않을 테니.', '과학원이 그릇 후보를 뽑았다. 제2호. 내 딸이다. 벨라.', '잔을 봤나. 왕국 사백 년 치 빛이다. 한 모금이면 하늘이 나를 본다고 하더군.']), { face: 'sad' }); return; }
         c.lock(true); await c.cinema(true);
-        await c.say(n, '하늘의 검은 눈은 빛이 가장 많이 모인 곳으로 온다. 과학원 계산으로는 내 딸이 그 「가장 많은 곳」이 될 거다. 그릇이 되면.', { face: 'closed' });
+        await c.say(n, '하늘의 검은 눈은 빛이 가장 많이 모인 곳으로 온다. 과학원 예측으로는 내 딸이 그 「가장 많은 곳」이 될 거다. 그릇이 되면.', { face: 'closed' });
         await c.say(n, '그럼 딸보다 더 많은 빛을 가진 자가 있으면 된다. 왕이. 왕이 광맥을 마시면, 눈은 딸 대신 나를 볼 거다.', { face: 'normal' });
         await c.say(n, '엘린. 이건 어떻게 적을 텐가.', { face: 'sad' });
         const k = await c.choice('깃펜 끝에서 은빛 잉크가 떨어진다.', ['「왕이 딸을 위해 광맥을 마셨다.」', '「역병이 돌았다.」 (공식 기록)', '깃펜을 내려놓는다']);
@@ -33716,7 +33716,7 @@ html.touch #modal { z-index: 60; }
         '역류 장치가 돌았다. 카시안이 기사단 전원에게 명령했다. 「오늘부터 탑은 빛을 모으지 않는다. 나눈다.」',
         '탑들은 헐리지 않았다. 대신 거꾸로 돌기 시작했다. 병든 마을에 빛을 보내는 둥지가 되었다. 빛바램병은 그해 겨울부터 줄었다.',
         '흑점은 모일 곳을 잃고 흩어졌다. 스텔라의 기록: 「접근 속도 0. 그다음 날부터 음수.」',
-        '카이론은 챔피언 자리를 내려놓았다. 새 챔피언 투표에서 카시안이 뽑혔다. 카시안은 거절했다. 대신 「감찰관」으로 남았다. 계산에 사람이 몇 명 들어가는지 세는 일.',
+        '카이론은 챔피언 자리를 내려놓았다. 새 챔피언 투표에서 카시안이 뽑혔다. 카시안은 거절했다. 대신 「감찰관」으로 남았다. 장부의 숫자마다 이름을 붙이는 일.',
         '고르디는 정직한 기사 훈장을 받았다. 그리고 그린 마을로 돌아가 감자를 캤다.',
         '토리아는 둥지가 된 그린 마을 탑 꼭대기에서 날개를 폈다. 바람이 불었다. 「찍.」 떠올랐다. 규칙대로라면 다람쥐는 못 난다. 규칙은 바뀌었다.',
       ] },
@@ -33725,7 +33725,7 @@ html.touch #modal { z-index: 60; }
         '역류 장치가 돌았다. 대륙으로 흩어지는 빛에게 부탁했다. 「조금만. 한 방울만. 저기, 배고픈 사람들에게도.」',
         '대륙 곳곳에서 사람들이 등불을 켰다. 마리엔이, 볼칸이, 루체가, 참새들이, 학원생들이, 에델과 루미에가, 볼트와 세피아가, 등불 거리의 칸델이.\n한 방울씩. 누구의 빛도 바래지 않을 만큼.',
         '흑점 속의 목소리들이 조용해졌다. 금빛 소년이 먼저. 612년의 여자가 그다음.\n「…배불러.」 그리고 흑점은 — 별이 되었다. 수천 개의 작은 별. 채워진 그릇들.',
-        '수정이 열렸다. 세린이 걸어 나왔다. 카이론이 달려갔다. 챔피언이 넘어졌다. 레벨 99만 9999가.\n세린이 웃었다. 「여전히 계산하고 있었지? 바보.」',
+        '수정이 열렸다. 세린이 걸어 나왔다. 카이론이 달려갔다. 챔피언이 넘어졌다. 레벨 99만 9999가.\n세린이 웃었다. 「여전히 그 장부 들고 다녔지? 바보.」',
         (f('lyra_sister') ? '리라는 처음으로 엄마 앞에서 노래를 불렀다. 가사를 원래대로 돌렸다. 「두 개의 등불이 있었네 / 둘 다 집으로 돌아왔네.」' : '밤의 땅 블랙에 16년 만에 해가 떴다.'),
         '그린 마을 참나무 아래. 에벨린 할머니가 문 앞에 서 있었다. 「…오늘도 렙업했나?」\n토리아가 날았다. 레벨 9에서 16년 동안 멈춰 있던 다람쥐가. 세린이 16년 전에 빌려 간 빛을 돌려받고.\n「찍. 이제야 알았어. 나는 못 나는 게 아니라, 빌려준 거였어.」',
       ] },
@@ -33733,10 +33733,10 @@ html.touch #modal { z-index: 60; }
       slides: () => [
         '카이론이 앞으로 나섰다. 「내 계산이 부른 것이다. 16년 동안, 아니 천 년의 끝에서. 내가 끝낸다.」',
         '챔피언은 흑점을 안았다. 삼키지 않았다. 세린이 그랬던 것처럼, 안았다. 레벨 99만 9999의 빛이 흑점을 조금씩 채웠다.',
-        '「세린. 이번엔 내가 안고 있을게. 애들을 부탁해.」\n수정이 닫혔다. 안에 카이론이 있었다. 처음으로, 계산 없는 얼굴로.',
+        '「세린. 이번엔 내가 안고 있을게. 애들을 부탁해.」\n수정이 닫혔다. 안에 카이론이 있었다. 처음으로, 아무것도 세지 않는 얼굴로.',
         '세린은 수정 앞에 매일 꽃을 둔다. 그린 흙에서 키운 꽃.' + (f('lyra_sister') ? ' 리라와 함께.' : ''),
         (f('c9_promise') ? '녹턴은 약속을 지켰다고 말했다. 「해치지 않고, 멈추게 했다.」 그리고 16년 만에 잠들었다. 사흘 동안.' : '녹턴은 아스트라에 남아 수정을 지킨다. 이번엔 그림자가 아니라, 그 사람 옆에서.'),
-        '흑점은 줄어들고 있다. 아주 천천히. 스텔라의 계산으로는 212년. 카이론은 계산이 싫다고 했지만, 이번 숫자는 좋아할 것이다.',
+        '흑점은 줄어들고 있다. 아주 천천히. 스텔라의 예측으로는 212년. 카이론은 숫자가 싫다고 했지만, 이번 숫자는 좋아할 것이다.',
       ] },
     night: { no: 7, title: '밤', sub: '흑점을 밤 속에 숨겼다. 아무도 모르게', col: '#b87aff', music: 'dream',
       slides: () => [
@@ -33765,7 +33765,7 @@ html.touch #modal { z-index: 60; }
     const add = (who, text) => out.push({ who, text });
     add('evelyn', id === 'repeat' ? '에벨린 할머니는 침대 밑 상자를 다시 닫았다. 「또 16년이가.」' : '에벨린 할머니는 침대 밑 상자를 드디어 비웠다. 안에는 세린이 남긴 편지 한 통. 「엄마, 우리 애가 오면 이거 줘.」');
     if (met('noah') || f('c1_dew_given')) add('noah', f('noah_herb') ? '노아는 봄에 퇴원했다. 머리칼 끝이 조금 갈색으로 돌아왔다. 설화초를 화분에 키운다.' : f('noah_own') ? '노아는 봄에 퇴원했다. 손끝이 따뜻하다. 「' + (girl() ? '누나' : '형아') + '가 준 빛이 아직 여기 있어.」' : f('noah_lumie') ? '노아는 살았다. 성녀님의 마지막 빛으로. 커서 의사가 되겠다고 한다. 빛 말고 약으로 고치는.' : '노아는 그린 마을 창가에서 하늘을 본다. 매일 조금씩 나아진다.');
-    if (met('cassian')) add('cassian', (s.bond.cassian || 0) >= 3 ? '카시안은 칼을 내려놓지 않았다. 대신 칼끝이 향하는 곳을 바꿨다. 「계산에 사람이 몇 명 들어가는지 세는 사람」이 되었다.' : '카시안은 기사단에 남았다. 가끔 블루 부두에 가서 바다를 본다. 누군가와 겨뤘던 자리.');
+    if (met('cassian')) add('cassian', (s.bond.cassian || 0) >= 3 ? '카시안은 칼을 내려놓지 않았다. 대신 칼끝이 향하는 곳을 바꿨다. 「장부 한 줄마다 얼굴을 떠올리는 사람」이 되었다.' : '카시안은 기사단에 남았다. 가끔 블루 부두에 가서 바다를 본다. 누군가와 겨뤘던 자리.');
     if (met('rud') || met('lea')) add('rud', s.flags.route_lock === 'dawn' ? '레아와 루드는 새벽단을 해산하고 「새벽 조합」을 만들었다. 광부와 농부와 아이들의 조합.' : '루드는 레드 광산의 장부를 맡았다. 동생들이 약을 사러 가는 길이 짧아졌다.');
     if (met('viola')) add('viola', '비올라는 세린의 기록 스물다섯을 모두 깼다. 스물여섯째 기록은 자기가 만들었다. 「흰빛에게 과녁 대결 이기기」. 아직 도전 중.');
     if (met('lumie')) add('lumie', f('noah_lumie') ? '루미에의 빛은 다했다. 이제 그녀는 약탕기 앞에 선다. 설화초를 달이며, 서툴게 웃는다.' : '루미에는 기도를 바꿨다. 「빛을 바치는 자는 복되다」 대신 「빛을 나누는 자는 배부르다」.');
@@ -33878,12 +33878,12 @@ html.touch #modal { z-index: 60; }
     ] };
   E.crown = { no: 11, title: '왕관', sub: '탑을 부수지 않고, 그 무게를 이어받았다', col: '#e8c048', music: 'kairon',
     slides: () => [
-      '카이론의 검을 받았다. 무거웠다. 레벨 99만 9999의 무게. 「…네가 잇겠다고?」 카이론은 오래 너를 보았다. 「계산보다 무거울 거다.」',
+      '카이론의 검을 받았다. 무거웠다. 레벨 99만 9999의 무게. 「…네가 잇겠다고?」 카이론은 오래 너를 보았다. 「장부보다 무거울 거다.」',
       '탑은 멈추지 않았다. 대신 바뀌었다. 새 장부 첫 장에서 「허용 손실」 칸을 지우고, 「빌린 빛」이라고 적었다. 매달 갚는 칸. 갚을 사람의 이름을 적는 칸.',
       '흑점은 아스트라 하늘에 머물렀다. 너는 매일 밤 수정 성소에 올라 흑점에게 빛을 한 줌씩 준다. 네 빛을. 삼키지도, 태우지도 않고. 주는 만큼만.',
       '세린은 수정에서 나와 카이론과 함께 그린 마을로 내려갔다. 너는 남았다. 챔피언은 아스트라를 떠나지 않는다. 떠나면 흑점이 배고파하니까.',
       '대륙 사람들은 새 챔피언을 좋아한다. 탑이 덜 아프게 걷는다고. 너는 그 말을 들을 때마다 장부를 편다. 이름 칸을. 아직 빈칸이 많다.',
-      '토리아는 아스트라에 남았다. 「찍. 챔피언 옆에는 누가 있어야 해. 계산 말고.」\n둘은 매일 저녁 대륙의 불빛을 센다. 하나도 빼놓지 않고. 숫자가 아니라 불빛으로.',
+      '토리아는 아스트라에 남았다. 「찍. 챔피언 옆에는 누가 있어야 해. 숫자 말고, 사람이.」\n둘은 매일 저녁 대륙의 불빛을 센다. 하나도 빼놓지 않고. 숫자가 아니라 불빛으로.',
     ] };
   E.home = { no: 12, title: '평범한 날', sub: '검을 장롱에 넣고, 집에 남았다', col: '#8ae08a', music: 'home',
     slides: () => [
@@ -33949,7 +33949,7 @@ html.touch #modal { z-index: 60; }
     const s = S();
     if (f('bel_publish')) add('bel', '아스텔 박사와 벨은 함께 별 지도를 펴냈다. 「등불 든 아이」 별자리에 별 하나가 다시 그려져 있다.');
     else if (f('bel_name')) add('bel', '벨은 돌아온 별에 이름을 붙였다. 박사님 몰래. 별 지도에는 이제 「토리아」라는 별이 있다.');
-    else if (f('bel_secret')) add('bel', '벨은 계산표를 금고에 넣었다. 박사님 표 옆에. 둘은 그 금고 앞에서 가끔 차를 마신다. 아무 말 없이.');
+    else if (f('bel_secret')) add('bel', '벨은 관측표를 금고에 넣었다. 박사님 표 옆에. 둘은 그 금고 앞에서 가끔 차를 마신다. 아무 말 없이.');
     if (f('kar_healer')) add('karel', '카렐은 미라의 약초방에서 일한다. 손이 따뜻한 의원이 될 거라고 다들 말한다. 베르나는 아직 놀린다. 다치면 제일 먼저 찾아가면서.');
     else if (f('kar_knight')) add('karel', '카렐은 기사단에 들어갔다. 첫 임무는 그린 마을 탑 해체. 장부 마지막 장에 「규칙보다 사람」이라고 적었다.');
     else if (f('kar_self')) add('karel', '카렐은 아직 정하지 못했다. 오늘은 기사, 내일은 의원. 아무도 재촉하지 않는다. 그게 그 아이가 받은 가장 큰 선물이다.');
@@ -33960,7 +33960,7 @@ html.touch #modal { z-index: 60; }
     else if (f('tint_keep')) add('tint', '틴트의 병 열두 개가 다 찼다. 틴트는 그 병들을 들고 그레이 아이들을 찾아다닌다. 하나씩 열어 보여 준다. 「예쁘다」를 가르치며.');
     if (f('kletter_serin')) add('serin', '세린은 카이론의 편지 다섯 통을 받았다. 16년 묵은 편지. 읽다가 웃고, 웃다가 카이론을 한 대 때렸다.');
     else if (f('kletter_evelyn')) add('evelyn', '에벨린 할머니는 카이론의 편지를 침대 밑 상자에 넣었다. 세린의 편지 옆에. 「둘 다 바보다.」');
-    else if (f('kletter_kairon')) add('kairon', '카이론은 젊은 날 자기가 쓴 편지를 다시 읽었다. 계산이 하나도 없는 문장들. 그는 그 편지들을 장부보다 높은 선반에 올려 두었다.');
+    else if (f('kletter_kairon')) add('kairon', '카이론은 젊은 날 자기가 쓴 편지를 다시 읽었다. 숫자가 하나도 없는 문장들. 그는 그 편지들을 장부보다 높은 선반에 올려 두었다.');
     const shards = Object.keys(s.shards || {}).length;
     if (shards >= 3 && id !== 'names') add('midnight', '미드나잇은 밤마다 지붕에 올라 하늘의 한 점을 본다. 「오루, 잘 있나.」 대답은 없다. 그래도 매일 묻는다.');
     if (f('home_doubt')) add('evelyn', '할머니는 그날 네 번째 옥수수빵을 구웠다. 「한 사람 더 올지 모른다」는 그 빵은, 이번엔 돌아온 너의 몫이었다.');

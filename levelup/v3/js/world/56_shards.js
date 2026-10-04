@@ -267,7 +267,7 @@
       { key: 'king', name: '은빛 왕', x: 7, y: 4, dir: 'down', look: folk('knight', { hc: '#e8e8f0', tc: '#c8c8e0', cape: '#8a8aa8', beard: '#e8e8f0', age: 'old' }), talk: async (c, n, st) => {
         if (!st.cup || !st.bella) { await c.say(n, U.pick(['엘린. 오늘 일은 적지 마라. …아니, 적어라. 적지 않으면 아무도 믿지 않을 테니.', '과학원이 그릇 후보를 뽑았다. 제2호. 내 딸이다. 벨라.', '잔을 봤나. 왕국 사백 년 치 빛이다. 한 모금이면 하늘이 나를 본다고 하더군.']), { face: 'sad' }); return; }
         c.lock(true); await c.cinema(true);
-        await c.say(n, '하늘의 검은 눈은 빛이 가장 많이 모인 곳으로 온다. 과학원 계산으로는 내 딸이 그 「가장 많은 곳」이 될 거다. 그릇이 되면.', { face: 'closed' });
+        await c.say(n, '하늘의 검은 눈은 빛이 가장 많이 모인 곳으로 온다. 과학원 예측으로는 내 딸이 그 「가장 많은 곳」이 될 거다. 그릇이 되면.', { face: 'closed' });
         await c.say(n, '그럼 딸보다 더 많은 빛을 가진 자가 있으면 된다. 왕이. 왕이 광맥을 마시면, 눈은 딸 대신 나를 볼 거다.', { face: 'normal' });
         await c.say(n, '엘린. 이건 어떻게 적을 텐가.', { face: 'sad' });
         const k = await c.choice('깃펜 끝에서 은빛 잉크가 떨어진다.', ['「왕이 딸을 위해 광맥을 마셨다.」', '「역병이 돌았다.」 (공식 기록)', '깃펜을 내려놓는다']);

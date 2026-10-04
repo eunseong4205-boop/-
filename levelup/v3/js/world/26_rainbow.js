@@ -266,8 +266,8 @@
     if (f('c6_rolo')) {
       await c.say('toria', '위원장님. 롤로 아저씨가 그랬어요. 무지개 기둥은… 탑이라고. 제일 큰 징수탑이라고.', { face: 'sad' });
       await c.say(n, '…롤로가.', { face: 'sad' });
-      await c.say(n, '기둥이 빛을 모으는 건 맞아요. 하지만 한 사람한테서 조금씩이에요. 백 명이 조금씩 내면, 한 명도 쓰러지지 않아요. 그게 계산이에요. 카이론 님의 계산.', { face: 'normal' });
-      await c.say(n, '작년 예행연습 때… 롤로는 쓰러졌지요. 계산에 없던 일이었어요. 나는 그 뒤로 계산을 한 번도 다시 해 보지 않았어요.', { face: 'sad' });
+      await c.say(n, '기둥이 빛을 모으는 건 맞아요. 하지만 한 사람한테서 조금씩이에요. 백 명이 조금씩 내면, 한 명도 쓰러지지 않아요. 그게 원리예요. 카이론 님이 짜신 거예요.', { face: 'normal' });
+      await c.say(n, '작년 예행연습 때… 롤로는 쓰러졌지요. 아무도 예상 못 한 일이었어요. 나는 그 뒤로 그 숫자들을 한 번도 다시 들여다보지 않았어요.', { face: 'sad' });
     }
     await c.say(n, '봉헌식은 오늘 밤이에요. 준비되면 다시 말을 걸어요. 불씨를 기둥에 넣을지 말지는… 그때 당신이 정해요.', { face: 'closed' });
     c.lock(false);
@@ -288,7 +288,7 @@
       await c.say(n, '브라보! 브라보! …이런 박수, 오랜만이네.', { face: 'happy' });
       await c.getItem('heartpiece');
     }
-    await c.say(n, ST.lines({ c6: f('c6_rolo') ? '불씨를 넣을지 말지는 당신 몫이에요. 광대는 웃기만 해요. 울어야 할 때도.' : '크로마 위원장님은 좋은 분이에요. 좋은 사람도 나쁜 계산을 해요.', c7: '거울을 봤어요. 얼굴에 색이 있어요. 칠하지 않은 색이. 아침마다 봐요. 매일 봐요.' }), { face: 'smile' });
+    await c.say(n, ST.lines({ c6: f('c6_rolo') ? '불씨를 넣을지 말지는 당신 몫이에요. 광대는 웃기만 해요. 울어야 할 때도.' : '크로마 위원장님은 좋은 분이에요. 좋은 사람도 나쁜 결정을 해요.', c7: '거울을 봤어요. 얼굴에 색이 있어요. 칠하지 않은 색이. 아침마다 봐요. 매일 봐요.' }), { face: 'smile' });
   } });
   class Balloon extends G.ent.Ent {
     constructor(o) { super(Object.assign({ kind: 'balloon', solid: false, bw: 1, bh: 1 }, o)); this.bx = this.x; this.by = this.y; this.ph = Math.random() * 6; }
@@ -332,7 +332,7 @@
     await c.say(n, '…흰빛. 잠깐 천막 뒤로 와요. 분장 지우는 거 보여 줄게요.', { face: 'normal' });
     await c.narr('롤로가 젖은 수건으로 얼굴을 닦았다. 빨강, 노랑, 파랑이 지워지고 — 그 아래는 회색이었다.\n잿빛도 아니고 은빛도 아닌, 비 온 뒤 보도블록 같은 회색.');
     await c.say(n, '작년 봉헌식 예행연습. 기둥 앞에 제일 가까이 서 있었어요. 광대니까, 제일 앞에서 웃어야 하니까.', { face: 'sad' });
-    await c.say(n, '기둥이 빛을 빨아들였어요. 사람들한테서 조금씩. …나한테서는 조금이 아니었어요. 계산이 틀렸대요. 기둥 옆자리는 원래 비워 둬야 했대요.', { face: 'sad' });
+    await c.say(n, '기둥이 빛을 빨아들였어요. 사람들한테서 조금씩. …나한테서는 조금이 아니었어요. 어른들 예상이 틀렸대요. 기둥 옆자리는 원래 비워 둬야 했대요.', { face: 'sad' });
     await c.say(n, '무지개 기둥은 장식이 아니에요. [r]대륙에서 제일 큰 징수탑[/]이에요. 봉헌식 날 밤에만 제대로 켜지는.', { face: 'angry' });
     await c.say('toria', '찍… 그럼 불씨를 넣으면…', { face: 'shock' });
     await c.say(n, '기둥이 깨어나요. 천 년 치 불씨로. 그날 밤 광장에 선 모두한테서 빛을 모아서 — 어디론가 보내요. 천년성으로.', { face: 'sad' });
@@ -541,7 +541,7 @@
   /* ───────── 축제의 다른 얼굴들 ───────── */
   ST.folk('world', { id: 'cassian', name: '카시안', x: RX(176), y: RY(38), dir: 'down', when: () => festival() && !f('c6_arena'), lines: { c6: async (c, n) => { const rt = ST.route(); await c.say(n, rt === 'order' ? '봉헌식 경호를 맡았다. 스승님은 오지 않으신다고 했다. …그 말을 들은 그라우스가 웃었다. 기분 나쁘게.' : rt === 'dawn' ? '새벽단이 섬에 들어왔다는 첩보가 있다. 네가 모른다고 하면, 믿어 주지. 이번만.' : '리라라는 음유시인. 네 친구지? 그 여자 노래를 들으면 경호원들이 졸아. 우연인가?', { face: 'normal' }); await c.say(n, '투기장 시범 경기에 나간다. 네가 나오면… 반가울 거다. 봐주진 않겠지만.', { face: 'smirk' }); } } });
   ST.folk('world', { id: 'lea', name: '레아', x: RX(159), y: RY(38), dir: 'down', when: festival, lines: { c6: async (c, n) => { const rt = ST.route(); if (rt === 'dawn') { await c.say(n, '쉿. 솜사탕 장수야, 지금은. 봉헌식 밤에 기둥 밑에 화약을 심을 거야. 새벽단 스무 명이 섬에 들어와 있어.', { face: 'smirk' }); await c.say(n, '네가 무대 위에 있을 거라며. 신호는 네가 줘. 불씨를 기둥에 넣지 않으면 — 그게 신호야.', { face: 'normal' }); } else { await c.say(n, '솜사탕 하나 사. 무지개맛. …얼굴 기억하는 척하지 마. 오늘은 그냥 장사꾼이야.', { face: 'smirk' }); } const k = await c.choice('무지개 솜사탕 (30골드)', ['산다', '안 산다'], { who: 'lea', name: '레아' }); if (k === 0 && S().gold >= 30) { c.gold(-30); await c.getItem('food_cotton'); } } } });
-  ST.folk('world', { id: 'rud', name: '루드', x: RX(161), y: RY(39), dir: 'up', when: festival, lines: { c6: ['천년제 입장객 사만 이천. 봉헌식 참가 예상 삼만. 기둥 효율을 계산해 봤어. …계산하지 말걸.', '누나가 솜사탕을 판다. 솜사탕 원가는 설탕 한 숟갈. 이익률이… 아니, 그 얘기가 아니지.'] } });
+  ST.folk('world', { id: 'rud', name: '루드', x: RX(161), y: RY(39), dir: 'up', when: festival, lines: { c6: ['천년제 입장객 사만 이천. 봉헌식 참가 예상 삼만. 기둥 효율을 따져 봤어. …따져 보지 말걸.', '누나가 솜사탕을 판다. 솜사탕 원가는 설탕 한 숟갈. 이익률이… 아니, 그 얘기가 아니지.'] } });
   ST.folk('world', { id: 'pika', name: '피카', x: RX(170), y: RY(37), dir: 'down', wander: 30, when: festival, lines: { c6: ['헤헤, 축제는 지갑 축제야! …농담. 참새단 애들 데리고 구경 왔어. 골디 아저씨가 여비 줬어. 공짜로. 세상에.', '봉헌식? 우린 안 가. 참새들은 높은 데 앉아서 봐. 그게 제일 잘 보여.'] } });
   ST.folk('world', { id: 'luce', name: '루체', x: RX(183), y: RY(30), dir: 'left', when: festival, lines: { c6: '구름 위에서 보니까 블루 등대가 보여! 아빠 일지에 그랬어. 「하늘섬에선 모든 등대가 보인다」. 진짜였어.' } });
   ST.folk('world', { name: '축제 손님', folk: 'kidg', x: RX(164), y: RY(31), wander: 40, when: festival, barks: ['솜사탕!', '불꽃 또 터져!'], lines: { c6: ['봉헌식 때 기둥이 일곱 색으로 빛난대! 엄마가 맨 앞에서 보재!', '롤로 아저씨 곡예 봤어? 아저씨는 왜 늘 얼굴에 색칠해?'] } });
@@ -717,7 +717,7 @@
     gr.jz = 0; c.shake(4, 0.4); c.sfx('impact');
     const rt = ST.route();
     await c.say(n0(gr), rt === 'order' ? '오랜만이군, 흰빛. 네 장부 덕에 석 달을 천년성 감옥에서 보냈다. 나오는 데 금화 삼만이 들더군. 챔피언께서 공로를 참작하셨지.' : rt === 'dawn' ? '광산에서 착즙기를 박살 낸 꼬마. 덕분에 증거는 사라졌지만, 내 체면도 사라졌다. 부단장이 광부 앞에서 웃음거리가 됐지.' : '내 금고를 턴 고양이의 친구. 금화 사만 칠천. 밤마다 세어 봤다. 몇 번을 세어도 영이더군.', { face: 'angry' });
-    await c.say(n0(gr), '챔피언께선 흑점까지 백이십 일이라고 하셨다. 탑 천 개로 막을 계산이지. 나는 다른 계산을 했다.', { face: 'smirk' });
+    await c.say(n0(gr), '챔피언께선 흑점까지 백이십 일이라고 하셨다. 탑 천 개로 막겠다는 거지. 나는 다른 답을 냈다.', { face: 'smirk' });
     await c.say(n0(gr), '[r]흰빛 하나면 탑 천 개보다 낫다.[/] 그 빛을 챔피언께 바치면 나는 단장이 되고, 내가 가지면 — 내가 챔피언이다.', { face: 'smirk' });
     await c.say(n0(cs), '그라우스! 이건 명령에 없다! 무기를 내려놓아라!', { face: 'angry' });
     await c.say(n0(gr), '명령? 꼬마 감찰관. 장부엔 명령보다 숫자가 먼저다. 잿빛 장부단, 기둥을 끝까지 올려라!', { face: 'angry' });
@@ -755,7 +755,7 @@
     const gx = boss.x, gy = boss.y; boss.dead = true;
     const gr2 = add({ cid: 'graus', x: gx, y: gy, dir: 'up' });
     c.camOn(gr2, 3);
-    await c.say(n0(gr2), '헉… 헉… 계산이… 틀렸군. 좋다. 그럼 마지막 계산이다.', { face: 'angry' });
+    await c.say(n0(gr2), '헉… 헉… 틀렸군. 좋다. 그럼 마지막 수다.', { face: 'angry' });
     await c.move(gr2, p.x, p.y + 6, { speed: 160 });
     c.shake(3, 0.4); c.sfx('impact');
     await c.say(n0(gr2), '[r]흰빛을 기둥에 통째로 넣으면 된다.[/]', { face: 'smirk' });
@@ -809,8 +809,8 @@
     await c.narr('카이론이 손가락을 들었다. 그라우스가 소리도 없이 무릎을 꿇었다. 눈이 텅 비었다. 숨은 쉰다. 그것뿐이다.');
     c.abyss('graus_erased');
     c.camOn(ka, 3);
-    await c.say('kairon', '흑점까지 백이십 일. 탑 천 개와 기둥 백 개로 막는 계산이었다. 기둥 하나가 방금 무너졌다.', { face: 'closed' });
-    await c.say('kairon', '천년성으로 와라, 흰빛. 너를 어디에 넣어야 계산이 맞는지 — 나는 이미 알고 있다.', { face: 'normal' });
+    await c.say('kairon', '흑점까지 백이십 일. 탑 천 개와 기둥 백 개로 막을 작정이었다. 기둥 하나가 방금 무너졌다.', { face: 'closed' });
+    await c.say('kairon', '천년성으로 와라, 흰빛. 너를 어디에 넣어야 하는지 — 나는 이미 알고 있다.', { face: 'normal' });
     await c.say('kairon', '……할머니한테 안부 전해라. 초록 창에게.', { face: 'sad' });
     await c.move(ka, ka.x, ka.y, {});
     for (let t = 0; t < 1; t += 1 / 40) { ka.jz = 200 * t * t; gr2.jz = 200 * t * t; await c.wait(1 / 40); }
@@ -825,8 +825,8 @@
     const Cc = n0(cs); Cc.x = p.x + 30; Cc.y = p.y + 20;
     const Ly = n0(ly); Ly.x = p.x; Ly.y = p.y + 34;
     void L; void le;
-    await c.say('lea', '같이 가자. 설산 화이트에 새벽단 은신처가 있어. 카이론이 널 「넣을 곳」을 정했다면, 우리가 먼저 그 계산을 부숴야 해.', { face: 'normal' });
-    await c.say('cassian', '스승님께 가자. 내가 곁에 있겠다. 밖에서 부수는 건 새벽단이 할 거다. 나는 — 안에서 계산을 바꾸겠다. 너와 함께라면 할 수 있을지도 모른다.', { face: 'normal' });
+    await c.say('lea', '같이 가자. 설산 화이트에 새벽단 은신처가 있어. 카이론이 널 「넣을 곳」을 정했다면, 우리가 먼저 그 판을 엎어야 해.', { face: 'normal' });
+    await c.say('cassian', '스승님께 가자. 내가 곁에 있겠다. 밖에서 부수는 건 새벽단이 할 거다. 나는 — 안에서 스승님의 마음을 바꾸겠다. 너와 함께라면 할 수 있을지도 모른다.', { face: 'normal' });
     await c.say('lyra', '아무에게도 가지 마요. 밤은 누구의 편도 아니에요. 그래서 안전해요. 미드나잇이 당신을 기다려요. 천 년 전 이야기의 넷째 칸을 알고 있거든요.', { face: 'closed' });
     const cur = ST.route();
     const pick = await c.choice('세 사람이 손을 내민다. 이 선택으로 남은 길이 굳는다.', [
@@ -837,7 +837,7 @@
     const route = ['dawn', 'order', 'night'][pick];
     s.flags.route_lock = route; c.route(route, 3);
     c.flag('c6_route_' + route);
-    if (route === 'dawn') { await c.say('lea', '좋아. 새벽은 온다. 우리가 데려오면.', { face: 'smirk' }); await c.say('rud', '…계산해 봤어. 이길 확률 삼 퍼센트. 삼 퍼센트면 충분해. 누나가 그랬어.', { face: 'smile' }); }
+    if (route === 'dawn') { await c.say('lea', '좋아. 새벽은 온다. 우리가 데려오면.', { face: 'smirk' }); await c.say('rud', '…확률을 뽑아 봤어. 이길 확률 삼 퍼센트. 삼 퍼센트면 충분해. 누나가 그랬어.', { face: 'smile' }); }
     else if (route === 'order') { await c.say('cassian', '…고맙다. 스승님이 틀렸다면, 스승님께 그걸 증명하는 게 제자의 일이다.', { face: 'smile' }); await c.say('lea', '기사단이라. 뭐, 네 선택이야. 부수고 싶어지면 불러.', { face: 'normal' }); }
     else { await c.say('lyra', '…고마워요. 밤은 약속을 안 해요. 대신 잊지도 않아요.', { face: 'smile' }); await c.say('cassian', '밤의 편이라. 다음에 만날 때 우리가 같은 편이길 바란다.', { face: 'sad' }); }
     await c.fade(true, { sec: 1.2 });

@@ -145,11 +145,11 @@
   });
   ST.hookTalk('g_work', 'bolt', need('fuel'), async (c, n) => {
     c.lock(true);
-    await c.say(n, '피로스. 그 미친놈. …연료 계산을 네 번 틀렸더군. 편지로 고쳐 줬다. 쓸데없는 말 빼고 세 장.', { face: 'closed' });
+    await c.say(n, '피로스. 그 미친놈. …연료 배합을 네 번 틀렸더군. 편지로 고쳐 줬다. 쓸데없는 말 빼고 세 장.', { face: 'closed' });
     await c.say(n, '광맥 바닥 은빛 부스러기. 빛이 아니라 은이다. 먹을 수 없는 빛. 태울 수는 있다. 그러니 탑 없이도 난다.', { face: 'normal' });
-    await c.say('sepia', '연료통 세 개. 내가 채웠다. 3분 동안 계산했다. 이 감정의 이름: 「응원」.', { face: 'happy' });
+    await c.say('sepia', '연료통 세 개. 내가 채웠다. 이번엔 1분 만에 이름을 찾았다. 이 감정의 이름: 「응원」.', { face: 'happy' });
     await givePart(c, 'fuel');
-    await c.say(n, '…하늘에서 흑점을 보거든, 계산하지 마라. 그냥 봐라. 아내가 그랬다. 멈추는 것도 계산이라고.', { face: 'sad' });
+    await c.say(n, '…하늘에서 흑점을 보거든, 따지지 마라. 그냥 봐라. 아내가 그랬다. 멈추는 것도 답이라고.', { face: 'sad' });
     c.lock(false);
   });
   ST.person('g_work', { id: 'sepia', x: 15, y: 6, dir: 'left', when: () => ST.after('c9') || f('c8_done'), talk: async (c, n) => { await c.say(n, ST.lines({ c8: '볼트는 요즘 노래를 흥얼거린다. 음정이 3퍼센트 틀린다. 기록하지 않겠다.', c10: '색 표본 병을 새로 만들었다. 하늘색 칸이 비었다. 하늘에서 담아 와 줄 수 있나.' }), { face: 'smile' }); } });
@@ -173,7 +173,7 @@
       { t: '「하늘에서 본 걸 말해 줄게요. 제일 먼저.」', sub: '돈 대신 이야기로.' },
       { t: '「피카네 참새단도 같이 태워 주면요?」', sub: '농담 반.' },
     ]);
-    if (k === 0) { c.gold(-10000); await c.say(n, '만 닢. 좋아. 나머지 이만은… 돌아와서 갚아. 이자는 연 0퍼센트. 처음 해 보는 계산이군.', { face: 'smile' }); }
+    if (k === 0) { c.gold(-10000); await c.say(n, '만 닢. 좋아. 나머지 이만은… 돌아와서 갚아. 이자는 연 0퍼센트. 처음 해 보는 장사군.', { face: 'smile' }); }
     else if (k === 1) { await c.say(n, '……하. 이야기로 값을 치르겠다. 세린도 그랬지. 「돌아와서 하늘 이야기 해 줄게.」 안 돌아왔어. 그러니까 너는 — 돌아와서 해. 그게 값이다.', { face: 'sad' }); c.bond('goldy', 2); c.flag('goldy_promise'); }
     else { await c.say(n, '하하! 참새들을 로켓에? 그 녀석들이 하늘에서 정거장 전선을 다 훔쳐 올 거다. …좋아, 기분이 좋군. 외판은 공짜다. 오늘만. 평생 처음으로.', { face: 'happy' }); await c.say('pika', '(창문 밖에서) 들었어! 공짜래! 금화왕이 공짜래!', { face: 'happy' }); c.bond('goldy', 1); }
     await givePart(c, 'plating');
