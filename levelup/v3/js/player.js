@@ -45,10 +45,12 @@
       }
       // 무기 동작 (공격 · 활 · 마법 …)이 진행 중이면 그쪽에 맡긴다 — 그동안에도 느리게 걸을 수 있다 (겨누는 쪽과 따로)
       if (this.state !== 'idle' && this.state !== 'walk' && this.state !== 'hurt') {
-        if (ctl && !this.autoMove) this.actMove(dt, m);
+        // 갈고리는 걷지 않는다 (쏘는 동안 · 끌려가는 동안 방향키에 밀려 엇나갔다)
+        if (ctl && !this.autoMove && this.state !== 'hook') this.actMove(dt, m);
         const a = this.actions[this.state];
         if (a && a.update) a.update(this, dt, m, ctl);
-        this.checkGround(m, dt);
+        // 갈고리에 끌려가는 동안은 구덩이 · 물 위를 지나간다 — 예전엔 걷기 공격을 넣으며 여기서 발밑을 재어, 말뚝에 걸어도 첫 구덩이 칸에서 떨어졌다
+        if (!(this.state === 'hook' && this.hook && this.hook.pull)) this.checkGround(m, dt);
         return;
       }
       let ax = ctl ? I.axisX : 0, ay = ctl ? I.axisY : 0;

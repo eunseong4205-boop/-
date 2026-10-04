@@ -177,7 +177,13 @@
         src.dead = true; return false;
       }
     }
-    let dq = Math.max(1, Math.round(q * d.def * (G.prog ? G.prog.diff().hurt : 1)));
+    // 난이도 배율: 피해는 ¼칸 단위 정수라 반올림하면 배율이 사라졌다(보통 ×0.95여도 2 → 2 · 3 → 3) — 남는 소수는 다음 타격으로 넘겨 평균이 배율대로
+    // 쉬움 · 보통은 하트가 적은 초반에 조금 덜 아프다 (Lv1 ×0.73 → Lv12부터 ×1)
+    const DF = G.prog ? G.prog.diff() : null;
+    const early = DF && DF.early ? Math.min(1, 0.7 + (s.lv || 1) * 0.025) : 1;
+    const exact = q * d.def * (DF ? DF.hurt : 1) * early + (C.hurtCarry || 0);
+    let dq = Math.max(1, Math.floor(exact + 1e-6));
+    C.hurtCarry = U.clamp(exact - dq, -0.99, 0.99);
     if (s.skills.sv_second && s.hp >= 2 && dq >= s.hp) dq = s.hp - 1;
     if (s.duel && dq >= s.hp) dq = Math.max(0, s.hp - 1);
     s.hp -= dq;
@@ -835,10 +841,29 @@
       g.fillStyle = '#8a6a3a'; g.fillRect(x + 1, y - 8, 1, 3);
     }
   }
+  /** 갈고리를 쏠 쪽: 겨눈 쪽(마우스 · 스틱) 또는 바라보는 쪽. 그쪽 ±35° 안에 닿는 말뚝이 있으면 말뚝으로 곧장
+      (예전: 상하좌우 네 쪽으로만 나가 비스듬한 말뚝은 맞힐 수 없었다) */
+  function hookAngle(p, max) {
+    const ex = explicitAim(p);
+    const a0 = ex ? U.angle(ex.x, ex.y) : U.angle(p.face[0], p.face[1]);
+    let best = null, bs = 1e9;
+    for (const e of W().ents) {
+      if (!e.hookable || e.dead) continue;
+      const dx = e.x - p.x, dy = e.y - p.y, d = Math.hypot(dx, dy);
+      if (d < 10 || d > max - 4) continue;
+      const da = Math.abs(U.angDiff(a0, Math.atan2(dy, dx)));
+      if (da > 0.62) continue;
+      const sc = d + da * 140; if (sc < bs) { bs = sc; best = e; }
+    }
+    if (best) return Math.atan2(best.y - p.y, best.x - p.x);
+    return ex ? a0 : ANG[p.dir];
+  }
   function startHook(p, m) {
     if (p.hook) return;
-    const a = ANG[p.dir];
-    p.hook = { x: p.x, y: p.y - 8, a, d: 0, out: true, max: 160 * (C.hookMul ? C.hookMul() : 1), hit: null };
+    const max = 160 * (C.hookMul ? C.hookMul() : 1);
+    const a = hookAngle(p, max);
+    p.face = [Math.cos(a), Math.sin(a)]; p.dir = U.dir4(p.face[0], p.face[1], p.dir);
+    p.hook = { x: p.x, y: p.y - 8, a, d: 0, out: true, max, hit: null };
     p.setState('hook');
     sfx('hook');
   }
