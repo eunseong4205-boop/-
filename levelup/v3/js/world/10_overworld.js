@@ -104,6 +104,7 @@
     TL.regionFields(m, 5);          // 지역 경계에서 빛깔을 섞을 흐린 장
     // 2) 바다 · 땅
     const sea = new Uint8Array(N);
+    const T0 = Object.values(TOWNS0);
     for (let Y = 0; Y < H; Y++) for (let X = 0; X < W; X++) {
       const i = Y * W + X, x = OX[i], y = OY[i];
       const n = U.fbm(x / 22, y / 22, 31, 3), big = U.fbm(x / 48, y / 48, 37, 2);
@@ -112,7 +113,7 @@
       let coast = 2 + n * 12 + Math.max(0, big - 0.42) * 70;
       // 마을 근처는 땅으로 남긴다
       let nearTown = 99;
-      for (const t of Object.values(TOWNS0)) nearTown = Math.min(nearTown, Math.max(t.x - x, x - (t.x + t.w), t.y - y, y - (t.y + t.h)));
+      for (const t of T0) nearTown = Math.min(nearTown, Math.max(t.x - x, x - (t.x + t.w), t.y - y, y - (t.y + t.h)));
       if (nearTown < 8) coast = Math.min(coast, 3 + Math.max(0, nearTown) * 1.5);
       if (U.dist(x, y, VX, VY) < 26) coast = Math.min(coast, 3);
       // 남쪽 해안은 들쭉날쭉, 블루 항구에 만

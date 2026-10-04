@@ -31,26 +31,24 @@
     if (o) { const d = OB.DEF[o]; if (d && d.solid && !(d.cut || d.lift || d.bomb || ((d.burn || d.melt) && !d.big))) return false; }
     return true;
   }
-  /** 걸음으로 이어진 칸 무리 (같은 높이 · 계단) */
+  /** 걸음으로 이어진 칸 무리 (같은 높이 · 계단) — 넓은 대륙에서 수십 번 불리므로 이웃 넷을 풀어 쓴다 */
   function label(m, pass) {
-    const N = m.w * m.h, Wd = m.w, Hh = m.h;
+    const N = m.w * m.h, Wd = m.w, Hh = m.h, ter = m.ter, hgt = m.hgt, STA = T.STAIRS;
     const comp = new Int32Array(N).fill(-1), ok = new Uint8Array(N), size = [];
-    for (let i = 0; i < N; i++) ok[i] = (pass || passI)(m, i) ? 1 : 0;
+    const pf = pass || passI;
+    for (let i = 0; i < N; i++) ok[i] = pf(m, i) ? 1 : 0;
     const st = new Int32Array(N); let nc = 0;
     for (let i0 = 0; i0 < N; i0++) {
       if (!ok[i0] || comp[i0] >= 0) continue;
       let sp = 0, n = 0; st[sp++] = i0; comp[i0] = nc;
       while (sp) {
         const i = st[--sp]; n++;
-        const x = i % Wd, y = (i / Wd) | 0, s1 = m.ter[i] === T.STAIRS, h = m.hgt[i];
-        for (let d = 0; d < 4; d++) {
-          const nx = x + D4[d][0], ny = y + D4[d][1];
-          if (nx < 0 || ny < 0 || nx >= Wd || ny >= Hh) continue;
-          const j = ny * Wd + nx;
-          if (!ok[j] || comp[j] >= 0) continue;
-          if (!(s1 || m.ter[j] === T.STAIRS || m.hgt[j] === h)) continue;
-          comp[j] = nc; st[sp++] = j;
-        }
+        const x = i % Wd, s1 = ter[i] === STA, h = hgt[i];
+        let j;
+        if (x + 1 < Wd) { j = i + 1; if (ok[j] && comp[j] < 0 && (s1 || ter[j] === STA || hgt[j] === h)) { comp[j] = nc; st[sp++] = j; } }
+        if (x > 0) { j = i - 1; if (ok[j] && comp[j] < 0 && (s1 || ter[j] === STA || hgt[j] === h)) { comp[j] = nc; st[sp++] = j; } }
+        if (i + Wd < N) { j = i + Wd; if (ok[j] && comp[j] < 0 && (s1 || ter[j] === STA || hgt[j] === h)) { comp[j] = nc; st[sp++] = j; } }
+        if (i >= Wd) { j = i - Wd; if (ok[j] && comp[j] < 0 && (s1 || ter[j] === STA || hgt[j] === h)) { comp[j] = nc; st[sp++] = j; } }
       }
       size.push(n); nc++;
     }
@@ -58,24 +56,27 @@
   }
   /** 뛰어내리기: 무리 → 무리 (ent.js의 ledgeAhead · map.ledgeLanding과 같은 규칙) */
   function jumps(m, L) {
-    const Wd = m.w, Hh = m.h, out = new Map();
+    const Wd = m.w, Hh = m.h, out = new Map(), ter = m.ter, hgt = m.hgt, ok = L.ok, comp = L.comp, CL = T.CLIFF, STA = T.STAIRS;
     const add = (a, b) => { if (a === b) return; let s = out.get(a); if (!s) out.set(a, s = new Set()); s.add(b); };
     for (let y = 0; y < Hh; y++) for (let x = 0; x < Wd; x++) {
       const i = y * Wd + x;
-      if (!L.ok[i] || m.ter[i] === T.STAIRS) continue;
-      const z = m.hgt[i];
+      if (!ok[i] || ter[i] === STA) continue;
+      const z = hgt[i];
+      // 둘레에 절벽이나 낮은 칸이 하나도 없으면 건너뛴다 (대부분의 칸)
+      const l = x > 0 ? i - 1 : -1, r = x + 1 < Wd ? i + 1 : -1, u = y > 0 ? i - Wd : -1, dn = y + 1 < Hh ? i + Wd : -1;
+      if (!((l >= 0 && (ter[l] === CL || hgt[l] < z)) || (r >= 0 && (ter[r] === CL || hgt[r] < z)) || (u >= 0 && (ter[u] === CL || hgt[u] < z)) || (dn >= 0 && (ter[dn] === CL || hgt[dn] < z)))) continue;
       for (let d = 0; d < 4; d++) {
         const dx = D4[d][0], dy = D4[d][1], fx = x + dx, fy = y + dy;
         if (fx < 0 || fy < 0 || fx >= Wd || fy >= Hh) continue;
         const fi = fy * Wd + fx;
-        if (!(m.ter[fi] === T.CLIFF || m.hgt[fi] < z)) continue;
+        if (!(ter[fi] === CL || hgt[fi] < z)) continue;
         for (let k = 1; k <= 5; k++) {
           const nx = x + dx * k, ny = y + dy * k;
           if (nx < 0 || ny < 0 || nx >= Wd || ny >= Hh) break;
           const j = ny * Wd + nx;
-          if (m.ter[j] === T.CLIFF) continue;
+          if (ter[j] === CL) continue;
           if (m.blocked(nx, ny, NOSWIM)) break;
-          if (m.hgt[j] < z && L.ok[j]) add(L.comp[i], L.comp[j]);
+          if (hgt[j] < z && ok[j]) add(comp[i], comp[j]);
           break;
         }
       }
@@ -161,9 +162,17 @@
     return A;
   }
   /** 가장 싼 길(다익스트라)로 s0에서 ok 칸까지 낸다: 사물 치우기 3 · 절벽/높이 바꿈 → 계단 5 · 물 → 다리 12 · 벽 · 건물 · 깊은 구덩이는 못 지난다 */
+  // 길 찾기 칸 표: 지도 크기마다 한 번 만들고, 쓴 칸만 되돌린다 (예전에는 부를 때마다 23만 칸짜리 배열 둘을 새로 만들었다)
+  const CP = { n: 0, dist: null, prev: null, used: [] };
+  function cpBuf(N) {
+    if (CP.n !== N) { CP.n = N; CP.dist = new Float32Array(N).fill(1e9); CP.prev = new Int32Array(N).fill(-1); CP.used = []; }
+    else { for (const i of CP.used) { CP.dist[i] = 1e9; CP.prev[i] = -1; } CP.used.length = 0; }
+    return CP;
+  }
   function carvePath(m, s0, ok, maxD, allow) {
-    const N = m.w * m.h, dist = new Float32Array(N).fill(1e9), prev = new Int32Array(N).fill(-1);
-    dist[s0] = 0; const open = [[0, s0]];
+    const N = m.w * m.h, B = cpBuf(N), dist = B.dist, prev = B.prev, used = B.used;
+    dist[s0] = 0; used.push(s0); const open = [[0, s0]];
+    const wm = warpMask(m);
     let hit = -1;
     while (open.length) {
       let bi = 0; for (let k = 1; k < open.length; k++) if (open[k][0] < open[bi][0]) bi = k;
@@ -176,13 +185,13 @@
         const nx = x + dx, ny = y + dy; if (!m.inb(nx, ny)) continue;
         const j = m.i(nx, ny), t = m.ter[j], P2 = PROP[t];
         if (m.solidExtra[j] || t === T.WALL || t === T.VOID || (P2 && P2.h && t !== T.WATER)) continue;
-        if ((warpAtTile(m, nx, ny) && j !== s0)) continue;
+        if (wm[j] && j !== s0) continue;
         if (allow && !allow(j)) continue;
         let c = 1;
         const o = m.obj[j]; if (o && OB.DEF[o] && OB.DEF[o].solid && !passAll(m, j)) c += 3;
         if (t === T.CLIFF) c += 5; else if (m.hgt[j] !== m.hgt[i] && t !== T.STAIRS && m.ter[i] !== T.STAIRS) c += 5;
         if (t === T.WATER || t === T.DEEP) c += 12;
-        if (d + c < dist[j]) { dist[j] = d + c; prev[j] = i; open.push([d + c, j]); }
+        if (d + c < dist[j]) { if (dist[j] >= 1e9) used.push(j); dist[j] = d + c; prev[j] = i; open.push([d + c, j]); }
       }
     }
     if (hit < 0) return false;
@@ -217,13 +226,19 @@
    *  (하늘섬처럼 마을에서 뛰어내려 대륙으로 갈 수는 있어도 대륙에서 걸어 올라올 수는 없던 곳).
    *  지역은 이야기 차례대로 열리므로, 그 마을이 열리는 때까지 열린 땅만으로 잇는다 */
   const OPEN_RANK = { green: 0, red: 1, blue: 2, amber: 2, yellow: 3, purple: 4, mist: 4, rainbow: 5, white: 6, gray: 7, black: 8, colorful: 9 };
+  /** 칸마다 그 지역이 열리는 차례 (매번 이름으로 찾던 것을 한 번에) */
+  function rankArr(m) {
+    const RN = G.ow.regName, N = m.w * m.h, a = new Uint8Array(N);
+    for (let i = 0; i < N; i++) { const r = OPEN_RANK[RN[i]]; a[i] = r == null ? 99 : r; }
+    return a;
+  }
   function connectTowns(m) {
     if (!m.overworld || !G.ow || !G.ow.towns || !G.ow.towns.green || !G.ow.regName) return 0;
-    const RN = G.ow.regName, rank = (i) => { const r = OPEN_RANK[RN[i]]; return r == null ? 99 : r; };
+    const RK = rankArr(m), rank = (i) => RK[i];
     const towns = Object.entries(G.ow.towns).filter(([id, t]) => t.plaza);
     let carved = 0;
     for (let k = 0; k <= 9; k++) {
-      const pass = (mm, i) => rank(i) <= k && passAll(mm, i);
+      const pass = (mm, i) => RK[i] <= k && passAll(mm, i);
       const failed = new Set();
       for (let round = 0; round < 6; round++) {
         const A = analyze(m, mainsOf(m), linksOf(m), pass);
@@ -247,10 +262,10 @@
    *  지역은 이야기 차례대로 열리므로 열리는 차례마다, 그때 열린 땅만으로 */
   function fixTraps(m) {
     if (!m.overworld || !G.ow || !G.ow.towns || !G.ow.towns.green || !G.ow.regName) return 0;
-    const RN = G.ow.regName, rank = (i) => { const r = OPEN_RANK[RN[i]]; return r == null ? 99 : r; };
+    const RK = rankArr(m), rank = (i) => RK[i];
     let carved = 0;
     for (let k = 0; k <= 9; k++) {
-      const pass = (mm, i) => rank(i) <= k && passAll(mm, i);
+      const pass = (mm, i) => RK[i] <= k && passAll(mm, i);
       const failed = new Set();
       for (let round = 0; round < 4; round++) {
         const A = analyze(m, mainsOf(m), linksOf(m), pass), L = A.L;
@@ -263,7 +278,8 @@
         const core = (i) => { const c = L.comp[i]; return c >= 0 && fw[c] && bk[c]; };
         // 덫 무리마다 한 칸 (닫힌 지역 쪽이 아닌, 가장 가운데에 가까운 칸)
         const first = new Map();
-        for (let i = 0; i < L.comp.length; i++) { const c = L.comp[i]; if (c < 0 || !fw[c] || bk[c] || failed.has(c) || first.has(c)) continue; if (warpAtTile(m, i % m.w, (i / m.w) | 0)) continue; first.set(c, i); }
+        const wm = warpMask(m);
+        for (let i = 0; i < L.comp.length; i++) { const c = L.comp[i]; if (c < 0 || !fw[c] || bk[c] || failed.has(c) || first.has(c)) continue; if (wm[i]) continue; first.set(c, i); }
         if (!first.size) break;
         let n = 0;
         for (const [c, i] of first) {
@@ -275,6 +291,14 @@
     }
     if (carved && m.dirtyAll) m.dirtyAll();
     return carved;
+  }
+  /** 문 칸 표 (문 목록이 바뀌면 다시) */
+  function warpMask(m) {
+    const ws = m.warps || [], key = ws.length + ':' + m.w + 'x' + m.h;
+    if (m._wm && m._wmKey === key && m._wmArr === ws) return m._wm;
+    const a = new Uint8Array(m.w * m.h);
+    for (const w of ws) for (let y = w.y; y < w.y + (w.h || 1); y++) for (let x = w.x; x < w.x + (w.w || 1); x++) if (m.inb(x, y)) a[m.i(x, y)] = 1;
+    m._wm = a; m._wmKey = key; m._wmArr = ws; return a;
   }
   function warpAtTile(m, x, y) { for (const w of m.warps || []) if (x >= w.x && y >= w.y && x < w.x + (w.w || 1) && y < w.y + (w.h || 1)) return w; return null; }
 
@@ -499,21 +523,8 @@
     return r;
   };
 
-  /* ───────── 막아선 사람은 비켜 준다 ───────── */
-  const pb0 = G.world.propBlock;
-  G.world.propBlock = function (x, y, w, h, who) {
-    const Wd = G.world;
-    if (who && who === Wd.player) {
-      for (const e of Wd.ents) {
-        if (e === who || !e.solid || e.dead || !e.blockBox) continue;
-        if (e.yieldT > 0) continue;
-        const b = e.blockBox();
-        if (b && x < b.x + b.w && x + w > b.x && y < b.y + b.h && y + h > b.y) return true;
-      }
-      return false;
-    }
-    return pb0.apply(this, arguments);
-  };
+  /* ───────── 막아선 사람은 비켜 준다 ─────────
+     (비켜 선 사람 yieldT > 0 은 주인공을 막지 않는다: world.js의 propBlock이 본다) */
   const npcUpd = G.props.NPC.prototype.update;
   G.props.NPC.prototype.update = function (dt, Wd) {
     npcUpd.apply(this, arguments);

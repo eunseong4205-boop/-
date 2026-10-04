@@ -26,6 +26,7 @@
     const w = Math.round(LW * s), h = Math.round(LH * s);
     cv.style.width = w + 'px'; cv.style.height = h + 'px';
     cv.style.left = Math.round((r.width - w) / 2) + 'px'; cv.style.top = Math.round((r.height - h) / 2) + 'px';
+    GM.redraw = true;
     W.view.w = LW; W.view.h = LH;
     if (W.map) W.snap();
   }
@@ -43,7 +44,8 @@
     let n = 0;
     while (GM.acc >= STEP && n < 4) { tick(STEP); GM.acc -= STEP; n++; }
     if (n === 4) GM.acc = 0;
-    draw();
+    // 120Hz 화면에서는 갱신이 없는 프레임이 절반: 바뀐 것이 없으니 다시 그리지 않는다
+    if (n > 0 || GM.redraw) { GM.redraw = false; draw(); }
   }
   // 한 갈래가 오류를 내도 나머지(그리기 · 조작 · 이야기)는 계속 돈다: 예전에는 한 곳의 오류가 매 프레임 그리기까지 멈춰 화면이 굳었다
   const errSeen = {};
@@ -157,11 +159,21 @@
     if (m.def && m.def.onEnter) m.def.onEnter(m);
     if (G.story && G.story.onEnter) G.story.onEnter(m);
   }
+  /* ───────── 처음 대륙을 지을 때: 몇 초 걸리므로 「펼치는 중」을 먼저 그려 보이고 짓는다 ───────── */
+  function needsWorld(mapId) { const B = G.build; return !!(B && B.MAPS.world && !B.built.world && (mapId === 'world' || !B.MAPS[mapId])); }
+  const nextPaint = () => new Promise((res) => requestAnimationFrame(() => requestAnimationFrame(res)));
+  async function prepare(mapId) {
+    if (!needsWorld(mapId)) return;
+    const el = $('loading'); if (el) el.hidden = false;
+    await nextPaint();
+    try { G.build.get('world'); } finally { if (el) el.hidden = true; }
+  }
   /** 문 · 계단 · 동굴 입구 */
   function useWarp(w) {
     G.script.run(async (c) => {
       c.sfx(w.exit ? 'door' : w.sfx || 'door');
       await c.fade(true, { sec: 0.22 });
+      await prepare(w.to);
       const TS = TL.TS;
       let tx = w.tx, ty = w.ty;
       const target = G.build.MAPS[w.to];
@@ -179,6 +191,8 @@
     else { const t = G.ow.towns.green; goto('world', (t.x + 17) * 16 + 8, (t.y + 12) * 16 + 12, 'down', { fresh: true }); }
   }
   function continueGame(save) {
+    const at = save && (save.map ? save.map : save.respawn && save.respawn.map);
+    if (needsWorld(at || 'world')) { const el = $('loading'); if (el) el.hidden = false; return nextPaint().then(() => { try { G.build.get('world'); } finally { if (el) el.hidden = true; } continueGame(save); }); }
     G.state = G.prog ? G.prog.migrate(Object.assign(G.st.fresh(), save, { settings: Object.assign(G.st.fresh().settings, save.settings || {}) })) : save;
     W.player = null;
     if (G.audio) { G.audio.unlock(); G.audio.applySettings(); }
@@ -256,7 +270,7 @@
     requestAnimationFrame(frame);
   }
 
-  Object.assign(GM, { boot, resize, devMap, startDev, makePlayer, goto, useWarp, newGame, continueGame, onDeath, toTitle });
+  Object.assign(GM, { boot, resize, devMap, startDev, makePlayer, goto, prepare, useWarp, newGame, continueGame, onDeath, toTitle });
   // 다른 모듈이 먼저 G.game에 붙인 것(start 등)을 살리고, 이후로는 같은 객체를 쓴다
   G.game = Object.assign(GM, G.game || {});
 })();

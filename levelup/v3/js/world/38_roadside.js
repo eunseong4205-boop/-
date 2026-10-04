@@ -75,7 +75,7 @@
       const p = Wd.player; if (!p || f(this.key)) return;
       const d = U.dist(p.x, p.y, this.x, this.y);
       if (!this.foes && d < 110) {
-        this.foes = [];
+        this.foes = []; this.keepAwake = true;   // 무리가 깨어 있는 동안은 멀어져도 지켜본다 (멀리 가면 거둔다)
         const tb = OW.TABLE[this.reg] || OW.TABLE.green;
         for (let i = 0; i < this.n; i++) { const a = (i / this.n) * Math.PI * 2; const t = tb[Math.floor(U.hash(this.key + i) % tb.length)][0]; const e = G.foes.spawn(t === 'octo' ? 'slime' : t, this.x + Math.cos(a) * 30, this.y + Math.sin(a) * 20, { tier: this.tier, elite: i === 0 ? true : undefined, noElite: i !== 0 }); e.aggro = true; this.foes.push(e); }
         G.ui.toast('뼈 무더기 사이에서 무언가 깨어난다 — 몬스터 둥지다!', 'bad'); if (G.audio) G.audio.sfx('encounter');
@@ -86,7 +86,7 @@
         const ch = new G.props.Chest({ x: this.x, y: this.y, item: id, n, flagKey: this.key + ':chest', col: '#e8c048' }); ch.appear = 0.8; Wd.add(ch);
         G.fx.glow(this.x, this.y - 6, '#fff2a8', 18); if (G.audio) G.audio.jingle('secret'); G.ui.toast('둥지를 치웠다 — 상자가 드러났다', 'good');
       }
-      if (this.foes && d > 420) { for (const e of this.foes) if (!e.dead) e.dead = true; this.foes = null; }   // 멀리 가면 다음에 다시
+      if (this.foes && d > 420) { for (const e of this.foes) if (!e.dead) e.dead = true; this.foes = null; this.keepAwake = false; }   // 멀리 가면 다음에 다시
     }
   }
 

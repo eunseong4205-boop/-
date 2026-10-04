@@ -183,7 +183,7 @@
       const last = this.trail[this.trail.length - 1];
       if (!last || U.dist(last[0], last[1], p.x, p.y) > 4) this.trail.push([p.x, p.y, p.z]);
       if (this.trail.length > 60) this.trail.shift();
-      const idx = (Wd.ents.filter((e) => e.follower).indexOf(this) + 1) * 6;
+      let idx = 6; for (const e of Wd.awake()) { if (e === this) break; if (e.follower) idx += 6; }   // 몇 번째 동료인가 (줄 선 순서)
       const tgt = this.trail[Math.max(0, this.trail.length - idx)];
       if (tgt && U.dist(this.x, this.y, tgt[0], tgt[1]) > 3 && U.dist(this.x, this.y, p.x, p.y) > 14) {
         const [nx, ny] = U.norm(tgt[0] - this.x, tgt[1] - this.y);

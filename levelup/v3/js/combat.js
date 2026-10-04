@@ -20,7 +20,7 @@
   const ANG = { right: 0, down: Math.PI / 2, left: Math.PI, up: -Math.PI / 2 };
 
   const C = {};
-  const foes = () => W().ents.filter((e) => e.foe && !e.dead && !e.dormant);
+  const foes = () => W().awake().filter((e) => e.foe && !e.dead && !e.dormant);   // 넓은 들판에서는 화면 둘레의 적만 (먼 적은 잠들어 있다)
 
   /* ───────── 피해 ───────── */
   const dmgOf = (a) => Math.min(1, a / 8);

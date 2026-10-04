@@ -75,6 +75,10 @@ html.touch #touch { display: block; position: absolute; inset: 0; pointer-events
 #stage.cinema .cine { height: 11%; }
 #fade { position: absolute; inset: 0; background: #000; opacity: 0; pointer-events: none; z-index: 40; transition: opacity .35s; }
 #fade.white { background: #fff; }
+/* 처음 대륙에 들어설 때 한 번: 넓은 땅을 짓는 동안 멈춘 게 아니라는 것을 보인다 */
+#loading { position: absolute; inset: 0; z-index: 41; display: flex; align-items: center; justify-content: center; gap: 10px; pointer-events: none; color: var(--gold, #f0cc6e); font-size: 13px; letter-spacing: .12em; background: #000; }
+#loading[hidden] { display: none; }
+#loading i { width: 8px; height: 8px; background: currentColor; box-shadow: 0 0 10px currentColor; transform: rotate(45deg); }
 #stage.blackout #dialog { z-index: 41; } #stage.blackout #choices { z-index: 42; }
 #bubbles { position: absolute; inset: 0; pointer-events: none; z-index: 12; overflow: hidden; }
 .bub { position: absolute; left: 0; top: 0; max-width: 170px; padding: 5px 9px 6px; background: rgba(250, 245, 232, .97); color: #1e1628; border-radius: 10px;

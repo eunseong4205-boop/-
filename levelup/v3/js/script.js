@@ -60,7 +60,7 @@
     SC.visitors = [];
   }
   function updLeaving(dt) {
-    for (const e of W().ents) {
+    for (const e of W().awake()) {
       if (!e.leaving || e.dead) continue;
       const L = e.leaving; L.t += dt;
       G.ent.move(W().map, e, L.vx * dt, L.vy * dt);
@@ -235,6 +235,7 @@
       async warp(mapId, x, y, dir, o) {
         o = o || {};
         if (!o.noFade) await c.fade(true, { sec: 0.3 });
+        if (G.game.prepare) await G.game.prepare(mapId);
         G.game.goto(mapId, x, y, dir, o);
         if (!o.noFade) await c.fade(false, { sec: 0.3 });
       },

@@ -458,7 +458,7 @@
     const [ux, uy] = dv;
     const fx = p.x + ux * 12, fy = p.y - 4 + uy * 10;
     let best = null, bd = 99;
-    for (const e of W().ents) {
+    for (const e of W().awake()) {
       if (e === p || e.dead || e.hidden || !e.use || !e.canUse) continue;
       const ex = e.x, ey = e.y - (e.npc ? 6 : 5);
       const d = U.dist(fx, fy, ex, ey);
