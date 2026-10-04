@@ -17,6 +17,9 @@
   const BS = G.bosses, Boss = BS.Boss;
   const sfx = (k) => G.audio && G.audio.sfx(k);
   const party = (id) => (S().party || []).includes(id);
+  // 둘레 사람들(58_crowd)이 보스의 순간에 반응하도록: emit('intro' | 'l1' | 'p2' | 'clash' | 'p3' | 'down', 보스)
+  const LIS = [];
+  const emit = (ev, b) => { for (const fn of LIS) { try { fn(ev, b); } catch (e) { /* 구경꾼 반응 실패는 넘어간다 */ } } };
 
   /* ═════════ 보스마다 ═════════
      col · col2: 빛깔 · glyph: 문양 · kind: beast | human | machine | final · amb: 흩날림 · p2: [둘째 막 이름, 한마디, 변신] · fin: 격파 문장
@@ -187,6 +190,7 @@
     W().shake(st.kind === 'final' ? 7 : 4, 0.6);
     G.fx.ring(b.x, b.y - (b.h || 30) / 2, st.col, 60, 0.8, 3);
     b.bfxT = 0; b.barkT = 7 + Math.random() * 5;
+    emit('intro', b);
   }
   function phase2(b) {
     const st = stageOf(b), [, name] = titleParts(b);
@@ -198,6 +202,7 @@
     card(st, b, 'phase', st.p2[0], name, '둘째 막');
     if (st.p2[1]) setTimeout(() => { if (!b.dead) G.cine.bubble(b, st.p2[1], { life: 2.6 }); }, 900);
     if (L && L.p2) setTimeout(() => { if (!b.dead) talk(b, st, L.p2); }, 2100);
+    emit('p2', b);
   }
   function clash(b) {
     const st = stageOf(b), p = W().player; if (!p) return;
@@ -210,6 +215,7 @@
     setTimeout(() => { if (b.dead) return; flash('#ffffff', 0.75); const a = Math.atan2(p.y - b.y, p.x - b.x); p.kx = Math.cos(a) * 260; p.ky = Math.sin(a) * 260; b.kx = -Math.cos(a) * 200; b.ky = -Math.sin(a) * 200; G.fx.ring(mx, my, st.col, 50, 0.5, 3); }, 1100);
     card(st, b, 'phase', '칼날이 맞부딪친다', titleParts(b)[1], '');
     if (L && L.clash) setTimeout(() => { if (!b.dead) talk(b, st, L.clash); }, 1500);
+    emit('clash', b);
   }
   function phase3(b) {
     const st = stageOf(b), L = st.lines ? st.lines(b) : null;
@@ -221,12 +227,13 @@
     const names = (G.story.shardNames && G.story.shardNames().length) ? G.story.shardNames() : ['아우룸', '벨라'];
     names.slice(0, 7).forEach((nm, i) => setTimeout(() => { if (!b.dead) G.cine.bubble(b, '…' + nm + '…', { life: 1.6 }); }, 600 + i * 420));
     if (L && L.p3) setTimeout(() => { if (!b.dead) talk(b, st, L.p3); }, 900 + names.length * 420);
+    emit('p3', b);
   }
   function tick(b, dt) {
     if (b.dead || b.dying || b.st === 'wait') return;
     const st = stageOf(b), r = b.hp / Math.max(1, b.maxHp);
     ambient(b, st, dt);
-    if (st.lines && !b.bfxL1 && r <= 0.8 && !b.phase2) { b.bfxL1 = true; const L = st.lines(b); if (L && L.l1) talk(b, st, L.l1); }
+    if (st.lines && !b.bfxL1 && r <= 0.8 && !b.phase2) { b.bfxL1 = true; const L = st.lines(b); if (L && L.l1) talk(b, st, L.l1); emit('l1', b); }
     if (st.kind === 'human' && !b.bfxClash && r <= 0.34 && r > 0.04) { b.bfxClash = true; clash(b); }
     if (st.kind === 'final' && !b.phase3 && r <= 0.25 && r > 0.02) phase3(b);
     // 사람 보스의 짧은 외침
@@ -275,6 +282,7 @@
     const was = this.dying;
     const r = pk0.apply(this, arguments);
     if (!was && this.dying && !this.duel && !this.noStage) {
+      emit('down', this);
       const st = stageOf(this), [, name] = titleParts(this);
       if (st.fin) card(st, this, 'final', name, '격파', st.fin);
       const self = this; let n = 0;
@@ -296,5 +304,5 @@
     }
     return draw0.apply(this, arguments);
   };
-  G.bossfx = { T, stageOf, card, hold, HOLD };
+  G.bossfx = { T, stageOf, card, hold, HOLD, on: (fn) => LIS.push(fn), emit };
 })();

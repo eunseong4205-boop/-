@@ -270,20 +270,25 @@
     G.script.run(duel);
   });
   async function duel(c) {
-    const P0 = { x: px(X0 + 18), y: py(Y0 + 19) };
+    // 부두 끝(물 위의 두 칸짜리 다리)이 아니라 부두 앞 뭍에서 겨룬다 — 예전엔 카시안이 바다 위에 서서 움직이지 못했다
+    const m0 = G.world.map;
+    const g0 = G.bosses.groundAt(m0, px(X0 + 18), py(Y0 + 15), 12) || { x: px(X0 + 18), y: py(Y0 + 19) };
+    const P0 = { x: g0.x, y: g0.y };
+    const gC = G.bosses.groundAt(m0, P0.x + 32, P0.y, 4) || G.bosses.groundAt(m0, P0.x - 32, P0.y, 4) || { x: P0.x, y: P0.y - 32 };
     c.lock(true);
     await c.cinema(true);
     c.music('danger');
-    const cs = c.spawn({ cid: 'cassian', x: P0.x + 60, y: P0.y });
-    await c.move(cs, P0.x + 30, P0.y);
+    { const pl = G.world.player; await c.move('hero', P0.x, P0.y); if (pl) pl.dir = gC.x > P0.x ? 'right' : 'left'; }
+    const cs = c.spawn({ cid: 'cassian', x: gC.x + (gC.x >= P0.x ? 30 : -30), y: gC.y });
+    await c.move(cs, gC.x, gC.y);
     c.faceEach('hero', cs);
     const rt = ST.route();
     await c.say('cassian', rt === 'order' ? '두 번째 심사다, 후보. 루드의 장부는 잘 받았다. 그라우스는 지금 천년성 법정에 서 있다. …그런데 챔피언께서 한 가지를 더 물으셨다. 「그 아이, 검은 쓸 줄 아나.」' : rt === 'dawn' ? '광산을 부쉈다더군. 새벽단 목도리를 두르고. …탑 하나, 기계 하나. 다음은 뭐지? 천년성인가?' : '레드에서 그라우스의 금고가 비었다. 루드네 문 앞에는 약상자가 놓였고. 고양이 발자국만 남긴 채로. …네 짓이 아니라고 말해 봐.', { face: 'normal' });
     await c.say('cassian', '말로는 모르겠다. 검으로 묻지.', { face: 'smirk' });
     await c.cutin({ who: 'cassian', title: '카시안', small: '카이론의 마지막 제자', sub: '정면은 막는다 — 완벽 회피 뒤에 반격을', col: '#8a1a2a', face: 'smirk', sec: 1.6 });
     cs.dead = true;
-    const boss = G.bosses.spawn('cassian', P0.x + 30, P0.y, { hpMul: 1 });
-    boss.duel = true; boss.home = { x: P0.x, y: P0.y };
+    const boss = G.bosses.spawn('cassian', gC.x, gC.y, { hpMul: 1 });
+    boss.duel = true; boss.home = { x: (P0.x + gC.x) / 2, y: (P0.y + gC.y) / 2 };
     S().duel = true;
     await c.cinema(false);
     c.lock(false);

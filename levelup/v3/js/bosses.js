@@ -639,14 +639,37 @@
   }
 
   /* ───────── 만들기 ───────── */
+  /** 둘레에서 보스가 설 수 있는 땅(물 · 용암 · 구름 · 벽이 아닌, 둘레 3×3이 트인 칸) — 없으면 null */
+  const WET = () => { const T = TL.T; return [T.WATER, T.DEEP, T.LAVA, T.CLOUD, T.VOID].filter((v) => v != null); };
+  function groundAt(m, x, y, r, ent) {
+    const tx0 = Math.floor(x / TS), ty0 = Math.floor(y / TS), wet = WET();
+    const okT = (tx, ty) => m.inb(tx, ty) && !m.blocked(tx, ty, ent) && !wet.includes(m.ter[m.i(tx, ty)]);
+    const open = (tx, ty) => { if (!okT(tx, ty)) return false; let n = 0; for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (okT(tx + dx, ty + dy)) n++; return n >= 7; };
+    for (let d = 0; d <= (r || 12); d++) for (let dy = -d; dy <= d; dy++) for (let dx = -d; dx <= d; dx++) {
+      if (Math.max(Math.abs(dx), Math.abs(dy)) !== d) continue;
+      if (open(tx0 + dx, ty0 + dy)) return { x: (tx0 + dx) * TS + 8, y: (ty0 + dy) * TS + 12 };
+    }
+    return null;
+  }
   function spawn(type, x, y, o) {
     const b = new Boss(type, Object.assign({ x, y }, o || {}));
     b.home = { x, y };
-    if (W().map) E.settle(W().map, b);
+    const m = W().map;
+    if (m) {
+      E.settle(m, b);
+      // 물 · 벽 속에 세우면(부두 위 결투 등) 움직이지 못한다 → 가장 가까운 트인 땅으로, 무대도 그곳으로
+      if (!b.fly && !m.dungeon) {
+        const tx = Math.floor(b.x / TS), ty = Math.floor(b.y / TS);
+        if (m.blocked(tx, ty, b) || WET().includes(m.ter[m.i(tx, ty)])) {
+          const q = groundAt(m, b.x, b.y, 14, b);
+          if (q) { b.x = q.x; b.y = q.y; const hq = groundAt(m, b.home.x, b.home.y, 14, b) || q; b.home = { x: hq.x, y: hq.y }; }
+        }
+      }
+    }
     return W().add(b);
   }
 
   /** 변종: 몸과 행동은 base, 이름 · 체력 · 빛깔은 새로 */
   function variant(id, base, o) { B[id] = Object.assign({}, B[base], o, { id }); }
-  G.bosses = { B, Boss, spawn, def, variant, warnRect, warnCircle, hitRect, hitCircle, minion, ring, Tentacle, MirrorClone, art, poly, R, aim, shoot, roomRect, clampRoom };
+  G.bosses = { B, Boss, spawn, groundAt, def, variant, warnRect, warnCircle, hitRect, hitCircle, minion, ring, Tentacle, MirrorClone, art, poly, R, aim, shoot, roomRect, clampRoom };
 })();
