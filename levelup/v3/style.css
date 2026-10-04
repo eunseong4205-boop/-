@@ -407,3 +407,28 @@ html.touch #modal { z-index: 60; }
 /* 기억 속(검은 조각): 살피기 버튼 하나만 */
 #touch.mem .tb:not([data-act="attack"]) { display: none; }
 #touch.mem .sb[data-act="cycle"], #touch.mem .sb[data-act="map"] { display: none; }
+
+/* ───────── 보스 무대 (57_bossfx): 이름 카드 · 2막 · 격파 ───────── */
+#bosscard { position: absolute; left: 0; right: 0; top: 30%; pointer-events: none; z-index: 38; display: flex; flex-direction: column; align-items: center; gap: 2px; --bc: #d84a6a; --bc2: #f4ecdc; font-family: 'Galmuri11', 'Galmuri14', monospace; }
+#bosscard[hidden] { display: none; }
+#bosscard .bc-band { position: absolute; left: -6%; right: -6%; top: -16px; bottom: -16px; background: linear-gradient(90deg, transparent, rgba(8, 4, 16, .9) 16%, rgba(8, 4, 16, .9) 84%, transparent); border-top: 2px solid var(--bc); border-bottom: 2px solid var(--bc); box-shadow: 0 0 24px -4px var(--bc); animation: bcBand var(--bcd, 2.4s) ease forwards; }
+#bosscard .bc-glyph { position: relative; color: var(--bc); font-size: clamp(18px, 4.4vw, 30px); line-height: 1; text-shadow: 0 0 14px var(--bc); animation: bcGlyph var(--bcd, 2.4s) ease forwards; }
+#bosscard .bc-small { position: relative; color: var(--bc2); font-size: clamp(10px, 2.2vw, 14px); letter-spacing: .45em; opacity: .92; animation: bcFade var(--bcd, 2.4s) ease forwards; }
+#bosscard .bc-name { position: relative; color: #fff; font-size: clamp(24px, 6.4vw, 46px); letter-spacing: .12em; white-space: nowrap; text-shadow: 0 0 18px var(--bc), 0 0 2px var(--bc), 0 3px 0 #000; animation: bcName var(--bcd, 2.4s) cubic-bezier(.2, .8, .2, 1) forwards; }
+#bosscard .bc-sub { position: relative; color: var(--bc); font-size: clamp(10px, 2.3vw, 15px); letter-spacing: .28em; text-shadow: 0 0 8px #000; animation: bcFade var(--bcd, 2.4s) ease forwards; }
+#bosscard .bc-slash { position: absolute; left: 50%; top: 50%; width: 0; height: 3px; background: linear-gradient(90deg, transparent, #fff, var(--bc), transparent); transform: translate(-50%, -50%) rotate(-12deg); box-shadow: 0 0 12px var(--bc); animation: bcSlash var(--bcd, 2.4s) ease forwards; }
+#bosscard .bc-sun { position: absolute; left: 50%; top: 50%; width: clamp(90px, 22vw, 170px); aspect-ratio: 1; max-width: 100%; border-radius: 50%; background: radial-gradient(circle, #000 55%, var(--bc) 58%, transparent 72%); transform: translate(-50%, -50%) scale(0); animation: bcSun var(--bcd, 2.4s) ease forwards; }
+#bosscard.k-machine .bc-name { animation: bcGlitch var(--bcd, 2.4s) steps(1) forwards; }
+#bosscard.k-machine .bc-band { background: repeating-linear-gradient(0deg, rgba(8, 4, 16, .92) 0 3px, rgba(20, 14, 34, .92) 3px 4px); }
+#bosscard.k-human .bc-band { animation-name: bcBandH; }
+#bosscard.phase { top: 22%; }
+#bosscard.phase .bc-name { font-size: clamp(20px, 5vw, 36px); }
+#bosscard.final .bc-name { font-size: clamp(20px, 5.2vw, 38px); color: var(--bc2); }
+@keyframes bcName { 0% { letter-spacing: .9em; opacity: 0; filter: blur(5px); } 22% { letter-spacing: .14em; opacity: 1; filter: none; } 80% { opacity: 1; } 100% { opacity: 0; letter-spacing: .26em; } }
+@keyframes bcFade { 0%, 12% { opacity: 0; transform: translateY(6px); } 28%, 80% { opacity: 1; transform: none; } 100% { opacity: 0; } }
+@keyframes bcBand { 0% { transform: scaleX(0); } 16% { transform: scaleX(1); } 82% { opacity: 1; } 100% { opacity: 0; transform: scaleX(1.04); } }
+@keyframes bcBandH { 0% { transform: skewY(-4deg) translateX(-110%); } 16% { transform: skewY(-4deg) translateX(0); } 82% { opacity: 1; } 100% { opacity: 0; transform: skewY(-4deg) translateX(8%); } }
+@keyframes bcGlyph { 0% { transform: scale(3) rotate(-40deg); opacity: 0; } 22% { transform: none; opacity: 1; } 84% { opacity: 1; } 100% { opacity: 0; transform: scale(.8); } }
+@keyframes bcSlash { 0% { width: 0; opacity: 1; } 14% { width: 120%; opacity: 1; } 30% { opacity: 0; } 100% { width: 120%; opacity: 0; } }
+@keyframes bcSun { 0% { transform: translate(-50%, -50%) scale(0); } 25% { transform: translate(-50%, -50%) scale(1); } 80% { opacity: .9; } 100% { opacity: 0; transform: translate(-50%, -50%) scale(1.2); } }
+@keyframes bcGlitch { 0% { opacity: 0; transform: translateX(-8px); } 8% { opacity: 1; transform: translateX(6px); } 12% { transform: translateX(-3px); } 16% { transform: none; } 50% { transform: none; } 52% { transform: translateX(4px); } 54% { transform: none; } 82% { opacity: 1; } 100% { opacity: 0; } }

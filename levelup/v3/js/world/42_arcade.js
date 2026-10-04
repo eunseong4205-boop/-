@@ -780,7 +780,7 @@
     how: '쓰러지지 않는 별빛 거인 젤리와 90초. 준 피해만큼 점수(거인 체력의 %). 체력이 ¼ 아래로 내려가면 다시 일어서며 더 세진다. 졸개 젤리가 거인에게 닿으면 거인이 회복한다 — 졸개부터 막아라.',
     setup(R) {
       R.score = 0; R.dmg = 0; R.ups = 0;
-      const b = G.bosses.spawn(G.bosses.B.arcgiant ? 'arcgiant' : 'lvslime', px(8.5), py(5), { hpMul: 10 + R.D, noScale: true });
+      const b = G.bosses.spawn(G.bosses.B.arcgiant ? 'arcgiant' : 'lvslime', px(8.5), py(5), { hpMul: 10 + R.D, noScale: true, noStage: true });
       b.atk = Math.max(3, Math.round(b.atk * 0.75)); b.aggro = true; if (b.start) b.start(); b.exp = 0; b.gold = 0; b.arcade = true;
       b.preKill = function () { this.hp = this.maxHp; return true; };
       R.giant = b; R.gMax = b.maxHp; R.lastHp = b.hp;
