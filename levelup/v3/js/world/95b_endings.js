@@ -101,8 +101,7 @@
       await c.say('toria', '찍… 나는 어디든 같이 있을게. 집이든, 하늘이든. 근데… 노아는? 루체 언니는? …아니야. 네가 정해.', { face: 'sad' });
       const k2 = await c.choice('정말 여기서 그만둘까? (이 결말을 본 뒤에도 이어하기로 다시 떠날 수 있다)', ['그만둔다 — 집에 남는다', '…아니, 다시 간다']);
       if (k2 !== 0) { await c.say('evelyn', '그래. 그럼 빵 싸 주꾸마. 세 개. 아이다, 네 개.', { face: 'smile' }); c.flag('home_doubt'); return; }
-      c.flag('home_stayed');
-      s.flags.ending = 'home';
+      c.flag('home_stayed');   // flags.ending은 남기지 않는다 — 이어하기로 다시 떠나면 이야기 한가운데이므로
       try { G.st.save(s, true); } catch (e) { /* 저장 실패는 넘어간다 */ }
       await c.fade(true, { sec: 1.2 });
       await c.ending('home');

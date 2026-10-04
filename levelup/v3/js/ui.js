@@ -856,14 +856,14 @@
     el.appendChild(menu2);
     el.insertAdjacentHTML('beforeend', '<div class="t-foot">가로 화면 권장 · 휴대폰은 왼쪽 스틱, 오른쪽 버튼 · 글꼴: 갈무리(SIL OFL)</div>');
     el.hidden = false;
-    UI.title = { btns, sel: 0 };
+    UI.titleSel = { btns, sel: 0 };
     hlTitle();
     G.game.scene = 'title';
     if (G.audio) G.audio.music('title');
   }
-  function hlTitle() { const T = UI.title; if (!T) return; T.btns.forEach((b, i) => b.classList.toggle('sel', i === T.sel)); }
+  function hlTitle() { const T = UI.titleSel; if (!T) return; T.btns.forEach((b, i) => b.classList.toggle('sel', i === T.sel)); }
   function titleUpdate() {
-    const T = UI.title; if (!T || !T.btns.length) return;
+    const T = UI.titleSel; if (!T || !T.btns.length) return;
     const nv = I.nav4();
     if (nv === 'up') { T.sel = (T.sel + T.btns.length - 1) % T.btns.length; hlTitle(); sfx('move'); }
     if (nv === 'down') { T.sel = (T.sel + 1) % T.btns.length; hlTitle(); sfx('move'); }
@@ -893,7 +893,7 @@
     }
     g.fillStyle = '#05040a'; g.fillRect(0, 0, w, h);
   }
-  function hideTitle() { $('title').hidden = true; UI.title = null; }
+  function hideTitle() { $('title').hidden = true; UI.titleSel = null; }
   function newGameForm(el) {
     el.innerHTML = '';
     const bg = UI.titleBg; if (bg) el.appendChild(bg);
@@ -939,7 +939,7 @@
     const back = document.createElement('button'); back.className = 't-btn'; back.textContent = '돌아가기'; back.addEventListener('click', () => title());
     m.appendChild(go); m.appendChild(back);
     el.appendChild(m);
-    UI.title = { btns: [go, back], sel: 0 };
+    UI.titleSel = { btns: [go, back], sel: 0 };
     hlTitle();
   }
   function keysHelp(el) {
@@ -952,7 +952,7 @@
     const m = document.createElement('div'); m.className = 't-menu';
     const back = document.createElement('button'); back.className = 't-btn pri'; back.textContent = '돌아가기'; back.addEventListener('click', () => title());
     m.appendChild(back); el.appendChild(m);
-    UI.title = { btns: [back], sel: 0 }; hlTitle();
+    UI.titleSel = { btns: [back], sel: 0 }; hlTitle();
   }
 
   /* ───────── 쓰러짐 ───────── */

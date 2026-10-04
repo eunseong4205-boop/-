@@ -29,6 +29,21 @@
   item('letter_sun', { type: 'letter', name: '흑점에게 가는 편지', desc: '받는 이: 「흑점」. 보낸 이: 그린의 아이. 크레파스 냄새가 난다.', read: '봉투 위에 웃는 까만 동그라미가 그려져 있다.' });
   item('kletters', { type: 'key', name: '젊은 카이론의 편지', desc: '세린에게 보내지 못한 편지들. 끈으로 묶여 있다.', read: '글씨가 장부 글씨와 같다. 그런데 줄 사이가 넓다.' });
 
+  /* 마을 사람(tw_*)은 세상을 지을 때(35_folk의 OW 훅) 집이 정해지며 서므로, 그 뒤에 어느 지도에 섰든 찾아서 건다 */
+  const FH = [];
+  const hookFolk = (id, cond, fn) => FH.push([id, cond, fn]);
+  OW.hooks.push(() => {
+    FH.forEach(([id, cond, fn], i) => {
+      const mapId = Object.keys(ST.people).find((k) => ST.people[k].some((x) => x.id === id));
+      if (!mapId) { console.warn('[tales] no folk', id); return; }
+      const sp = ST.people[mapId].find((x) => x.id === id);
+      sp.__th = sp.__th || {};
+      if (sp.__th[i]) return;
+      ST.hookTalk(mapId, id, cond, fn);
+      for (const o of ST.people[mapId]) if (o.id === id) { o.__th = o.__th || {}; o.__th[i] = true; }
+    });
+  });
+
   /* ═════════ 들판에 놓을 자리 (마을에서 걸어 닿는 땅) ═════════ */
   const SPOTS = {};
   function spot(key, reg, dx, dy) {
@@ -61,7 +76,7 @@
     { reg: 'yellow', off: [13, -10], text: '모래바다 관측석. 여기서 보는 흑점은 조금 더 크다. 모래 언덕 위 낮게 뜬 별 하나가 흑점 쪽으로 기울어 있다. 별도 배가 고픈 것처럼.\n[y]관측값: 손 자리, 각도 41.6 — 조금 더 가까이[/]' },
     { reg: 'white', off: [12, -8], text: '설원 봉우리 관측석. 흑점 가장자리가 희미하게 빛난다. 먹은 빛이 테두리로 새어 나오는 것처럼. 그 빛의 색이… 하얗다.\n[y]관측값: 손 자리, 각도 41.9 — 테두리에 흰빛[/]' },
   ];
-  ST.hookTalk('tw_red_3', 'tw_bel', (s) => (ST.after('c2') && !s.quests.bel_stars) || (qOn('bel_stars') && ['red', 'yellow', 'white'].every((r) => s.flags['belst:' + r])), async (c, n) => {
+  hookFolk('tw_bel', (s) => (ST.after('c2') && !s.quests.bel_stars) || (qOn('bel_stars') && ['red', 'yellow', 'white'].every((r) => s.flags['belst:' + r])), async (c, n) => {
     const s = S();
     if (!s.quests.bel_stars) {
       await c.say(n, '저기, 잠깐만. 너 여행 다니지? 부탁 하나 해도 돼? 박사님한텐 비밀이야.', { face: 'normal' });
@@ -94,10 +109,10 @@
   Q('karel_way', { name: '카렐의 갈림길', who: '카렐', desc: '그린 마을 참나무 아래, 카렐이 목검을 꽂아 두고 기다린다.', after: '카렐이 갈 길을 골랐다. 아니면, 고르지 않기로 골랐다.' });
 
   /* ═════════ 3. 마지막 줄 — 시인 에코 ═════════ */
-  const LINES = { hanna: { map: 'tw_green_0', id: 'tw_hanna', reg: 'green', who: '한나', line: '식기 전에, 나눠 먹자.' }, regina: { map: 'tw_white_0', id: 'tw_regina', reg: 'white', who: '수녀 레지나', line: '숫자 옆에, 이름을 적었다.' }, lumen: { map: 'tw_black_0', id: 'tw_lumen', reg: 'black', who: '등불장이 루멘', line: '꺼지지 않게, 누군가 봐 주었다.' }, kiki: { map: 'tw_colorful_3', id: 'tw_kiki', reg: 'colorful', who: '비둘기 조련사 키키', line: '편지는 늦게 와도, 도착한다.' } };
+  const LINES = { hanna: { id: 'tw_hanna', reg: 'green', who: '한나', line: '식기 전에, 나눠 먹자.' }, regina: { id: 'tw_regina', reg: 'white', who: '수녀 레지나', line: '숫자 옆에, 이름을 적었다.' }, lumen: { id: 'tw_lumen', reg: 'black', who: '등불장이 루멘', line: '꺼지지 않게, 누군가 봐 주었다.' }, kiki: { id: 'tw_kiki', reg: 'colorful', who: '비둘기 조련사 키키', line: '편지는 늦게 와도, 도착한다.' } };
   const gotLines = (s) => Object.keys(LINES).filter((k) => s.flags['eline:' + k]);
   Q('echo_line', { name: '마지막 줄', who: '시인 에코', desc: (s) => { const n = gotLines(s).length; return n < 4 ? '천년제 시의 마지막 줄을 찾는다. 대륙 사람들에게 「마지막 한 줄」을 물어 온다 — 그린 한나 · 화이트 레지나 · 블랙 루멘 · 알록달록 키키 (' + n + ' / 4). 둘만 모아도 에코에게 돌아갈 수 있다.' : '무지개 시인 에코에게 돌아가 마지막 줄을 고른다.'; }, after: '에코의 시가 끝났다. 마지막 줄은 내가 골랐다.' });
-  ST.hookTalk('tw_rainbow_3', 'tw_echo', (s) => (ST.after('c6') && !s.quests.echo_line) || (qOn('echo_line') && gotLines(s).length >= 2), async (c, n) => {
+  hookFolk('tw_echo', (s) => (ST.after('c6') && !s.quests.echo_line) || (qOn('echo_line') && gotLines(s).length >= 2), async (c, n) => {
     const s = S();
     if (!s.quests.echo_line) {
       await c.say(n, '천 번째 천년제 시를 다 썼어. 마지막 줄만 빼고. 내 말로 끝내면 거짓말 같아서.', { face: 'sad' });
@@ -122,7 +137,7 @@
     await c.cinema(false); c.lock(false);
   });
   for (const [k, L] of Object.entries(LINES)) {
-    ST.hookTalk(L.map, L.id, (s) => qOn('echo_line') && !s.flags['eline:' + k], async (c, n) => {
+    hookFolk(L.id, (s) => qOn('echo_line') && !s.flags['eline:' + k], async (c, n) => {
       const ask = { hanna: '시의 마지막 줄? 어머, 나한테? …빵 굽는 사람이 무슨 시를. 음… 「식기 전에, 나눠 먹자.」 우리 가게에서 제일 많이 하는 말이야.', regina: '마지막 줄이라… 나는 평생 장부의 마지막 줄만 썼어요. 숫자로. 이번엔 다르게 쓰고 싶네요. 「숫자 옆에, 이름을 적었다.」', lumen: '시는 몰라. 등불은 알지. 「꺼지지 않게, 누군가 봐 주었다.」 내 설계도에 적은 비밀이야. 시로 써도 돼.', kiki: '마지막 줄? 비둘기들한테 물어볼게. …음, 「편지는 늦게 와도, 도착한다.」 우리 비둘기들 자랑이야!' }[k];
       await c.say(n, ask, { face: 'smile' });
       S().flags['eline:' + k] = true;
@@ -133,7 +148,7 @@
 
   /* ═════════ 4. 이름 없는 묘 — 묘지기 모르트 ═════════ */
   Q('mort_names', { name: '이름 없는 묘', who: '묘지기 모르트', desc: (s) => { const n = [0, 1, 2].filter((i) => s.flags['mortp:' + i]).length; return n < 3 ? '밤의 도시 둘레에 흩어진 「밤의 장부」 찢긴 장을 찾는다. (' + n + ' / 3)' : '묘지기 모르트에게 장부 쪽을 가져간다.'; }, after: '이름 없는 묘들이 무언가를 얻었다.' });
-  ST.hookTalk('tw_black_2', 'tw_graves', (s) => (ST.after('c9') && !s.quests.mort_names) || (qOn('mort_names') && [0, 1, 2].every((i) => s.flags['mortp:' + i])), async (c, n) => {
+  hookFolk('tw_graves', (s) => (ST.after('c9') && !s.quests.mort_names) || (qOn('mort_names') && [0, 1, 2].every((i) => s.flags['mortp:' + i])), async (c, n) => {
     const s = S();
     if (!s.quests.mort_names) {
       await c.say(n, '녹턴이 장부에서 지운 사람들이 여기 누워 있어. 이름이 없지. 지울 때 장부를 찢어 버렸거든.', { face: 'closed' });
@@ -165,7 +180,7 @@
   ];
   const dropN = (s) => DROPS.filter((d) => s.flags['tint:' + d[0]]).length;
   Q('tint_bottles', { name: '열두 병', who: '색 모으는 틴트', desc: (s) => '대륙 열두 곳에 떨어진 색 방울을 모아 틴트의 빈 병을 채운다. (' + dropN(s) + ' / 12) 방울은 마을 둘레, 빛이 고인 자리에 있다.', after: '틴트의 병이 다 찼다.' });
-  ST.hookTalk('world', 'tw_tint', (s) => (ST.after('c8') && !s.quests.tint_bottles) || (qOn('tint_bottles') && ((dropN(s) >= 6 && !s.flags.tint_half) || dropN(s) >= 12)), async (c, n) => {
+  hookFolk('tw_tint', (s) => (ST.after('c8') && !s.quests.tint_bottles) || (qOn('tint_bottles') && ((dropN(s) >= 6 && !s.flags.tint_half) || dropN(s) >= 12)), async (c, n) => {
     const s = S();
     if (!s.quests.tint_bottles) {
       await c.say(n, '빈 병이 열한 개야. 대륙 어딘가엔 색이 방울져 떨어져 있대. 세피아 언니가 그랬어. 빛이 많이 고인 데엔 색도 고인대.', { face: 'normal' });
@@ -233,7 +248,7 @@
   });
 
   /* ═════════ 7. 흑점에게 가는 편지 — 우편배달부 핀 ═════════ */
-  ST.hookTalk('world', 'fin', (s) => ST.after('c11') && !s.flags.fin_sun, async (c, n) => {
+  ST.hookTalk('world', 'fin', (s) => ST.after('c10') && !s.flags.fin_sun, async (c, n) => {
     await c.say(n, '우편이요! …이건 좀 이상한 우편이에요. 받는 이가 「흑점」이에요. 보낸 이는 그린의 아이, 노아.', { face: 'normal' });
     await c.say(n, '어디로 배달해야 할지 몰라서 석 달을 들고 다녔어요. 하늘로 가신다면서요. 거기가 제일 가깝겠죠?', { face: 'smile' });
     c.flag('fin_sun');

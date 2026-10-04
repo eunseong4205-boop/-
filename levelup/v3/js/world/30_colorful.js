@@ -119,13 +119,15 @@
   /* ───────── 부품: 각자의 자리에서 ───────── */
   /** 지도 mapId의 인물 id에게, 조건이 맞을 때 먼저 할 말을 끼워 넣는다 */
   ST.hookTalk = function (mapId, id, cond, fn) {
-    const list = ST.people[mapId] || [];
-    const sp = list.find((x) => x.id === id);
-    if (!sp) { ST.person(mapId, { id, x: 5, y: 4, dir: 'down', when: cond, mark: () => '!', talk: fn }); return; }
-    const old = sp.talk, oldMark = sp.mark, oldWhen = sp.when;
-    sp.when = (s) => cond(s) || (oldWhen ? oldWhen(s) : true);
-    sp.mark = (s) => (cond(s) ? '!' : oldMark ? oldMark(s) : null);
-    sp.talk = async (c, n) => (cond(S()) ? fn(c, n) : old ? old(c, n) : undefined);
+    const all = (ST.people[mapId] || []).filter((x) => x.id === id);
+    if (!all.length) { ST.person(mapId, { id, x: 5, y: 4, dir: 'down', when: cond, mark: () => '!', talk: fn }); return; }
+    // 같은 사람이 장마다 따로 서 있으면(에블린 등) 모두에 건다. 억지로 세우는 건 아무도 안 서 있을 때 첫 사람만 — 둘이 겹쳐 서지 않게
+    all.forEach((sp, i) => {
+      const old = sp.talk, oldMark = sp.mark, oldWhen = sp.when;
+      if (i === 0) { const others = all.slice(1); sp.when = (s) => (oldWhen ? oldWhen(s) : true) || (cond(s) && !others.some((o) => !o.when || o.when(s))); }
+      sp.mark = (s) => (cond(s) ? '!' : oldMark ? oldMark(s) : null);
+      sp.talk = async (c, n) => (cond(S()) ? fn(c, n) : old ? old(c, n) : undefined);
+    });
   };
   const need = (id) => () => f('c10_parts') && !f('part:' + id);
   async function givePart(c, id) { c.flag('part:' + id); await c.getItem('part_' + id); const n = got(); await c.say(null, '무한호 부품 ' + n + '/6', { style: 'sys' }); if (n === 6) await c.say('toria', '찍! 여섯 개 다 모았어! 알록달록 곶으로!', { face: 'happy' }); }
