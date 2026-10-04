@@ -301,6 +301,7 @@
     await c.narr('불꽃. 굉음. 몸이 의자에 짓눌렸다. 창밖으로 곶이, 대륙이, 바다가 작아졌다.' + (f('voices') ? '\n대륙 곳곳에서 등불이 반짝였다. 누군가가 보낸 빛 한 방울씩이, 로켓이 지나간 자리를 따라 별처럼 남았다.' : ''));
     await c.say('toria', '…날고 있어. 나 날고 있어. 로켓 안이지만. 이것도 나는 거지? 그렇지?', { face: 'cry' });
     await c.say('lyra', '…응. 나는 거예요.', { face: 'smile' });
+    c.flag('c10p_' + k);
     c.journal(k === 0 ? '무한호가 떴다. 징수탑 하나의 빛을 마지막으로 끌어 썼다.' : k === 1 ? '무한호가 떴다. 리라의 노래가 탑을 타고 흘렀고, 대륙 사람들이 등불 하나씩을 보냈다.' : '무한호가 떴다. 내 빛으로 불을 붙였다. 앞머리가 세 가닥 하얘졌다.');
     if (ST.startStation) await ST.startStation(c);
     else { await c.fade(false, { sec: 1 }); await c.cinema(false); c.lock(false); }

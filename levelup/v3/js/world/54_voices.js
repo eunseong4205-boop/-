@@ -94,6 +94,8 @@
     let desc = v.desc && !s.flags[dkey] ? (typeof v.desc === 'function' ? v.desc(s) : v.desc) : null;
     if (desc) desc = String(desc).replace(/^>\s*/, '');
     if (desc && !busy) { s.flags[dkey] = 1; await c.narr(desc); }
+    // 다시 만남 (54f_news): 오래 못 봤거나 그새 달라진 게 있으면 한마디 — 처음 묘사를 막 본 때 · 부탁이 걸린 때는 넘긴다
+    if (ST.reunion) { const ru = ST.reunion(name, n); if (ru && !desc && !busy && v.mode !== 'append') await speak(c, n, ru); }
     // 가게 · 여관 주인: 고르기에 이야기 한 칸
     const ch0 = c.choice;
     let menu = false;
@@ -108,7 +110,7 @@
           const at = list.indexOf(shown[li]);
           const opts2 = list.slice(0, at).concat([{ t: label, i: -7707 }], list.slice(at));
           const r = await ch0.call(this, prompt, opts2, o);
-          if (r === -7707) { const l = chatLine(name, v, n); if (l) await speak(c, n, l); return shown[li].i; }
+          if (r === -7707) { const l = (ST.newsFor && ST.newsFor(name, n, 'any')) || chatLine(name, v, n); if (l) await speak(c, n, l); return shown[li].i; }
           return r;
         }
       }
@@ -121,9 +123,15 @@
         // 이야기 인물: 원래 말은 늘 그대로, 두 번째부터 한마디 덧붙인다
         await orig(c, n);
         if (k >= 2 && !busy && !menu) { const l = nextLine(name, v); if (l) await speak(c, n, l); }
-      } else if (k === 1 || busy || s.vk[name] || k % 2 === 1) { await orig(c, n); }
-      else {
-        const l = nextLine(name, v);
+      } else if (k === 1 || busy || s.vk[name] || k % 2 === 1) {
+        await orig(c, n);
+        // 갓 들은 소식은 원래 말 끝에 덧붙인다 (부탁 · 가게 일이 없을 때)
+        if (!busy && !menu && !s.vk[name] && ST.newsFor) { const nl = ST.newsFor(name, n, 'fresh'); if (nl) await speak(c, n, (/^[…「'"]/.test(nl) ? '' : ['참, ', '아, 그러고 보니 ', '그건 그렇고, ', ''][U.hash(name + nl) % 4]) + nl); }
+      } else {
+        // 제 말 자리: 네 번에 한 번은 지난 일 이야기, 제 말을 다 했으면 소식으로 메운다
+        let l = k % 4 === 0 && ST.newsFor ? ST.newsFor(name, n, 'any') : null;
+        if (!l) l = nextLine(name, v);
+        if (!l && ST.newsFor) l = ST.newsFor(name, n, 'any');
         if (l) await speak(c, n, l); else await orig(c, n);
       }
     } finally {

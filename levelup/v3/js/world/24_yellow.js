@@ -237,6 +237,7 @@
     c.flag('c4_eye'); c.flag('c4_done'); c.flag('open:purple'); c.exp(80);
     await c.cinema(false);
     c.lock(false);
+    c.flag('c4p_' + k);
     c.journal(k === 0 ? '태양의 눈을 골디 앞에서 깨뜨렸다. 골디가 웃었다. 퍼플 통행 허가를 받았다.' : k === 1 ? '태양의 눈을 골디에게 넘기고 주황 우물의 빛값을 다시 매기게 했다.' : '태양의 눈을 야나에게 몰래 넘겼다. 골디는 알면서 금화 오천에 눈감아 주었다.');
     await c.say('yana', ST.route() === 'night' || k === 2 ? '…고마워. 이건 평생 갚을게. 사막 여우는 빚을 잊지 않아.' : '고마워. 여기서 헤어지자. 나는 모래바다로 돌아가. 필요하면 오아시스로 와.', { face: 'smile' });
     ST.leave('yana');

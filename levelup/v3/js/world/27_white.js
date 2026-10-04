@@ -528,6 +528,7 @@
         else { await c.narr('관에 손을 대지 않았다. 대신 흰빛으로 관 이음새에 작은 표시를 남겼다. 빛을 따라가면 이 표시도 따라간다. 미드나잇이 좋아할 것이다.'); c.flag('c7_marked'); }
         await c.cinema(false);
         c.lock(false);
+        c.flag('c7p_' + pick);
         c.journal(pick === 'dawn' ? '서리 거인을 쓰러뜨리고 얼음 창고를 부쉈다. 빛이 눈이 되어 내렸다.' : pick === 'order' ? '서리 거인을 쓰러뜨리고 얼음 창고의 새는 관을 막았다. 기록으로 남긴다.' : '서리 거인을 쓰러뜨렸다. 얼음 창고의 새는 관에 흰빛 표시를 남겼다. 따라가 볼 것이다.');
       }); };
       r.ctl.R.onEnter = () => { G.script.run(async (c) => {
