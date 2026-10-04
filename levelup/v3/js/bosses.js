@@ -20,6 +20,37 @@
   const AC = new Map();
   function art(key, w, h, f) { let c = AC.get(key); if (!c) { const b = X.brush(w, h); f(b); c = X.outline(b.put(), OUT); AC.set(key, c); } return c; }
 
+  /* ───────── 보스 난이도: 그 무렵 주인공의 힘에 맞춘다 ─────────
+     예전엔 보스마다 체력 · 공격이 고정이라, 장이 갈수록 주인공 하트 · 무기만 커져 후반 보스가 검 7~12번에 쓰러지고
+     열 대 넘게 맞아도 버텼다(보통). 이제 만날 때 그 무렵의 힘을 기준으로:
+     · 체력 — 검으로 이만큼은 베어야 쓰러지게 (보스 원래 체력보다 낮아지지는 않는다)
+     · 공격 — 하트를 이만큼 맞으면 쓰러지게 (갑옷은 그대로 덜어 준다 · 원래 공격보다 약해지지는 않는다)
+     그 장에서 기대하는 힘의 1.35배까지만 따라간다 — 그보다 강해지면(레벨을 많이 올렸으면) 그만큼 쉬워진다.
+     첫 두 보스는 조금 너그럽게. 시련의 탑 · 오락기처럼 스스로 맞추는 곳은 noScale */
+  const EXP_ATK = [3, 4.5, 5, 5.6, 6.3, 7, 8, 22, 23.5, 24.5, 25.5, 26.5];   // 장(티어)별 기대 검 공격 — 장마다 바로 가기 상태 기준
+  const EXP_HP = [4, 5, 6, 7, 8, 9, 11, 12, 14, 16, 17, 18];                // 기대 하트
+  const BOSS_DIFF = [{ sw: 22, hits: 6.5 }, { sw: 32, hits: 3.9 }, { sw: 42, hits: 2.9 }, { sw: 52, hits: 2.2 }];   // 쉬움 · 보통 · 어려움 · 매우 어려움
+  function bossTier(o) {
+    if (o.tier != null) return o.tier;
+    const Dn = o.did && G.dungeon && G.dungeon.DUN && G.dungeon.DUN[o.did];
+    if (Dn && Dn.tier != null) return Dn.tier;
+    return G.story && G.story.chIdx ? G.story.chIdx() : 5;
+  }
+  function bossScale(b, o) {
+    const s = G.state; if (!s || !G.st || !G.prog) return;
+    const d = G.st.derive(s), df = G.prog.diff(), T = BOSS_DIFF[df.id] || BOSS_DIFF[1];
+    const t = U.clamp(Math.round(bossTier(o)), 0, EXP_ATK.length - 1);
+    const ramp = t === 0 ? 0.75 : t === 1 ? 0.87 : 1;
+    const atkEff = Math.min(d.atk || 1, EXP_ATK[t] * 1.35);
+    const hpNeed = Math.round(T.sw * ramp * atkEff * Math.sqrt(o.hpMul || 1) * (b.D.scaleMul || 1));   // 이야기 결투의 체력 배율은 반쯤만 · 마지막 둘은 조금 더 무겁게
+    if (hpNeed > b.maxHp) b.maxHp = b.hp = hpNeed;
+    const hpEff = Math.min(d.hpMax || 12, EXP_HP[t] * 4 * 1.3);
+    const early = df.early ? Math.min(1, 0.7 + (s.lv || 1) * 0.025) : 1;
+    const q = hpEff / (T.hits / ramp) / ((df.hurt || 1) * early);
+    if (q > b.atk) b.atk = Math.round(q * 4) / 4;
+    b.scaled = { t, hp: b.maxHp, atk: b.atk };
+  }
+
   /* ───────── 보스 몸 ───────── */
   class Boss extends G.foes.Foe {
     constructor(type, o) {
@@ -29,6 +60,7 @@
       this.dunId = o.did || o.dunId || null; this.did = false;   // did는 공격 판정용으로 쓰인다
       this.maxHp = this.hp = Math.round(D.hp * (o.hpMul || 1) * (G.prog ? G.prog.diff().hp : 1));
       this.atk = D.atk; this.exp = D.exp; this.gold = D.gold; this.speed = D.speed;
+      if (!o.noScale) bossScale(this, o);
       this.st = 'wait'; this.stT = 0; this.phase2 = false; this.pat = 0; this.parts = [];
       this.phases = [0.5];
       this.noContact = !!D.noContact; this.col = D.col || '#ffffff';
@@ -514,7 +546,7 @@
     } });
 
   /* ═════════════ 그림자 녹턴 (천년성) — 순간이동 · 분신 · 어둠 ═════════════ */
-  def('nocturne', { name: '그림자 녹턴', title: '사천왕 · 검정의 자리 · 그림자 녹턴', hp: 150, atk: 6, r: 8, h: 22, speed: 110, dark: true, weak: ['light'], exp: 300, gold: 0,
+  def('nocturne', { scaleMul: 1.1, name: '그림자 녹턴', title: '사천왕 · 검정의 자리 · 그림자 녹턴', hp: 150, atk: 6, r: 8, h: 22, speed: 110, dark: true, weak: ['light'], exp: 300, gold: 0,
     init(e) { e.look = Object.assign({}, G.cast.get('nocturne').look); },
     ai(e, dt, Wd) {
       const p = Wd.player;
@@ -526,7 +558,7 @@
     gear: swordGear('#b87aff') });
 
   /* ═════════════ 방위 핵 (하늘 정거장) ═════════════ */
-  def('core', { name: '방위 핵', title: '하늘 정거장 · 방위 핵 「파수꾼」', hp: 200, atk: 6, r: 22, h: 40, col: '#6ad8ff', weak: ['bolt'], exp: 360, gold: 0, noContact: true,
+  def('core', { scaleMul: 1.1, name: '방위 핵', title: '하늘 정거장 · 방위 핵 「파수꾼」', hp: 200, atk: 6, r: 22, h: 40, col: '#6ad8ff', weak: ['bolt'], exp: 360, gold: 0, noContact: true,
     init(e) { e.shield = 3; },
     guards(e, info) { if (e.shield > 0) { sfx('clank'); return true; } return false; },
     ai(e, dt, Wd) {
@@ -546,7 +578,7 @@
     }, noShadow: false });
 
   /* ═════════════ 카이론 — 대륙의 절대 강자 ═════════════ */
-  def('kairon', { name: '카이론', title: '챔피언 · 레벨 99만 9999 · 카이론', hp: 320, atk: 7, r: 9, h: 24, speed: 90, exp: 800, gold: 0,
+  def('kairon', { scaleMul: 1.2, name: '카이론', title: '챔피언 · 레벨 99만 9999 · 카이론', hp: 320, atk: 7, r: 9, h: 24, speed: 90, exp: 800, gold: 0,
     init(e) { e.look = Object.assign({}, G.cast.get('kairon').look); },
     guards(e, info) { if (e.st === 'idle' && !info.unblockable && !info.crit && Math.random() < 0.5) { e.set('counter'); return true; } return false; },
     ai(e, dt, Wd) {
@@ -563,7 +595,7 @@
 
   /* ═════════════ 흑점 — 마지막 ═════════════
      검은 태양. 다섯 빛깔 구슬이 흑점을 지킨다: 구슬을 부수면 속이 드러난다. 마지막엔 필살기로 */
-  def('blacksun', { name: '흑점', title: '채워지지 못한 그릇들의 배고픔 · 흑점', hp: 400, atk: 7, r: 30, h: 60, col: '#1a1028', fly: true, dark: true, weak: ['light'], exp: 0, gold: 0, noContact: true,
+  def('blacksun', { scaleMul: 1.35, name: '흑점', title: '채워지지 못한 그릇들의 배고픔 · 흑점', hp: 400, atk: 7, r: 30, h: 60, col: '#1a1028', fly: true, dark: true, weak: ['light'], exp: 0, gold: 0, noContact: true,
     init(e) { e.orbs = []; e.core = false; },
     guards(e, info) { if (!e.core) { if (info.src === 'sword' || info.src === 'arrow') sfx('clank'); return true; } return false; },
     ai(e, dt, Wd) {

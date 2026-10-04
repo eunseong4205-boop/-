@@ -135,7 +135,7 @@
         c.sfx('warp'); c.flash('#e8e0ff', 0.4); await c.wait(0.3);
         const B = G.bosses.B[bo.type];
         const lv = s.lv;
-        const b = G.bosses.spawn(bo.type, px(r.x0 + 9), py(r.y0 + 5), { room: bo.k, hpMul: Math.max(2, (60 + lv * 9) / B.hp) });
+        const b = G.bosses.spawn(bo.type, px(r.x0 + 9), py(r.y0 + 5), { room: bo.k, hpMul: Math.max(2, (60 + lv * 9) / B.hp), noScale: true });
         b.atk = Math.max(B.atk + 2, Math.round(3 + lv / 8)); b.speed *= 1.15; b.exp = Math.round(B.exp * 0.6); b.gold = Math.round((B.gold || 100) * 1.5);
         b.name = '각성한 ' + b.name; b.title = '기억의 거울 · 각성한 ' + (B.name || '');
         b.awake = true; b.start && b.start(); b.aggro = true;
@@ -196,7 +196,7 @@
       if (!t.cp || n < t.cp) t.cp = Math.max(1, Math.floor((n - 1) / 5) * 5 + 1);
       if (n % 5 === 0) {
         const type = BOSS_CYCLE[(n / 5 - 1) % BOSS_CYCLE.length], B = G.bosses.B[type];
-        const b = G.bosses.spawn(type, cx, cy - 20, { hpMul: Math.max(1.4, (50 + n * 18 + lvl * 4) / B.hp) });
+        const b = G.bosses.spawn(type, cx, cy - 20, { hpMul: Math.max(1.4, (50 + n * 18 + lvl * 4) / B.hp), noScale: true });
         b.atk = Math.round(Math.max(B.atk, 3 + n / 5 + lvl / 12)); b.exp = Math.round(B.exp * 0.5); b.gold = 100 + n * 20;
         b.name = n + '층 문지기 · ' + b.name; b.start && b.start(); b.aggro = true;
         b.onDieFn = () => { t.cp = n + 1; done(); };
