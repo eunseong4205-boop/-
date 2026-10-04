@@ -534,7 +534,7 @@
     let c = m && m.dungeon ? 0.06 + t * 0.008 : 0.02 + t * 0.004;
     if (G.state.ch === 'c1' && !(m && m.dungeon)) c = 0;
     const di = G.state.settings.diff != null ? G.state.settings.diff : 1;
-    return c * [0.35, 1, 1.5, 2.1][di];
+    return c * [0.35, 0.85, 1.4, 2.0][di];   // 정예가 나올 확률 — 보통은 조금 덜
   }
   const spawn0 = F.spawn;
   F.spawn = function (type, x, y, o) {
