@@ -105,7 +105,7 @@
   function beastImg(kind, f, dir) {
     const key = kind + f + dir;
     if (BC[key]) return BC[key];
-    const X = G.gfx; const SZ = { whale: [48, 30], spirit: [28, 34], armor: [24, 30] }[kind] || [20, 20]; const b = X.brush(SZ[0], SZ[1]);
+    const X = G.gfx; const SZ = { whale: [48, 30], spirit: [28, 34], armor: [24, 30], camel: [24, 24] }[kind] || [20, 20]; const b = X.brush(SZ[0], SZ[1]);
     if (kind === 'whale') { // 구름고래: 둥실 떠 있는 구름 덩어리, 등에 무지개 깃발
       const bob = f % 2, C = ['#8aa8d8', '#bcd4f4', '#e4f0ff', '#ffffff'];
       b.ellipse(22, 18 - bob, 18, 9, C[1]); b.ellipse(20, 16 - bob, 16, 7, C[2]); b.ellipse(16, 13 - bob, 8, 4, C[3]);
@@ -139,6 +139,13 @@
       b.rect(9, 1, 8, 5, K); b.rect(8, 5, 10, 1, K); b.hline(9, 16, 4, '#8a2a3a');
       if (dir !== 'up') { b.px(11, 9, '#ffe070'); b.px(15, 9, '#ffe070'); b.px(16, 9, '#e8c860'); }
       b.rect(6, 16, 2, 3, K); b.rect(12, 16, 2, 3, K);
+    } else if (kind === 'camel') { // 낙타 (기억의 조각 — 모래 위의 별지기)
+      const C1 = '#c89a5a', C2 = '#a87a3a', C3 = '#e8c890', step = f % 2;
+      b.ellipse(12, 14, 8, 5, C1); b.ellipse(11, 9, 4, 4, C2); b.ellipse(10, 8, 2.5, 2, C3);   // 몸 · 혹
+      const hx = dir === 'left' ? 3 : 20; b.line(dir === 'left' ? 6 : 18, 12, hx, 5, C1); b.line(dir === 'left' ? 5 : 19, 12, hx + (dir === 'left' ? 1 : -1), 5, C1); b.ellipse(hx, 4, 3, 2, C1);   // 목 · 머리
+      if (dir !== 'up') b.px(hx + (dir === 'left' ? -1 : 1), 3, '#1a1020');
+      b.rect(6, 18, 2, 6 - step, C2); b.rect(10, 18, 2, 5 + step, C2); b.rect(14, 18, 2, 6 - step, C2); b.rect(17, 18, 2, 5 + step, C2);
+      b.rect(8, 10, 8, 2, '#c84a3a'); b.px(9, 12, '#ffd84a'); b.px(14, 12, '#ffd84a');   // 안장 천
     } else if (kind === 'octopus') {
       const P = '#d86a8a';
       b.ellipse(10, 8, 7, 7, P); b.ellipse(8, 6, 3, 2.5, '#f0a0b8');

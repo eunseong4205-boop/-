@@ -621,7 +621,7 @@
     c.music('mother');
     await c.say(n, '……', { face: 'shock' });
     await c.say(n, '니가. 첫째가.', { face: 'sad' });
-    await c.say(ly, '처음 뵙겠습니다… 는 아니죠. 983년에 한 번 봤을 테니까.', { face: 'smile' });
+    await c.say(ly, '처음 뵙겠습니다…는 아니죠. 983년에 한 번 봤을 테니까.', { face: 'smile' });
     await c.say(n, '울기만 하던 아가였다. 목청이 좋았제. 노래할 줄 알았다.', { face: 'cry' });
     await c.narr('할머니가 침대 밑 상자에서 종이 반 장을 꺼냈다. 한쪽이 칼로 자른 듯 반듯했다.');
     await c.narr('세린의 글씨.\n[w]「첫째: 리라 — 노래하는 아이. 밤이 지켜 줄 거야.」[/]\n[w]「둘째: 이름은 엄마가 지어 줘. 엄마가 부르기 좋은 이름으로.」[/]');

@@ -421,10 +421,15 @@
       { t: '나눈다 — 역류 장치를 켠다', sub: s.inv.reverser ? '모인 빛을 대륙으로 되돌린다. 그리고 흑점에게도 — 한 입씩.' : '[r]볼트의 역류 장치 설계도가 없다[/]', if: true },
     ];
     if (f('c12_persuaded') || f('c12_beat_kairon')) opts.push({ t: '카이론에게 맡긴다', sub: '「내 계산이 부른 것이다. 내가 끝낸다.」' });
+    // 95b_endings: 이름 · 자장가 · 왕관
+    const more = ST.finalMore ? ST.finalMore(s) : [];
+    for (const o of more) opts.push(o);
     let k;
     for (;;) { k = await c.choice('흑점이 배고프다고 한다.', opts); if (k === 2 && !s.inv.reverser) { await c.say('toria', '…역류 장치가 없어. 볼트 아저씨 설계도가 있어야 해.', { face: 'sad' }); continue; } break; }
     let ending;
-    if (k === 0) ending = 'ash';
+    const pickedMore = opts[k] && opts[k].ending;
+    if (pickedMore) ending = pickedMore;
+    else if (k === 0) ending = 'ash';
     else if (k === 1) ending = 'repeat';
     else if (k === 3) ending = 'atone';
     else {
@@ -433,6 +438,7 @@
       else ending = { dawn: 'dawn', order: 'nest', night: 'night' }[s.flags.route_lock || 'order'];
     }
     s.flags.ending = ending;
+    if (ST.beforeEnding) await ST.beforeEnding(c, ending);
     await c.cinema(false);
     c.lock(false);
     await c.ending(ending);

@@ -135,7 +135,7 @@
     ov.appendChild(box);
     const show = async (html, min, max) => { box.style.opacity = '0'; await new Promise((r) => setTimeout(r, 500)); box.innerHTML = html; box.style.opacity = '1'; await waitKey(min, max); };
     await new Promise((r) => setTimeout(r, 1400));
-    await show('<div style="font-size:12px;letter-spacing:.5em;color:' + E.col + '">결말 ' + E.no + ' / 8</div><div style="font-size:34px;margin:14px 0;color:#fff;text-shadow:0 0 18px ' + E.col + '">' + E.title + '</div><div style="font-size:13px;color:#b8b0c8">' + E.sub + '</div>', 1.5, 6);
+    await show('<div style="font-size:12px;letter-spacing:.5em;color:' + E.col + '">결말 ' + E.no + ' / ' + Object.keys(ENDINGS).length + '</div><div style="font-size:34px;margin:14px 0;color:#fff;text-shadow:0 0 18px ' + E.col + '">' + E.title + '</div><div style="font-size:13px;color:#b8b0c8">' + E.sub + '</div>', 1.5, 6);
     for (const t of E.slides()) await show(rich(t), 1.2, 9);
     // 사람들의 그 뒤
     const fs = fates(id);
@@ -147,7 +147,7 @@
     await show('<div style="font-size:12px;letter-spacing:.4em;color:#8a82a0">무한렙업 대모험</div><div style="font-size:22px;margin:10px 0;color:#fff">빛의 검과 무한의 그릇</div><div style="font-size:13px;line-height:2;color:#c8c0d8">이야기 · 그림 · 소리 · 코드<br>한 파일 안에, 전부 손으로<br><br>원작의 마음 — 「무한으로 렙업하자!!」<br>함께 걸어 준 모든 사람에게</div>', 2, 10);
     const got = saveEnding(id);
     const list = Object.values(ENDINGS).sort((a, b) => a.no - b.no).map((e2) => { const k2 = Object.keys(ENDINGS).find((kk) => ENDINGS[kk] === e2); return '<span style="display:inline-block;margin:4px 6px;padding:4px 10px;border:1px solid ' + (got[k2] ? e2.col : '#3a3448') + ';color:' + (got[k2] ? e2.col : '#4a4458') + ';border-radius:3px">' + (got[k2] ? e2.title : '？') + '</span>'; }).join('');
-    await show('<div style="font-size:12px;letter-spacing:.4em;color:#8a82a0;margin-bottom:10px">찾은 결말 ' + Object.keys(got).filter((k2) => ENDINGS[k2]).length + ' / 8</div><div style="max-width:36ch">' + list + '</div><div style="font-size:12px;color:#8a82a0;margin-top:18px">다른 선택은 다른 결말로 이어진다.<br>새벽 · 질서 · 밤 — 그리고 나눈 만큼, 삼킨 만큼.</div>', 2, 20);
+    await show('<div style="font-size:12px;letter-spacing:.4em;color:#8a82a0;margin-bottom:10px">찾은 결말 ' + Object.keys(got).filter((k2) => ENDINGS[k2]).length + ' / ' + Object.keys(ENDINGS).length + '</div><div style="max-width:36ch">' + list + '</div><div style="font-size:12px;color:#8a82a0;margin-top:18px">다른 선택은 다른 결말로 이어진다.<br>새벽 · 질서 · 밤 — 그리고 나눈 만큼, 삼킨 만큼.</div>', 2, 20);
     await show('<div style="font-size:26px;color:#fff">끝</div><div style="font-size:13px;color:#b8b0c8;margin-top:12px">오늘도 렙업.</div>', 2, 8);
     S().flags['ended:' + id] = true; S().cleared = (S().cleared || 0) + 1;
     try { G.st.save(S(), true); } catch (e) { /* 저장 실패는 넘어간다 */ }
