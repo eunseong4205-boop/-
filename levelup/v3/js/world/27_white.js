@@ -363,13 +363,13 @@
     ed.dead = true;
     const boss = G.bosses.spawn('cassian', p.x, p.y + 40, { hpMul: 1.6 });
     boss.look = Object.assign({}, G.cast.get('edel').look); boss.name = '에델'; boss.title = '백은 기사 · 에델'; boss.atk = 5;
-    boss.duel = true; boss.home = { x: p.x, y: p.y + 30 };
+    boss.duel = true; boss.home = { x: p.x, y: p.y + 30 }; G.bosses.duelTo(boss, 0.2);
     S().duel = true;
     await c.cinema(false);
     c.lock(false);
     boss.start(); G.hud.setBoss(boss); c.music('boss2');
     let win = false;
-    await c.freeWhile(() => { if (boss.hp <= boss.maxHp * 0.2) { win = true; return true; } return S().hp <= 1; });
+    await c.freeWhile(() => { if (boss.hp <= 1) { win = true; return true; } return S().hp <= 1; });
     S().duel = false;
     const bx = boss.x, by = boss.y; boss.dead = true; G.hud.boss = null;
     c.lock(true);

@@ -299,12 +299,12 @@
     else await c.say(nc, '…그래. 말이 필요 없는 쪽이 편하다. 나도 그렇다.', { face: 'normal' });
     await c.cutin({ who: 'nocturne', title: '그림자 녹턴', small: '사천왕 · 검정의 자리', sub: '어둠이 짙어지면 — 흰빛으로 걷어 내라!', col: '#3a1a5a', face: 'angry', sec: 1.8 });
     nc.dead = true; boss.hidden = false;
-    if (promised) { boss.duel = true; S().duel = true; }
+    if (promised) { boss.duel = true; S().duel = true; G.bosses.duelTo(boss, 0.15); }
     c.camFree(); await c.cinema(false); c.lock(false);
     boss.start(); G.hud.setBoss(boss);
     c.music('boss2');
     let won;
-    if (promised) { await c.freeWhile(() => boss.hp <= boss.maxHp * 0.15 || S().hp <= 1); won = boss.hp <= boss.maxHp * 0.15; S().duel = false; }
+    if (promised) { await c.freeWhile(() => boss.hp <= 1 || S().hp <= 1); won = boss.hp <= 1; S().duel = false; }
     else { won = await c.battle(boss, { music: 'boss2' }); if (!won) return; }
     const bx = boss.x, by = boss.y;
     if (promised) { boss.dead = true; G.hud.boss = null; }

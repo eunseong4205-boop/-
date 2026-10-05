@@ -225,7 +225,7 @@
     const tag = bossTag();
     if (!b || (b.dead && H.bossShow <= 0)) { if (!tag.hidden) tag.hidden = true; return; }
     const bw = Math.min(220, w - 120), x = Math.round((w - bw) / 2), y = h - 10;
-    const k = Math.max(0, b.hp / b.maxHp);
+    const k = b.duel && b.hp <= 1 ? 0 : Math.max(0, b.hp / b.maxHp);
     H.bossLag = H.bossLag == null ? k : U.lerp(H.bossLag, k, 0.04);
     g.fillStyle = 'rgba(11,9,20,0.85)'; g.fillRect(x - 2, y - 2, bw + 4, 8);
     // 이름은 화면 해상도 그대로(작고 또렷하게) — 캔버스 글씨는 3배로 커진다

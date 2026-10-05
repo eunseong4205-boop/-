@@ -506,10 +506,10 @@
         await c.say('cassian', f('c3_duel_win') ? '블루에서의 빚을 갚지.' : '블루에서보다 나아졌길 바란다.', { face: 'normal' });
         cs.dead = true;
         const boss = G.bosses.spawn('cassian', C0.x, C0.y - 30, { hpMul: 1.3 });
-        boss.duel = true; boss.home = { x: C0.x, y: C0.y - 20 };
+        boss.duel = true; boss.home = { x: C0.x, y: C0.y - 20 }; G.bosses.duelTo(boss, 0.2);
         c.lock(false); boss.start(); G.hud.setBoss(boss); c.music('boss2');
         let win = false;
-        await c.freeWhile(() => { if (boss.hp <= boss.maxHp * 0.2) { win = true; return true; } return S().hp <= 1; });
+        await c.freeWhile(() => { if (boss.hp <= 1) { win = true; return true; } return S().hp <= 1; });
         const bx = boss.x, by = boss.y; boss.dead = true; G.hud.boss = null;
         c.lock(true);
         const cs2 = c.spawn({ cid: 'cassian', x: bx, y: by }); c.faceEach('hero', cs2);

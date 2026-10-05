@@ -92,7 +92,10 @@
     guards(info) { return this.D.guards ? this.D.guards(this, info) : false; }
     preKill(info) {
       if (this.dying) return true;
-      if (this.duel) { this.hp = 1; this.stunT = 1; return true; }
+      if (this.duel) {   // 이야기 결투: 쓰러지지 않고 무릎 꿇는다 — 막대가 다 닳은 그 순간이 결착
+        if (!this.settled) { this.settled = true; W().slowmo(0.35, 0.7); G.cine.flash('#fff', 0.25); G.fx.ring(this.x, this.y - this.h / 2, '#ffffff', 40, 0.5, 3); }
+        this.hp = 1; this.stunT = 1; return true;
+      }
       if (this.D.preKill && this.D.preKill(this, info)) return true;
       // 쓰러질 때 연출: 잠깐 버티며 폭발
       this.dying = true; this.hp = 0; this.noContact = true;
@@ -651,6 +654,13 @@
     }
     return null;
   }
+  /** 이야기 결투: 예전엔 체력이 frac만큼 남으면 끝났다(막대가 남은 채로 싸움이 끝나 보였다).
+      이제 막대가 다 닳을 때 끝난다 — 같은 수고가 들도록 체력을 (1 - frac)로 줄인다 */
+  function duelTo(b, frac) {
+    b.maxHp = b.hp = Math.max(2, Math.round(b.maxHp * (1 - (frac || 0))));
+    if (b.scaled) b.scaled.hp = b.maxHp;
+    return b;
+  }
   function spawn(type, x, y, o) {
     const b = new Boss(type, Object.assign({ x, y }, o || {}));
     b.home = { x, y };
@@ -671,5 +681,5 @@
 
   /** 변종: 몸과 행동은 base, 이름 · 체력 · 빛깔은 새로 */
   function variant(id, base, o) { B[id] = Object.assign({}, B[base], o, { id }); }
-  G.bosses = { B, Boss, spawn, groundAt, def, variant, warnRect, warnCircle, hitRect, hitCircle, minion, ring, Tentacle, MirrorClone, art, poly, R, aim, shoot, roomRect, clampRoom };
+  G.bosses = { B, Boss, spawn, duelTo, groundAt, def, variant, warnRect, warnCircle, hitRect, hitCircle, minion, ring, Tentacle, MirrorClone, art, poly, R, aim, shoot, roomRect, clampRoom };
 })();

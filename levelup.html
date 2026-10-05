@@ -7662,7 +7662,10 @@ html.touch #modal { z-index: 60; }
     guards(info) { return this.D.guards ? this.D.guards(this, info) : false; }
     preKill(info) {
       if (this.dying) return true;
-      if (this.duel) { this.hp = 1; this.stunT = 1; return true; }
+      if (this.duel) {   // 이야기 결투: 쓰러지지 않고 무릎 꿇는다 — 막대가 다 닳은 그 순간이 결착
+        if (!this.settled) { this.settled = true; W().slowmo(0.35, 0.7); G.cine.flash('#fff', 0.25); G.fx.ring(this.x, this.y - this.h / 2, '#ffffff', 40, 0.5, 3); }
+        this.hp = 1; this.stunT = 1; return true;
+      }
       if (this.D.preKill && this.D.preKill(this, info)) return true;
       // 쓰러질 때 연출: 잠깐 버티며 폭발
       this.dying = true; this.hp = 0; this.noContact = true;
@@ -8221,6 +8224,13 @@ html.touch #modal { z-index: 60; }
     }
     return null;
   }
+  /** 이야기 결투: 예전엔 체력이 frac만큼 남으면 끝났다(막대가 남은 채로 싸움이 끝나 보였다).
+      이제 막대가 다 닳을 때 끝난다 — 같은 수고가 들도록 체력을 (1 - frac)로 줄인다 */
+  function duelTo(b, frac) {
+    b.maxHp = b.hp = Math.max(2, Math.round(b.maxHp * (1 - (frac || 0))));
+    if (b.scaled) b.scaled.hp = b.maxHp;
+    return b;
+  }
   function spawn(type, x, y, o) {
     const b = new Boss(type, Object.assign({ x, y }, o || {}));
     b.home = { x, y };
@@ -8241,7 +8251,7 @@ html.touch #modal { z-index: 60; }
 
   /** 변종: 몸과 행동은 base, 이름 · 체력 · 빛깔은 새로 */
   function variant(id, base, o) { B[id] = Object.assign({}, B[base], o, { id }); }
-  G.bosses = { B, Boss, spawn, groundAt, def, variant, warnRect, warnCircle, hitRect, hitCircle, minion, ring, Tentacle, MirrorClone, art, poly, R, aim, shoot, roomRect, clampRoom };
+  G.bosses = { B, Boss, spawn, duelTo, groundAt, def, variant, warnRect, warnCircle, hitRect, hitCircle, minion, ring, Tentacle, MirrorClone, art, poly, R, aim, shoot, roomRect, clampRoom };
 })();
 
 /* js/monsters.js */
@@ -9599,7 +9609,7 @@ html.touch #modal { z-index: 60; }
     const tag = bossTag();
     if (!b || (b.dead && H.bossShow <= 0)) { if (!tag.hidden) tag.hidden = true; return; }
     const bw = Math.min(220, w - 120), x = Math.round((w - bw) / 2), y = h - 10;
-    const k = Math.max(0, b.hp / b.maxHp);
+    const k = b.duel && b.hp <= 1 ? 0 : Math.max(0, b.hp / b.maxHp);
     H.bossLag = H.bossLag == null ? k : U.lerp(H.bossLag, k, 0.04);
     g.fillStyle = 'rgba(11,9,20,0.85)'; g.fillRect(x - 2, y - 2, bw + 4, 8);
     // 이름은 화면 해상도 그대로(작고 또렷하게) — 캔버스 글씨는 3배로 커진다
@@ -20519,14 +20529,14 @@ html.touch #modal { z-index: 60; }
     await c.cutin({ who: 'cassian', title: '카시안', small: '카이론의 마지막 제자', sub: '정면은 막는다 — 완벽 회피 뒤에 반격을', col: '#8a1a2a', face: 'smirk', sec: 1.6 });
     cs.dead = true;
     const boss = G.bosses.spawn('cassian', gC.x, gC.y, { hpMul: 1 });
-    boss.duel = true; boss.home = { x: (P0.x + gC.x) / 2, y: (P0.y + gC.y) / 2 };
+    boss.duel = true; boss.home = { x: (P0.x + gC.x) / 2, y: (P0.y + gC.y) / 2 }; G.bosses.duelTo(boss, 0.25);
     S().duel = true;
     await c.cinema(false);
     c.lock(false);
     boss.start(); G.hud.setBoss(boss);
     c.music('boss2');
     let win = false;
-    await c.freeWhile(() => { if (boss.hp <= boss.maxHp * 0.25) { win = true; return true; } return S().hp <= 1; });
+    await c.freeWhile(() => { if (boss.hp <= 1) { win = true; return true; } return S().hp <= 1; });
     S().duel = false;
     c.lock(true);
     await c.cinema(true);
@@ -21747,10 +21757,10 @@ html.touch #modal { z-index: 60; }
         await c.say('cassian', f('c3_duel_win') ? '블루에서의 빚을 갚지.' : '블루에서보다 나아졌길 바란다.', { face: 'normal' });
         cs.dead = true;
         const boss = G.bosses.spawn('cassian', C0.x, C0.y - 30, { hpMul: 1.3 });
-        boss.duel = true; boss.home = { x: C0.x, y: C0.y - 20 };
+        boss.duel = true; boss.home = { x: C0.x, y: C0.y - 20 }; G.bosses.duelTo(boss, 0.2);
         c.lock(false); boss.start(); G.hud.setBoss(boss); c.music('boss2');
         let win = false;
-        await c.freeWhile(() => { if (boss.hp <= boss.maxHp * 0.2) { win = true; return true; } return S().hp <= 1; });
+        await c.freeWhile(() => { if (boss.hp <= 1) { win = true; return true; } return S().hp <= 1; });
         const bx = boss.x, by = boss.y; boss.dead = true; G.hud.boss = null;
         c.lock(true);
         const cs2 = c.spawn({ cid: 'cassian', x: bx, y: by }); c.faceEach('hero', cs2);
@@ -22489,13 +22499,13 @@ html.touch #modal { z-index: 60; }
     ed.dead = true;
     const boss = G.bosses.spawn('cassian', p.x, p.y + 40, { hpMul: 1.6 });
     boss.look = Object.assign({}, G.cast.get('edel').look); boss.name = '에델'; boss.title = '백은 기사 · 에델'; boss.atk = 5;
-    boss.duel = true; boss.home = { x: p.x, y: p.y + 30 };
+    boss.duel = true; boss.home = { x: p.x, y: p.y + 30 }; G.bosses.duelTo(boss, 0.2);
     S().duel = true;
     await c.cinema(false);
     c.lock(false);
     boss.start(); G.hud.setBoss(boss); c.music('boss2');
     let win = false;
-    await c.freeWhile(() => { if (boss.hp <= boss.maxHp * 0.2) { win = true; return true; } return S().hp <= 1; });
+    await c.freeWhile(() => { if (boss.hp <= 1) { win = true; return true; } return S().hp <= 1; });
     S().duel = false;
     const bx = boss.x, by = boss.y; boss.dead = true; G.hud.boss = null;
     c.lock(true);
@@ -23376,12 +23386,12 @@ html.touch #modal { z-index: 60; }
     else await c.say(nc, '…그래. 말이 필요 없는 쪽이 편하다. 나도 그렇다.', { face: 'normal' });
     await c.cutin({ who: 'nocturne', title: '그림자 녹턴', small: '사천왕 · 검정의 자리', sub: '어둠이 짙어지면 — 흰빛으로 걷어 내라!', col: '#3a1a5a', face: 'angry', sec: 1.8 });
     nc.dead = true; boss.hidden = false;
-    if (promised) { boss.duel = true; S().duel = true; }
+    if (promised) { boss.duel = true; S().duel = true; G.bosses.duelTo(boss, 0.15); }
     c.camFree(); await c.cinema(false); c.lock(false);
     boss.start(); G.hud.setBoss(boss);
     c.music('boss2');
     let won;
-    if (promised) { await c.freeWhile(() => boss.hp <= boss.maxHp * 0.15 || S().hp <= 1); won = boss.hp <= boss.maxHp * 0.15; S().duel = false; }
+    if (promised) { await c.freeWhile(() => boss.hp <= 1 || S().hp <= 1); won = boss.hp <= 1; S().duel = false; }
     else { won = await c.battle(boss, { music: 'boss2' }); if (!won) return; }
     const bx = boss.x, by = boss.y;
     if (promised) { boss.dead = true; G.hud.boss = null; }
@@ -24125,12 +24135,12 @@ html.touch #modal { z-index: 60; }
       await c.cutin({ who: 'kairon', title: '카이론', small: '챔피언 · 레벨 99만 9999', sub: '반격을 조심 — 빛기둥을 피하고 틈을 노려라', col: '#e8c048', face: 'normal', sec: 1.8 });
       ka.dead = true;
       const boss = G.bosses.spawn('kairon', px(13), py(9), {});
-      boss.duel = true; boss.home = { x: px(13), y: py(10) };
+      boss.duel = true; boss.home = { x: px(13), y: py(10) }; G.bosses.duelTo(boss, 0.1);
       s.duel = true;
       await c.cinema(false); c.lock(false);
       boss.start(); G.hud.setBoss(boss); c.music('final');
       let win = false;
-      await c.freeWhile(() => { if (boss.hp <= boss.maxHp * 0.1) { win = true; return true; } return s.hp <= 1; });
+      await c.freeWhile(() => { if (boss.hp <= 1) { win = true; return true; } return s.hp <= 1; });
       s.duel = false;
       const bx = boss.x, by = boss.y; boss.dead = true; G.hud.boss = null;
       for (const e of G.world.ents) if (e.foe && !e.dead) e.dead = true;
@@ -25641,12 +25651,12 @@ html.touch #modal { z-index: 60; }
       await c.cutin({ who: 'cassian', title: '카시안', small: '스승을 떠난 제자', sub: '방패를 든 정면은 막힌다 — 완벽 회피 뒤에 반격을', col: '#8a1a2a', face: 'smirk', sec: 1.6 });
       const bx = n.x, by = n.y; n.dead = true;
       const boss = G.bosses.spawn('cassian2', bx, by, {});
-      boss.duel = true; boss.home = { x: bx, y: by };
+      boss.duel = true; boss.home = { x: bx, y: by }; G.bosses.duelTo(boss, 0.2);
       S().duel = true;
       c.lock(false);
       boss.start(); G.hud.setBoss(boss); c.music('boss2');
       let win = false;
-      await c.freeWhile(() => { if (boss.hp <= boss.maxHp * 0.2) { win = true; return true; } return S().hp <= 1; });
+      await c.freeWhile(() => { if (boss.hp <= 1) { win = true; return true; } return S().hp <= 1; });
       S().duel = false;
       const x2 = boss.x, y2 = boss.y; boss.dead = true; G.hud.boss = null;
       c.lock(true); await c.cinema(true);

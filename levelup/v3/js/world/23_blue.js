@@ -288,14 +288,14 @@
     await c.cutin({ who: 'cassian', title: '카시안', small: '카이론의 마지막 제자', sub: '정면은 막는다 — 완벽 회피 뒤에 반격을', col: '#8a1a2a', face: 'smirk', sec: 1.6 });
     cs.dead = true;
     const boss = G.bosses.spawn('cassian', gC.x, gC.y, { hpMul: 1 });
-    boss.duel = true; boss.home = { x: (P0.x + gC.x) / 2, y: (P0.y + gC.y) / 2 };
+    boss.duel = true; boss.home = { x: (P0.x + gC.x) / 2, y: (P0.y + gC.y) / 2 }; G.bosses.duelTo(boss, 0.25);
     S().duel = true;
     await c.cinema(false);
     c.lock(false);
     boss.start(); G.hud.setBoss(boss);
     c.music('boss2');
     let win = false;
-    await c.freeWhile(() => { if (boss.hp <= boss.maxHp * 0.25) { win = true; return true; } return S().hp <= 1; });
+    await c.freeWhile(() => { if (boss.hp <= 1) { win = true; return true; } return S().hp <= 1; });
     S().duel = false;
     c.lock(true);
     await c.cinema(true);

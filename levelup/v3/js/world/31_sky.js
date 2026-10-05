@@ -335,12 +335,12 @@
       await c.cutin({ who: 'kairon', title: '카이론', small: '챔피언 · 레벨 99만 9999', sub: '반격을 조심 — 빛기둥을 피하고 틈을 노려라', col: '#e8c048', face: 'normal', sec: 1.8 });
       ka.dead = true;
       const boss = G.bosses.spawn('kairon', px(13), py(9), {});
-      boss.duel = true; boss.home = { x: px(13), y: py(10) };
+      boss.duel = true; boss.home = { x: px(13), y: py(10) }; G.bosses.duelTo(boss, 0.1);
       s.duel = true;
       await c.cinema(false); c.lock(false);
       boss.start(); G.hud.setBoss(boss); c.music('final');
       let win = false;
-      await c.freeWhile(() => { if (boss.hp <= boss.maxHp * 0.1) { win = true; return true; } return s.hp <= 1; });
+      await c.freeWhile(() => { if (boss.hp <= 1) { win = true; return true; } return s.hp <= 1; });
       s.duel = false;
       const bx = boss.x, by = boss.y; boss.dead = true; G.hud.boss = null;
       for (const e of G.world.ents) if (e.foe && !e.dead) e.dead = true;
