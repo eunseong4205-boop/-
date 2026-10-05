@@ -255,6 +255,33 @@
       },
       /** 연출 없이 조작을 잠깐 돌려준다 (예: 짧은 전투) */
       async freeWhile(fn) { SC.running = false; await frames(fn); SC.running = true; },
+      /** 이야기 결투: 막대가 다 닳으면 이긴다(true).
+          예전엔 주인공 체력이 1이 되면 바로 끝나서, 바닥난 채로 들어오면 시작하자마자 · 큰 한 방에 상대 막대가 남은 채로 끝나 버렸다.
+          이제 시작할 때 숨을 고르고, 쓰러뜨릴 일격을 맞으면 무릎이 꺾인다 — 다시 일어설지(처음부터 다시) 고른다. 받아들이면 false.
+          o.rescue(c): 고르는 대신 누군가 일으켜 세운다(상대 막대는 그대로, 싸움은 이어진다) */
+      async duel(boss, o) {
+        o = o || {};
+        const s = S();
+        c.heal(); s.duelDown = false;
+        for (;;) {
+          await c.freeWhile(() => boss.hp <= 1 || boss.dead || boss.dying || s.duelDown);
+          if (boss.hp <= 1 || boss.dead || boss.dying) { s.duelDown = false; return true; }
+          const p = W().player;
+          boss.holdT = 99;   // 고르는 동안 상대도 멈춘다
+          for (const e of W().ents) if (e.kind === 'shot' && e.owner !== 'player') e.dead = true;
+          W().slowmo(0.3, 0.6); c.sfx('hurt');
+          if (p) { p.vx = p.vy = 0; p.setState('hurt'); }
+          if (o.rescue) await o.rescue(c);
+          else {
+            const k = await c.choice('무릎이 꺾였다. ' + U.josa(boss.name, '은/는') + ' 아직 서 있다.', [{ t: '다시 일어선다', sub: '숨을 고르고 처음부터 다시 겨룬다' }, '패배를 받아들인다']);
+            if (k === 1) { boss.holdT = 0; s.duelDown = false; return false; }
+            if (boss.resetDuel) boss.resetDuel();
+          }
+          c.heal(); s.duelDown = false;
+          if (p) { p.inv = 1.4; p.setState('idle'); }
+          boss.holdT = 0.8;
+        }
+      },
       shop(id) { return G.ui.shop(id); },
       forge() { return G.ui.forge(); },
       async ending(id) { return G.game.ending(id); },

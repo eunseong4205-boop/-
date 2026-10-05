@@ -304,7 +304,7 @@
     boss.start(); G.hud.setBoss(boss);
     c.music('boss2');
     let won;
-    if (promised) { await c.freeWhile(() => boss.hp <= 1 || S().hp <= 1); won = boss.hp <= 1; S().duel = false; }
+    if (promised) { won = await c.duel(boss); S().duel = false; }
     else { won = await c.battle(boss, { music: 'boss2' }); if (!won) return; }
     const bx = boss.x, by = boss.y;
     if (promised) { boss.dead = true; G.hud.boss = null; }

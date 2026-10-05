@@ -48,6 +48,42 @@
   const TH = G.foes.TIER_HP, NEW = [1, 1.8, 2.6, 3.4, 4.2, 5.0, 5.8, 6.4, 7.0, 7.6, 8.4, 9.2];
   for (let i = 0; i < TH.length && i < NEW.length; i++) TH[i] = NEW[i];
 
+  /* ── 경험: 위험도에 비해 가벼운 땅 ──
+     장마다 기대 레벨 사이에 드는 경험을 그 장 던전 · 보스 · 들판 적이 주는 경험과 견주면(보통) 던전 밖에서 더 잡아야 할 적이
+     c1 111 · c2 38 · c3 63 · c4 52 · c5 110 · c6 158 · c7 90 · c8 73 · c9 72 · c10 213 · c11 88 — 그린 · 무지개 섬(★5) · 알록달록 곶(★9)의 적이
+     그 위험도에 비해 가벼웠다(적 하나 평균 4.8 · 40.9 · 97.8, 앞 장 퍼플은 44.6 · 뒤 장 화이트 93.9 · 그레이 128). 그 위험도의 적만 무겁게(퍼플도 조금)
+     → c1 81 · c5 91 · c6 96 · c10 152 · c11 63 (나머지는 그대로) */
+  const XP = { 0: 1.2, 4: 1.15, 5: 1.35, 9: 1.4 };
+  const fsp0 = G.foes.spawn;
+  G.foes.spawn = function () {
+    const e = fsp0.apply(this, arguments);
+    if (e && !e.boss && XP[e.tier] && !e._xp) { e._xp = true; e.exp = Math.round(e.exp * XP[e.tier]); }
+    return e;
+  };
+  /* ── 뒤처진 만큼 (새 장에 들어설 때) ──
+     기대 레벨(장마다 바로 가기 상태)보다 두 레벨 넘게 낮으면 그 차이에 드는 경험의 40%를 「새 땅의 빛」으로.
+     레벨을 넉넉히 올린 사람에겐 아무것도 없다 — 들판 적은 위험도에 묶여 있어 너무 낮으면 장마다 점점 버거워졌다 */
+  const EXPECT = { c2: 8, c3: 12, c4: 16, c5: 20, c6: 25, c7: 30, c8: 35, c9: 40, c10: 44, c11: 48, c12: 50 };
+  const ST = G.story;
+  if (ST && ST.setChapter) {
+    const sc0 = ST.setChapter;
+    ST.setChapter = async function (c, id) {
+      const r = await sc0.apply(this, arguments);
+      try {
+        const s = G.state, E = EXPECT[id];
+        if (E && s && s.lv < E - 2 && !s.flags['catch:' + id]) {
+          s.flags['catch:' + id] = true;
+          let gap = -s.exp; for (let l = s.lv; l < E; l++) gap += D.expNext(l);
+          const mul = G.st.derive(s).expMul * (P.diff ? P.diff().exp || 1 : 1);
+          const n = Math.round(gap * 0.4 / Math.max(0.1, mul));
+          if (n > 0) { G.ui.toast('새 땅의 빛이 스며든다 — 경험 +' + Math.round(n * mul), 'gold'); c.exp(n); }
+        }
+      } catch (e) { console.error('[catch-up]', e); }
+      return r;
+    };
+  }
+  G.balance_xp = { XP, EXPECT };
+
   // 가게: 기술서 · 새 장비 (가게 목록이 이야기 쪽에서 다시 만들어지기도 해서 맨 마지막에)
   if (G.arsenal && G.arsenal.placeLate) G.arsenal.placeLate();
   if (G.skills && G.skills.placeLate) G.skills.placeLate();

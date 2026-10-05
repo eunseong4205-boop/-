@@ -27,7 +27,10 @@
      · 공격 — 하트를 이만큼 맞으면 쓰러지게 (갑옷은 그대로 덜어 준다 · 원래 공격보다 약해지지는 않는다)
      그 장에서 기대하는 힘의 1.35배까지만 따라간다 — 그보다 강해지면(레벨을 많이 올렸으면) 그만큼 쉬워진다.
      첫 두 보스는 조금 너그럽게. 시련의 탑 · 오락기처럼 스스로 맞추는 곳은 noScale */
-  const EXP_ATK = [3, 4.5, 5, 5.6, 6.3, 7, 8, 22, 23.5, 24.5, 25.5, 26.5];   // 장(티어)별 기대 검 공격 — 장마다 바로 가기 상태 기준
+  // 장(티어)별 기대 검 공격. 예전엔 장마다 바로 가기 상태(시작의 검 그대로) 기준이라 ★3~6이 5.6~8이었다 —
+  // 가게 검(바람 단검 · 도끼검 · 거인의 대검 …)을 사 든 사람에겐 보스가 반쯤(보통 32번 → 15번) 베면 쓰러졌다.
+  // 이제 그 장까지 열린 가게의 좋은 검을 든 공격의 ¾ (주인공 힘은 여전히 이 값의 1.35배까지만 따라간다)
+  const EXP_ATK = [3, 5.6, 7.5, 13.4, 13.6, 14, 15.3, 22, 23.5, 25.1, 25.5, 26.5];
   const EXP_HP = [4, 5, 6, 7, 8, 9, 11, 12, 14, 16, 17, 18];                // 기대 하트
   const BOSS_DIFF = [{ sw: 22, hits: 6.5 }, { sw: 32, hits: 3.9 }, { sw: 42, hits: 2.9 }, { sw: 52, hits: 2.2 }];   // 쉬움 · 보통 · 어려움 · 매우 어려움
   function bossTier(o) {
@@ -67,7 +70,14 @@
       this.dir = 'down'; this.state = 'idle';
       if (D.init) D.init(this);
     }
-    start() { if (this.st === 'wait') { this.set('idle'); this.aggro = true; } }
+    start() { if (this.st === 'wait') { this.set('idle'); this.aggro = true; } if (this.spd0 == null) this.spd0 = this.speed; }
+    /** 결투를 처음부터 다시: 체력 · 둘째 막 · 속도 · 칼날 장면 */
+    resetDuel() {
+      this.hp = this.maxHp; this.phase2 = false; this.phase3 = false; if (this.spd0 != null) this.speed = this.spd0;
+      this.settled = false; this.bfxClash = false; this.combo = 0; this.stunT = 0; this.inv = 0; this.burnT = 0;
+      if (this.home) { this.x = this.home.x; this.y = this.home.y; }
+      this.set('idle');
+    }
     update(dt, Wd) {
       if (G.prog) dt *= G.prog.diff().spd;
       this.t += dt; this.stT += dt;

@@ -339,8 +339,7 @@
       s.duel = true;
       await c.cinema(false); c.lock(false);
       boss.start(); G.hud.setBoss(boss); c.music('final');
-      let win = false;
-      await c.freeWhile(() => { if (boss.hp <= 1) { win = true; return true; } return s.hp <= 1; });
+      const win = await c.duel(boss);
       s.duel = false;
       const bx = boss.x, by = boss.y; boss.dead = true; G.hud.boss = null;
       for (const e of G.world.ents) if (e.foe && !e.dead) e.dead = true;
@@ -384,7 +383,12 @@
     const ally = G.world.add(new KaironAlly({ x: px(9), y: py(12), target: bs }));
     s.duel = true;
     bs.start(); G.hud.setBoss(bs);
-    const won = await (async () => { await c.freeWhile(() => bs.dead || bs.dying || bs.hp <= 1 || s.hp <= 1); return bs.dead || bs.dying || bs.hp <= 1; })();
+    let ups = 0;
+    const won = await c.duel(bs, { rescue: async (c2) => {
+      ups++;
+      const L = ['…일어나. 아직 끝나지 않았어. 엄마도 16년 동안 쓰러질 뻔했어. 매일.', '괜찮아. 엄마 손 잡아. …봐, 저 안에서도 누가 손을 내밀고 있어.', '한 번 더. 이번엔 같이.'];
+      await c2.say('serin', L[Math.min(L.length - 1, ups - 1)], { face: 'sad', remote: true });
+    } });
     s.duel = false;
     ally.dead = true;
     if (!won) { c.lock(true); await c.say('serin', '…일어나. 아직 끝나지 않았어. 엄마도 16년 동안 쓰러질 뻔했어. 매일.', { face: 'sad' }); c.heal(); c.lock(false); bs.dead = true; G.hud.boss = null; S().flags.c12_kairon = true; G.script.run(finalChoice); return; }

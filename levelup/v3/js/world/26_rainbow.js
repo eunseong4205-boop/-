@@ -508,8 +508,7 @@
         const boss = G.bosses.spawn('cassian', C0.x, C0.y - 30, { hpMul: 1.3 });
         boss.duel = true; boss.home = { x: C0.x, y: C0.y - 20 }; G.bosses.duelTo(boss, 0.2);
         c.lock(false); boss.start(); G.hud.setBoss(boss); c.music('boss2');
-        let win = false;
-        await c.freeWhile(() => { if (boss.hp <= 1) { win = true; return true; } return S().hp <= 1; });
+        const win = await c.duel(boss);
         const bx = boss.x, by = boss.y; boss.dead = true; G.hud.boss = null;
         c.lock(true);
         const cs2 = c.spawn({ cid: 'cassian', x: bx, y: by }); c.faceEach('hero', cs2);
@@ -520,8 +519,10 @@
       } else {
         const fs = R0.foes.map(([t, dx, dy]) => G.foes.spawn(t, C0.x + dx, C0.y + dy, { tier: 5 }));
         c.lock(false);
-        await c.freeWhile(() => fs.every((e) => e.dead) || S().hp <= 1);
-        if (S().hp <= 1) lost = true;
+        S().duelDown = false;
+        await c.freeWhile(() => fs.every((e) => e.dead) || S().duelDown);
+        if (S().duelDown) lost = true;
+        S().duelDown = false;
         for (const e of fs) e.dead = true;
       }
       c.heal();

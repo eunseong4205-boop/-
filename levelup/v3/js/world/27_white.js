@@ -368,8 +368,7 @@
     await c.cinema(false);
     c.lock(false);
     boss.start(); G.hud.setBoss(boss); c.music('boss2');
-    let win = false;
-    await c.freeWhile(() => { if (boss.hp <= 1) { win = true; return true; } return S().hp <= 1; });
+    const win = await c.duel(boss);
     S().duel = false;
     const bx = boss.x, by = boss.y; boss.dead = true; G.hud.boss = null;
     c.lock(true);

@@ -185,7 +185,7 @@
     let dq = Math.max(1, Math.floor(exact + 1e-6));
     C.hurtCarry = U.clamp(exact - dq, -0.99, 0.99);
     if (s.skills.sv_second && s.hp >= 2 && dq >= s.hp) dq = s.hp - 1;
-    if (s.duel && dq >= s.hp) dq = Math.max(0, s.hp - 1);
+    if (s.duel && dq >= s.hp) { dq = Math.max(0, s.hp - 1); s.duelDown = true; }   // 결투: 쓰러지지 않고 무릎 (c.duel이 받는다)
     s.hp -= dq;
     p.inv = opt.inv || 0.9; p.flash = 0.2; p.flashCol = '#ff4a5e';
     if (!opt.noKnock && src) { const [nx, ny] = U.norm(p.x - src.x, p.y - src.y); p.kx = nx * 220; p.ky = ny * 220; }
@@ -455,15 +455,32 @@
     }
     return A;
   }
-  function autoTarget(p, a0, range, cone) {
+  /* 자동 조준을 더 자연스럽게 (바라보는 쪽은 그대로 존중한다 — 직접 겨누면 늘 그쪽):
+     · 붙든다: 방금(1.6초 안) 겨눈 적을 먼저 — 조금 넓은 원뿔 · 사거리까지. 다른 쪽으로 돌아서면 저절로 놓는다(연타 중에 이 적 저 적으로 튀지 않게)
+     · 칼: 몸에 붙은 적(28px 안)은 옆(±92°)까지 · 높이가 다른 땅의 적(날지 않는)은 겨누지 않는다(닿지도 않는다)
+     · 활 · 주문 · 던지기: 벽 · 높은 땅 너머의 적은 빼고(쏘면 벽에 박힌다), 움직이는 적은 날아가는 동안 갈 곳을 조금 앞서 겨눈다 */
+  const SHOTSPD = { bow: 300, magic: 220, skill: 250, special: 250, throw: 180 };
+  function losFree(p, ex, ey) {
+    const m = W().map; if (!m || !m.shotFree) return true;
+    const z = p.z || 0, x0 = p.x, y0 = p.y - 6, dx = ex - x0, dy = ey - y0, n = Math.ceil(U.len(dx, dy) / 8);
+    for (let k = 1; k < n - 1; k++) if (!m.shotFree(x0 + dx * k / n, y0 + dy * k / n, z)) return false;
+    return true;
+  }
+  function autoTarget(p, a0, range, cone, kind) {
     let best = null, bs = 1e9;
+    const lock = p.lockE && !p.lockE.dead && !p.lockE.dying && p.t - (p.lockAt || -9) < 1.6 ? p.lockE : null;
     for (const e of foes()) {
       if (e.hidden || e.dying || e.friendly || e.cloakT > 0 || e.submerged) continue;
       const ex = e.x, ey = e.y - (e.h || 16) / 2;
-      const dd = U.dist(p.x, p.y - 9, ex, ey); if (dd > range + (e.r || 8)) continue;
+      const isLock = e === lock;
+      const dd = U.dist(p.x, p.y - 9, ex, ey); if (dd > range * (isLock ? 1.15 : 1) + (e.r || 8)) continue;
       const da = Math.abs(U.angDiff(a0, U.angle(ex - p.x, ey - (p.y - 9))));
-      if (da > cone && dd > 20) continue;
-      const sc = dd + da * 70 - (e.boss ? 16 : 0);
+      const close = kind === 'sword' && dd < 28 + (e.r || 8);
+      const cn = close ? Math.max(cone, 1.6) : cone + (isLock ? 0.35 : 0);
+      if (da > cn && dd > 20) continue;
+      if (kind === 'sword' && !e.fly && !e.boss && Math.abs((e.z || 0) - (p.z || 0)) >= 1) continue;
+      if (kind && kind !== 'sword' && dd > 24 && !losFree(p, ex, ey)) continue;
+      const sc = dd + da * 70 - (e.boss ? 16 : 0) - (isLock ? 34 : 0);
       if (sc < bs) { bs = sc; best = e; }
     }
     return best;
@@ -487,11 +504,16 @@
     const a0 = U.angle(p.face[0], p.face[1]);
     const st = (S() && S().settings) || {};
     if (st.autoAim !== false) {
-      const R = AIMR[kind] || AIMR.skill, t = autoTarget(p, a0, R[0], R[1]);
+      const R = AIMR[kind] || AIMR.skill, t = autoTarget(p, a0, R[0], R[1], kind);
       // 활 · 주문: 바라보는 쪽의 눈 스위치(화살로 맞히는 퍼즐)도 겨눈다 — 둘레의 적보다 바라보는 쪽에 더 가까우면 그쪽
       const pz = kind === 'bow' || kind === 'magic' ? puzzleTarget(p, a0, 190, 0.42) : null;
       if (pz && (!t || Math.abs(U.angDiff(a0, U.angle(pz.x - p.x, pz.y - 8 - (p.y - 9)))) + 0.12 < Math.abs(U.angDiff(a0, U.angle(t.x - p.x, t.y - (t.h || 16) / 2 - (p.y - 9)))))) return { a: U.angle(pz.x - p.x, pz.y - 8 - (p.y - 9)), src: 'auto', target: pz };
-      if (t) return { a: U.angle(t.x - p.x, t.y - (t.h || 16) / 2 - (p.y - 9)), src: 'auto', target: t };
+      if (t) {
+        let tx = t.x, ty = t.y - (t.h || 16) / 2;
+        const sp = SHOTSPD[kind];
+        if (sp && (t.vx || t.vy)) { const lt = Math.min(0.6, U.dist(p.x, p.y - 9, tx, ty) / sp) * 0.8; tx += (t.vx || 0) * lt; ty += (t.vy || 0) * lt; }   // 앞서 겨누기
+        return { a: U.angle(tx - p.x, ty - (p.y - 9)), src: 'auto', target: t };
+      }
     }
     return { a: a0, src: 'face' };
   }
@@ -500,6 +522,7 @@
     const r = aimFor(p, kind);
     p.face = [Math.cos(r.a), Math.sin(r.a)]; p.dir = U.dir4(p.face[0], p.face[1], p.dir);
     p.aimA = r.a; p.aimSrc = r.src; p.aimTgt = r.target || null; p.aimT = p.t;
+    if (r.target) { p.lockE = r.target; p.lockAt = p.t; } else if (r.src !== 'auto') p.lockE = null;   // 직접 겨누면 붙든 적을 놓는다
     return r.a;
   }
   C.explicitAim = explicitAim; C.aimFor = aimFor; C.faceAim = faceAim; C.autoTarget = autoTarget;
@@ -1121,11 +1144,16 @@
       g.fillStyle = col; g.fillRect(mx - 7, my, 3, 1); g.fillRect(mx + 5, my, 3, 1); g.fillRect(mx, my - 7, 1, 3); g.fillRect(mx, my + 5, 1, 3);
       g.restore();
     }
-    // 자동 조준이 잡은 적: 발밑 꺾쇠 (활을 당기는 동안 · 막 겨눈 뒤)
-    const t = p.aimSrc === 'auto' && p.aimTgt && !p.aimTgt.dead && (p.state === 'bow' || p.t - (p.aimT || -9) < 0.4) ? p.aimTgt : null;
+    // 자동 조준이 잡은 적: 발밑 꺾쇠 (활을 당기는 동안 · 막 겨눈 뒤). 그 밖에도 근처에 덤비는 적이 있으면 「지금 치면 이 적」을 옅게 미리 보인다
+    let t = p.aimSrc === 'auto' && p.aimTgt && !p.aimTgt.dead && (p.state === 'bow' || p.t - (p.aimT || -9) < 0.4) ? p.aimTgt : null, ta = 0.7;
+    if (!t && !ex && (s.settings || {}).autoAim !== false && (W().tickN || 0) % 3 === 0) {
+      const wk = C.weapon ? C.weapon() : 'sword';
+      if (foes().some((e) => e.aggro && !e.dead && U.dist(e.x, e.y, p.x, p.y) < 240)) { const r = aimFor(p, wk); C.preview = r.src === 'auto' ? r.target : null; } else C.preview = null;
+    } else if (t || ex) C.preview = null;
+    if (!t && C.preview && !C.preview.dead && !C.preview.dying) { t = C.preview; ta = 0.32; }
     if (t) {
       const tx = Math.round(t.x - cx), ty = Math.round(t.y - cy), w2 = (t.r || 8) + 3;
-      g.save(); g.globalAlpha = 0.7; g.strokeStyle = col; g.lineWidth = 1;
+      g.save(); g.globalAlpha = ta; g.strokeStyle = col; g.lineWidth = 1;
       for (const sx of [-1, 1]) { g.beginPath(); g.moveTo(tx + sx * w2, ty - 3); g.lineTo(tx + sx * w2, ty + 1); g.lineTo(tx + sx * (w2 - 3), ty + 1); g.stroke(); }
       g.restore();
     }
