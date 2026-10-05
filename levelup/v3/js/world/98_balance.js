@@ -63,6 +63,34 @@
   };
   G.balance_xp = { XP };
 
+  /* ── 레벨에 따라 둘레의 적도 함께 자란다 (정비례 · 완만하게) ──
+     예전: 적의 세기는 지역 위험도(★)로만 정해져, 레벨을 올린 뒤 앞 지역으로 돌아가면 모든 적이 한 방이었다.
+     이제 주인공 레벨이 그 위험도의 기대 레벨(★0 그린 2.5 … ★9 알록달록 곶 42)을 넘은 만큼, 한 레벨마다
+     · 체력 +1% · 공격 +0.8% · 경험 +1.2% · 골드 +0.8% (넘지 않았으면 그대로), 끝은 체력 ×1.5 · 공격 ×1.4
+     · 레벨당 주인공이 자라는 몫(능력치만으로 앞쪽 4~5% · 뒤쪽 2%, 장비는 따로)의 절반 아래로 — 레벨을 올린 만큼 늘 더 세진다
+       (재 보니 레벨당 2.5%로는 뒤쪽 장에서 10레벨을 올려도 그 지역 적이 오히려 더 단단해져, 레벨을 올릴 까닭이 사라졌다)
+     · 그린 잡몹: Lv 20에 검 1.3 → 1.5번, Lv 44에 0.35 → 0.5번(여전히 한 번) — 어려워지지 않는다
+     보스 · 오락기 놀이 · 기억 속 장면은 빼고, 던전 · 들판 · 숨은 곳의 일반 적 모두 */
+  const LT = [2.5, 6, 10, 14, 18, 22.5, 27.5, 32.5, 37.5, 42, 46, 50];
+  const LV = { hp: 0.01, atk: 0.008, exp: 0.012, gold: 0.008, capHp: 1.5, capAtk: 1.4, off: false };
+  function lvGap(tier, lv) { return Math.max(0, (lv || 1) - LT[Math.max(0, Math.min(LT.length - 1, tier || 0))]); }
+  const fsp1 = G.foes.spawn;
+  G.foes.spawn = function (type, x, y, o) {
+    const e = fsp1.apply(this, arguments);
+    const s = G.state, m = G.world && G.world.map;
+    if (!e || e.boss || e._lvs || LV.off || !s || (o && o.noLv) || (m && (m.id === 'arcade_room' || m.stage)) || (G.story && G.story.staging)) return e;
+    const gap = lvGap(e.tier, s.lv);
+    e._lvs = true; e.lvGap = gap;
+    if (gap <= 0) return e;
+    const kh = Math.min(LV.capHp, 1 + LV.hp * gap), ka = Math.min(LV.capAtk, 1 + LV.atk * gap);
+    e.maxHp = e.hp = Math.max(1, Math.round(e.maxHp * kh));
+    e.atk = Math.round(e.atk * ka * 10) / 10;
+    e.exp = Math.round(e.exp * (1 + LV.exp * gap));
+    e.gold = Math.round(e.gold * (1 + LV.gold * gap));
+    return e;
+  };
+  G.balance_lv = { LT, LV, lvGap };
+
   // 가게: 기술서 · 새 장비 (가게 목록이 이야기 쪽에서 다시 만들어지기도 해서 맨 마지막에)
   if (G.arsenal && G.arsenal.placeLate) G.arsenal.placeLate();
   if (G.skills && G.skills.placeLate) G.skills.placeLate();

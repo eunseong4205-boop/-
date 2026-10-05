@@ -73,15 +73,30 @@
   /** 이야기가 바뀌어 사람들이 오가야 할 때: 지금 지도의 사람들을 다시 세운다 */
   ST.refreshPeople = function () {
     const Wd = W(), m = Wd.map; if (!m) return;
-    for (const e of Wd.ents) if (e.fromPeople) e.dead = true;
-    spawnPeople(m, Wd);
+    spawnPeople(m, Wd, true);
   };
-  function spawnPeople(m, Wd) {
+  /** keep: 이야기가 바뀌어 다시 세울 때 — 그대로 남을 사람은 지금 자리 그대로 둔다(예전엔 모두 지우고 다시 세워, 돌아다니던 사람이
+      제자리로 순간 이동하고 화면 안의 사람이 깜박였다). 떠날 사람은 걸어 나가고(world/96d_presence), 새로 올 사람은 걸어 들어온다.
+      서야 할 자리가 바뀐 사람은 그 자리로 걸어간다(화면 밖이면 바로) */
+  function spawnPeople(m, Wd, keep) {
     const s = S();
-    // 두 번 세우지 않는다 (들어서는 장면이 먼저 사람들을 다시 세운 경우)
-    for (const e of Wd.ents) if (e.fromPeople) e.dead = true;
+    const old = new Map();
+    for (const e of Wd.ents) if (e.fromPeople && !e.dead) { if (keep && e.spec && !old.has(e.spec)) old.set(e.spec, e); else e.dead = true; }
     for (const sp of ST.people[m.id] || []) {
       if (sp.when && !sp.when(s)) continue;
+      const was = old.get(sp);
+      if (was) {
+        old.delete(sp);
+        const pos = typeof sp.at === 'function' ? sp.at(s) : [sp.x, sp.y];
+        const hx = pos[0] * TS + 8, hy = pos[1] * TS + 12;
+        // 정한 자리(칸)가 바뀐 사람만 (자리 고치기 96_sanity가 옮긴 home과 견주지 않는다)
+        if (was.specPos && (was.specPos[0] !== pos[0] || was.specPos[1] !== pos[1])) {
+          was.home = { x: hx, y: hy }; was.specPos = [pos[0], pos[1]];
+          if (G.presence && G.presence.onScreen(was) && !G.presence.dark()) G.presence.walkTo(was, hx, hy, sp.dir || 'down');   // 조작을 막지 않는 걸음
+          else { was.x = hx; was.y = hy; was.baseDir = was.dir = sp.dir || 'down'; E.settle(m, was); }
+        }
+        continue;
+      }
       const cast = sp.id && G.cast.get(sp.id);
       const look = sp.look || (cast && cast.look) || G.cast.folk(sp.folk || 'farmer');
       const pos = typeof sp.at === 'function' ? sp.at(s) : [sp.x, sp.y];
@@ -92,10 +107,12 @@
       if (look && look.kind && !sp.drawFn) npc.drawFn = beastDraw(npc, look.kind);
       if (sp.met !== false && sp.id) npc.onTalkMet = true;
       E.settle(m, npc);
-      npc.fromPeople = true;
+      npc.fromPeople = true; npc.spec = sp; npc.specPos = [pos[0], pos[1]];
       Wd.add(npc);
       if (sp.init) sp.init(npc, s);
+      if (keep && G.presence) G.presence.enter(npc, {});
     }
+    for (const e of old.values()) e.dead = true;   // 이제 이 지도에 없을 사람
   }
   ST.decorate = {};   // 지도 id → [fn(m, W, s)]: 들어설 때마다 (조건부 소품 · 적 · 사건)
   ST.onMap = function (mapId, fn) { (ST.decorate[mapId] = ST.decorate[mapId] || []).push(fn); };
@@ -198,7 +215,16 @@
         this.x += nx * sp * dt; this.y += ny * sp * dt; this.z = tgt[2];
         this.dir = U.dir4(nx, ny, this.dir); this.state = 'walk'; this.walkT += dt; this.vx = nx * sp; this.vy = ny * sp;
       } else { this.state = 'idle'; this.vx = this.vy = 0; }
-      if (U.dist(this.x, this.y, p.x, p.y) > 200) { this.x = p.x - 10; this.y = p.y + 4; this.trail = []; }
+      // 멀리 떨어지면 뛰어서 따라온다 (예전엔 200픽셀만 떨어져도 주인공 옆으로 순간 이동했다).
+      // 아주 멀면(같은 지도 안에서 주인공이 옮겨진 때) 화면 밖 주인공 뒤쪽에 서서 뛰어 들어온다
+      const far = U.dist(this.x, this.y, p.x, p.y);
+      if (far > 150) {
+        if (far > 640) { const [bx, by] = U.norm(this.x - p.x, this.y - p.y); this.x = p.x + bx * 240; this.y = p.y + by * 150; this.trail = []; }
+        const [nx, ny] = U.norm(p.x - this.x, p.y - this.y), sp = Math.max(this.speed * 2.4, far * 1.6);
+        this.x += nx * sp * dt; this.y += ny * sp * dt; this.z = p.z;
+        this.dir = U.dir4(nx, ny, this.dir); this.state = 'walk'; this.walkT += dt * 2; this.vx = nx * sp; this.vy = ny * sp;
+        if (U.dist(this.x, this.y, p.x, p.y) <= 150) this.trail = [];
+      }
       // 가끔 혼잣말
       this.chatT -= dt;
       if (this.chatT <= 0 && !G.script.running) { this.chatT = 25 + Math.random() * 30; const line = ST.chatter ? ST.chatter(this.cid) : null; if (line) G.cine.bubble(this, line, { life: 3 }); }
@@ -207,7 +233,15 @@
     draw(g, cx, cy) { if (this.drawFn) this.drawFn(g, cx, cy); else G.sprites.drawChar(g, this, cx, cy); }
   }
   ST.Follower = Follower;
-  ST.join = function (id) { const s = S(); s.party = s.party || []; if (!s.party.includes(id)) s.party.push(id); const p = W().player; if (p && W().map) W().add(new Follower({ cid: id, look: G.cast.get(id).look, name: G.cast.name(id) })); };
+  ST.join = function (id) {
+    const s = S(); s.party = s.party || []; if (!s.party.includes(id)) s.party.push(id);
+    const p = W().player; if (!p || !W().map) return;
+    const fw = W().add(new Follower({ cid: id, look: G.cast.get(id).look, name: G.cast.name(id) }));
+    // 장면 속 그 사람(방금 지운 · 아직 선)이 있으면 그 자리에서 따라붙는다 — 주인공 옆에 뚝 나타나지 않게
+    const was = W().ents.find((e) => e !== fw && e.npc && !e.follower && e.cid === id && (e.dead || !e.hidden) && U.dist(e.x, e.y, p.x, p.y) < 260);
+    if (was) { fw.x = was.x; fw.y = was.y; fw.dir = was.dir; if (!was.dead) was.dead = true; was._noFade = true; }
+    else if (G.presence) G.presence.enter(fw, {});
+  };
   /** 동료가 떠난다. walk면 걸어서 나간다 (대사 중에 도트가 사라지지 않게) */
   ST.leave = function (id, walk) {
     const s = S(); s.party = (s.party || []).filter((x) => x !== id);

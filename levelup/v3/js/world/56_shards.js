@@ -516,7 +516,7 @@
     intro: async (c) => { await c.narr('스물두 살. 기사단 회계실 서기. 첫 출근 석 달째.\n오늘 새 장부의 첫 장을 짠다. 탑이 대륙의 빛을 걷기 시작하면, 걷다가 생기는 「손실」을 적을 칸이 필요하다.'); },
     npcs: [
       { key: 'regina', name: '서기 레지나', x: 11, y: 5, dir: 'left', look: folk('nun', { hat: null, hc: '#4a3a2a', tc: '#5a5a7a' }), talk: async (c, n, st) => { st.reg = true; await c.say(n, U.pick(['오스본, 칸 이름은 정했어? 위에서 「깔끔하게」 지으래. 읽는 사람이 놀라지 않게.', '나는 손수건을 가져왔어. 장부 쓰다 울면 글씨가 번지잖아. …농담이야. 반만.']), { face: 'normal' }); } },
-      { key: 'graus', name: '견습 기사 그라우스', x: 3, y: 5, dir: 'right', look: folk('knight', { hc: '#3a3448', tc: '#5a5a7a' }), talk: async (c, n, st) => { st.graus = true; await c.say(n, U.pick(['하나, 둘, 셋… 이번 기수 동기들 이름을 세는 중이야. 마흔하나. 다 외웠어. 숫자로 세면 아무도 안 빠지거든.', '난 숫자가 좋아. 숫자는 누굴 미워하지 않아. 공평하잖아.']), { face: 'smile' }); } },
+      { key: 'graus', name: '견습 기사 그라우스', x: 3, y: 5, dir: 'right', look: folk('knight', { hc: '#3a3448', tc: '#5a5a7a' }), talk: async (c, n, st) => { st.graus = true; await c.say(n, U.pick(['이번 기수 동기들 이름을 외우는 중이야. 다 외웠어. 숫자로 세면 아무도 안 빠지거든.', '난 숫자가 좋아. 숫자는 누굴 미워하지 않아. 공평하잖아.']), { face: 'smile' }); } },
       { key: 'kairon', name: '그림자 속의 사내', x: 7, y: 3, dir: 'down', look: G.cast.get('kairon') ? G.cast.get('kairon').look : folk('knight'), talk: async (c, n, st) => {
         if (!st.desk) { await c.say(n, '…장부부터 짜라. 이야기는 그다음이다.', { face: 'normal' }); return; }
         c.lock(true); await c.cinema(true);
@@ -524,7 +524,7 @@
         await c.say(n, st.col === 2 ? '…뒷장에 이름을 적었군. 지우라고는 하지 않겠다. 하지만 아무도 그 장은 읽지 않을 거다.' : st.col === 1 ? '「빌린 빛」. 갚을 생각이 있다는 뜻이군. 좋은 이름이다. 위에서는 바꾸겠지만.' : '「허용 손실」. 정확하군. 읽는 사람이 놀라지 않을 거다.', { face: 'closed' });
         await c.say(n, '이 칸에 이천삼백열두 명이 들어간다. 계산은 끝났다. 흑점이 오면 대륙 전체가 들어간다. 그보다는 적다.', { face: 'normal' });
         await c.say(n, '…적는 손이 떨리면, 떨려도 적어라. 떨리지 않는 손으로 적는 건 더 나쁘다.', { face: 'sad' });
-        await c.narr('그 사내는 그날 이후 십육 년 동안 회계실에 오지 않았다. 장부는 매달 그의 책상으로 올라갔다. 이천삼백열두 칸이 다 찰 때까지.');
+        await c.narr('그 사내는 그날 이후 다시는 회계실에 오지 않았다. 장부는 매달 그의 책상으로 올라갔다. 그 칸이 다 찰 때까지.');
         await c.narr('…그 사람들은 그릇이 아니었다. 그냥 빛을 조금 더 낸 사람들이었다. 흑점 속에서 그들은 하나의 목소리가 되었다. 「허용 손실」이라는 이름이 싫다고 말하는.');
         await c.cinema(false);
         await next(c, st.col || 0, '흑점 속 수많은 목소리는 「이천삼백열두 사람」이었다. 숫자가 아니라.');

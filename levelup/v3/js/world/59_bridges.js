@@ -106,7 +106,7 @@
         return true;
       },
       async night(c) {
-        await c.say('toria', '할머니 오두막 서쪽 벽에 빗금 있잖아. 하루에 하나. 열여섯 해면… 오천 개가 넘어.', { face: 'normal' });
+        await c.say('toria', '할머니 오두막 서쪽 벽에 빗금 있잖아. 하루에 하나. 그게 벽 한쪽을 다 채웠어.', { face: 'normal' });
         const k = await c.choice('할머니는 무엇을 세고 있었을까.', ['엄마를 기다린 날', '나를 지킨 날', '모르겠다']);
         if (k === 0) await c.say('toria', '…그럴지도. 근데 할머니는 기다리는 사람 얼굴이 아니었어. 지키는 사람 얼굴이었어.', { face: 'sad' });
         else if (k === 1) await c.say('toria', '…응. 나도 그렇게 생각해. 마지막 빗금 긋는 날, 할머니 손이 떨렸거든.', { face: 'sad' });
@@ -178,7 +178,7 @@
         await c.say('toria', '요즘 탑 소리가 이상해. 윙윙거리다가… 가끔 숨을 참아. 누가 탑 안에서 숨죽이고 있는 것처럼.', { face: 'normal' });
         await c.say('toria', '골디 아저씨가 그랬지. 사천왕 회의가 열린다고. 카이론이 흑점 이야기를 할 거라고. …네 이름도.', { face: 'sad' });
         const k = await c.choice(null, ['이름이 불리면 간다', '아직은 숨는다', '먼저 찾아간다']);
-        await c.say('toria', ['찍. 당당하다. 할머니가 들으면 꿀밤 줄 거야. …그리고 몰래 웃을 거야.', '숨는 거 잘해. 나 16년 동안 했어. 같이 숨자.', '…진짜? 너 가끔 할머니보다 무서워.'][k], { face: k === 1 ? 'smile' : 'shock' });
+        await c.say('toria', ['찍. 당당하다. 할머니가 들으면 꿀밤 줄 거야. …그리고 몰래 웃을 거야.', '숨는 거 잘해. 평생 했어. 같이 숨자.', '…진짜? 너 가끔 할머니보다 무서워.'][k], { face: k === 1 ? 'smile' : 'shock' });
       } },
     /* ── 무지개 → 화이트 ── */
     { id: 'g6', from: 'c6', to: 'c7',
@@ -217,7 +217,7 @@
     { id: 'g7', from: 'c7', to: 'c8',
       async farewell(c) {
         await c.narr('대성당 종이 한 번 울렸다. 기도 종이 아니라, 문 여는 종이었다. 성녀가 처음으로 문을 활짝 열어 둔 날.');
-        await c.say('toria', '루미에 성녀님 편지 있잖아. 16년 치래. 엄마한테 쓴 거.', { face: 'sad' });
+        await c.say('toria', '루미에 성녀님 편지 있잖아. 한 묶음이래. 엄마한테 쓴 거.', { face: 'sad' });
         const k = await c.choice(null, ['한 통 꺼내 읽는다', '나중에 읽는다']);
         if (k === 0) { await c.narr('「세린. 오늘은 아이 셋이 나았어요. 기도등이 셋 꺼졌어요. 그 등을 붙인 사람 셋이 조금 더 하얘졌어요.\n당신이라면 뭐라고 했을까요. …아니, 알아요. 「나눠요, 짜내지 말고.」」'); await c.say('toria', '…엄마 목소리 같아. 들어 본 적 없는데.', { face: 'cry' }); }
         else await c.say('toria', '응. 나중에. 다 끝나고. 엄마랑 같이 읽어도 되겠다.', { face: 'smile' });
@@ -238,7 +238,7 @@
         return true;
       },
       async night(c) {
-        await c.say('toria', '에델 아저씨, 투구 벗은 얼굴 생각보다 젊었어. 울 것 같은 얼굴이었어. 16년 동안 투구 안에서 그 얼굴로 있었을까.', { face: 'sad' });
+        await c.say('toria', '에델 아저씨, 투구 벗은 얼굴 생각보다 젊었어. 울 것 같은 얼굴이었어. 그동안 투구 안에서 그 얼굴로 있었을까.', { face: 'sad' });
         const k = await c.choice(null, ['투구는 우는 얼굴을 숨기려고 쓴다', '투구는 머리를 지키려고 쓴다']);
         await c.say('toria', k === 0 ? '…그럼 투구 벗은 건 이제 울어도 된다는 거네. 다행이다.' : '찍. 너는 진지한 데서 꼭 그렇게 말하더라. …근데 맞는 말이야. 둘 다 지켜.', { face: k === 0 ? 'smile' : 'smirk' });
         if (f('met:noah')) await c.say('toria', '노아도 이제 그림 그릴 수 있대. 손끝이 다시 안 비친대. …다음엔 우리 그려 달라고 하자.', { face: 'happy' });
@@ -248,7 +248,7 @@
       async farewell(c) {
         await c.narr('공방 굴뚝에서 처음으로 색이 있는 연기가 올랐다. 희미한 분홍. 볼트가 무언가 시험하는 모양이었다.');
         await c.say('toria', '세피아 언니 손 흔들 때 째깍 소리 났어. 그게 우는 소리래. 로봇은 그렇게 운대.', { face: 'sad' });
-        await c.say('toria', '…동쪽은 밤이래. 16년 동안 해가 안 뜬 땅. 거기 지나야 하늘 가는 사람한테 갈 수 있대.', { face: 'normal' });
+        await c.say('toria', '…동쪽은 밤이래. 해가 안 뜨는 땅. 거기 지나야 하늘 가는 사람한테 갈 수 있대.', { face: 'normal' });
       },
       async meet(c) {
         const n = await traveler(c, { look: G.cast.folk('kid', { hc: '#2a2438', tc: '#3a3450', bc: '#2a2438', skin: 'pale' }), name: '등불 소년 엘로' });
@@ -277,7 +277,7 @@
     { id: 'g9', from: 'c9', to: 'c10',
       async farewell(c) {
         await c.narr('동쪽 하늘 끝이 아주 조금 파래져 있었다. 등불 거리 사람들이 지붕에 올라가 그 쪽을 보고 있었다. 아무도 말하지 않았다.');
-        await c.say('toria', '찍. 하늘이 파래. 16년 만이래. 다들 우는지 웃는지 모르는 얼굴이야.', { face: 'happy' });
+        await c.say('toria', '찍. 하늘이 파래. 처음 본대. 다들 우는지 웃는지 모르는 얼굴이야.', { face: 'happy' });
         if (inParty('lyra')) {
           await c.say('lyra', '…저기요. ' + sib() + '라고 불러도 돼요. 아직 어색하면 그냥 리라라고 해도 되고요.', { face: 'blush' });
           const k = await c.choice(null, ['리라 ' + sib(), '리라']);
@@ -302,7 +302,7 @@
       },
       async night(c) {
         await c.say('toria', '…리라가 ' + sib() + '래. 너한테. 나 이제 둘 다 지켜야 돼. 다람쥐 일이 두 배야.', { face: 'smirk' });
-        if (inParty('lyra')) await c.say('lyra', '저는 제가 지킬게요. 토리아는 쉬어요. 16년 동안 쉬지 않았잖아요.', { face: 'smile' });
+        if (inParty('lyra')) await c.say('lyra', '저는 제가 지킬게요. 토리아는 쉬어요. 한 번도 쉬지 않았잖아요.', { face: 'smile' });
         await c.say('toria', '…카이론 말이야. 「오늘도 렙업이군」 했잖아. 엄마가 늘 하던 인사라고. 그 사람, 엄마 인사를 아직 기억해.', { face: 'sad' });
         const k = await c.choice('카이론을 만나면.', ['검을 든다', '먼저 말을 건다', '아직 모르겠다']);
         await c.say('toria', ['…그럼 나는 뒤에서 찍 할게. 크게.', '응. 무슨 말? …「오늘도 렙업이에요」? 그건 반칙이다. 너무 세.', '모르는 게 맞아. 아흔 날 남았어. 그 안에 알게 될 거야.'][k], { face: 'normal' });
@@ -378,7 +378,7 @@
     } },
     { id: 'n_c11_capsule', when: (s) => s.flags.c11_done && s.ch === 'c11', async night(c) {
       await c.say('toria', '캡슐 안에서 자는 거, 관 같아서 싫다고 했는데… 따뜻하다. 388년 동안 누가 데워 둔 것 같아.', { face: 'normal' });
-      if (inParty('lyra')) { await c.say('lyra', '내일이면 엄마를 봐요. 16년 만에. …저는 처음이에요. 엄마 얼굴 보는 거.', { face: 'sad' }); await c.say('toria', '찍. 리라, 엄마는 너 본 적 있어. 아기 때. 엄마가 너 안고 노래했어. 그 노래 네가 부르는 거.', { face: 'sad' }); await c.say('lyra', '…그래서 처음부터 알았구나.', { face: 'cry' }); }
+      if (inParty('lyra')) { await c.say('lyra', '내일이면 엄마를 봐요. …저는 처음이에요. 엄마 얼굴 보는 거.', { face: 'sad' }); await c.say('toria', '찍. 리라, 엄마는 너 본 적 있어. 아기 때. 엄마가 너 안고 노래했어. 그 노래 네가 부르는 거.', { face: 'sad' }); await c.say('lyra', '…그래서 처음부터 알았구나.', { face: 'cry' }); }
       else await c.say('toria', '내일이면 엄마를 봐. …무슨 말부터 할지 정했어? 나는 「찍」부터 할 거야.', { face: 'smile' });
     } },
   ];
@@ -391,7 +391,7 @@
       ST.join(b);
       await c.fade(true, { sec: 0.5 });
       await c.narr('사흘의 뱃길.');
-      if (b === 'rud') { await c.narr('밤마다 레아는 키를 잡고 콧노래를 불렀다. 루드는 갑판에 누워 별을 셌다.'); await c.say('rud', '별이 이천일백… 아니, 세는 게 아니래. 보는 거래. 레아 누나가 그랬어. 세면 하나도 안 보인대.', { face: 'smile' }); }
+      if (b === 'rud') { await c.narr('밤마다 레아는 키를 잡고 콧노래를 불렀다. 루드는 갑판에 누워 별을 셌다.'); await c.say('rud', '별이 엄청 많아… 아니, 세는 게 아니래. 보는 거래. 레아 누나가 그랬어. 세면 하나도 안 보인대.', { face: 'smile' }); }
       else if (b === 'cassian') {
         await c.narr('고등어호의 밤. 카시안은 갑판에서 혼자 검을 휘둘렀다. 천 번. 그리고 한 번 더.');
         await c.say('cassian', '스승님은 매일 천 번 휘두르라고 했다. 한 번 더는 내 몫이다. …너도 해 볼래?', { face: 'normal' });

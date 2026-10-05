@@ -109,7 +109,7 @@
     if (f('c2_extractor') && !f('c2_done')) { await volkanFarewell(c, n); return; }
     const k = await c.choice(ST.lines({ c2: '뭐냐. 망치 식는다.', c4: '왔냐. 검 좀 보자.', default: '뭐냐.' }), ['물건을 산다 · 검을 두드린다', '에벨린 할머니 이야기', '그만둔다'], { who: 'volkan', name: '볼칸 아저씨' });
     if (k === 0) await c.shop('red');
-    else if (k === 1) await c.say(n, ST.lines({ c2: '초록 창 얘기? …그 창은 부러진 적 없다. 983년에 내가 날을 세웠으니까 안다. 부러진 게 아니라, 내려놓은 거다.', c6: '천년제에서 흰빛이 터졌다며. 에벨린이 16년 동안 무슨 약속을 지켰는지, 이제 너도 알 때가 됐겠지.', c9: '밤의 성까지 갔다고? 에벨린 제자답다. 걔도 겁이 없었지.' }));
+    else if (k === 1) await c.say(n, ST.lines({ c2: '초록 창 얘기? …그 창은 부러진 적 없다. 983년에 내가 날을 세웠으니까 안다. 부러진 게 아니라, 내려놓은 거다.', c6: '천년제에서 흰빛이 터졌다며. 에벨린이 그 긴 세월 무슨 약속을 지켰는지, 이제 너도 알 때가 됐겠지.', c9: '밤의 성까지 갔다고? 에벨린 제자답다. 걔도 겁이 없었지.' }));
   } });
   async function volkanLetter(c, n) {
     c.lock(true);
@@ -121,7 +121,7 @@
     c.take('letter_volkan');
     await c.narr('볼칸이 봉투를 받아 든다. 망치를 쥐던 손이 조금 떨린다. 밀랍을 뜯는 소리가 유난히 크다.');
     await c.wait(1.2);
-    await c.say(n, '…16년 만에 편지 한 장. 그것도 석 줄.', { face: 'sad' });
+    await c.say(n, '…그 오랜만에 편지 한 장. 그것도 석 줄.', { face: 'sad' });
     await c.say(n, '「아이가 열여섯이 됐다. 검이 깼다. 부탁한다.」', { face: 'closed' });
     await c.say(n, '…하, 부탁이라니. 에벨린 입에서 부탁이 다 나오네.', { face: 'smile' });
     c.face(n, 'hero');
@@ -168,7 +168,7 @@
   // 루드 (징수탑 앞)
   ST.person('world', { id: 'rud', x: X0 + 26, y: Y0 + 12, dir: 'left', when: () => !f('c2_extractor'), mark: () => (f('c2_letter') && !f('c2_mine_ok') && ST.route() === 'order' ? '!' : null), talk: async (c, n) => {
     c.flag('met:rud');
-    if (!f('c2_letter')) { await c.say(n, '숫자는 거짓말 안 해. 레드 마을 올해 목표 대비 칠십팔 퍼센트. …비켜, 세고 있으니까.', { face: 'normal' }); return; }
+    if (!f('c2_letter')) { await c.say(n, '올해 목표엔 아직 한참 모자라. …비켜, 바쁘니까.', { face: 'normal' }); return; }
     if (!f('c2_mine_ok')) {
       if (ST.route() === 'order') { await rudEscort(c, n); return; }
       await c.say(n, '광산? 거긴 부단장님 관할이야. 견습은 장부만 세. 들어가면… 안 돼.', { face: 'sad' });
@@ -181,7 +181,7 @@
     c.lock(true);
     await c.say(n, '…등급 후보? 카시안 님 서명이네. 진짜야?', { face: 'shock' });
     await c.say(n, '카시안 님한테서 전서구가 왔어. 「광산 장부를 감사하라. 후보가 동행한다.」 네가 그 후보구나.', { face: 'normal' });
-    await c.say(n, '좋아. 숫자는 거짓말 안 해. 들어가서 세 보자. 들어간 빛이랑 나온 빛.', { face: 'smile' });
+    await c.say(n, '좋아. 들어가서 맞춰 보자. 들어간 빛이랑 나온 빛.', { face: 'smile' });
     c.flag('c2_mine_ok'); c.bond('rud', 1);
     await c.say(null, '루드가 광산 기사들에게 명령서를 내민다. 기사들이 마지못해 길을 비킨다.', { style: 'narr' });
     c.lock(false);
@@ -266,7 +266,7 @@
     c.flag('met:astel');
     if (!S().truth.t_chart) {
       await c.say(n, '…누구냐. 아, 망원경 보러 왔나. 요즘은 아무도 하늘을 안 봐. 땅만 보지. 빛을 세느라.', { face: 'sad' });
-      await c.say(n, '저 검은 점. 16년 전보다 두 배 크다. 가까워지고 있다는 뜻이지.');
+      await c.say(n, '저 검은 점. 처음 봤을 때보다 두 배 크다. 가까워지고 있다는 뜻이지.');
       const k = await c.choice(null, [{ t: '왜 가까워지는 거예요?' }, { t: '카이론은 알아요?' }]);
       if (k === 0) {
         await c.say(n, '…993년에 관측값을 맞춰 보다가 하나를 알았다. 빛을 많이 보낼수록 흑점이 빨라진다는. 양이 아니라 쏠림이야. 한 점에 모으니까.', { face: 'closed' });
@@ -340,8 +340,8 @@
     await c.move(rud, (X + 7) * TS, (Y + 7) * TS, { speed: 70 });
     await c.say('rud', '……', { face: 'shock' });
     await c.narr('루드가 기계 옆에 떨어진 두꺼운 장부를 줍는다. 페이지를 넘기는 손이 점점 빨라진다.');
-    await c.say('rud', '들어간 빛, 삼백사십만. 천년성으로 올라간 빛, 이백십만.', { face: 'normal' });
-    await c.say('rud', '백삼십만이 비어. …부단장님 인장이 찍힌 개인 금고로.', { face: 'angry' });
+    await c.say('rud', '들어간 빛이랑 천년성으로 올라간 빛이 안 맞아.', { face: 'normal' });
+    await c.say('rud', '삼분의 일이 비어. …부단장님 인장이 찍힌 개인 금고로.', { face: 'angry' });
     await c.say('rud', '숫자는 거짓말 안 해. 그런데… 사람은 해.', { face: 'cry' });
     const rt = ST.route();
     let ally = null;

@@ -36,7 +36,7 @@
     frost: { col: '#bfe8ff', col2: '#4a8ad8', glyph: '❄', amb: 'snow', p2: ['깨어난 겨울', '…춥다. 천 년째, 춥다.', 'freeze'], fin: '서리 거인이 녹아내렸다 — 얼음 속의 빛이 풀려난다' },
     hollowking: { col: '#d8d8f0', col2: '#8a7ab8', glyph: '♛', amb: 'silver', p2: ['빈 왕관', '……배고프다. 왕국 하나로는 모자랐다.', 'crown'], fin: '빈 왕이 무너졌다 — 투구 속은 처음부터 비어 있었다' },
     nocturne: { col: '#8a7ad8', col2: '#2a1a48', glyph: '☾', amb: 'shadow', kind: 'human', p2: ['그림자의 밤', null, 'shade'], fin: '그림자 녹턴이 무릎을 꿇었다 — 커튼 사이로 빛 한 줄',
-      lines: () => ({ l1: [['nocturne', '그분의 그림자로 16년. 명령은 하나 — 「아이들을 지켜라.」', 'normal']], p2: [['nocturne', '등불을 꺼라. 그림자는 어둠 속에서 가장 길다.', 'angry']], clash: [['nocturne', '…너도 그분의 아이다. 그래서 물러설 수 없다.', 'sad']] }) },
+      lines: () => ({ l1: [['nocturne', '그분의 그림자로 살았다. 명령은 하나 — 「아이들을 지켜라.」', 'normal']], p2: [['nocturne', '등불을 꺼라. 그림자는 어둠 속에서 가장 길다.', 'angry']], clash: [['nocturne', '…너도 그분의 아이다. 그래서 물러설 수 없다.', 'sad']] }) },
     core: { col: '#6ad8ff', col2: '#ff4a5a', glyph: '⬢', amb: 'data', kind: 'machine', p2: ['경계 단계 2', '[경고] 침입자 위협도 상향. 방위 출력 최대.', 'alarm'], fin: '방위 핵 정지 — 388년 만에 문이 열린다' },
     mk7: { col: '#ffb04a', col2: '#9a9aa8', glyph: '⚙', amb: 'steam', kind: 'machine', p2: ['임계 가동', '[MK-7] 목표 재설정. 목표: 전부.', 'overheat'], fin: 'MK-7 정지 — 쇳덩이 거인이 처음으로 조용해졌다',
       lines: () => (party('sepia') ? { l1: [['sepia', '정지 명령을 무시한다. …저 안에 990년 가을의 녹음이 있다.', 'normal']] } : {}) },
@@ -58,7 +58,7 @@
       lines: () => ({ l1: [['cassian', '스승님의 마지막 초식이다. 같이 배우자.', 'smirk']], p2: [['cassian', '휘장 없이 드는 검은… 가볍군. 그래서 더 빠르다.', 'normal']], clash: [['cassian', '네 검은 누구를 위해 휘두르지? …대답 안 해도 된다.', 'smile']] }) },
     kairon: { col: '#f0c848', col2: '#ffffff', glyph: '✦', amb: 'light', kind: 'human', p2: ['챔피언', null, 'champion'], fin: '',
       lines: () => ({ l1: [['kairon', '빠르다. 세린을 닮았군, 그 검 끝이.', 'normal']], p2: [['kairon', '레벨 99만 9999. 이 숫자가 나를 지켜 준 적은 없다.', 'closed']],
-        clash: party('lyra') ? [['lyra', '아버지! 이제 그만해요… 제발.', 'cry']] : [['kairon', '…그 눈. 16년 전 수정 앞에서 본 눈이다.', 'shock']] }) },
+        clash: party('lyra') ? [['lyra', '아버지! 이제 그만해요… 제발.', 'cry']] : [['kairon', '…그 눈. 그날 수정 앞에서 본 눈이다.', 'shock']] }) },
     blacksun: { col: '#b87aff', col2: '#1a1028', glyph: '●', amb: 'void', kind: 'final', p2: ['닫히는 하늘', null, 'eclipse'], fin: '',
       lines: () => ({ l1: [['kairon', '빛기둥을 맞춘다! 흰빛, 틈을 열어라!', 'angry']], p2: [['toria', '찍…! 하늘이 닫혀! 저 안에서 우는 소리가 나!', 'cry']], p3: [['serin', '조금만 더. …저 아이들, 다 이름이 있었어.', 'sad']] }) },
   };

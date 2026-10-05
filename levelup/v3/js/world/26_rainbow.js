@@ -356,7 +356,7 @@
   const bp = (id) => { const b = boothAt(id); return { x: b.tx + 3, y: b.ty }; };
   // 빨강: 볼칸의 「망치 한 방」 (눈금 맞추기)
   ST.person('world', { id: 'volkan', x: bp('red').x, y: bp('red').y, dir: 'left', when: festival, mark: () => (!f('stamp:red') ? '♪' : null), talk: async (c, n) => {
-    await c.say(n, f('stamp:red') ? '또 왔냐. 망치질은 하루에 천 번이다. 모자라.' : ST.lines({ c6: '오, 녀석! 에벨린 누님 손주! 망치 한 방 해 봐라. 종을 울리면 빨강 도장이다.' }), { face: 'happy' });
+    await c.say(n, f('stamp:red') ? '또 왔냐. 망치질이 아직 모자라.' : ST.lines({ c6: '오, 녀석! 에벨린 누님 손주! 망치 한 방 해 봐라. 종을 울리면 빨강 도장이다.' }), { face: 'happy' });
     if (f('stamp:red')) return;
     if (!(await c.confirm('망치 한 방 (10골드). 흔들리는 눈금이 가운데 올 때 공격 버튼!', '한다', '안 한다'))) return;
     if (S().gold < 10) { await c.say(n, '돈이 없으면 망치도 없다. 공짜는… 이건 골디 대사지.', { face: 'smirk' }); return; }
@@ -496,7 +496,9 @@
     for (let r = 0; r < rounds.length && !lost; r++) {
       const R0 = rounds[r];
       c.lock(true);
-      p.x = C0.x; p.y = C0.y + 40; p.dir = 'up';
+      // 판마다 출발선으로 걸어간다 (예전엔 출발선으로 순간 이동했다)
+      if (U.dist(p.x, p.y, C0.x, C0.y + 40) > 2) await c.move('hero', C0.x, C0.y + 40, { speed: 95 });
+      p.dir = 'up';
       await c.say(n, R0.name + '! 시작!', { face: 'happy' });
       if (R0.boss) {
         const rt = ST.route();
@@ -542,7 +544,7 @@
   /* ───────── 축제의 다른 얼굴들 ───────── */
   ST.folk('world', { id: 'cassian', name: '카시안', x: RX(176), y: RY(38), dir: 'down', when: () => festival() && !f('c6_arena'), lines: { c6: async (c, n) => { const rt = ST.route(); await c.say(n, rt === 'order' ? '봉헌식 경호를 맡았다. 스승님은 오지 않으신다고 했다. …그 말을 들은 그라우스가 웃었다. 기분 나쁘게.' : rt === 'dawn' ? '새벽단이 섬에 들어왔다는 첩보가 있다. 네가 모른다고 하면, 믿어 주지. 이번만.' : '리라라는 음유시인. 네 친구지? 그 여자 노래를 들으면 경호원들이 졸아. 우연인가?', { face: 'normal' }); await c.say(n, '투기장 시범 경기에 나간다. 네가 나오면… 반가울 거다. 봐주진 않겠지만.', { face: 'smirk' }); } } });
   ST.folk('world', { id: 'lea', name: '레아', x: RX(159), y: RY(38), dir: 'down', when: festival, lines: { c6: async (c, n) => { const rt = ST.route(); if (rt === 'dawn') { await c.say(n, '쉿. 솜사탕 장수야, 지금은. 봉헌식 밤에 기둥 밑에 화약을 심을 거야. 새벽단 스무 명이 섬에 들어와 있어.', { face: 'smirk' }); await c.say(n, '네가 무대 위에 있을 거라며. 신호는 네가 줘. 불씨를 기둥에 넣지 않으면 — 그게 신호야.', { face: 'normal' }); } else { await c.say(n, '솜사탕 하나 사. 무지개맛. …얼굴 기억하는 척하지 마. 오늘은 그냥 장사꾼이야.', { face: 'smirk' }); } const k = await c.choice('무지개 솜사탕 (30골드)', ['산다', '안 산다'], { who: 'lea', name: '레아' }); if (k === 0 && S().gold >= 30) { c.gold(-30); await c.getItem('food_cotton'); } } } });
-  ST.folk('world', { id: 'rud', name: '루드', x: RX(161), y: RY(39), dir: 'up', when: festival, lines: { c6: ['천년제 입장객 사만 이천. 봉헌식 참가 예상 삼만. 기둥 효율을 따져 봤어. …따져 보지 말걸.', '누나가 솜사탕을 판다. 솜사탕 원가는 설탕 한 숟갈. 이익률이… 아니, 그 얘기가 아니지.'] } });
+  ST.folk('world', { id: 'rud', name: '루드', x: RX(161), y: RY(39), dir: 'up', when: festival, lines: { c6: ['천년제 사람들 좀 봐. 기둥 효율을 따져 봤어. …따져 보지 말걸.', '누나가 솜사탕을 판다. 솜사탕 원가는 설탕 한 숟갈. 이익률이… 아니, 그 얘기가 아니지.'] } });
   ST.folk('world', { id: 'pika', name: '피카', x: RX(170), y: RY(37), dir: 'down', wander: 30, when: festival, lines: { c6: ['헤헤, 축제는 지갑 축제야! …농담. 참새단 애들 데리고 구경 왔어. 골디 아저씨가 여비 줬어. 공짜로. 세상에.', '봉헌식? 우린 안 가. 참새들은 높은 데 앉아서 봐. 그게 제일 잘 보여.'] } });
   ST.folk('world', { id: 'luce', name: '루체', x: RX(183), y: RY(30), dir: 'left', when: festival, lines: { c6: '구름 위에서 보니까 블루 등대가 보여! 아빠 일지에 그랬어. 「하늘섬에선 모든 등대가 보인다」. 진짜였어.' } });
   ST.folk('world', { name: '축제 손님', folk: 'kidg', x: RX(164), y: RY(31), wander: 40, when: festival, barks: ['솜사탕!', '불꽃 또 터져!'], lines: { c6: ['봉헌식 때 기둥이 일곱 색으로 빛난대! 엄마가 맨 앞에서 보재!', '롤로 아저씨 곡예 봤어? 아저씨는 왜 늘 얼굴에 색칠해?'] } });
@@ -627,7 +629,7 @@
         c.lock(true);
         c.music('dream');
         await c.narr('폭풍새가 둥지로 떨어졌다. 깃털이 눈처럼 흩날린다. 둥지 한가운데, 알 대신 작은 불씨 하나가 일곱 색으로 깜빡인다.');
-        await c.say('toria', '찍… 폭풍새는 이걸 지키고 있었어. 천 년 동안. 알을 낳을 자리에.', { face: 'sad' });
+        await c.say('toria', '찍… 폭풍새는 이걸 지키고 있었어. 알을 낳을 자리에.', { face: 'sad' });
         await c.getItem('ember');
         await c.narr('불씨를 쥐자, 가슴 안쪽 어딘가가 꿀꺽 소리를 냈다. 배가 고팠다. 아주 조금.');
         if (c.abyss('ember_hunger') || true) await c.say('toria', '…왜 불씨를 그렇게 봐? 먹을 거 아니야. 먹을 거 아니지?', { face: 'shock' });
@@ -717,7 +719,7 @@
     for (let t = 0; t < 1; t += 1 / 30) { gr.jz = 120 * (1 - t) * (1 - t); await c.wait(1 / 30); }
     gr.jz = 0; c.shake(4, 0.4); c.sfx('impact');
     const rt = ST.route();
-    await c.say(n0(gr), rt === 'order' ? '오랜만이군, 흰빛. 네 장부 덕에 석 달을 천년성 감옥에서 보냈다. 나오는 데 금화 삼만이 들더군. 챔피언께서 공로를 참작하셨지.' : rt === 'dawn' ? '광산에서 착즙기를 박살 낸 꼬마. 덕분에 증거는 사라졌지만, 내 체면도 사라졌다. 부단장이 광부 앞에서 웃음거리가 됐지.' : '내 금고를 턴 고양이의 친구. 금화 사만 칠천. 밤마다 세어 봤다. 몇 번을 세어도 영이더군.', { face: 'angry' });
+    await c.say(n0(gr), rt === 'order' ? '오랜만이군, 흰빛. 네 장부 덕에 석 달을 천년성 감옥에서 보냈다. 나오는 데 금화 삼만이 들더군. 챔피언께서 공로를 참작하셨지.' : rt === 'dawn' ? '광산에서 착즙기를 박살 낸 꼬마. 덕분에 증거는 사라졌지만, 내 체면도 사라졌다. 부단장이 광부 앞에서 웃음거리가 됐지.' : '내 금고를 턴 고양이의 친구. 밤마다 금고를 열어 봤다. 늘 텅 비어 있더군.', { face: 'angry' });
     await c.say(n0(gr), '챔피언께선 흑점까지 백이십 일이라고 하셨다. 탑 천 개로 막겠다는 거지. 나는 다른 답을 냈다.', { face: 'smirk' });
     await c.say(n0(gr), '[r]흰빛 하나면 탑 천 개보다 낫다.[/] 그 빛을 챔피언께 바치면 나는 단장이 되고, 내가 가지면 — 내가 챔피언이다.', { face: 'smirk' });
     await c.say(n0(cs), '그라우스! 이건 명령에 없다! 무기를 내려놓아라!', { face: 'angry' });
@@ -765,7 +767,7 @@
     c.stopMusic(0.2);
     c.sfx('heartbeat'); await c.wait(0.8); c.sfx('heartbeat'); await c.wait(0.6);
     // 깨어남
-    await c.narr('빨려 들어간다. 빛이. 너의 빛이. 할머니가 16년 동안 침대 밑에 감춰 둔 빛이.');
+    await c.narr('빨려 들어간다. 빛이. 너의 빛이. 할머니가 침대 밑에 감춰 둔 빛이.');
     await c.narr('그런데 — 기둥이 너를 삼키는 게 아니었다.\n[w]네가 기둥을 삼키고 있었다.[/]');
     c.music('epic');
     c.flash('#ffffff', 1.2); c.shake(6, 1.4); c.sfx('white');

@@ -66,7 +66,7 @@
     const P = G.props;
     Wd.add(new P.Waystone({ x: px(BT.plaza.x + 3), y: py(BT.plaza.y - 3), wid: 'w_blue', name: '블루 항구' }));
     Wd.add(new P.Sign({ x: px(X0 + 17), y: py(Y0 + 19), text: '블루 항구 부두\n「고등어호」 — 옐로 연안 · 알록달록 곶 (운항 중단)' }));
-    Wd.add(new P.Sign({ x: px(LH.x - 3), y: py(LH.y + 3), text: '블루 등대\n「불이 꺼진 지 16년. 루체가 지킨다.」' }));
+    Wd.add(new P.Sign({ x: px(LH.x - 3), y: py(LH.y + 3), text: '블루 등대\n「불이 꺼진 지 오래. 루체가 지킨다.」' }));
     // 배 세 척 (결투 뒤)
     spawnBoats(Wd);
   });
@@ -172,7 +172,7 @@
   ST.person('b_light', { id: 'luce', x: 5, y: 5, dir: 'down', mark: () => (f('c3_archive') && !f('c3_luce') ? '!' : f('d3:boss') && !f('c3_luce_done') ? '!' : null), talk: async (c, n) => {
     c.flag('met:luce');
     if (!f('c3_luce')) {
-      if (!f('c3_archive')) { await c.say(n, '등대는 16년째 불이 꺼져 있어. 아빠가 돌아오면 켤 거야.', { face: 'sad' }); return; }
+      if (!f('c3_archive')) { await c.say(n, '등대는 내가 아기 때부터 불이 꺼져 있어. 아빠가 돌아오면 켤 거야.', { face: 'sad' }); return; }
       c.lock(true);
       await c.say(n, '항해일지? …관장님이 보냈구나. 983년 겨울 이야기.', { face: 'sad' });
       await c.say(n, '아빠는 그날 밤 하늘에서 흰 줄기가 떨어지는 걸 봤대. 그걸 적고, 그다음 봄에 서쪽 바다 동굴에 들어갔다가… 안 나왔어.', { face: 'sad' });
@@ -190,7 +190,7 @@
       await c.say(n, '약속대로. 아빠의 일지야.', { face: 'smile' });
       c.truth('t_log');
       for (const l of G.data.TRUTHS.t_log.long) await c.narr(l);
-      await c.say(n, '그리고… 오늘 밤 등대에 불 켤 거야. 16년 만에. 아빠가 아니라, 너희가 돌아올 수 있게.', { face: 'smile' });
+      await c.say(n, '그리고… 오늘 밤 등대에 불 켤 거야. 아주 오랜만에. 아빠가 아니라, 너희가 돌아올 수 있게.', { face: 'smile' });
       c.flag('c3_luce_done'); c.bond('luce', 2); c.exp(40);
       c.lock(false);
       c.journal('루체에게 아버지의 나침반을 돌려주었다. 983년 겨울, 하늘에서 흰 줄기가 떨어져 바다를 갈랐다. 그날 엄마가 잠들었다.');

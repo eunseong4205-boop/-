@@ -138,6 +138,14 @@
   function goto(mapId, x, y, dir, o) {
     o = o || {};
     const s = G.state;
+    // 화면이 밝은 채로 지도가 바뀌면(장면이 암전을 깜박한 곳) 뚝 바뀌지 않게 검은 화면에서 밝아진다
+    if (!o.fresh && GM.scene === 'play' && W.map) {
+      const fe = $('fade'), st = $('stage');
+      if (fe && st && !st.classList.contains('blackout') && parseFloat(fe.style.opacity || '0') < 0.9) {
+        fe.style.transition = 'none'; fe.style.opacity = '1'; void fe.offsetWidth;
+        fe.style.transition = 'opacity 0.45s'; fe.style.opacity = '0';
+      }
+    }
     const m = G.build.get(mapId);
     let p = W.player;
     if (!p || o.fresh) p = W.player = makePlayer(x, y);

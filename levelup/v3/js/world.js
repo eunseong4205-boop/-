@@ -131,11 +131,35 @@
       } finally { W.inTick = false; }
       W.act = act; W.actMap = m; W.actN = W.tickN;
       let anyDead = false; for (const e of W.ents) if (e.dead && e !== W.player) { anyDead = true; break; }
-      if (anyDead) W.ents = W.ents.filter((e) => !e.dead || e === W.player);
+      if (anyDead) {
+        // 화면 안에서 지워지는 사람은 바로 사라지지 않고 걸어 나가거나 흐려진다 (world/96d_presence)
+        const born = [];
+        if (W.onGone) for (const e of W.ents) if (e.dead && e !== W.player) { try { W.onGone(e, born); } catch (err) { entErr(e, err); } }
+        W.ents = W.ents.filter((e) => !e.dead || e === W.player);
+        for (const b of born) W.ents.push(b);
+      }
     }
     if (G.fx) G.fx.update(dt);
     updateCam(dt);
     checkTiles();
+  }
+
+  /** 열리지 않는 입구를 밟았다: 까닭을 알리고, 그 칸 밖으로 한 걸음 물린다.
+      예전: 6픽셀만 물려 입구 칸 안에 남는 때가 있었고(옆이나 비스듬히 다가오면), 같은 칸이라 다시 밀어도 아무 말이 없었다 —
+      이제 입구 칸을 벗어날 때까지 물리고, 다시 밟을 때마다 같은 까닭을 다시 띄운다 */
+  function refuse(p, m, w) {
+    const msg = w.msg ? (typeof w.msg === 'function' ? w.msg() : w.msg) : '지금은 들어갈 수 없다.';
+    G.ui.toast(msg, 'bad', 'warp:' + (w.id || w.to));
+    if (G.audio) G.audio.sfx('bump');
+    const inW = () => { const tx = Math.floor(p.x / TS), ty = Math.floor((p.y - 2) / TS); return tx >= w.x && ty >= w.y && tx < w.x + (w.w || 1) && ty < w.y + (w.h || 1); };
+    // 들어온 쪽으로: 걷던 방향의 반대, 그쪽이 막혔으면 입구 칸의 가장 가까운 바깥(대개 아래)
+    let [ux, uy] = U.DV[p.dir] || [0, -1];
+    if (Math.abs(p.vx || 0) + Math.abs(p.vy || 0) > 4) [ux, uy] = U.norm(p.vx, p.vy);
+    for (let k = 0; k < 10 && inW(); k++) G.ent.move(m, p, -ux * 2, -uy * 2);
+    if (inW()) { const by = (w.y + (w.h || 1)) * TS + 12; for (let k = 0; k < 12 && inW(); k++) G.ent.move(m, p, 0, Math.sign(by - p.y) * 2 || 2); }
+    if (inW()) { p.y = (w.y + (w.h || 1)) * TS + 12; G.ent.settle(m, p); }
+    p.vx = p.vy = 0;
+    W.lastTx = Math.floor(p.x / TS); W.lastTy = Math.floor((p.y - 2) / TS);
   }
 
   /* ───────── 발밑 칸: 문(다른 지도) · 칸 트리거 ───────── */
@@ -150,7 +174,7 @@
     W.lastTx = tx; W.lastTy = ty;
     for (const w of m.warps || []) {
       if (tx < w.x || ty < w.y || tx >= w.x + (w.w || 1) || ty >= w.y + (w.h || 1)) continue;
-      if (w.cond && !w.cond()) { if (w.msg) { G.ui.toast(typeof w.msg === 'function' ? w.msg() : w.msg, 'bad', 'warp:' + (w.id || w.to)); const [ux, uy] = U.DV[p.dir]; p.x -= ux * 6; p.y -= uy * 6; } continue; }
+      if (w.cond && !w.cond()) { refuse(p, m, w); return; }
       if (G.game.useWarp) G.game.useWarp(w);
       return;
     }

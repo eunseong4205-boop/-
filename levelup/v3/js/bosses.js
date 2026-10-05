@@ -476,7 +476,7 @@
     update(dt, Wd) { this.t += dt; const p = Wd.player; this.toward(p.x, p.y, 50, dt); this.walkT = (this.walkT || 0) + dt; this.dir = U.dir4(p.x - this.x, p.y - this.y, this.dir); if (U.dist(this.x, this.y, p.x, p.y) < 12) C().hurtPlayer(p, this.atk, this, {}); if (this.revealed) this.dead = true; }
     reveal() { this.revealed = true; G.fx.shards(this.x, this.y - 10, 12, '#b8a8ff'); sfx('mirror'); }
     draw(g, cx, cy) { G.sprites.drawChar(g, this, cx, cy); }
-    preKill() { G.fx.shards(this.x, this.y - 10, 10, '#8a3aff'); this.dead = true; return true; }
+    preKill() { G.fx.shards(this.x, this.y - 10, 10, '#8a3aff'); this.dead = true; this._noFade = true; return true; }
   }
 
   /* ═════════════ 폭풍새 (구름 신전) — 화살로 떨어뜨린다 ═════════════ */

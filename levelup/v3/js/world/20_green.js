@@ -112,7 +112,7 @@
     c.flag('met:verdex');
     if (!after('c2')) {
       await c.say(n, '오, {n}. 생일이라며. 축하한다. …허, 경사스러운 날에 이런 얼굴이라 미안하구나.', { face: 'sad' });
-      await c.say(n, '올해 그린 마을 징수 목표가 작년의 두 배다. 사백이십만. 아이들이 일 년 내내 김을 매도 채울 수 없는 숫자지.');
+      await c.say(n, '올해 그린 마을 징수 목표가 작년의 두 배다. 아이들이 일 년 내내 김을 매도 못 채운다.');
       await c.say(n, '모자라면 탑이 알아서 가져간다더구나. 사람 몸에서. 노아가… 그래서 저렇게 된 거다.', { face: 'angry' });
     } else if (!after('c6')) {
       await c.say(n, f('c1_route') === 'dawn' ? '네가 탑을 베고 떠난 뒤로 기사들이 마을을 뒤졌다. 그래도 아무도 네 이름을 말하지 않았다. 그게 그린 마을이다.' : f('c1_route') === 'order' ? '카시안 기사가 장부를 다시 매겼다. 조금 숨통이 트였어. 기사단에도 사람이 있구나.' : '그 음유시인이 떠나고 나서 밤마다 탑 불빛이 약해진다. 탑이 배탈이라도 난 건지. 허허.');
@@ -161,7 +161,7 @@
   } });
 
   // 마을 사람들 (넓은 지도)
-  ST.person(W, { id: 'berna', x: tx(12), y: ty(10), wander: 24, barks: ['하나! 둘! 천 번 휘두르면 전설이 된대!', '카렐 바보!'], when: () => !after('c6') || true, talk: async (c, n) => {
+  ST.person(W, { id: 'berna', x: tx(12), y: ty(10), wander: 24, barks: ['천 번 휘두르면 전설이 된대!', '카렐 바보!'], when: () => !after('c6') || true, talk: async (c, n) => {
     c.flag('met:berna');
     if (!f('g_berna_duel')) {
       await c.say(n, '{n}! 그거 진짜 검이야? 우와… 나랑 대련해! 허수아비 셋을 나보다 빨리 쓰러뜨리면 인정해 줄게!', { face: 'happy' });
@@ -169,7 +169,7 @@
       if (k === 0) await ST.bernaDuel(c, n);
     } else await c.say(n, after('c6') ? '나도 언젠가 너처럼 흰빛으로 렙업할 거야! …안 되면 초록빛도 괜찮고.' : '두고 봐. 다음엔 내가 이겨!', { face: 'smile' });
   } });
-  ST.person(W, { id: 'karel', x: tx(15), y: ty(11), wander: 20, barks: ['베르나는 매일 천 번. 나는 매일 천한 번.'], talk: async (c, n) => { c.flag('met:karel'); await c.say(n, U.pick(['베르나가 너한테 대련하재? 걔 목검 진짜 아파.', '내 꿈은 기사단에 들어가는 거야. 아니… 요즘은 잘 모르겠어. 노아 보면.'])); } });
+  ST.person(W, { id: 'karel', x: tx(15), y: ty(11), wander: 20, barks: ['베르나보다 딱 한 번 더 휘두르는 게 내 규칙이야.'], talk: async (c, n) => { c.flag('met:karel'); await c.say(n, U.pick(['베르나가 너한테 대련하재? 걔 목검 진짜 아파.', '내 꿈은 기사단에 들어가는 거야. 아니… 요즘은 잘 모르겠어. 노아 보면.'])); } });
   ST.person(W, { name: '감자 농부 브람', folk: 'farmer', x: tx(34), y: ty(7), dir: 'down', mark: () => (!f('q_bram') ? '!' : S().quests.bram && S().quests.bram.st === 'on' && (S().bramKills || 0) >= 5 ? '!' : null), talk: async (c, n) => {
     const q = S().quests.bram;
     if (!q) {

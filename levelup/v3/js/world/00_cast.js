@@ -8,9 +8,9 @@
 
   /* ── 주인공 쪽 ── */
   add('toria', { name: '토리아', color: '#f0b070', voice: 1.6, look: { kind: 'squirrel' }, desc: '날지 못하는 하늘다람쥐. 레벨 9에서 16년째 멈춰 있다. 말끝마다 「찍」.' });
-  add('evelyn', { name: '에벨린 할머니', color: '#8ae08a', voice: 0.72, desc: '그린 마을 약초꾼. 사투리를 쓴다. 침대 밑에 무언가를 16년째 두고 산다.',
+  add('evelyn', { name: '에벨린 할머니', color: '#8ae08a', voice: 0.72, desc: '그린 마을 약초꾼. 사투리를 쓴다. 침대 밑에 무언가를 오래도록 두고 산다.',
     look: { gender: 'girl', age: 'old', hair: 'bun', hc: '#d4d0c4', eye: '#5a9a5a', skin: 'light', top: 'robe', tc: '#4a7a4a', trim: '#c8b890', bottom: 'long', bc: '#3a5a3a', glasses: true, acc: ['necklace'], gem: '#6ae07a' } });
-  add('serin', { name: '세린', color: '#ffffff', voice: 1.0, desc: '흰빛의 그릇. 아스트라의 수정 속에서 16년째 잠들어 있다.',
+  add('serin', { name: '세린', color: '#ffffff', voice: 1.0, desc: '흰빛의 그릇. 아스트라의 수정 속에서 오래 잠들어 있다.',
     look: { gender: 'girl', hair: 'long', hc: '#f4f0e8', eye: '#e8c878', skin: 'fair', top: 'dress', tc: '#f4f4f8', trim: '#e8c878', bottom: 'long', bc: '#e8eef8', eyeShape: 'sleepy', acc: ['necklace'], gem: '#ffffff' } });
   add('kairon', { name: '카이론', color: '#fff0a8', voice: 0.8, desc: '대륙의 챔피언. 레벨 99만 9999. 경험세를 만든 사람.',
     look: { hair: 'long', hc: '#e8e0c8', eye: '#d8a030', eyeShape: 'sharp', skin: 'light', top: 'coat', tc: '#e8eef8', trim: '#e8c048', bottom: 'pants', bc: '#3a3448', boots: '#2a2438', cape: '#7a1a2a', build: 'broad', acc: ['pauldron'] } });

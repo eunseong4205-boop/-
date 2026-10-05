@@ -101,7 +101,7 @@
     if (!f('c8_bolt')) { await boltFirst(c, n); return; }
     if (f('d8:boss') && !f('c8_proof')) { await boltProof(c, n); return; }
     if (f('c8_mk7') && !f('c8_done')) { await boltLast(c, n); return; }
-    if (f('c8_proof') && !f('c8_mk7')) { await c.say(n, '폐공장. 동쪽. …기다리게 하지 마라. 16년도 기다렸다.', { face: 'closed' }); return; }
+    if (f('c8_proof') && !f('c8_mk7')) { await c.say(n, '폐공장. 동쪽. …기다리게 하지 마라. 충분히 기다렸다.', { face: 'closed' }); return; }
     await c.say(n, ST.lines({ c8: f('c8_done') ? '역류 장치. 부품은 천년성에. 끼우는 건 네 일이다. 나는 도면까지다. …틀리지 마라.' : '광맥. 남쪽 폐허. 기록을 가져와라. 느낌은 연료가 안 된다.', c10: '알록달록의 피로스 녀석, 로켓 연료 배합을 틀렸더군. 고쳐서 보냈다. 녀석이 고맙다는 말은 안 하겠지.' }), { face: 'normal' });
   } });
   async function boltFirst(c, n) {
@@ -112,7 +112,7 @@
     if (k === 1) await c.say(n, '루미에. …그 여자는 거짓말을 못 하지. 그래서 싫다.', { face: 'angry' });
     if (k === 2) await c.say(n, '「대요」. 전해 들은 말. 연료가 안 된다.', { face: 'angry' });
     await c.say(n, '탑은 내가 설계했다. 983년. 카이론의 부탁. 대륙의 빛을 모아 하늘을 지키는 탑.', { face: 'normal' });
-    await c.say(n, '지금은 그 빛을 쏠 대포를 만든다. [y]천년포[/]. 16년 치 빛으로 흑점을 쏜다. 설계는 끝났다.', { face: 'normal' });
+    await c.say(n, '지금은 그 빛을 쏠 대포를 만든다. [y]천년포[/]. 탑이 모은 빛으로 흑점을 쏜다. 설계는 끝났다.', { face: 'normal' });
     await c.say('toria', '엄마 노트에 그랬어요. 빛을 한곳에 모으면 안 된다고. 나눠 주라고.', { face: 'angry' });
     await c.say(n, '근거. 느낌은 연료가 안 된다. 숫자를 가져와라. 숫자라면 들어 주지.', { face: 'closed' });
     await c.say(n, '…남쪽에 은빛 왕국 폐허가 있다. 광맥 깊은 곳에 기록 보관소가 무너지지 않고 남았다. 612년의 기록이 있을 거다.', { face: 'normal' });
@@ -130,14 +130,14 @@
     await c.narr('볼트가 은빛 기록판을 한 장씩 넘겼다. 아주 오랫동안. ' + (S().truth.t_chart ? '아스텔의 관측표를 옆에 펼쳤다. ' : '') + (S().truth.t_star ? '' : '') + '공방의 시계 소리만 났다. 멈춘 시계인데도.');
     await c.say(n, '「흡광체는 빛의 총량이 아니라 밀도에 이끌린다. 빛이 한 점에 모일수록 접근이 빨라진다.」', { face: 'closed' });
     await c.say(n, '……', { face: 'sad' });
-    await c.say(n, '내 탑은 16년 동안 대륙의 빛을 아스트라 한 점에 모았다. 은빛 왕국 대광맥의 세 배.', { face: 'sad' });
-    await c.say(n, '그러니까 나는… 16년 동안 흑점에게 가장 밝은 [r]등대[/]를 켜 준 거군.', { face: 'shock' });
-    await c.say(n, '…아니다. 기록판 한 장으로는 부족하다. 16년을 뒤집으려면 더 큰 증명이 필요하다.', { face: 'angry' });
+    await c.say(n, '내 탑은 대륙의 빛을 아스트라 한 점에 모았다. 은빛 왕국 대광맥의 세 배.', { face: 'sad' });
+    await c.say(n, '그러니까 나는… 내내 흑점에게 가장 밝은 [r]등대[/]를 켜 준 거군.', { face: 'shock' });
+    await c.say(n, '…아니다. 기록판 한 장으로는 부족하다. 내 평생의 일을 뒤집으려면 더 큰 증명이 필요하다.', { face: 'angry' });
     await c.say(n, '동쪽 폐공장으로 와라. 내 MK-7이 있다. 천년포의 시제품. 대륙에서 제일 큰 기계. 그걸 이기면 — 네 말이 맞다고 인정하지.', { face: 'angry' });
     c.flag('c8_proof');
     await c.cinema(false);
     c.lock(false);
-    c.journal('612년의 기록을 본 볼트: 「나는 16년 동안 흑점에게 등대를 켜 준 거군.」 그래도 증명이 더 필요하다며 폐공장으로 불렀다.');
+    c.journal('612년의 기록을 본 볼트: 「나는 내내 흑점에게 등대를 켜 준 거군.」 그래도 증명이 더 필요하다며 폐공장으로 불렀다.');
   }
 
   /* ───────── 세피아 (N-07) ───────── */
@@ -315,7 +315,7 @@
       c.music('dread');
       const bo = c.spawn({ cid: 'bolt', x: 12 * TS + 8, y: 5 * TS + 12, dir: 'down' });
       await c.say(bo, '왔군. 이게 MK-7이다. 천년포의 시제품. 대륙에서 제일 큰 기계지.', { face: 'normal' });
-      await c.say(bo, '내가 16년 동안 옳았다면, 이 녀석이 널 이긴다. 네가 옳다면… 증명해 봐라.', { face: 'angry' });
+      await c.say(bo, '내가 옳았다면, 이 녀석이 널 이긴다. 네가 옳다면… 증명해 봐라.', { face: 'angry' });
       let fight = true;
       if (S().party.includes('sepia')) {
         await c.say('sepia', '…따라왔다. 볼트. 나에게 재생 금지 명령이 걸린 기록이 하나 있다. 990년 가을.', { face: 'normal' });
@@ -330,7 +330,7 @@
           c.music('sad');
           await c.narr('볼트가 바닥에 주저앉았다. 강철 장갑을 벗는 데 한참 걸렸다.');
           await c.say(bo, '……9년 동안 한 번도 안 틀었다. 틀면… 내가 틀린 게 되니까.', { face: 'cry' });
-          await c.say(bo, '……틀렸군. 9년 동안. 아니, 16년 동안.', { face: 'cry' });
+          await c.say(bo, '……틀렸군. 처음부터.', { face: 'cry' });
           await c.say(bo, '싸울 필요 없다. 증명은 끝났다. 저 목소리가 나보다 늘 한 수 앞이었다.', { face: 'sad' });
           c.bond('sepia', 2); c.bond('bolt', 2); c.flag('c8_recording');
         }
@@ -350,7 +350,7 @@
         await c.cinema(true);
         const bo2 = c.spawn({ cid: 'bolt', x: boss.x, y: boss.y + 10, dir: 'down' });
         await c.narr('MK-7이 무릎을 꿇었다. 연기 속에서 볼트가 조종석에서 내려왔다.');
-        await c.say(bo2, '……증명 끝. 네가 옳다. 내가 틀렸다. 16년 동안.', { face: 'sad' });
+        await c.say(bo2, '……증명 끝. 네가 옳다. 내가 틀렸다.', { face: 'sad' });
         c.flag('c8_mk7_fight');
       }
       await c.say('toria', '…아저씨. 공방으로 가요. 틀렸으면 고쳐야죠.', { face: 'sad' });
@@ -359,7 +359,7 @@
       c.music('gray');
       await c.cinema(false);
       c.lock(false);
-      c.journal(f('c8_recording') ? '폐공장에서 세피아가 990년 가을의 녹음을 틀었다. 볼트의 아내 목소리. 「멈추는 것도 답이에요.」 볼트가 울었다.' : '폐공장에서 MK-7을 쓰러뜨렸다. 볼트: 「증명 끝. 내가 틀렸다. 16년 동안.」');
+      c.journal(f('c8_recording') ? '폐공장에서 세피아가 990년 가을의 녹음을 틀었다. 볼트의 아내 목소리. 「멈추는 것도 답이에요.」 볼트가 울었다.' : '폐공장에서 MK-7을 쓰러뜨렸다. 볼트: 「증명 끝. 내가 틀렸다.」');
     });
   });
   async function boltLast(c, n) {

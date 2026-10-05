@@ -70,7 +70,9 @@
       await c.say('toria', '찍! 찍찍! 일어나! 해가 벌써 창틀까지 왔어!', { face: 'happy' });
       await c.jump(tori, 10);
       await c.say('toria', '오늘이 무슨 날인지 알아? 생일! 열여섯 번째 생일! 찍!', { face: 'happy' });
-      p.forceAnim = null; p.x = px(3) + 6; p.y = py(6); c.face('hero', 'right'); c.sfx('land');
+      p.forceAnim = null;   // 침대에서 뛰어내린다 (예전엔 자리만 바뀌었다)
+      await c.all(c.jump('hero', 10), c.move('hero', px(3) + 6, py(6), { ghost: true, speed: 110 }));
+      c.face('hero', 'right'); c.sfx('land');
       await c.wait(0.3);
       c.emote('hero', '…');
       await c.wait(0.6);
@@ -562,7 +564,7 @@
     if (cid !== 'toria') return null;
     const s = S(); const reg = G.world.map && G.world.map.overworld ? OW.regionOf(Math.floor(G.world.player.x / TS), Math.floor(G.world.player.y / TS)) : null;
     const lines = {
-      green: ['찍, 이 길은 할머니랑 약초 캐러 오던 길이야.', '저 나무 위에서 뛰어내리면 날 수 있을까? …안 되겠지.', '레벨 9. 16년째. 찍.'],
+      green: ['찍, 이 길은 할머니랑 약초 캐러 오던 길이야.', '저 나무 위에서 뛰어내리면 날 수 있을까? …안 되겠지.', '레벨 9. 아직도. 찍.'],
       red: ['뜨거워! 꼬리 탈 것 같아, 찍!', '망치 소리가 심장 소리 같아.'],
       blue: ['바다 냄새! 짭짤해, 찍!', '저 물고기들은 레벨이 몇일까?'],
       yellow: ['모래가 털 사이에 다 들어가, 찍…', '금화 반짝반짝. 하나만 주우면 안 될까?'],

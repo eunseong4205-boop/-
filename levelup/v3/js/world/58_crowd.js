@@ -183,7 +183,15 @@
     }
     if (c.phase === 'back') {
       if (!onScreen(n) && U.dist(n.x, n.y, c.home.x, c.home.y) > 4) { n.x = c.home.x; n.y = c.home.y; }
-      if (moveTo(n, c.home, 32, dt) || c.t > 12) home(n);
+      // 막히거나 오래 걸려도 화면 안에서는 제자리로 순간 이동하지 않는다: 사람 틈을 비집고 걸어서 돌아간다
+      if (c.squeeze) {
+        const d = U.dist(n.x, n.y, c.home.x, c.home.y);
+        if (d < 2) { home(n); return; }
+        const [nx, ny] = U.norm(c.home.x - n.x, c.home.y - n.y), st = Math.min(d, 34 * dt);
+        n.x += nx * st; n.y += ny * st; n.dir = U.dir4(nx, ny, n.dir); n.state = 'walk'; n.walkT = (n.walkT || 0) + dt; n.vx = nx * 34; n.vy = ny * 34;
+        return;
+      }
+      if (moveTo(n, c.home, 32, dt) || c.t > 12) { if (U.dist(n.x, n.y, c.home.x, c.home.y) <= 4 || !onScreen(n)) home(n); else c.squeeze = true; }
     }
   }
   const BACK = { adult: ['휴… 끝났나?', '살았다…', '고마워, 여행자!', '심장 떨어지는 줄 알았네.', '이제 괜찮겠지?', '다들 다친 데 없지?', '…장사나 다시 해야지.'], child: ['끝났어? 진짜?', '{형} 최고야!', '나 안 울었어. 진짜야.', '엄마한테 자랑해야지!'], old: ['허허, 오래 살고 볼 일이구먼.', '에구, 다리야.', '젊은이 덕에 살았네.'] };

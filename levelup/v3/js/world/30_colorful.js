@@ -274,7 +274,7 @@
     c.flag('c10_fire_' + ['tower', 'voices', 'self'][k]);
     if (k === 0) {
       c.route('order', 2);
-      await c.narr('발사대 옆 징수탑의 핵을 열었다. 16년 동안 모인 빛이 관을 타고 무한호로 흘렀다. 탑이 꺼졌다. 곶의 마을 불빛이 조금 밝아졌다.\n모인 빛을 쓰는 건 이번이 마지막이다. 그렇게 정했다.');
+      await c.narr('발사대 옆 징수탑의 핵을 열었다. 탑이 모아 둔 빛이 관을 타고 무한호로 흘렀다. 탑이 꺼졌다. 곶의 마을 불빛이 조금 밝아졌다.\n모인 빛을 쓰는 건 이번이 마지막이다. 그렇게 정했다.');
     } else if (k === 1) {
       c.route('dawn', 1); c.route('night', 1);
       const ly = 'lyra';
@@ -310,6 +310,6 @@
   /* ───────── 주민 · 가게 ───────── */
   ST.folk('c_shop', { name: '발명 공방 가게', folk: 'inventor', x: 5, y: 3, lines: { c10: async (c) => { const k = await c.choice('폭탄! 물약! 화살! 전부 조금씩 터진다!', ['물건을 산다', '괜찮아요'], { name: '발명 공방 가게' }); if (k === 0) await c.shop('colorful'); } } });
   ST.folk('c_inn', { name: '쾅쾅 여관 주인', folk: 'farmerw', x: 4, y: 3, lines: { c10: async (c) => { const k = await c.choice('베개에 귀마개가 달려 있어요. 쾅 소리 때문에. (60골드)', ['쉰다', '괜찮아요'], { name: '쾅쾅 여관 주인' }); if (k === 0) { if (S().gold >= 60) c.gold(-60); await c.rest(); } } } });
-  ST.folk('world', { name: '곶 아이', folk: 'kid', ...OW.pt(295, 214), wander: 30, barks: ['쾅!', '로켓이다!'], lines: { c10: ['피로스 박사님 로켓 412번째래! 411번째는 우리 집 지붕에 떨어졌어! 지붕에 구멍 났는데 별이 보여서 좋아!', '봄바 누나는 폭탄 던지기 대회 1등이야. 나는 2등. 참가자 둘.'] } });
+  ST.folk('world', { name: '곶 아이', folk: 'kid', ...OW.pt(295, 214), wander: 30, barks: ['쾅!', '로켓이다!'], lines: { c10: ['피로스 박사님이 로켓을 또 만든대! 지난번 건 우리 집 지붕에 떨어졌어! 지붕에 구멍 났는데 별이 보여서 좋아!', '봄바 누나는 폭탄 던지기 대회 1등이야. 나는 2등. 참가자 둘.'] } });
   ST.folk('world', { name: '곶 어부', folk: 'sailor', ...OW.pt(300, 222), lines: { c10: '바다에서 보면 곶이 하루에 세 번 번쩍여. 그걸로 시간을 알아. 로켓 시계야, 우리는.' } });
 })();

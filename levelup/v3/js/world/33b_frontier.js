@@ -16,7 +16,7 @@
 
   /* ───────── 사람들 ───────── */
   const cast = (id, o) => { G.cast.C[id] = Object.assign({ id, voice: 1 }, o); };
-  cast('morgan', { name: '늪지기 모르간', color: '#a8d0b8', voice: 0.6, desc: '안개 늪의 나룻배 사공. 40년 동안 같은 물길만 저었다. 16년 전 어느 밤을 잊지 못한다.',
+  cast('morgan', { name: '늪지기 모르간', color: '#a8d0b8', voice: 0.6, desc: '안개 늪의 나룻배 사공. 40년 동안 같은 물길만 저었다. 오래전 어느 밤을 잊지 못한다.',
     look: { age: 'old', hair: 'short', hc: '#c8c8c0', skin: 'tan', top: 'coat', tc: '#3e5a4e', trim: '#8a7a5a', bottom: 'pants', bc: '#2e3a34', hat: 'straw', hatC: '#a8a070', build: 'broad' } });
   cast('iren', { name: '약초사 이렌', color: '#9ae0a0', voice: 1.05, desc: '물안개 마을의 약초사. 에벨린의 옛 제자. 세린과 같은 방에서 약초를 말렸다.',
     look: { gender: 'girl', hair: 'braid', hc: '#4a6a3a', eye: '#6ab87a', top: 'robe', tc: '#4a6a5a', trim: '#c8d8a0', bottom: 'long', bc: '#2e4a3a', acc: ['flower'] } });
@@ -39,21 +39,21 @@
   const item = (id, o) => { D.ITEMS[id] = Object.assign({ id, price: 0, desc: '' }, o); };
   item('lamp_morgan', { type: 'key', name: '모르간의 등불', desc: '가라앉은 사원 바닥에서 건진 녹슨 등불. 심지가 아직 젖어 있지 않다.' });
   item('lily', { type: 'mat', name: '안개 백합', price: 30, desc: '안개가 짙은 물가에만 피는 흰 꽃. 이렌이 찾는다.' });
-  item('letter_iren', { type: 'letter', name: '이렌의 편지', desc: '에벨린 선생님께. 봉투가 몇 번이나 뜯겼다 다시 붙었다.', read: '「선생님. 16년 만에 씁니다. 세린 언니를 보낸 날, 선생님이 말리지 않은 걸 아직 용서하지 못했어요. 그런데 요즘 알 것 같아요. 말렸어도 언니는 갔을 거예요. …선생님, 잘 지내세요. 이렌.」' });
+  item('letter_iren', { type: 'letter', name: '이렌의 편지', desc: '에벨린 선생님께. 봉투가 몇 번이나 뜯겼다 다시 붙었다.', read: '「선생님. 너무 오랜만에 씁니다. 세린 언니를 보낸 날, 선생님이 말리지 않은 걸 아직 용서하지 못했어요. 그런데 요즘 알 것 같아요. 말렸어도 언니는 갔을 거예요. …선생님, 잘 지내세요. 이렌.」' });
   item('letter_haru', { type: 'letter', name: '볼칸의 편지', desc: '하루에게. 기름때 묻은 손으로 꾹꾹 눌러 썼다.', read: '「하루야. 네 말이 맞았다. 탑 부품은 이제 안 두드린다. 망치 소리로 사람을 안다고 큰소리쳤는데, 내 딸 목소리는 못 들었다. 돌아오라는 말은 안 하겠다. 가끔 두드리는 소리나 들려다오. — 아빠」' });
   item('shade_core', { type: 'mat', name: '그림자 핵', price: 120, desc: '흑점의 그림자가 흩어진 자리에 남는 검은 알갱이. 벨이 모은다.' });
   D.QUESTS = D.QUESTS || {};
   const Q = (id, o) => { D.QUESTS[id] = Object.assign({ id }, o); };
-  Q('morgan_lamp', { name: '가라앉은 등불', who: '늪지기 모르간', desc: '가라앉은 사원 바닥에서 모르간의 등불을 찾아온다.', after: '모르간이 16년 전 그 밤에 들은 마지막 말을 들려주었다.' });
+  Q('morgan_lamp', { name: '가라앉은 등불', who: '늪지기 모르간', desc: '가라앉은 사원 바닥에서 모르간의 등불을 찾아온다.', after: '모르간이 그 밤에 들은 마지막 말을 들려주었다.' });
   Q('iren_lily', { name: '안개 백합 세 송이', who: '약초사 이렌', desc: (s) => '안개 늪 물가의 안개 백합 세 송이. (' + Math.min(3, s.inv.lily || 0) + '/3)', after: '이렌이 약초학의 요령을 가르쳐 주었다.' });
-  Q('iren_letter', { name: '16년 만의 편지', who: '약초사 이렌', desc: '이렌의 편지를 그린 마을 에벨린 할머니에게 전한다.', after: '에벨린이 답장을 쓰지 않았다. 대신 오래 앉아 있었다.' });
+  Q('iren_letter', { name: '오랜만의 편지', who: '약초사 이렌', desc: '이렌의 편지를 그린 마을 에벨린 할머니에게 전한다.', after: '에벨린이 답장을 쓰지 않았다. 대신 오래 앉아 있었다.' });
   Q('yuna_brother', { name: '안개 속 동생', who: '유나', desc: '밤에 가라앉은 탑 앞에서 진실의 거울을 비춰 본다.', after: '유나가 내일은 열두 살을 하겠다고 했다.' });
   Q('bell_hunt', { name: '그림자 사냥', who: '그림자 사냥꾼 벨', desc: (s) => '밤의 안개 늪에서 흑점의 그림자를 쓰러뜨리고 그림자 핵 넷을 모은다. (' + Math.min(4, s.inv.shade_core || 0) + '/4)', after: '벨이 비기를 넘겨주고 단풍 협곡으로 떠났다.' });
   Q('haru_letter', { name: '망치 소리', who: '대장장이 하루', desc: '레드의 볼칸 아저씨에게 하루 소식을 전하고, 답장을 받아 온다.', after: '하루가 아버지와 처음이자 마지막으로 함께 두드린 검을 건넸다.' });
-  Q('echo_stones', { name: '메아리 받아 적기', who: '수도사 에코', desc: (s) => '단풍 협곡의 메아리 돌 넷에서 목소리를 듣는다. (' + ['echo:1', 'echo:2', 'echo:3', 'echo:4'].filter((k) => s.flags[k]).length + '/4)', after: '마지막 목소리는 16년 동안 협곡에서 가장 크게 울린 목소리였다.' });
+  Q('echo_stones', { name: '메아리 받아 적기', who: '수도사 에코', desc: (s) => '단풍 협곡의 메아리 돌 넷에서 목소리를 듣는다. (' + ['echo:1', 'echo:2', 'echo:3', 'echo:4'].filter((k) => s.flags[k]).length + '/4)', after: '마지막 목소리는 협곡에서 가장 크게 울린 목소리였다.' });
   Q('rowan_giant', { name: '메아리 거인', who: '사냥꾼 로완', desc: '메아리 협곡 깊은 곳의 메아리 거인을 쓰러뜨린다.', after: '로완이 삼 년 만에 활을 내려놓고 웃었다.' });
-  D.TRUTHS.t_ferry = { name: '늪지기의 기억', hint: '안개 늪 나루터의 늙은 사공이 16년 동안 품은 것.', text: '983년 봄, 배가 부른 여인과 장부를 쥔 사내가 안개 늪을 건넜다. 여인은 말했다. 「이 아이들은 셈에 넣지 말아 주세요. 에벨린 선생님께는 말하지 마세요. 그분은 울 테니까.」' };
-  D.TRUTHS.t_echo = { name: '협곡의 가장 큰 목소리', hint: '단풍 협곡의 메아리 돌 넷.', text: '협곡은 탑에 빛을 빼앗긴 사람들의 마지막 말을 되돌려 준다. 16년 동안 가장 크게 울린 목소리는 한 여인의 것이었다. 「둘 다 살려 줘요. 셈에 넣지 말고.」' };
+  D.TRUTHS.t_ferry = { name: '늪지기의 기억', hint: '안개 늪 나루터의 늙은 사공이 오래 품은 것.', text: '983년 봄, 배가 부른 여인과 장부를 쥔 사내가 안개 늪을 건넜다. 여인은 말했다. 「이 아이들은 셈에 넣지 말아 주세요. 에벨린 선생님께는 말하지 마세요. 그분은 울 테니까.」' };
+  D.TRUTHS.t_echo = { name: '협곡의 가장 큰 목소리', hint: '단풍 협곡의 메아리 돌 넷.', text: '협곡은 탑에 빛을 빼앗긴 사람들의 마지막 말을 되돌려 준다. 가장 크게 울린 목소리는 한 여인의 것이었다. 「둘 다 살려 줘요. 셈에 넣지 말고.」' };
 
   /* ───────── 가게 ───────── */
   D.SHOPS.mist = { name: '늪 잡화점', items: ['potion_r', 'potion_b', 'potion_g', 'arrows10', 'bombs5', 'sw_thorn', 'ar_mage', 'ac_shell', 'art_frost', 'potion_forget'] };
@@ -126,7 +126,7 @@
       if (!f('met:morgan')) {
         c.flag('met:morgan');
         await c.say(n, '…배 탈 거면 기다려. 안개가 걷혀야 노를 젓지. 걷히는 날은… 올해는 없었군.', { face: 'closed' });
-        await c.say(n, '…너. 얼굴이 낯익다. 16년 전에 이 늪을 건넌 여자가 있었지. 배가 불러 있었어. 둘이라고 하더군.', { face: 'normal' });
+        await c.say(n, '…너. 얼굴이 낯익다. 오래전에 이 늪을 건넌 여자가 있었지. 배가 불러 있었어. 둘이라고 하더군.', { face: 'normal' });
         await c.say('toria', '찍…? 둘?', { face: 'shock' });
         await c.say(n, '옆의 사내는 한마디도 안 했다. 손에 장부를 쥐고, 물만 봤지. 물에 비친 제 얼굴이 늦게 따라오는 걸 보고서야 입을 열더군. 「아직 멀었군.」', { face: 'closed' });
         await c.say(n, '그날 밤 저 탑이 가라앉았다. 내 등불도 같이 빠졌어. 사원 바닥 어딘가에 있겠지. …찾아오면, 그 여자가 배에서 내리며 한 말을 들려주마.', { face: 'normal' });
@@ -136,7 +136,7 @@
       if (s.inv.lamp_morgan && !f('morgan_done')) {
         c.take('lamp_morgan'); c.flag('morgan_done'); c.quest('morgan_lamp', 'done');
         await c.say(n, '…이 녹. 이 휜 손잡이. 맞다. 내 거다.', { face: 'sad' });
-        await c.narr('모르간이 등불을 오래 쥐고 있었다. 심지에 불을 붙이자, 안개 속에 16년 전 나루터가 잠깐 비쳤다.');
+        await c.narr('모르간이 등불을 오래 쥐고 있었다. 심지에 불을 붙이자, 안개 속에 그 밤의 나루터가 잠깐 비쳤다.');
         await c.say(n, '여자가 배에서 내리며 그랬다. 「이 아이들은 셈에 넣지 말아 주세요.」', { face: 'closed' });
         await c.say(n, '그리고 하나 더. 「에벨린 선생님께는 말하지 마세요. 그분은 울 테니까.」', { face: 'sad' });
         await c.say(n, '…나는 셈이 뭔지 몰랐다. 그런데 요즘 탑이 우는 소리를 들으면, 알 것 같아.', { face: 'closed' });
@@ -154,7 +154,7 @@
         c.flag('met:yuna');
         await c.say(n, '…언니, 우리 동생 봤어? 유안. 나랑 똑같이 생겼어. 안개 속으로 간 지… 몇 밤 됐더라.', { face: 'normal' });
         await c.say(n, '엄마는 30년 됐다고 해. 이상하지? 나는 계속 열한 살인데.', { face: 'smile' });
-        await c.say('toria', '…찍. (토리아도 16년째 레벨 9야.)', { face: 'sad' });
+        await c.say('toria', '…찍. (토리아도 아직 레벨 9야.)', { face: 'sad' });
         await c.say(n, '탑이 가라앉던 밤에 유안이 빛을 다 냈대. 세금이 모자라서. 그래서 가벼워져서… 안개가 됐대. 엄마가 그랬어.', { face: 'normal' });
         await c.say(n, '밤에 탑 앞에 가면 가끔 유안 목소리가 들려. 근데 나는 거울이 없어서 못 봐.', { face: 'sad' });
         c.quest('yuna_brother', 'on');
@@ -206,7 +206,7 @@
         await c.say(n, '…고마워. 이 꽃은 언니가 제일 좋아했어. 말리면 향이 더 짙어지거든.', { face: 'smile' });
         await c.say(n, '보답으로 약초 다루는 요령을 알려 줄게. 물약은 급하게 마시지 말고, 숨을 한 번 쉬고 마셔.', { face: 'normal' });
         if (!s.skills.sv_herb) { s.skills.sv_herb = true; c.toast('재능 「약초학」을 배웠다 — 물약 · 음식 회복 +50%', 'gold'); }
-        await c.say(n, '…그리고 이거. 16년 동안 못 부친 편지야. 그린에 가거든… 아니, 버려도 돼.', { face: 'sad' });
+        await c.say(n, '…그리고 이거. 끝내 못 부친 편지야. 그린에 가거든… 아니, 버려도 돼.', { face: 'sad' });
         await c.getItem('letter_iren'); c.quest('iren_letter', 'on');
         return;
       }
@@ -226,11 +226,11 @@
     c3: '바다 냄새가 나네. 등대지기 딸아이 만났나? 그 집 아버지는… 아이다. 니가 알아서 들어라.',
     c4: '옐로 금은 조심해라. 값이 붙은 건 다 누가 치른 기다.',
     c5: '퍼플 학원에 간다꼬? …세린이도 거기서 공부했다. 제일 앞자리에서 졸았제. 그래도 일등이었다.',
-    c6: '천년제. 16년 전에도 갔었다. 세린이랑. 그 아이가 무대에서 노래했다. …챔피언이 그 노래를 끝까지 들었제. 처음이자 마지막으로.',
+    c6: '천년제. 그때도 갔었다. 세린이랑. 그 아이가 무대에서 노래했다. …챔피언이 그 노래를 끝까지 들었제. 처음이자 마지막으로.',
     c7: '머리가 하얘졌네. …그래. 그렇게 되는 기다. 그 아이도 그랬다. 앞머리부터.',
     c8: '침대 밑 상자? …아직 열 때가 아이다. 열면 니가 날 미워할 끼다.',
     c9: '녹턴이 뭐라 카더노. …카이론 얘기를 했나. 그래. 증인은 나였다. 참나무 아래서. 둘 다 웃고 있었다.',
-    c10: '하늘로 간다꼬. …가라. 세린이가 기다린다. 16년을 기다린 사람한테 하루 더는 길다.',
+    c10: '하늘로 간다꼬. …가라. 세린이가 기다린다. 그렇게 오래 기다린 사람한테 하루 더는 길다.',
     c11: '돌아오면 옥수수빵 세 개 구워 둘 끼다. 토리아 한 개, 니 두 개. …아니다. 네 개 굽자. 한 사람 더 올지 모르니까.',
   };
   ST.person('g_home', { id: 'evelyn', x: 9, y: 4, dir: 'left', when: () => f('c1_night'),
@@ -248,7 +248,7 @@
       if (f('box_seen') && !f('box_talk')) {
         c.flag('box_talk');
         await c.say(n, '…봤나.', { face: 'closed' });
-        await c.say(n, '16년 동안 징수 장부를 베껴 뒀다. 세린이 이름이 들어간 칸마다. 언젠가 누가 그 셈을 따지러 오면, 보여 줄라꼬.', { face: 'sad' });
+        await c.say(n, '징수 장부를 몰래 베껴 뒀다. 세린이 이름이 들어간 칸마다. 언젠가 누가 그 셈을 따지러 오면, 보여 줄라꼬.', { face: 'sad' });
         await c.say(n, '맨 끝 칸 이름은… 내가 쓴 기 아이다. 장부가 그렇게 와 있었다. 니 이름이다. 다음 그릇.', { face: 'cry' });
         await c.say(n, '말리지 않았다고 이렌이가 날 미워했제. 이번엔 말릴 끼다. 누가 뭐라 캐도.', { face: 'angry' });
         return;
@@ -367,7 +367,7 @@
       if (['echo:1', 'echo:2', 'echo:3', 'echo:4'].every((k) => f(k)) && !f('echo_done')) {
         c.flag('echo_done'); c.quest('echo_stones', 'done'); c.truth('t_echo');
         await c.say(n, '…마지막 목소리를 들었소? 「둘 다 살려 줘요. 셈에 넣지 말고.」', { face: 'sad' });
-        await c.say(n, '그 목소리는 16년 동안 협곡에서 가장 크게 울렸소. 어떤 날은 너무 커서 단풍이 한꺼번에 떨어졌지.', { face: 'closed' });
+        await c.say(n, '그 목소리는 협곡에서 가장 크게 울렸소. 어떤 날은 너무 커서 단풍이 한꺼번에 떨어졌지.', { face: 'closed' });
         await c.say(n, '이 협곡의 단풍이 1년 내내 지는 까닭을 아시오? 그 목소리가 멈추지 않아서요.', { face: 'normal' });
         const s = S(); s.pts = (s.pts || 0) + 3; c.toast('깨달음 — 성장 점수 +3', 'gold');
         return;
@@ -429,7 +429,7 @@
     { id: 'l_yuna', from: '유나', when: (s) => s.flags.yuna_done, text: '「나 오늘 열두 살 됐어! 엄마가 케이크 대신 백합을 줬어. 유안 몫까지 두 송이. 한 송이는 늪에 띄웠어.」' },
     { id: 'l_bell', from: '벨', when: (s) => s.flags.bell_done && ST.after('c9'), text: '「그라우스 부단장이 무너졌다는 소식을 들었다. 기쁘지 않았다. 그 사람도 장부를 믿었을 뿐이다. 믿음이 가장 무서운 칼이다. — 벨」' },
     { id: 'l_noah2', from: '노아', when: (s) => ST.after('c8') && s.flags.noah_herb, text: '「형/누나, 이번엔 진짜야. 두 올. 엄마가 울었어. 나도 울었어. 기뻐서 우는 건 처음이야.」' },
-    { id: 'l_morgan', from: '모르간', when: (s) => s.flags.morgan_done && ST.after('c10'), text: '「안개가 걷혔다. 16년 만이다. 물에 비친 얼굴이 제때 따라온다. …고맙다는 말은 서툴다. 노를 한 번 더 저었다고만 해 두마.」' },
+    { id: 'l_morgan', from: '모르간', when: (s) => s.flags.morgan_done && ST.after('c10'), text: '「안개가 걷혔다. 참 오랜만이다. 물에 비친 얼굴이 제때 따라온다. …고맙다는 말은 서툴다. 노를 한 번 더 저었다고만 해 두마.」' },
   ];
   ST.LETTERS = LETTERS;   // 뒤 파일에서 편지를 더 넣는다
   ST.person('world', { id: 'fin', at: (s) => { const t = OW.towns[FIN_AT[s.ch || 'c1']] || OW.towns.green; return [t.plaza ? t.plaza.x - 5 : t.x + 4, t.plaza ? t.plaza.y + 2 : t.y + 4]; }, dir: 'down',

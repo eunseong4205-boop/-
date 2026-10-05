@@ -48,6 +48,15 @@
     if (!el) { el = document.createElement('div'); if (key) el.dataset.key = key; box.appendChild(el); }
     el.className = 'toast ' + (kind || '');
     el.innerHTML = markup(text);
+    // 같은 key로 다시 오면 처음부터 다시 보인다 — 예전엔 글만 바꾸고 사라지는 움직임(2.8초 뒤 투명)은 그대로 두어,
+    // 막힌 입구를 두 번째로 밟으면 이미 투명해진 알림에 글만 바뀌어 아무것도 뜨지 않았다
+    // 아직 보이는 중이면 떠오르는 움직임 없이 그대로 다시 머문다(거듭 밀 때 깜박이지 않게)
+    if (key) {
+      const now = performance.now(), shown = el._at && now - el._at < 3500;
+      el.style.animation = 'none'; void el.offsetWidth; el.style.animation = ''; el.style.animationDuration = '4.4s';
+      el.style.animationDelay = shown ? '-0.36s' : '';
+      el._at = shown ? now - 360 : now;
+    }
     while (box.children.length > 4) box.firstChild.remove();
     clearTimeout(el._t); el._t = setTimeout(() => el.remove(), key ? 4500 : 2900);
   }

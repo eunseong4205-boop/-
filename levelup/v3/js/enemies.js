@@ -417,7 +417,7 @@
       }
     }
     fallIn(kind) {
-      this.dead = true;
+      this.dead = true; this._noFade = true;   // 빠진 것은 흐려지며 서 있지 않는다
       G.fx.dust(this.x, this.y, 6);
       if (kind === 'lava') { G.fx.sparks(this.x, this.y, 10, '#ff8a3a'); sfx('burn'); }
       else sfx('fall');
@@ -463,6 +463,8 @@
       if (this.st === 'hidden' && this.ai !== 'worm') return;
       if (this.ai === 'ghost' && !this.revealed && !this.aggro) g.globalAlpha = 0.18 + Math.sin(this.t * 3) * 0.08;
       else if (this.ai === 'ghost') g.globalAlpha = 0.85;
+      else if (this.ai === 'shade' && this.st === 'fade') g.globalAlpha = Math.max(0.05, 1 - this.stT / 0.5);
+      else if (this.ai === 'shade' && this.appearT > 0) g.globalAlpha = Math.max(0.05, 1 - this.appearT / 0.45);
       let x, y, img;
       if (this.look) {
         this.state = this.state || 'idle';
@@ -871,7 +873,9 @@
     /* 흑점의 그림자: 빛을 먹으러 곧장 */
     shade(e, dt) {
       const p = e.p;
-      if (e.st === 'fade') { if (e.stT > 0.6) { const a = Math.random() * Math.PI * 2; e.x = p.x + Math.cos(a) * 70; e.y = p.y + Math.sin(a) * 50; e.set('idle'); } return; }
+      // 흐려졌다가(0.5초) 주인공 둘레의 어둠에서 다시 짙어진다 — 예전엔 선 채로 있다가 옆에 뚝 나타났다
+      if (e.st === 'fade') { if (e.stT > 0.6) { const a = Math.random() * Math.PI * 2; e.x = p.x + Math.cos(a) * 70; e.y = p.y + Math.sin(a) * 50; e.set('idle'); e.appearT = 0.45; G.fx.glow(e.x, e.y - 8, '#3a1a5a', 12); } return; }
+      if (e.appearT > 0) e.appearT -= dt;
       e.toward(p.x, p.y - 6, e.speed * (0.8 + Math.sin(e.t * 2) * 0.3), dt);
       if (e.stT > 3 && Math.random() < dt) { e.set('fade'); G.fx.glow(e.x, e.y - 8, '#3a1a5a', 12); }
     },

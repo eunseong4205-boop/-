@@ -121,7 +121,7 @@
     await c.cinema(true);
     c.music('mother');
     await c.say(n, '거울을 가져왔군요. 표정을 보니, 뭔가를 봤어요.', { face: 'sad' });
-    await c.say(n, '…이제 보여 줄 때가 됐네요. 16년 동안 찻잔 받침으로 쓴 종이. 버리지도, 읽지도 못하고.', { face: 'closed' });
+    await c.say(n, '…이제 보여 줄 때가 됐네요. 오랫동안 찻잔 받침으로 쓴 종이. 버리지도, 읽지도 못하고.', { face: 'closed' });
     c.truth('t_note');
     for (const l of G.data.TRUTHS.t_note.long) await c.narr(l);
     await c.say(n, '「이 아이에게는 나누는 법을 가르쳐 줘요.」 …나는 가르치지 못했어요. 당신은 여기 없었으니까.', { face: 'cry' });
@@ -145,7 +145,7 @@
     if (!f('c5_viola')) {
       c.lock(true);
       await c.say(n, '당신이 세린의 아이? 흥. 별로 안 닮았네. 눈 말고는.', { face: 'angry' });
-      await c.say(n, '나는 비올라. 열네 살. 라벤더 학원 최연소 수석. 세린의 기록 스물세 개 중에 열아홉 개를 깼어. 남은 네 개는 올해 안에 깰 거야.', { face: 'smirk' });
+      await c.say(n, '나는 비올라. 열네 살. 라벤더 학원 최연소 수석. 세린의 기록을 거의 다 깼어. 남은 것도 올해 안에 깰 거야.', { face: 'smirk' });
       await c.say(n, '당신이 정말 흰빛이면, 과녁 세 개쯤은 나보다 빨리 맞히겠지? 활이든 마법이든. 12초.', { face: 'smirk' });
       const ok = await c.confirm('과녁 대결을 받을까?', '받는다', '다음에');
       c.lock(false);
