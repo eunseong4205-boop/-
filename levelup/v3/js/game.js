@@ -170,6 +170,7 @@
   }
   /** 문 · 계단 · 동굴 입구 */
   function useWarp(w) {
+    if (G.exitLanding) { try { w = G.exitLanding(w) || w; } catch (e) { console.error('[exit landing]', e); } }   // 밖으로 나올 자리 고르기 (world/96c_exits)
     G.script.run(async (c) => {
       c.sfx(w.exit ? 'door' : w.sfx || 'door');
       await c.fade(true, { sec: 0.22 });
