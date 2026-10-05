@@ -86,7 +86,7 @@
     // 묘지 (대성당 뒤): 비석 + 뚜껑문
     OW.clear(m, GRAVE.x - 2, GRAVE.y - 1, 8, 5, m.hgt[m.i(GRAVE.x, GRAVE.y + 2)], T.SNOW);
     for (const [dx, dy] of [[-1, 0], [1, 0], [3, 0], [-1, 2], [3, 2]]) G.build.placeBuilding(m, { special: 'statue', tx: GRAVE.x + dx, ty: GRAVE.y + dy, w: 1, h: 1, col: '#a8b0c0', door: false, veil: dx === 3 });
-    m.warps.push({ x: GRAVE.x + 1, y: GRAVE.y + 1, w: 1, h: 1, to: 'd7', id: 'd7_hatch', cond: () => f('c7_plan') && S().flags.route_lock !== 'order', msg: '눈 덮인 쇠 뚜껑문. 자물쇠가 얼어붙었다. 아직은 열 까닭이 없다.' });
+    m.warps.push({ x: GRAVE.x + 1, y: GRAVE.y + 1, w: 1, h: 1, to: 'd7', id: 'd7_hatch', cond: () => (f('c7_plan') && S().flags.route_lock !== 'order') || f('d7:boss'),   /* 보스를 이긴 뒤에는 어느 갈래든 (질서 갈래는 이 문이 영영 잠겨 있었다) */ msg: '눈 덮인 쇠 뚜껑문. 자물쇠가 얼어붙었다. 아직은 열 까닭이 없다.' });
     // 꾸미기: 화로 · 전나무
     for (const [dx, dy] of [[12, 8], [20, 8], [12, 13], [20, 13]]) { m.obj[m.i(X0 + dx, Y0 + dy)] = O.LAMP; m.lights.push({ x: (X0 + dx) * TS + 8, y: (Y0 + dy) * TS + 2, r: 60, warm: 'rgba(255,190,120,0.25)' }); }
     for (const [dx, dy] of [[0, 9], [31, 9], [0, 20], [31, 18], [9, 21], [22, 21]]) if (m.inb(X0 + dx, Y0 + dy) && !m.solidExtra[m.i(X0 + dx, Y0 + dy)]) m.obj[m.i(X0 + dx, Y0 + dy)] = O.PINE;

@@ -42,7 +42,7 @@
     for (const [x, y] of [[270, 130], [278, 130], [271, 135], [277, 135], [268, 132]].map(([a, b]) => OW.P(a, b))) if (m.inb(x, y)) m.obj[m.i(x, y)] = O.PALM;
     // 태양 피라미드
     OW.clear(m, PYR.x - 2, PYR.y - 2, 14, 10, 0, T.SAND);
-    G.build.placeBuilding(m, { special: 'pyramid', tx: PYR.x, ty: PYR.y, w: 10, h: 3, to: 'd4', id: 'd4_gate', cond: () => f('c4_yana') || (S().party || []).includes('yana'), msg: '모래 폭풍이 입구를 가린다. 모래바다의 길잡이가 필요하다.' });
+    G.build.placeBuilding(m, { special: 'pyramid', tx: PYR.x, ty: PYR.y, w: 10, h: 3, to: 'd4', id: 'd4_gate', cond: () => f('c4_yana') || (S().party || []).includes('yana') || f('c4_done') || f('d4:boss'), msg: '모래 폭풍이 입구를 가린다. 모래바다의 길잡이가 필요하다.' });
     for (let y = PYR.y + 3; y < PYR.y + 8; y++) for (const x of [PYR.x + 4, PYR.x + 5]) { const i = m.i(x, y); m.ter[i] = T.ROAD; m.obj[i] = 0; }
     for (const [dx, dy] of [[-1, 4], [10, 4]]) { const x = PYR.x + dx, y = PYR.y + dy; G.build.placeBuilding(m, { special: 'statue', tx: x, ty: y, w: 1, h: 1, col: '#d8b060', door: false }); }
     // 마을 꾸미기

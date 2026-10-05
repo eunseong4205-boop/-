@@ -224,7 +224,9 @@
       for (let y = 18; y < h; y++) { const hw = 10 + (y / h) * 12; for (let x = Math.round(w / 2 - hw); x <= w / 2 + hw; x++) b.px(x, y, x < w / 2 - hw * 0.4 ? C[3] : x > w / 2 + hw * 0.5 ? C[1] : C[2]); if (y % 16 === 0) b.hline(Math.round(w / 2 - hw), Math.round(w / 2 + hw), y, C[0]); }
       b.ellipse(w / 2, 12, 9, 9, o.broken ? '#3a3040' : '#ffe8a8'); b.ellipse(w / 2, 12, 6, 6, o.broken ? '#2a2030' : '#ffffff');
       if (!o.broken) for (let a = 0; a < 8; a++) b.line(w / 2, 12, w / 2 + Math.cos(a * 0.785) * 14, 12 + Math.sin(a * 0.785) * 14, '#fff4c8');
-      b.rect(w / 2 - 6, h - 18, 12, 18, '#0a0612'); b.rect(w / 2 - 7, h - 19, 14, 2, C[0]);
+      // 문: 들어갈 수 있는 탑(o.to)만 열린 어둠. 아닌 탑(징수탑 · 시계탑 · 등불 탑 · 전망대 …)은 돌로 막힌 문 — 예전엔 모두 열린 문으로 그려져 던전처럼 보였다
+      if (o.to) { b.rect(w / 2 - 6, h - 18, 12, 18, '#0a0612'); b.rect(w / 2 - 7, h - 19, 14, 2, C[0]); }
+      else { b.rect(w / 2 - 6, h - 18, 12, 18, C[0]); for (let yy = h - 15; yy < h; yy += 5) b.hline(Math.round(w / 2 - 6), Math.round(w / 2 + 5), yy, C[3]); b.line(w / 2, h - 18, w / 2, h - 13, C[3]); b.line(w / 2 - 3, h - 13, w / 2 - 3, h - 8, C[3]); b.line(w / 2 + 3, h - 8, w / 2 + 3, h - 3, C[3]); b.rect(w / 2 - 7, h - 19, 14, 2, C[0]); }
       if (o.broken) { b.line(w / 2 - 8, 30, w / 2 + 2, 50, '#1a1020'); b.line(w / 2 + 2, 50, w / 2 - 3, 70, '#1a1020'); }
       return { c: X.outline(b.put(), OUT), W: w, H: h, footH: 2 * TS };
     },
@@ -305,7 +307,8 @@
     if (o.solid !== false && !(art.solid === false)) for (let y = o.ty; y < o.ty + h; y++) for (let x = o.tx; x < o.tx + w; x++) if (m.inb(x, y)) { m.solidExtra[m.i(x, y)] = 1; m.obj[m.i(x, y)] = 0; }
     // 문: 발자리 맨 아래 줄, 그림 가운데 칸은 막지 않는다 (들어가는 곳)
     const dx = Math.floor((o.tx * TS + art.W / 2) / TS), dy = o.ty + h - 1;
-    const hasDoor = o.special ? ['cave', 'temple', 'tower', 'lighthouse', 'pyramid'].includes(o.special) || !!(art.door && o.to) || (o.special === 'gate' && o.open !== false) : o.door !== false;
+    // 동굴 · 신전 · 탑 · 등대 · 피라미드: 갈 곳(o.to)이 있을 때만 문 칸을 연다 — 갈 곳 없는 탑의 문 칸이 열려 있어 들어가지는 듯 들어가지지 않았다
+    const hasDoor = o.special ? (['cave', 'temple', 'tower', 'lighthouse', 'pyramid'].includes(o.special) && (!!o.to || o.door === true)) || !!(art.door && o.to) || (o.special === 'gate' && o.open !== false) : o.door !== false;
     if (hasDoor && m.inb(dx, dy)) {
       m.solidExtra[m.i(dx, dy)] = 0;
       const wide = o.special === 'cave' || o.special === 'temple' || o.special === 'pyramid' || o.special === 'gate';

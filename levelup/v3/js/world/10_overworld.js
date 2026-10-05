@@ -594,11 +594,13 @@
         const n = OW.regName[i];
         const r = rnd();
         if (r > 0.55) continue;
-        const type = pickFoe(n, rnd());
+        let type = pickFoe(n, rnd()), tier = TIERS[n], eliteP = 0, zone = null;
+        // 지역 안의 구역(마을 둘레 · 깊은 곳 · 경계 · 높은 땅 · 숲 · 물가 …)에 따라 세기와 종류를 다시 고른다 (world/47_zones)
+        if (OW.zone) { const z = OW.zone(m, x, y, n, type, rnd); if (z) { type = z.type; tier = z.tier; eliteP = z.eliteP || 0; zone = z.key || null; } }
         const water = type === 'octo';
         if (water ? t !== T.WATER && t !== T.DEEP : (m.blocked(x, y) || t === T.WATER || t === T.DEEP || t === T.CLIFF || t === T.STAIRS || t === T.LAVA || t === T.CLOUD || OW.roadTiles[i])) continue;
         const n2 = type === 'bug' || type === 'wolf' ? 3 : type === 'slime' ? 2 : 1;
-        for (let j = 0; j < n2; j++) list.push({ type, x: x * TS + 8 + (j - 1) * 14, y: y * TS + 12 + (j % 2) * 10, tier: TIERS[n] });
+        for (let j = 0; j < n2; j++) list.push({ type, x: x * TS + 8 + (j - 1) * 14, y: y * TS + 12 + (j % 2) * 10, tier, eliteP: j === 0 ? eliteP : 0, zone });
       }
       cells.push(list);
     }
@@ -619,7 +621,12 @@
       const cx = k % cw, cy = (k / cw) | 0;
       const near = Math.abs(cx - pcx) <= 0 && Math.abs(cy - pcy) <= 0;
       if (near && !OW.firstSpawn) continue;       // 바로 옆에서 갑자기 생기지 않게
-      const list = OW.cells[k].filter((s) => U.dist(s.x, s.y, p.x, p.y) > 150 || !OW.firstSpawn).map((s) => { const e = G.foes.spawn(s.type, s.x, s.y, { tier: Math.max(s.tier, scale) }); e.cell = k; return e; });
+      const di = G.state.settings && G.state.settings.diff != null ? G.state.settings.diff : 1;
+      const list = OW.cells[k].filter((s) => U.dist(s.x, s.y, p.x, p.y) > 150 || !OW.firstSpawn).map((s) => {
+        const o = { tier: Math.max(s.tier, scale) };
+        if (s.eliteP && G.state.ch !== 'c1' && Math.random() < s.eliteP * [0.4, 1, 1.3, 1.6][di]) o.elite = true;   // 깊은 곳 · 높은 땅엔 정예가 더 잦다
+        const e = G.foes.spawn(s.type, s.x, s.y, o); e.cell = k; e.zone = s.zone; return e;
+      });
       live.set(k, list);
     }
     OW.firstSpawn = true;
@@ -675,6 +682,7 @@
         if (!first || !G.state.flags['seen_reg:' + n]) { G.cine.area(OW.NAMES[n].split(' — ')[0], OW.NAMES[n].split(' — ')[1] || ''); G.state.flags['seen_reg:' + n] = true; }
       }
     }
+    if (OW.zoneTick) OW.zoneTick(m, p);
     m.weatherAt = OW.weatherAt;
   };
 

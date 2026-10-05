@@ -16773,7 +16773,9 @@ html.touch #modal { z-index: 60; }
       for (let y = 18; y < h; y++) { const hw = 10 + (y / h) * 12; for (let x = Math.round(w / 2 - hw); x <= w / 2 + hw; x++) b.px(x, y, x < w / 2 - hw * 0.4 ? C[3] : x > w / 2 + hw * 0.5 ? C[1] : C[2]); if (y % 16 === 0) b.hline(Math.round(w / 2 - hw), Math.round(w / 2 + hw), y, C[0]); }
       b.ellipse(w / 2, 12, 9, 9, o.broken ? '#3a3040' : '#ffe8a8'); b.ellipse(w / 2, 12, 6, 6, o.broken ? '#2a2030' : '#ffffff');
       if (!o.broken) for (let a = 0; a < 8; a++) b.line(w / 2, 12, w / 2 + Math.cos(a * 0.785) * 14, 12 + Math.sin(a * 0.785) * 14, '#fff4c8');
-      b.rect(w / 2 - 6, h - 18, 12, 18, '#0a0612'); b.rect(w / 2 - 7, h - 19, 14, 2, C[0]);
+      // 문: 들어갈 수 있는 탑(o.to)만 열린 어둠. 아닌 탑(징수탑 · 시계탑 · 등불 탑 · 전망대 …)은 돌로 막힌 문 — 예전엔 모두 열린 문으로 그려져 던전처럼 보였다
+      if (o.to) { b.rect(w / 2 - 6, h - 18, 12, 18, '#0a0612'); b.rect(w / 2 - 7, h - 19, 14, 2, C[0]); }
+      else { b.rect(w / 2 - 6, h - 18, 12, 18, C[0]); for (let yy = h - 15; yy < h; yy += 5) b.hline(Math.round(w / 2 - 6), Math.round(w / 2 + 5), yy, C[3]); b.line(w / 2, h - 18, w / 2, h - 13, C[3]); b.line(w / 2 - 3, h - 13, w / 2 - 3, h - 8, C[3]); b.line(w / 2 + 3, h - 8, w / 2 + 3, h - 3, C[3]); b.rect(w / 2 - 7, h - 19, 14, 2, C[0]); }
       if (o.broken) { b.line(w / 2 - 8, 30, w / 2 + 2, 50, '#1a1020'); b.line(w / 2 + 2, 50, w / 2 - 3, 70, '#1a1020'); }
       return { c: X.outline(b.put(), OUT), W: w, H: h, footH: 2 * TS };
     },
@@ -16854,7 +16856,8 @@ html.touch #modal { z-index: 60; }
     if (o.solid !== false && !(art.solid === false)) for (let y = o.ty; y < o.ty + h; y++) for (let x = o.tx; x < o.tx + w; x++) if (m.inb(x, y)) { m.solidExtra[m.i(x, y)] = 1; m.obj[m.i(x, y)] = 0; }
     // 문: 발자리 맨 아래 줄, 그림 가운데 칸은 막지 않는다 (들어가는 곳)
     const dx = Math.floor((o.tx * TS + art.W / 2) / TS), dy = o.ty + h - 1;
-    const hasDoor = o.special ? ['cave', 'temple', 'tower', 'lighthouse', 'pyramid'].includes(o.special) || !!(art.door && o.to) || (o.special === 'gate' && o.open !== false) : o.door !== false;
+    // 동굴 · 신전 · 탑 · 등대 · 피라미드: 갈 곳(o.to)이 있을 때만 문 칸을 연다 — 갈 곳 없는 탑의 문 칸이 열려 있어 들어가지는 듯 들어가지지 않았다
+    const hasDoor = o.special ? (['cave', 'temple', 'tower', 'lighthouse', 'pyramid'].includes(o.special) && (!!o.to || o.door === true)) || !!(art.door && o.to) || (o.special === 'gate' && o.open !== false) : o.door !== false;
     if (hasDoor && m.inb(dx, dy)) {
       m.solidExtra[m.i(dx, dy)] = 0;
       const wide = o.special === 'cave' || o.special === 'temple' || o.special === 'pyramid' || o.special === 'gate';
@@ -18937,11 +18940,13 @@ html.touch #modal { z-index: 60; }
         const n = OW.regName[i];
         const r = rnd();
         if (r > 0.55) continue;
-        const type = pickFoe(n, rnd());
+        let type = pickFoe(n, rnd()), tier = TIERS[n], eliteP = 0, zone = null;
+        // 지역 안의 구역(마을 둘레 · 깊은 곳 · 경계 · 높은 땅 · 숲 · 물가 …)에 따라 세기와 종류를 다시 고른다 (world/47_zones)
+        if (OW.zone) { const z = OW.zone(m, x, y, n, type, rnd); if (z) { type = z.type; tier = z.tier; eliteP = z.eliteP || 0; zone = z.key || null; } }
         const water = type === 'octo';
         if (water ? t !== T.WATER && t !== T.DEEP : (m.blocked(x, y) || t === T.WATER || t === T.DEEP || t === T.CLIFF || t === T.STAIRS || t === T.LAVA || t === T.CLOUD || OW.roadTiles[i])) continue;
         const n2 = type === 'bug' || type === 'wolf' ? 3 : type === 'slime' ? 2 : 1;
-        for (let j = 0; j < n2; j++) list.push({ type, x: x * TS + 8 + (j - 1) * 14, y: y * TS + 12 + (j % 2) * 10, tier: TIERS[n] });
+        for (let j = 0; j < n2; j++) list.push({ type, x: x * TS + 8 + (j - 1) * 14, y: y * TS + 12 + (j % 2) * 10, tier, eliteP: j === 0 ? eliteP : 0, zone });
       }
       cells.push(list);
     }
@@ -18962,7 +18967,12 @@ html.touch #modal { z-index: 60; }
       const cx = k % cw, cy = (k / cw) | 0;
       const near = Math.abs(cx - pcx) <= 0 && Math.abs(cy - pcy) <= 0;
       if (near && !OW.firstSpawn) continue;       // 바로 옆에서 갑자기 생기지 않게
-      const list = OW.cells[k].filter((s) => U.dist(s.x, s.y, p.x, p.y) > 150 || !OW.firstSpawn).map((s) => { const e = G.foes.spawn(s.type, s.x, s.y, { tier: Math.max(s.tier, scale) }); e.cell = k; return e; });
+      const di = G.state.settings && G.state.settings.diff != null ? G.state.settings.diff : 1;
+      const list = OW.cells[k].filter((s) => U.dist(s.x, s.y, p.x, p.y) > 150 || !OW.firstSpawn).map((s) => {
+        const o = { tier: Math.max(s.tier, scale) };
+        if (s.eliteP && G.state.ch !== 'c1' && Math.random() < s.eliteP * [0.4, 1, 1.3, 1.6][di]) o.elite = true;   // 깊은 곳 · 높은 땅엔 정예가 더 잦다
+        const e = G.foes.spawn(s.type, s.x, s.y, o); e.cell = k; e.zone = s.zone; return e;
+      });
       live.set(k, list);
     }
     OW.firstSpawn = true;
@@ -19018,6 +19028,7 @@ html.touch #modal { z-index: 60; }
         if (!first || !G.state.flags['seen_reg:' + n]) { G.cine.area(OW.NAMES[n].split(' — ')[0], OW.NAMES[n].split(' — ')[1] || ''); G.state.flags['seen_reg:' + n] = true; }
       }
     }
+    if (OW.zoneTick) OW.zoneTick(m, p);
     m.weatherAt = OW.weatherAt;
   };
 
@@ -20721,7 +20732,7 @@ html.touch #modal { z-index: 60; }
     for (const [x, y] of [[270, 130], [278, 130], [271, 135], [277, 135], [268, 132]].map(([a, b]) => OW.P(a, b))) if (m.inb(x, y)) m.obj[m.i(x, y)] = O.PALM;
     // 태양 피라미드
     OW.clear(m, PYR.x - 2, PYR.y - 2, 14, 10, 0, T.SAND);
-    G.build.placeBuilding(m, { special: 'pyramid', tx: PYR.x, ty: PYR.y, w: 10, h: 3, to: 'd4', id: 'd4_gate', cond: () => f('c4_yana') || (S().party || []).includes('yana'), msg: '모래 폭풍이 입구를 가린다. 모래바다의 길잡이가 필요하다.' });
+    G.build.placeBuilding(m, { special: 'pyramid', tx: PYR.x, ty: PYR.y, w: 10, h: 3, to: 'd4', id: 'd4_gate', cond: () => f('c4_yana') || (S().party || []).includes('yana') || f('c4_done') || f('d4:boss'), msg: '모래 폭풍이 입구를 가린다. 모래바다의 길잡이가 필요하다.' });
     for (let y = PYR.y + 3; y < PYR.y + 8; y++) for (const x of [PYR.x + 4, PYR.x + 5]) { const i = m.i(x, y); m.ter[i] = T.ROAD; m.obj[i] = 0; }
     for (const [dx, dy] of [[-1, 4], [10, 4]]) { const x = PYR.x + dx, y = PYR.y + dy; G.build.placeBuilding(m, { special: 'statue', tx: x, ty: y, w: 1, h: 1, col: '#d8b060', door: false }); }
     // 마을 꾸미기
@@ -22307,7 +22318,7 @@ html.touch #modal { z-index: 60; }
     // 묘지 (대성당 뒤): 비석 + 뚜껑문
     OW.clear(m, GRAVE.x - 2, GRAVE.y - 1, 8, 5, m.hgt[m.i(GRAVE.x, GRAVE.y + 2)], T.SNOW);
     for (const [dx, dy] of [[-1, 0], [1, 0], [3, 0], [-1, 2], [3, 2]]) G.build.placeBuilding(m, { special: 'statue', tx: GRAVE.x + dx, ty: GRAVE.y + dy, w: 1, h: 1, col: '#a8b0c0', door: false, veil: dx === 3 });
-    m.warps.push({ x: GRAVE.x + 1, y: GRAVE.y + 1, w: 1, h: 1, to: 'd7', id: 'd7_hatch', cond: () => f('c7_plan') && S().flags.route_lock !== 'order', msg: '눈 덮인 쇠 뚜껑문. 자물쇠가 얼어붙었다. 아직은 열 까닭이 없다.' });
+    m.warps.push({ x: GRAVE.x + 1, y: GRAVE.y + 1, w: 1, h: 1, to: 'd7', id: 'd7_hatch', cond: () => (f('c7_plan') && S().flags.route_lock !== 'order') || f('d7:boss'),   /* 보스를 이긴 뒤에는 어느 갈래든 (질서 갈래는 이 문이 영영 잠겨 있었다) */ msg: '눈 덮인 쇠 뚜껑문. 자물쇠가 얼어붙었다. 아직은 열 까닭이 없다.' });
     // 꾸미기: 화로 · 전나무
     for (const [dx, dy] of [[12, 8], [20, 8], [12, 13], [20, 13]]) { m.obj[m.i(X0 + dx, Y0 + dy)] = O.LAMP; m.lights.push({ x: (X0 + dx) * TS + 8, y: (Y0 + dy) * TS + 2, r: 60, warm: 'rgba(255,190,120,0.25)' }); }
     for (const [dx, dy] of [[0, 9], [31, 9], [0, 20], [31, 18], [9, 21], [22, 21]]) if (m.inb(X0 + dx, Y0 + dy) && !m.solidExtra[m.i(X0 + dx, Y0 + dy)]) m.obj[m.i(X0 + dx, Y0 + dy)] = O.PINE;
@@ -23247,7 +23258,7 @@ html.touch #modal { z-index: 60; }
     // 묘지와 기울어진 비석 (뒷길)
     OW.clear(m, GRAVE.x - 2, GRAVE.y - 1, 7, 5, m.hgt[m.i(GRAVE.x, GRAVE.y + 2)], T.DARK);
     for (const [dx, dy] of [[-1, 0], [1, 0], [3, 0], [-1, 2], [3, 2]]) G.build.placeBuilding(m, { special: 'statue', tx: GRAVE.x + dx, ty: GRAVE.y + dy, w: 1, h: 1, col: '#5a5468', door: false });
-    m.warps.push({ x: GRAVE.x + 1, y: GRAVE.y + 1, w: 1, h: 1, to: 'd9', id: 'd9_back', cond: () => S().flags.route_lock === 'night' && f('c9_mid'), msg: '기울어진 비석. 밀어 봐도 꿈쩍 않는다. 고양이 발자국 하나가 찍혀 있다.' });
+    m.warps.push({ x: GRAVE.x + 1, y: GRAVE.y + 1, w: 1, h: 1, to: 'd9', id: 'd9_back', cond: () => (S().flags.route_lock === 'night' && f('c9_mid')) || f('d9:boss'),   /* 보스를 이긴 뒤에는 어느 갈래든 뒷길로도 */ msg: '기울어진 비석. 밀어 봐도 꿈쩍 않는다. 고양이 발자국 하나가 찍혀 있다.' });
     // 등불 다섯 (꺼져 있다)
     for (const [x, y] of LAMPS) { m.obj[m.i(x, y)] = O.LAMP; }
     for (const [dx, dy] of [[1, 9], [33, 9], [1, 20], [33, 20]]) if (m.inb(X0 + dx, Y0 + dy) && !m.solidExtra[m.i(X0 + dx, Y0 + dy)]) m.obj[m.i(X0 + dx, Y0 + dy)] = O.DEAD;
@@ -30720,6 +30731,138 @@ html.touch #modal { z-index: 60; }
   }
 
   G.wings = { Sigil, Jet, Chute, Boulder, Belt, Race, Chime, NAME, THEME };
+})();
+
+/* js/world/47_zones.js */
+/* 지역 안의 구역 — 같은 지역이라도 어디냐에 따라 적의 세기와 종류가 다르다
+   예전: 지역마다 적 목록 하나 · 위험도 하나 — 마을 문 앞이나 지역 끝 고원이나 같은 적이 같은 세기로 나왔다.
+   · 세기: 마을 둘레(지역 반지름의 36% 안)는 한 단계 약하게(정예 없음), 깊은 곳(80% 밖) · 더 센 이웃 지역과 맞닿은 경계 · 높은 땅(그 지역 보통 높이 + 2)은
+     한 단계씩 세게(최대 +2), 정예도 잦게
+   · 종류: 발밑 지형 무리(숲 · 물가 · 모래땅 · 설원 · 잿빛 비탈 · 늪 · 바위 언덕 · 옛 터 · 들판 · 어둠 · 고원)의 적이 섞인다 —
+     단, 그 지역이나 한 단계 위 지역까지 나오는 적만(초반 지역에 늦은 지역의 적이 끼지 않게)
+   · 깊은 곳 · 경계 · 높은 땅에 들어서면 지역 이름처럼 작게 알린다 (「깊은 숲 — 적이 한층 세다」) */
+(function () {
+  'use strict';
+  const G = globalThis.G;
+  const OW = G.ow, TL = G.tiles, T = TL.T, OB = G.objs, O = OB.O, U = G.u;
+  if (!OW) return;
+
+  const BIOME = {
+    forest: { name: '숲', foes: [['plant', 2], ['bug', 2], ['wolf', 1.5], ['spider', 1.5], ['boar', 1.2], ['slime', 0.8]] },
+    shore: { name: '물가', foes: [['crab', 3], ['octo', 2], ['slime', 1], ['spider', 0.6]] },
+    desert: { name: '모래땅', foes: [['worm', 2.5], ['scorp', 2], ['skel', 1], ['bandit', 1.2]] },
+    snow: { name: '설원', foes: [['icewisp', 3], ['wolf', 2], ['cgolem', 0.6], ['skel', 1]] },
+    ash: { name: '잿빛 비탈', foes: [['wisp', 2.5], ['bomber', 2], ['golem', 1], ['shroom', 1.5]] },
+    swamp: { name: '늪', foes: [['plant', 2], ['bigslime', 1.5], ['shroom', 1.5], ['spider', 1.5], ['octo', 1]] },
+    rocky: { name: '바위 언덕', foes: [['golem', 1.5], ['bat', 2], ['lancer', 1], ['turret', 0.8], ['eye', 0.8]] },
+    ruin: { name: '옛 터', foes: [['skel', 2], ['hollow', 1.5], ['turret', 1], ['wraith', 0.8], ['priest', 0.5]] },
+    meadow: { name: '들판', foes: [['slime', 2], ['boar', 2], ['bug', 1.5], ['bandit', 1]] },
+    dark: { name: '어둠', foes: [['ghost', 2], ['shade', 1.5], ['wraith', 1.5], ['bat', 1.5], ['assassin', 0.6]] },
+    high: { name: '고원', foes: [['bat', 2], ['eye', 1.5], ['golem', 1], ['lancer', 1], ['sniper', 0.6], ['berserk', 0.6]] },
+  };
+  const TREES = new Set([O.TREE, O.BIGTREE, O.PINE, O.SNOWTREE, O.PALM, O.DEAD, O.BLOSSOM].filter((v) => v != null));
+  const RUINS = new Set([O.PILLAR, O.RUBBLE, O.GRAVE, O.BONES].filter((v) => v != null));
+
+  /** 지도마다 한 번: 지역별 마을 중심 · 반지름(마을에서 그 지역 땅까지 거리의 90번째) · 보통 높이 · 나올 수 있는 적 */
+  function stats(m) {
+    if (m._zones) return m._zones;
+    const RN = OW.regName, N = m.w * m.h, by = {};
+    for (const [n, t] of Object.entries(OW.towns || {})) by[n] = { cx: t.x + (t.w >> 1), cy: t.y + (t.h >> 1), d: [], h: [] };
+    for (let i = 0; i < N; i += 7) {
+      const R = by[RN[i]]; if (!R) continue;
+      const x = i % m.w, y = (i / m.w) | 0;
+      R.d.push(Math.hypot(x - R.cx, y - R.cy)); R.h.push(m.hgt[i]);
+    }
+    const TI = OW.TIERS;
+    for (const [n, R] of Object.entries(by)) {
+      R.d.sort((a, b) => a - b); R.h.sort((a, b) => a - b);
+      R.rad = Math.max(24, R.d[Math.floor(R.d.length * 0.9)] || 60);
+      R.hMed = R.h[Math.floor(R.h.length / 2)] || 0;
+      // 이 지역(위험도 t)에서 나와도 되는 적: 위험도 t + 1까지의 지역 목록에 있는 것
+      const ok = new Set();
+      for (const [n2, tb] of Object.entries(OW.TABLE)) if ((TI[n2] || 0) <= (TI[n] || 0) + 1) for (const [ty] of tb) ok.add(ty);
+      R.ok = ok; R.d = R.h = null;
+    }
+    m._zones = by;
+    return by;
+  }
+  function biomeAt(m, x, y) {
+    const t = m.T(x, y);
+    if (t === T.SNOW || t === T.ICE) return 'snow';
+    if (t === T.SAND || t === T.DRY || t === T.SANDSTONE) return 'desert';
+    if (t === T.SWAMP || t === T.MUD) return 'swamp';
+    if (t === T.DARK) return 'dark';
+    let trees = 0, water = 0, lava = 0, ruin = 0, stone = 0;
+    for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) {
+      const xx = x + dx, yy = y + dy; if (!m.inb(xx, yy)) continue;
+      const i = m.i(xx, yy), o = m.obj[i], tt = m.ter[i];
+      if (TREES.has(o)) trees++; if (RUINS.has(o)) ruin++;
+      if (tt === T.WATER || tt === T.DEEP) water++; if (tt === T.LAVA) lava++;
+      if (tt === T.ASH) lava += 0.3;
+      if (tt === T.STONE || tt === T.ROCKY || tt === T.GRAVEL || tt === T.CRACKED) stone++;
+    }
+    if (lava >= 2) return 'ash';
+    if (ruin >= 2) return 'ruin';
+    if (water >= 4) return 'shore';
+    if (trees >= 6) return 'forest';
+    if (stone >= 8) return 'rocky';
+    return 'meadow';
+  }
+  /** (x, y) 칸의 구역: { ring: near|mid|far, edge, high, biome } */
+  function zoneAt(m, x, y, n) {
+    const Z = stats(m)[n]; if (!Z) return null;
+    const d = Math.hypot(x - Z.cx, y - Z.cy) / Z.rad;
+    const ring = d < 0.36 ? 'near' : d > 0.8 ? 'far' : 'mid';
+    const TI = OW.TIERS, my = TI[n] || 0;
+    let edge = false;
+    for (let dy = -8; dy <= 8 && !edge; dy += 4) for (let dx = -8; dx <= 8 && !edge; dx += 4) { const xx = x + dx, yy = y + dy; if (!m.inb(xx, yy)) continue; const n2 = OW.regName[m.i(xx, yy)]; if (n2 && n2 !== n && (TI[n2] || 0) > my) edge = true; }
+    const high = m.hgt[m.i(x, y)] >= Z.hMed + 2;
+    // 경계: 더 센 이웃 지역과 8칸 안 — 마을 둘레는 빼고, 첫 지역(★0)은 깊은 곳에서만 (그린은 사방이 더 센 지역이라 거의 다 경계가 되었다)
+    return { ring, edge: edge && ring !== 'near' && (my > 0 || ring === 'far'), high, biome: biomeAt(m, x, y) };
+  }
+  const pickW = (list, r) => { let s = list.reduce((a, x) => a + x[1], 0) * r; for (const [t, w] of list) { s -= w; if (s <= 0) return t; } return list[0][0]; };
+
+  /** 10_overworld planSpawns가 적 하나를 고를 때마다 묻는다 */
+  OW.zone = function (m, x, y, n, type, rnd) {
+    const z = zoneAt(m, x, y, n); if (!z) return null;
+    const Z = stats(m)[n], base = OW.TIERS[n] || 0;
+    let adj = (z.ring === 'near' ? -1 : 0) + (z.ring === 'far' || z.edge ? 1 : 0) + (z.high ? 1 : 0);
+    adj = U.clamp(adj, -1, 2);
+    // 종류: 지형 무리(높은 땅이면 고원)의 적을 섞는다 — 이 지역에서 나와도 되는 것만
+    const pool = (z.high && rnd() < 0.55 ? BIOME.high : BIOME[z.biome]).foes.filter(([t]) => Z.ok.has(t) && G.foes.T[t]);
+    if (pool.length && rnd() < 0.45) type = pickW(pool, rnd());
+    const danger = (z.ring === 'far' ? 1 : 0) + (z.edge ? 1 : 0) + (z.high ? 1 : 0);
+    const eliteP = z.ring === 'near' ? 0 : [0, 0.05, 0.08, 0.1][danger];
+    return { type, tier: U.clamp(base + adj, 0, 11), eliteP, key: z.ring + (z.edge ? '+edge' : '') + (z.high ? '+high' : '') + ':' + z.biome };
+  };
+
+  /* ───────── 들어서면 알린다 (위험한 구역만, 같은 말은 자주 하지 않는다) ───────── */
+  let zT = 0, last = '', lastAt = -999;
+  const told = {};
+  OW.zoneTick = function (m, p) {
+    zT -= 0.4; if (zT > 0) return; zT = 1.2;
+    if (!p || G.script.running) return;
+    const x = Math.floor(p.x / TL.TS), y = Math.floor(p.y / TL.TS); if (!m.inb(x, y)) return;
+    const n = OW.regName[m.i(x, y)];
+    if (OW.inTown && OW.inTown(x, y, 4)) { last = ''; return; }
+    const z = zoneAt(m, x, y, n); if (!z) return;
+    const bn = (z.high ? BIOME.high : BIOME[z.biome]).name;
+    let label = null;
+    if (z.high && (z.ring === 'far' || z.edge)) label = '높은 ' + bn + ' — 적이 매우 세고 정예가 잦다';
+    else if (z.high) label = '높은 땅 · ' + bn + ' — 적이 세다';
+    else if (z.ring === 'far' && z.edge) label = '깊은 ' + bn + ' · 경계 — 적이 매우 세다';
+    else if (z.ring === 'far') label = '깊은 ' + bn + ' — 적이 한층 세다';
+    else if (z.edge) label = bn + ' · 경계 — 이웃 땅의 기운이 넘어온다';
+    const now = (G.world && G.world.t) || 0;
+    if (!label) { last = ''; return; }
+    if (label === last) return;
+    last = label;
+    if (now - lastAt < 20 || (told[label] && now - told[label] < 240)) return;
+    lastAt = now; told[label] = now;
+    G.ui.toast(label, 'white');
+  };
+  OW.zoneAt = zoneAt;
+  G.zones = { BIOME, zoneAt, stats };
 })();
 
 /* js/world/48_explore.js */
@@ -40093,7 +40236,8 @@ html.touch #modal { z-index: 60; }
   }
 
   /* ── 위험도별 적 체력 (★7부터 완만하게) ── */
-  const TH = G.foes.TIER_HP, NEW = [1, 1.8, 2.6, 3.4, 4.2, 5.0, 5.8, 6.4, 7.0, 7.6, 8.4, 9.2];
+  // 그리고 모든 일반 적의 체력을 조금(×1.12) 올렸다 — 들판 · 던전 · 숨은 곳의 적 모두 (보스는 따로 bossScale)
+  const TH = G.foes.TIER_HP, HPUP = 1.12, NEW = [1, 1.8, 2.6, 3.4, 4.2, 5.0, 5.8, 6.4, 7.0, 7.6, 8.4, 9.2].map((v) => Math.round(v * HPUP * 100) / 100);
   for (let i = 0; i < TH.length && i < NEW.length; i++) TH[i] = NEW[i];
 
   /* ── 경험: 위험도에 비해 가벼운 땅 ──

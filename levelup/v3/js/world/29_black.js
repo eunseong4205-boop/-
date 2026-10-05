@@ -76,7 +76,7 @@
     // 묘지와 기울어진 비석 (뒷길)
     OW.clear(m, GRAVE.x - 2, GRAVE.y - 1, 7, 5, m.hgt[m.i(GRAVE.x, GRAVE.y + 2)], T.DARK);
     for (const [dx, dy] of [[-1, 0], [1, 0], [3, 0], [-1, 2], [3, 2]]) G.build.placeBuilding(m, { special: 'statue', tx: GRAVE.x + dx, ty: GRAVE.y + dy, w: 1, h: 1, col: '#5a5468', door: false });
-    m.warps.push({ x: GRAVE.x + 1, y: GRAVE.y + 1, w: 1, h: 1, to: 'd9', id: 'd9_back', cond: () => S().flags.route_lock === 'night' && f('c9_mid'), msg: '기울어진 비석. 밀어 봐도 꿈쩍 않는다. 고양이 발자국 하나가 찍혀 있다.' });
+    m.warps.push({ x: GRAVE.x + 1, y: GRAVE.y + 1, w: 1, h: 1, to: 'd9', id: 'd9_back', cond: () => (S().flags.route_lock === 'night' && f('c9_mid')) || f('d9:boss'),   /* 보스를 이긴 뒤에는 어느 갈래든 뒷길로도 */ msg: '기울어진 비석. 밀어 봐도 꿈쩍 않는다. 고양이 발자국 하나가 찍혀 있다.' });
     // 등불 다섯 (꺼져 있다)
     for (const [x, y] of LAMPS) { m.obj[m.i(x, y)] = O.LAMP; }
     for (const [dx, dy] of [[1, 9], [33, 9], [1, 20], [33, 20]]) if (m.inb(X0 + dx, Y0 + dy) && !m.solidExtra[m.i(X0 + dx, Y0 + dy)]) m.obj[m.i(X0 + dx, Y0 + dy)] = O.DEAD;
