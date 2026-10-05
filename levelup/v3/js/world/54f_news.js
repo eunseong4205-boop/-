@@ -196,12 +196,15 @@
     after: ['그 재판 이후로 기사들이 장부를 두 권씩 들고 다닌대. 하나는 보여 주는 장부.'] });
 
   /* ═════════ 언제 일어났나 ═════════ */
+  // until: 예감 · 앞날의 소문 — 그 일이 일어나면 더는 그 말을 하지 않는다 (59b_rumors)
+  const gone = (e, s) => { try { return !!e.until(s); } catch (x) { return false; } };
   function stamp() {
     const s = S(); if (!s || !s.flags) return;
     const T = s.newsT || (s.newsT = {});
     const cur = chi(), d = dayNow();
     for (const e of EV) {
       if (T[e.id]) continue;
+      if (e.until && gone(e, s)) continue;   // 예감: 그 일이 벌써 일어났으면 꺼내지 않는다
       let ok = false; try { ok = !!e.when(s); } catch (x) { ok = false; }
       if (!ok) continue;
       // 이미 한참 지난 장의 일(옛 기록을 불러왔을 때)은 오래된 이야기로
@@ -249,6 +252,7 @@
     for (const want of order) {
       for (const e of EV) {
         const st = stageOf(e, reg); if (st !== want) continue;
+        if (e.until && gone(e, s)) continue;
         const key = e.id + ':' + st; if (told[key]) continue;
         // 사람마다 관심이 다르다: 제 동네 일은 대부분, 먼 동네 일은 절반 남짓
         const local = e.reg === 'all' || [].concat(e.reg).includes(reg);
