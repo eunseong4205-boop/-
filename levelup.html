@@ -9981,6 +9981,15 @@ html.touch #modal { z-index: 60; }
       M.tabsEl = tabs;
     }
     const body = document.createElement('div'); body.className = 'm-body'; el.appendChild(body); M.body = body;
+    // 마우스 · 손가락으로 누른 줄을 고른 줄로 (예전엔 고른 줄이 맨 위 그대로라, 다시 그린 뒤 그 줄로 — 맨 위로 — 끌려 올라갔다).
+    // 안쪽 탭(무기 · 재능 나무 고르기)은 탭처럼 맨 위부터
+    body.addEventListener('click', (e) => {
+      if (UI.modal !== M) return;
+      const n = e.target && e.target.closest ? e.target.closest('.nav') : null; if (!n || !body.contains(n)) return;
+      const i = navList().indexOf(n); if (i >= 0) { M.sel = i; M.selAt = { key: M.viewKey, sel: i }; }
+      if (e.detail > 0) M.ptr = true;
+      if (n.classList.contains('ttab')) M.resetScroll = true;
+    }, true);
     const foot = document.createElement('div'); foot.className = 'm-foot'; el.appendChild(foot); M.foot = foot;
     el.hidden = false;
     sfx('open');
@@ -9988,25 +9997,35 @@ html.touch #modal { z-index: 60; }
     refresh();
     return new Promise((res) => { M.resolve = res; });
   }
-  function setTab(id) { const M = UI.modal; if (!M) return; M.tab = id; M.sel = 0; M.sub = null; sfx('page'); refresh(); M.body.scrollTop = 0; }
+  function setTab(id) { const M = UI.modal; if (!M) return; M.tab = id; M.sel = 0; M.sub = null; M.resetScroll = true; sfx('page'); refresh(); M.body.scrollTop = 0; }
   function refresh() {
     const M = UI.modal; if (!M) return;
     if (M.tabsEl) [...M.tabsEl.children].forEach((b) => { b.classList.toggle('on', b.dataset.tab === M.tab); const tt = M.o.tabs.find((x) => x.id === b.dataset.tab), n = tt && tt.badge ? tt.badge() : 0; b.classList.toggle('badge', !!n); b.dataset.n = n ? (n > 99 ? '99+' : String(n)) : ''; });
     if (M.tabsEl && M.tabsEl.scrollWidth > M.tabsEl.clientWidth) { const on = M.tabsEl.querySelector('.on'); if (on) { const l = on.offsetLeft - M.tabsEl.offsetLeft, r = l + on.offsetWidth; if (l < M.tabsEl.scrollLeft) M.tabsEl.scrollLeft = l - 8; else if (r > M.tabsEl.scrollLeft + M.tabsEl.clientWidth) M.tabsEl.scrollLeft = r - M.tabsEl.clientWidth + 8; } }
     const t = M.o.tabs ? M.o.tabs.find((x) => x.id === M.tab) : null;
+    // 보던 자리 지키기: 같은 화면(같은 탭 · 같은 하위 화면)이면 다시 그려도 스크롤은 그대로 — 예전엔 무언가를 고르거나 누를 때마다 맨 위로 올라갔다.
+    // 탭을 바꿀 때 · 새 하위 화면(장비 고르기 · 책 다음 쪽 …)은 맨 위부터, 하위 화면에서 돌아오면 보던 자리로
+    const sc = M.scrolls || (M.scrolls = {});
+    if (M.viewKey != null) sc[M.viewKey] = { top: M.body.scrollTop, sel: M.selAt && M.selAt.key === M.viewKey ? M.selAt.sel : M.sel };
+    const key = M.tab + '|' + (M.sub == null ? '' : typeof M.sub === 'object' ? JSON.stringify(M.sub) : String(M.sub));
+    if (M.resetScroll) delete sc[key];
+    const back = key !== M.viewKey && sc[key];   // 하위 화면에서 돌아왔다 — 보던 자리 · 고른 줄로
+    if (back && !M.resetScroll && back.sel != null) M.sel = back.sel;
     M.body.innerHTML = '';
     if (t) t.render(M.body, M); else if (M.o.render) M.o.render(M.body, M);
+    M.body.scrollTop = M.resetScroll ? 0 : (sc[key] ? sc[key].top : 0);
+    M.viewKey = key; M.resetScroll = false; M.selAt = null;
     const s = S();
     M.foot.innerHTML = (M.o.foot ? M.o.foot() : '') + '<span class="gold">◎ ' + U.fmtInt(s.gold) + '</span>';
     const navs = navList();
     M.sel = U.clamp(M.sel, 0, Math.max(0, navs.length - 1));
-    hlNav();
+    hlNav(M.ptr); M.ptr = false;
   }
   function navList() { const M = UI.modal; return M ? [...M.body.querySelectorAll('.nav')] : []; }
-  function hlNav() {
+  function hlNav(noScroll) {
     const M = UI.modal, navs = navList();
     navs.forEach((n, i) => n.classList.toggle('sel', i === M.sel));
-    const el = navs[M.sel]; if (el && el.scrollIntoView) el.scrollIntoView({ block: 'nearest' });
+    const el = navs[M.sel]; if (!noScroll && el && el.scrollIntoView) el.scrollIntoView({ block: 'nearest' });   // 손으로 누른 뒤에는 화면을 끌지 않는다
   }
   function closeModal(v) {
     const M = UI.modal; if (!M) return;
