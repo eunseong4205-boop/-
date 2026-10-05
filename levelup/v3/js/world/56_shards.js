@@ -34,6 +34,44 @@
       },
     });
   }
+  /** 바깥 무대: 글자 그림으로 그린다. 빈칸 = 허공(막힘) · 글자마다 바닥과 물건 (spec.key로 덧붙인다) */
+  const OB = G.objs.O;
+  const KEY = {
+    '.': null, ',': 'floor2', g: [T.GRASS], m: [T.MEADOW], d: [T.DIRT], s: [T.SAND], n: [T.SNOW], c: [T.COBBLE], p: [T.PLAZA], k: [T.PLANK], b: [T.BRICK],
+    r: [T.ROAD], w: [T.WATER], W: [T.DEEP], i: [T.ICE], o: [T.STONE], u: [T.MARBLE], y: [T.DRY], e: [T.SANDSTONE], x: [T.CHECKER], q: [T.ICEBRICK], v: [T.GRAVEL], h: [T.ASH],
+    T: [T.GRASS, OB.TREE], Y: [T.SNOW, OB.SNOWTREE], P: [T.SAND, OB.PALM], D: [T.DRY, OB.DEAD], B: [null, OB.BOULDER], f: [null, OB.FLOWER], t: [null, OB.TALL], L: [null, OB.LAMP],
+    H: [null, OB.HEDGE], '=': [null, OB.FENCEH], '|': [null, OB.FENCEV], R: [T.WATER, OB.REED], G: [null, OB.GRAVE], N: [T.SAND, OB.NET], X: [null, OB.CRATE], O: [null, OB.BARREL],
+    K: [T.BRIDGE], Q: [T.WALL], A: [null, OB.PILLAR], F: [null, OB.BANNER], V: [null, OB.HAY], J: [null, OB.BENCH], Z: [null, OB.POTS], U: [null, OB.WELL], E: [null, OB.PEBBLE],
+  };
+  function field(id, spec) {
+    G.build.def(id, {
+      build() {
+        const rows = spec.rows, h = rows.length, w = Math.max(...rows.map((r) => r.length));
+        const m = new G.GameMap({ id, name: spec.name || '', w, h, region: TL.REGIONS.indexOf(spec.region || 'green'), music: spec.music || 'dream', edge: T.VOID });
+        m.palName = spec.pal || spec.region || 'green';
+        const fl = spec.floor != null ? spec.floor : T.GRASS, fl2 = spec.floor2 != null ? spec.floor2 : fl;
+        const key = Object.assign({}, KEY, spec.key || {});
+        for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+          const ch = rows[y][x] || ' ', i = m.i(x, y);
+          if (ch === ' ') { m.ter[i] = T.VOID; continue; }
+          const k = key[ch];
+          if (k === undefined) { m.ter[i] = fl; continue; }
+          if (k === null) { m.ter[i] = fl; continue; }
+          if (k === 'floor2') { m.ter[i] = fl2; continue; }
+          m.ter[i] = k[0] != null ? k[0] : fl;
+          if (k[1]) m.obj[i] = k[1];
+        }
+        m.entry = { x: px(spec.start ? spec.start[0] : Math.floor(w / 2)), y: py(spec.start ? spec.start[1] : h - 2) };
+        m.dark = spec.dark || 0; if (spec.darkCol) m.darkCol = spec.darkCol;
+        if (spec.weather) m.weather = spec.weather;
+        m.lights = (spec.lights || []).map((l) => ({ x: px(l[0]), y: py(l[1]) - 10, r: l[2] || 44, warm: l[3] || 'rgba(255,200,110,0.3)' }));
+        m.spawnList = [];
+        for (const f0 of spec.furn || []) m.spawnList.push({ decor: f0[0], tx: f0[1], ty: f0[2], o: f0[3] || {} });
+        m.stage = true; m.noCard = true; m.noFollow = true; m.memory = true;
+        return m;
+      },
+    });
+  }
   room('m_tower', { region: 'yellow', name: '천 년 전 · 금빛 언덕의 막사', w: 15, h: 10, floor: T.SANDSTONE, music: 'dream', dark: 0.3, rug: [6, 3, 4, 4],
     furn: [['desk', 7, 3], ['bookpile', 5, 3], ['lamp', 10, 3], ['window', 4, 1, { wall: true, v: 'night' }], ['window', 10, 1, { wall: true, v: 'night' }], ['crate', 1, 7], ['crate', 13, 7]] });
   room('m_sea', { region: 'blue', name: '팔백 년 전 · 소금 바다의 오두막', w: 15, h: 10, floor: T.SAND, music: 'calm', weather: 'mist',
@@ -49,45 +87,81 @@
   room('m_office', { region: 'rainbow', name: '983년 봄 · 기사단 회계실', w: 15, h: 10, floor: T.CHECKER, music: 'dread', dark: 0.3,
     furn: [['shelf', 2, 2], ['shelf', 3, 2], ['shelf', 4, 2], ['shelf', 10, 2], ['shelf', 11, 2], ['shelf', 12, 2], ['counter', 10, 5], ['crate', 1, 7], ['barrel', 13, 7], ['lamp', 6, 3]] });
 
-  /* ═════════ 들어가고 나오기 ═════════ */
-  const MEM = { cur: null, st: null };
+  /* ═════════ 들어가고 나오기 ═════════
+     조각 하나는 여러 장면(acts)으로 흐른다: 앞 장면 → 고르는 장면 → 그 뒤. 장면이 끝나면 next()로 다음 장면에 선다.
+     한 장면을 마칠 때마다 어디까지 보았는지 적어 두어, 중간에 빠져나와도 그 장면부터 다시 볼 수 있다 */
+  const MEM = { cur: null, st: null, act: null, ai: 0 };
   ST.memNow = () => MEM.cur;
-  async function enter(c, sh) {
+  const actsOf = (sh) => sh.acts || [sh];
+  const ORD = ['첫째', '둘째', '셋째', '넷째', '다섯째'];
+  async function enter(c, sh, from) {
     const s = S(), p0 = W().player;
     s.stageRet = { map: s.map, x: p0.x, y: p0.y, dir: p0.dir };
     c.lock(true);
     c.sfx('white');
-    await c.narr('검은 유리에 손끝이 닿았다. 차갑다. 그리고 — 배가 고프다. 누군가의 배고픔이 손가락을 타고 올라온다.');
+    await c.narr(from ? '검은 유리에 다시 손을 댔다. 아까 그 숨소리가 기다리고 있었다.' : '검은 유리에 손끝이 닿았다. 차갑다. 그리고 — 배가 고프다. 누군가의 배고픔이 손가락을 타고 올라온다.');
     await c.fade(true, { sec: 1 });
-    ST.staging = true; MEM.cur = sh; MEM.st = {};
+    ST.staging = true; MEM.cur = sh;
+    const pr = from && s.shardProg && s.shardProg[sh.id];
+    MEM.st = pr && pr.st ? JSON.parse(JSON.stringify(pr.st)) : {};
+    MEM.pick = pr ? pr.pick : null; MEM.label = pr ? pr.label : null;
     MEM.lantern = !!p0.lantern;
-    // 방 등불은 지도에 남으므로(지도는 한 번 지어 둔다) 들어올 때마다 처음 상태로
-    const rm0 = G.build.get(sh.room); rm0.lights0 = rm0.lights0 || (rm0.lights || []).slice(); rm0.lights = rm0.lights0.slice();
-    G.game.goto(sh.room, px(sh.start[0]), py(sh.start[1]), sh.dir || 'up', { quiet: true });
-    const p = W().player;
-    p.look = sh.pov.look; p.sheet = null; p.hidden = false; p.lantern = !!sh.lantern;
-    disarm(p);
-    p.beast = sh.pov.look && sh.pov.look.kind && ST.beastDraw ? ST.beastDraw(p, sh.pov.look.kind) : null;
     if (G.hud) G.hud.hidden = true;
     c.filter('memory');
-    if (sh.music) c.music(sh.music);
-    for (const npc of sh.npcs || []) {
-      const e = W().add(new G.props.NPC({ x: px(npc.x), y: py(npc.y), dir: npc.dir || 'down', look: npc.look, name: npc.name, talk: (c2, n) => npc.talk(c2, n, MEM.st), lookAt: npc.lookAt, mark: () => (isTarget(npc.key) ? '!' : null) }));
-      e.memKey = npc.key; e.voiceOff = true;
-      if (npc.state) e.state = npc.state;
-    }
-    for (const sp of sh.spots || []) W().add(new MemSpot({ mk: sp.mk, x: px(sp.x) + (sp.dx || 0), y: py(sp.y) + (sp.dy || 0), verb: sp.verb, reach: sp.reach || 18, when: () => !sp.when || sp.when(MEM.st), text: async (c2) => { MEM.used[sp.mk] = 1; await sp.text(c2, MEM.st); } }));
+    await stageAct(c, from || 0, true);
+  }
+  /** 장면 하나를 세운다: 방 · 모습 · 사람 · 물건 · 들어가는 말 */
+  async function stageAct(c, ai, first) {
+    const sh = MEM.cur, acts = actsOf(sh), A = acts[ai];
+    MEM.ai = ai; MEM.act = A;
+    // 방 등불은 지도에 남으므로(지도는 한 번 지어 둔다) 들어올 때마다 처음 상태로
+    const rm0 = G.build.get(A.room); rm0.lights0 = rm0.lights0 || (rm0.lights || []).slice(); rm0.lights = rm0.lights0.slice();
+    G.game.goto(A.room, px(A.start[0]), py(A.start[1]), A.dir || 'up', { quiet: true, keepMusic: true });
+    const p = W().player, pov = A.pov || sh.pov;
+    p.look = pov.look; p.sheet = null; p.hidden = false; p.lantern = !!A.lantern;
+    disarm(p);
+    p.beast = pov.look && pov.look.kind && ST.beastDraw ? ST.beastDraw(p, pov.look.kind) : null;
+    if (G.hud) G.hud.hidden = true;
+    c.music(A.music || sh.music || rm0.music || 'dream');
+    for (const npc of A.npcs || []) if (!npc.later) addNpc(npc);
+    for (const sp of A.spots || []) W().add(new MemSpot({ mk: sp.mk, x: px(sp.x) + (sp.dx || 0), y: py(sp.y) + (sp.dy || 0), verb: sp.verb, reach: sp.reach || 18, when: () => !sp.when || sp.when(MEM.st), text: async (c2) => { MEM.used[sp.mk] = 1; await sp.text(c2, MEM.st); } }));
     MEM.used = {}; MEM.idle = 0; MEM.sig = ''; MEM.age = 0;
     await c.wait(0.3);
     await c.fade(false, { sec: 1.2 });
-    G.cine.area(sh.title, sh.era);
+    G.cine.area(sh.title + (acts.length > 1 ? ' · ' + ORD[ai] + ' 장면' : ''), A.era || sh.era);
     await c.wait(1.6);
-    if (sh.intro) await sh.intro(c, MEM.st);
-    await c.narr('[s](조각 속에서는 ' + U.josa(sh.pov.name, '으로/로') + ' 걷는다. 위의 띠가 할 일을 알려 준다 — 빛나는 것은 만져 보고, [y]![/] 표시가 뜬 사람에게는 말을 걸자. 메뉴 키로 언제든 빠져나올 수 있다.)[/]');
+    if (A.intro) await A.intro(c, MEM.st);
+    if (first) await c.narr('[s](조각 속에서는 ' + U.josa(pov.name, '으로/로') + ' 걷는다.' + (acts.length > 1 ? ' 이 기억은 장면 ' + acts.length + '개로 이어진다.' : '') + ' 위의 띠가 할 일을 알려 준다 — 빛나는 것은 만져 보고, [y]![/] 표시가 뜬 사람에게는 말을 걸자. 메뉴 키로 언제든 빠져나올 수 있다.)[/]');
+    else if (A.pov && A.pov !== acts[ai - 1].pov) await c.narr('[s](이번에는 ' + U.josa(pov.name, '으로/로') + ' 걷는다.)[/]');
     c.lock(false);
+  }
+  /** 기억 속 사람 하나 (장면 중간에 나타나는 사람도: npc.later면 처음엔 세우지 않는다) */
+  function addNpc(npc, at) {
+    const x = at ? at.x : px(npc.x), y = at ? at.y : py(npc.y);
+    const e = W().add(new G.props.NPC({ x, y, dir: npc.dir || 'down', look: npc.look, name: npc.name, talk: npc.talk ? (c2, n) => npc.talk(c2, n, MEM.st) : null, lookAt: npc.lookAt, mark: () => (isTarget(npc.key) ? '!' : null) }));
+    e.memKey = npc.key; e.voiceOff = true; if (npc.wander) e.wanderR = npc.wander;
+    if (npc.state) e.state = npc.state;
+    if (npc.look && npc.look.kind && ST.beastDraw) e.drawFn = ST.beastDraw(e, npc.look.kind);
+    return e;
+  }
+  /** 장면 끝: 다음 장면으로, 마지막이면 조각을 녹인다. k · label은 고른 것 (고르는 장면에서만) */
+  async function next(c, k, label) {
+    if (k != null) { MEM.pick = k; MEM.st.pick = k; }
+    if (label) MEM.label = label;
+    const sh = MEM.cur, acts = actsOf(sh);
+    if (MEM.ai + 1 >= acts.length) { const s = S(); if (s.shardProg) delete s.shardProg[sh.id]; return leave(c, sh, MEM.pick == null ? 0 : MEM.pick, MEM.label); }
+    const s = S(); s.shardProg = s.shardProg || {};
+    s.shardProg[sh.id] = { ai: MEM.ai + 1, pick: MEM.pick, label: MEM.label, st: JSON.parse(JSON.stringify(MEM.st || {})) };
+    c.lock(true);
+    if (G.cine.letterbox) G.cine.letterbox(false);
+    c.sfx('white');
+    await c.fade(true, { sec: 1.4 });
+    await c.wait(0.4);
+    await stageAct(c, MEM.ai + 1, false);
   }
   async function leave(c, sh, pick, nameLabel) {
     const s = S();
+    MEM.stEnd = MEM.st || {};
     s.shards = s.shards || {};
     s.shards[sh.id] = { pick, name: sh.name };
     c.flag('shard:' + sh.id);
@@ -99,7 +173,7 @@
     await c.fade(false, { sec: 1 });
     const n = Object.keys(s.shards).length;
     await c.say('toria', n === 1 ? '찍…? 너 잠깐 멍하게 서 있었어. 눈이 딴 데 가 있었어. 어디 갔다 왔어?' : n >= 6 ? '또 갔다 왔구나. …너 요즘 흑점을 쳐다볼 때 얼굴이 달라. 무서워하는 얼굴이 아니야. 누굴 찾는 얼굴이야.' : '또 조각이야? 이번엔 누구였어? …찍, 말 안 해도 돼. 얼굴에 써 있어.', { face: n >= 6 ? 'sad' : 'normal' });
-    c.journal('검은 조각 — ' + sh.title + ' (' + sh.era + '). ' + sh.journal(pick) + ' 이름: ' + sh.name + '. (모은 이름 ' + n + ' / 7)');
+    c.journal('검은 조각 — ' + sh.title + ' (' + sh.era + '). ' + sh.journal(pick) + (sh.journal2 ? ' ' + sh.journal2(MEM.stEnd || {}) : '') + ' 이름: ' + sh.name + '. (모은 이름 ' + n + ' / 7)');
     if (n === 6) { await c.say(null, '[y]이름 여섯[/] — 흑점 속 목소리들의 이름을 거의 다 알게 되었다. 마지막 선택에서 무언가를 할 수 있을 것 같다.', { style: 'sys' }); }
     s.pts = (s.pts || 0) + 1;
     await c.say(null, '조각이 손바닥에서 녹아 사라졌다. [y]성장 점수 +1[/]', { style: 'sys' });
@@ -113,7 +187,7 @@
   function backToWorld(c) {
     const s = S();
     c.filter('');
-    ST.staging = false; MEM.cur = null; MEM.st = null;
+    ST.staging = false; MEM.cur = null; MEM.st = null; MEM.act = null; MEM.ai = 0;
     if (G.hud) G.hud.hidden = false;
     const r = s.stageRet || { map: 'world', x: px(99), y: py(182), dir: 'down' };
     G.game.goto(r.map, r.x, r.y, r.dir || 'down', { quiet: true });
@@ -125,12 +199,14 @@
   async function abort(c) {
     const sh = MEM.cur;
     c.lock(true);
-    await c.narr('손을 뗐다. 누군가의 숨소리가 멀어진다. ' + (sh ? sh.pov.name + '의 이야기는 아직 끝나지 않았다.' : ''));
+    const pov = (MEM.act && MEM.act.pov) || (sh && sh.pov);
+    await c.narr('손을 뗐다. 누군가의 숨소리가 멀어진다. ' + (pov ? pov.name + '의 이야기는 아직 끝나지 않았다.' : ''));
     await c.fade(true, { sec: 0.8 });
     backToWorld(c);
     await c.wait(0.2);
     await c.fade(false, { sec: 0.8 });
-    await c.say('toria', '찍…! 너 갑자기 숨을 몰아쉬었어. 괜찮아? …조각은 그대로 있어. 나중에 다시 만져 봐도 돼.', { face: 'sad' });
+    const pr = sh && S().shardProg && S().shardProg[sh.id];
+    await c.say('toria', '찍…! 너 갑자기 숨을 몰아쉬었어. 괜찮아? …조각은 그대로 있어. 나중에 다시 만져 봐도 돼.' + (pr ? ' 아까 본 데서부터 이어서 볼 수도 있을 거야.' : ''), { face: 'sad' });
     c.lock(false);
   }
   // 기억 속에서 메뉴 키: 수첩 대신 「빠져나올까」
@@ -143,13 +219,13 @@
      조각마다 goals: [{ text, targets: [물건 mk · 사람 key], done(st), prog(st) }] — 앞에서부터 끝나지 않은 것이 지금 할 일.
      지금 할 일의 물건은 크게 빛나고, 사람 머리 위에는 ! . 위 가운데 띠에 할 일, 20초 넘게 아무 진척이 없으면 화살표 */
   function goalNow() {
-    const sh = MEM.cur; if (!sh || !sh.goals) return null;
-    for (const g0 of sh.goals) if (!g0.done || !g0.done(MEM.st || {})) return g0;
-    return sh.goals[sh.goals.length - 1];
+    const A = MEM.cur && MEM.act; if (!A || !A.goals) return null;
+    for (const g0 of A.goals) if (!g0.done || !g0.done(MEM.st || {})) return g0;
+    return A.goals[A.goals.length - 1];
   }
   function isTarget(key) {
     const g0 = goalNow(); if (!g0 || !g0.targets.includes(key)) return false;
-    const td = MEM.cur.tdone && MEM.cur.tdone[key];
+    const td = MEM.act.tdone && MEM.act.tdone[key];
     return !(td && td(MEM.st || {}));
   }
   /** 기억 속 물건: 지금 볼 것은 크게 빛나고, 한 번 본 것 · 지금 쓸 수 없는 것은 빛나지 않는다 */
@@ -181,7 +257,8 @@
   ST.memInfo = function () {
     const sh = MEM.cur; if (!sh) return null;
     const g0 = goalNow();
-    return { title: sh.pov.name, fresh: (MEM.age || 0) < 6, text: g0 ? g0.text : '', prog: g0 && g0.prog ? '(' + g0.prog(MEM.st || {}) + ')' : '', arrow: MEM.idle > 20 ? nearestTarget() : null };
+    const n = actsOf(sh).length, pov = (MEM.act && MEM.act.pov) || sh.pov;
+    return { title: pov.name + (n > 1 ? ' · ' + (MEM.ai + 1) + '/' + n : ''), act: MEM.ai, acts: n, fresh: (MEM.age || 0) < 6, text: g0 ? g0.text : '', prog: g0 && g0.prog ? '(' + g0.prog(MEM.st || {}) + ')' : '', arrow: MEM.idle > 20 ? nearestTarget() : null };
   };
   ST.onTick.push((dt) => {
     if (!MEM.cur) return;
@@ -231,7 +308,7 @@
       await c.narr('그날 밤 소년은 빛을 다섯으로 쪼갰다. 그리고 하늘로 올라갔다. 고양이는 막사 지붕에서 밤새 하늘을 봤다. 검은 눈이 한 입을 먹는 것을.');
       await c.narr('천 년 뒤, 밤의 나라 정보상은 이 이야기를 팔지 않았다. 아무리 비싸게 불러도.');
       await c.cinema(false);
-      await leave(c, SH[0], k, '소년은 「아우룸」이 아니라 「오루」였다.');
+      await next(c, k, '소년은 「아우룸」이 아니라 「오루」였다.');
     } }],
     spots: [
       { mk: 'map', x: 9, y: 4, verb: '탁자 위 지도를 본다', text: async (c, st) => { st.map = true; await c.narr('다섯 부족의 땅에 다섯 빛깔로 금이 그어져 있다. 금마다 소년의 글씨: 「여기는 초록. 여기는 빨강. 서로 멀리.」\n지도 한가운데, 하늘 쪽에 작은 구멍이 뚫려 있다. 촛불에 그을린 구멍.'); } },
@@ -267,7 +344,7 @@
         await c.narr('이튿날 아침부터 그 해안에서는 고기가 잡히지 않았다. 대신 밤마다 바다가 희미하게 밝아졌다. 마을 사람들은 그 빛을 「마렌의 그물」이라 불렀다. 팔백 년 동안.');
         await c.narr('…그리고 바다 밑에서, 빛은 조금씩 배가 고파졌다. 노래를 들어 줄 사람이 없어서.');
         await c.cinema(false);
-        await leave(c, SH[1], k, '바다를 밝히던 빛은 「마렌」이라는 누나였다.');
+        await next(c, k, '바다를 밝히던 빛은 「마렌」이라는 누나였다.');
       } },
       { key: 'man', name: '은빛 단추의 징수인', x: 11, y: 8, dir: 'left', look: folk('guard', { tc: '#c8c8d8' }), when: null, talk: async (c, n, st) => {
         if (!st.talked) { await c.say(n, '…꼬마. 비켜라. 너랑은 볼일 없다.', { face: 'normal' }); return; }
@@ -306,7 +383,7 @@
         await c.narr('소년의 몸이 빛으로 풀렸다. 빛은 별 사이로 올라가 별 하나가 되었다. 횃불들이 하늘을 올려다봤다. 아무도 별에 세금을 매기지 못했다.');
         await c.narr('그날부터 모래바다에는 별 하나가 늘 낮게 떴다. 대상들은 그 별을 따라갔다. 길을 잃지 않았다.\n…다만 그 별은 해가 갈수록 조금씩 어두워졌다. 별도 먹어야 빛나는데, 아무도 그 별에게 빛을 나눠 주지 않았으니까.');
         await c.cinema(false);
-        await leave(c, SH[2], k, '모래바다의 낮은 별은 「사이프」라는 별지기였다.');
+        await next(c, k, '모래바다의 낮은 별은 「사이프」라는 별지기였다.');
       } },
       { key: 'chief', name: '대상의 우두머리', x: 3, y: 6, dir: 'right', look: folk('merchant', { tc: '#a8703a', skin: 'tan' }), talk: async (c, n, st) => {
         await c.say(n, st.talk ? '그 아이 이름은 사이프다. 별을 띄워 길을 그리지. 우리 대상의 눈이야. …요즘 영주들이 별 보는 아이를 찾는다더군.' : '느림보, 오늘 밤은 별이 많구나. 너도 보이냐? 낙타는 별을 안 본다던데.', { face: 'normal' });
@@ -341,10 +418,10 @@
         else if (k === 1) await c.say(n, '역병. 좋다. 백성들은 왕을 원망하지 않겠지. 병을 원망하겠지. …그 편이 낫다.', { face: 'closed' });
         else await c.say(n, '적지 않겠다고? 하하. 사백 년 동안 왕의 말을 다 적던 서기가. …고맙구나. 처음으로 나를 왕 말고 아비로 봤어.', { face: 'cry' });
         await c.narr('왕은 은잔을 비웠다. 서고의 등불이 일제히 흔들렸다. 왕의 눈이 은빛으로 차올랐다.\n이튿날 아침, 왕은 말했다. 「배가 고프다.」 사흘째, 하늘에 검은 점이 떴다.');
-        await c.narr('공주 벨라는 아버지의 배고픔을 보았다. 그리고 홀로 하늘로 올라갔다. 아버지 대신, 그 배고픔을 끝내러.\n아무도 돌아오지 않았다. 왕국은 색을 잃었다.');
+        await c.narr('공주 벨라는 아버지의 배고픔을 보았다. 사흘 동안, 매일 밤. 아버지의 손을 잡고.');
         await c.narr(k === 1 ? '그해 연대기에는 「역병」이라고 적혔다. 그 글자 위에 누군가 몇 번이나 덧칠했다. 엘린이었다. 평생.' : k === 0 ? '엘린의 기록은 은판에 새겨졌다. 사백 년 뒤 기록 보관소에서 누군가 읽을 때까지 아무도 읽지 않았다.' : '그날 이후 엘린은 아무것도 적지 않았다. 대신 왕의 이름을 외웠다. 매일 밤. 잊히지 않게.');
         await c.cinema(false);
-        await leave(c, SH[3], k, '광맥을 마신 왕은 딸의 아버지 「실반」이었다.');
+        await next(c, k, '광맥을 마신 왕은 딸의 아버지 「실반」이었다.');
       } },
       { key: 'bella', name: '공주 벨라', x: 3, y: 7, dir: 'right', look: folk('student', { gender: 'girl', hair: 'long', hc: '#e8e8f0', tc: '#8a8ab8' }), talk: async (c, n, st) => {
         st.bella = true;
@@ -382,7 +459,7 @@
         await c.narr('엘리아 수녀는 대성당으로 갔다. 첫 「성녀」. 그녀의 빛은 얼음 창고에 모였다. 천 명이 살았다. 그녀는 매일 조금씩 투명해졌다.');
         await c.narr('겨울 끝, 대성당 종이 네 번 울렸다. 리네는 수녀원 창가에서 그 소리를 셌다. 넷.\n…얼음 창고의 빛은 녹지 않았다. 엘리아의 빛은 천 명에게 나눠졌지만, 엘리아에게는 아무도 나눠 주지 않았다.');
         await c.cinema(false);
-        await leave(c, SH[4], k, '첫 성녀는 「엘리아」라는 이름의 수녀였다.');
+        await next(c, k, '첫 성녀는 「엘리아」라는 이름의 수녀였다.');
       } },
       { key: 'child', name: '병실 아이', x: 2, y: 5, dir: 'right', state: 'sit', look: folk('kidg', { hc: '#d8d4d0' }), talk: async (c, n, st) => { st.child = true; await c.say(n, U.pick(['리네 언니, 엘리아 수녀님 손이 얼음 같아. 나 때문이야?', '어젯밤에 수녀님이 울었어. 소리 안 내고. 창밖 보면서.']), { face: 'sad' }); } },
     ],
@@ -415,10 +492,9 @@
       if (k === 0) { await say('하나 더. 노을이 춥지 않게.'); await c.say(n, '따뜻해. …근데 이건 등불 빛이야. 내 배는 그대로야.', { face: 'sad' }); }
       else if (k === 1) { await say('가자. 해가 뜨는 데로.'); await c.narr('거리 끝까지 걸었다. 거리 끝에도 밤이었다. 그 너머에도. 밤은 그날부터 이 땅 전체에 내려앉았다.'); }
       else { await say('매일 밤 켤게. 네가 어디 있든, 등불 옆이면 안 들키게.'); await c.say(n, '약속이야? …그럼 나도 약속할게. 배고파도 안 울게.', { face: 'smile' }); }
-      await c.narr('노을은 밤 속에서 자랐다. 숨는 법은 배웠지만 나누는 법은 배우지 못했다. 열여섯 살 되던 밤, 노을은 등불 거리를 걸어 나가 하늘로 올라갔다. 배가 너무 고팠다.');
-      await c.narr('로웬은 약속을 지켰다. 매일 밤 등불을 켰다. 그의 아들도, 손자도. 지금 그 거리의 등불지기는 칸델이라는 남자다. 16년째 퇴근을 못 했다.');
+      await c.narr('노을은 밤 속에서 자랐다. 숨는 법은 배웠지만, 나누는 법은 아무도 가르쳐 주지 않았다.');
       await c.cinema(false);
-      await leave(c, SH[5], k, '밤 속에 숨겨졌던 아이는 「노을」이었다.');
+      await next(c, k, '밤 속에 숨겨졌던 아이는 「노을」이었다.');
     } }],
     spots: [
       { mk: 'l1', x: 5, y: 5, dy: -2, verb: '등불을 켠다', when: (st) => !st.l1, text: async (c, st) => { st.l1 = true; st.lamps = (st.lamps || 0) + 1; c.sfx('lamp'); G.fx.glow(W().player.x, W().player.y - 12, '#ffd86a', 14); if (W().map) (W().map.lights = W().map.lights || []).push({ x: px(5), y: py(5) - 14, r: 46, warm: 'rgba(255,200,110,0.35)' }); await c.narr('등불 하나. 아이 왼쪽에 노란 원이 생겼다. (' + st.lamps + ' / 3)'); } },
@@ -451,7 +527,7 @@
         await c.narr('그 사내는 그날 이후 십육 년 동안 회계실에 오지 않았다. 장부는 매달 그의 책상으로 올라갔다. 이천삼백열두 칸이 다 찰 때까지.');
         await c.narr('…그 사람들은 그릇이 아니었다. 그냥 빛을 조금 더 낸 사람들이었다. 흑점 속에서 그들은 하나의 목소리가 되었다. 「허용 손실」이라는 이름이 싫다고 말하는.');
         await c.cinema(false);
-        await leave(c, SH[6], st.col || 0, '흑점 속 수많은 목소리는 「이천삼백열두 사람」이었다. 숫자가 아니라.');
+        await next(c, st.col || 0, '흑점 속 수많은 목소리는 「이천삼백열두 사람」이었다. 숫자가 아니라.');
       } },
     ],
     spots: [
@@ -495,7 +571,15 @@
     for (const sh of SH) {
       const q = SPOT[sh.id]; if (!q) continue;
       Wd.add(new Shard({ x: px(q[0]), y: py(q[1]), reach: 18, verb: '검은 조각을 만진다', when: () => ST.after(sh.from) && !f('shard:' + sh.id) && !MEM.cur, text: async (c) => {
-        const k = await c.choice('검은 유리 조각. 흑점에서 떨어진 것 같다. 가까이 가면 누군가의 숨소리가 들린다.', ['만진다', '그만둔다']);
+        const pr = S().shardProg && S().shardProg[sh.id], n = actsOf(sh).length;
+        if (pr && pr.ai > 0 && pr.ai < n) {
+          const k = await c.choice('검은 유리 조각. 아까 보다 만 기억이 아직 따뜻하다. (' + n + '장면 중 ' + pr.ai + '장면까지 보았다)', [ORD[pr.ai] + ' 장면부터 이어서 본다', '처음부터 다시 본다', '그만둔다']);
+          if (k === 2) return;
+          if (k === 1) delete S().shardProg[sh.id];
+          await enter(c, sh, k === 0 ? pr.ai : 0);
+          return;
+        }
+        const k = await c.choice('검은 유리 조각. 흑점에서 떨어진 것 같다. 가까이 가면 누군가의 숨소리가 들린다.' + (n > 1 ? ' [s](장면 ' + n + '개로 이어진 기억)[/]' : ''), ['만진다', '그만둔다']);
         if (k !== 0) return;
         await enter(c, sh);
       } }));
@@ -530,6 +614,8 @@
     }
   };
   ST.SHARDS = SH;
+  // 장면을 덧붙이는 파일(56b_memacts)이 쓰는 도구
+  ST.memKit = { room, field, next, says, POV, me, folk, px, py, MEM, actsOf, addNpc };
   // 처음 조각을 볼 만한 때에 토리아가 알려 준다 (6장 이후, 아직 하나도 안 만졌으면)
   ST.onTick && ST.onTick.push(() => {
     const s = S(); if (!s || s.flags.shard_hint || !ST.after('c4') || G.script.running || MEM.cur) return;
