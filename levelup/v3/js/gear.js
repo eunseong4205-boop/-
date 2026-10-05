@@ -778,10 +778,12 @@
     // 주문을 거는 동안 발밑 마법진 (주문 색)
     let circ = null;
     if (p.state === 'cast') { const sp = D.SPELLS[p.castSpell]; circ = { col: (sp && sp.col) || '#a8c8ff', k: Math.min(1, p.st / 0.12), r: 14 }; }
-    else if (p.state === 'skill' && p.skill && G.stance && G.stance.ASK[p.skill.id] && G.stance.ASK[p.skill.id].w === 'magic') circ = { col: '#a8c8ff', k: Math.min(1, p.skill.t / 0.1), r: 16 };
+    else if (p.state === 'skill' && p.skill && G.stance && G.stance.ASK[p.skill.id] && G.stance.ASK[p.skill.id].w === 'magic') circ = { col: (G.vfx && G.vfx.skillCol && G.vfx.skillCol(p.skill.id)) || '#a8c8ff', k: Math.min(1, p.skill.t / 0.1), r: 16 + (G.stance.ASK[p.skill.id].grade || 1) * 2 };
     else if (p.state === 'sp' && p.spx && G.data.SPECIALS[p.spx.id] && G.data.SPECIALS[p.spx.id].type === 'magic') circ = { col: (G.prog.GRADES[G.data.SPECIALS[p.spx.id].grade] || {}).glow || '#fff0a8', k: Math.min(1, p.spx.t / 0.15), r: 22 };
-    if (circ) magicCircle(g, Math.round(p.x - cx), Math.round(p.y - cy), circ.r * (0.6 + circ.k * 0.4), circ.col, t * 3, 0.75 * circ.k);
-    if (RT.circle) { const c = RT.circle, k = c.t / 0.7; magicCircle(g, Math.round(c.x - cx), Math.round(c.y - cy), 18 + k * 10, c.col, t * 4, 0.9 * (1 - k)); }
+    // 마법진의 꼴은 마도구마다 다르다 (vfx.js)
+    const circle = G.vfx && G.vfx.circle ? (g2, x, y, r, col, rot, a) => G.vfx.circle(g2, x, y, r, col, rot, a, S().equip.focus) : magicCircle;
+    if (circ) circle(g, Math.round(p.x - cx), Math.round(p.y - cy), circ.r * (0.6 + circ.k * 0.4), circ.col, t * 3, 0.75 * circ.k);
+    if (RT.circle) { const c = RT.circle, k = c.t / 0.7; circle(g, Math.round(c.x - cx), Math.round(c.y - cy), 18 + k * 10, c.col, t * 4, 0.9 * (1 - k)); }
   }
 
   /* ───────── 손에 든 무기 ───────── */
@@ -812,6 +814,8 @@
       if (i % 3 === 0 && t1 > 0.4) { g.globalAlpha = base * 0.9; g.strokeStyle = '#ffffff'; g.lineWidth = 1; g.beginPath(); g.arc(hx, hy + 2, r1 + 3, Math.min(aa, ab), Math.max(aa, ab)); g.stroke(); }
     }
     g.restore();
+    // 날 모양마다 더하는 것 (불 혀 · 번개 · 무지개 · 심연 …) — vfx.js
+    if (G.vfx && G.vfx.trail) G.vfx.trail(g, hx, hy, a0, a1, r0, r1, k, col, gr, spin);
   }
   function bowBody(g, hx, hy, a, s, pull, full, t) {
     const B = bowImg(s.equip.bow || 'bw_short');
@@ -849,6 +853,7 @@
       g.globalAlpha = 0.35 * k; g.fillStyle = glowCol; g.beginPath(); g.arc(tx, ty, 5 + Math.sin(t * 30) * 1.5, 0, Math.PI * 2); g.fill();
       g.globalAlpha = 0.9 * k; g.fillStyle = '#ffffff'; g.beginPath(); g.arc(tx, ty, 1.5 + k, 0, Math.PI * 2); g.fill(); g.globalAlpha = 1;
       if (Math.random() < 0.5) { const aa = Math.random() * Math.PI * 2; G.fx.part({ x: tx + W().rcx + Math.cos(aa) * 10, y: ty + W().rcy + Math.sin(aa) * 8 + 11, z: 11, vx: -Math.cos(aa) * 40, vy: -Math.sin(aa) * 32, vz: 0, g: 0, life: 0.22, col: glowCol, size: 1, glow: true }); }
+      if (G.vfx && G.vfx.staffTip) G.vfx.staffTip(tx + W().rcx, ty + W().rcy + 11, k);
     }
   }
   const ANG4 = { right: 0, down: Math.PI / 2, left: Math.PI, up: -Math.PI / 2 };
@@ -909,6 +914,9 @@
       if (p.state === 'bow') { a = p.aim; pull = Math.min(1, p.bowT / (d.draw + 0.35)); full = !!p.bowFull; }
       else if (ask) { const K = p.skill, k = Math.min(1, K.t / Math.max(0.05, K.dur)); a = K.dir ? Math.atan2(-K.dir[1], -K.dir[0]) : fa; pull = k < 0.55 ? k / 0.55 : 0; full = k > 0.4 && k < 0.55; }
       else { a = p.aim != null ? p.aim : fa; pull = Math.min(1, p.spx.t / 0.4); full = pull >= 1; }
+      // 스킬 · 필살기마다 다른 자세 (하늘로 · 무릎 꿇고 · 빠르게 …) — vfx.js
+      const pose = p.state !== 'bow' && G.vfx && G.vfx.bowPose ? G.vfx.bowPose(p, ask ? p.skill : null, spDraw === 'bow' ? p.spx : null) : null;
+      if (pose) { if (pose.a != null) a = pose.a; if (pose.pull != null) pull = pose.pull; if (pose.full != null) full = pose.full; }
       bowBody(g, hx, hy, a, s, pull, full, t);
       if (p.state === 'bow') { g.globalAlpha = 0.3 + (full ? 0.2 : 0); g.fillStyle = full ? '#fff8c0' : '#ffffff'; for (let i = 2; i < 10; i++) g.fillRect(Math.round(hx + Math.cos(a) * i * 9), Math.round(hy + 3 + Math.sin(a) * i * 9), 1, 1); g.globalAlpha = 1; }
     }
@@ -917,8 +925,9 @@
       const sp = p.state === 'cast' ? D.SPELLS[p.castSpell] : null;
       const col = sp ? sp.col : spDraw === 'cast' ? ((G.prog.GRADES[(G.data.SPECIALS[p.spx.id] || {}).grade || 1] || {}).glow || '#fff0a8') : '#a8c8ff';
       const k = p.state === 'cast' ? Math.min(1, p.st / 0.14) : 1;
-      if (s.equip.focus) staffBody(g, hx, hy, fa, s, col, k, t);
-      else { g.globalAlpha = 0.6; g.fillStyle = col; g.beginPath(); g.arc(hx + Math.cos(fa) * 6, hy - 2 + Math.sin(fa) * 4, 4 + Math.sin(t * 30) * 1.5, 0, Math.PI * 2); g.fill(); g.globalAlpha = 1; }
+      const sa = G.vfx && G.vfx.staffAngle ? G.vfx.staffAngle(p, fa) : fa;   // 하늘로 드는 주문 · 돌리는 주문 …
+      if (s.equip.focus) staffBody(g, hx, hy, sa, s, col, k, t);
+      else { g.globalAlpha = 0.6; g.fillStyle = col; g.beginPath(); g.arc(hx + Math.cos(sa) * 6, hy - 2 + Math.sin(sa) * 4, 4 + Math.sin(t * 30) * 1.5, 0, Math.PI * 2); g.fill(); g.globalAlpha = 1; if (G.vfx && G.vfx.staffTip) G.vfx.staffTip(hx + Math.cos(sa) * 6 + W().rcx, hy - 2 + Math.sin(sa) * 4 + W().rcy + 11, k); }
     }
     // 쏜 직후: 활이 잠깐 남아 시위가 떤다
     else if (RT.relT != null && t - RT.relT < 0.22 && p.state !== 'roll' && C.weapon && C.weapon() === 'bow' && s.equip.bow) bowBody(g, hx, hy, RT.relA, s, 0, false, t);
@@ -966,8 +975,9 @@
 
   /* ───────── 스킬 · 필살기를 쓸 때의 손맛 ───────── */
   const WCOL = { sword: '#ffd8a8', bow: '#c8f0a0', magic: '#a8c8ff' };
-  function flourish(p, w, big) {
+  function flourish(p, w, big, id) {
     RT.flash = { w, t: 0, life: 0.28 };
+    if (G.vfx && G.vfx.flourish && G.vfx.flourish(p, w, big, id)) return;   // 스킬 · 필살기마다 다른 시작 (vfx2.js)
     G.fx.ring(p.x, p.y - 8, WCOL[w] || '#ffffff', big ? 30 : 18, 0.3, big ? 3 : 2);
     G.fx.glow(p.x, p.y - 10, WCOL[w] || '#ffffff', big ? 16 : 8, big ? 40 : 24);
     if (w === 'magic') RT.circle = { x: p.x, y: p.y, t: 0.2, col: WCOL.magic };
@@ -975,11 +985,11 @@
   }
   if (G.stance) {
     const used0 = G.stance.used;
-    G.stance.used = function (s, id) { const r = used0 ? used0.apply(this, arguments) : undefined; const A = G.stance.ASK[id], p = W().player; if (A && p) flourish(p, A.w, A.grade >= 4); return r; };
+    G.stance.used = function (s, id) { const r = used0 ? used0.apply(this, arguments) : undefined; const A = G.stance.ASK[id], p = W().player; if (A && p) flourish(p, A.w, A.grade >= 4, id); return r; };
   }
   if (G.specials && G.specials.start) {
     const st0 = G.specials.start;
-    G.specials.start = function (p, id) { const r = st0.apply(this, arguments); const sp = D.SPECIALS[id]; if (sp && p) { flourish(p, sp.type || 'sword', true); W().shake(2.5, 0.2); } return r; };
+    G.specials.start = function (p, id) { const r = st0.apply(this, arguments); const sp = D.SPECIALS[id]; if (sp && p) { flourish(p, sp.type || 'sword', true, 'sp:' + id); W().shake(2.5, 0.2); } return r; };
   }
   // 쏜 순간을 기억 (시위 떨림)
   const shootR = C.onShoot;

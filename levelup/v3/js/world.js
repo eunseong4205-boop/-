@@ -205,6 +205,7 @@
     if (G.combat && G.combat.drawAim) { try { G.combat.drawAim(g, cx, cy); } catch (_) { /* 무시 */ } }
     if (G.fx) G.fx.drawOver(g, cx, cy);
     if (G.light) G.light.draw(g, cx, cy);
+    if (G.fx && G.fx.drawGlow) G.fx.drawGlow(g, cx, cy);   // 마법 · 불 · 별빛은 어둠 위에서도 빛난다
     // 덧그림: 지역 날씨 장막 등 (빛 위에)
     if (W.overlays) for (const f of W.overlays) { try { f(g, cx, cy, v); } catch (err) { if (!W.ovErr) { W.ovErr = true; console.error('[overlay]', err); } } }
   }

@@ -563,7 +563,9 @@
         break;
       }
       case 'charge': sx = 1.05; sy = 0.95; if (e.chargeFull) dx = Math.sin(t * 70) * 0.6; break;
-      case 'spin': case 'dash': case 'sp': sx = 0.97; sy = 1.04; rot = side * 0.06; break;
+      case 'spin': case 'dash': sx = 0.97; sy = 1.04; rot = side * 0.06; break;
+      // 스킬 · 필살기: 무기 · 기술마다 다른 몸짓 (vfx.js)
+      case 'skill': case 'sp': { const M2 = G.vfx && (e.state === 'skill' ? G.vfx.skillMotion && G.vfx.skillMotion(e) : G.vfx.spMotion && G.vfx.spMotion(e)); if (M2) { sx = M2.sx; sy = M2.sy; rot = M2.rot; dx = M2.dx || 0; } else { sx = 0.97; sy = 1.04; rot = side * 0.06; } break; }
       case 'hurt': { const k = Math.max(0, 1 - (e.st || 0) / 0.22); sx = 1 + 0.14 * k; sy = 1 - 0.12 * k; rot = -(Math.sign(e.kx || 0) || -side || 1) * 0.16 * k; break; }
       case 'jump': sx = 0.93; sy = 1.08; break;
       case 'cast': sy = 1 + Math.sin(t * 22) * 0.035; sx = 2 - sy; break;
@@ -605,6 +607,7 @@
       case 'hurt': case 'fall': return { anim: 'hurt', frame: 0 };
       case 'attack': case 'spin': case 'dash': return { anim: 'atk', frame: e.atkFrame != null ? e.atkFrame : 1 };
       case 'sp': return (G.specials && G.specials.anim(e)) || { anim: 'atk', frame: 1 };
+      case 'skill': return (G.vfx && G.vfx.skillAnim && G.vfx.skillAnim(e)) || { anim: 'atk', frame: e.atkFrame != null ? e.atkFrame : 1 };
       case 'charge': return { anim: 'atk', frame: 0 };
       case 'bow': return { anim: 'bow', frame: (e.st || 0) > 0.2 ? 1 : 0 };
       case 'cast': return { anim: 'cast', frame: Math.floor(t * 6) };

@@ -269,6 +269,18 @@ html.touch #touch { display: block; position: absolute; inset: 0; pointer-events
 #bosstag b { font-family: var(--disp), 'Galmuri11', sans-serif; font-weight: normal; font-size: 15px; letter-spacing: .08em; color: #f6d77e; }
 #bosstag.rage b { color: #ff9ab8; }
 #bosstag[hidden] { display: none; }
+/* 싸움 중 대사: 보스 이름표 바로 위 자막 한 줄 (싸움을 멈추지도, 한가운데를 가리지도 않는다) */
+#bosstalk { position: absolute; left: 50%; bottom: calc(4.4% + 36px); transform: translate(-50%, 6px); z-index: 13; pointer-events: none; display: flex; align-items: center; gap: 7px; max-width: min(62%, 520px); padding: 3px 20px 3px 4px; --bt: #f0cc6e;
+  background: linear-gradient(90deg, rgba(8, 4, 16, .78), rgba(8, 4, 16, .7) 70%, rgba(8, 4, 16, 0)); border-left: 2px solid var(--bt); opacity: 0; transition: opacity .22s ease, transform .22s ease; }
+#bosstalk.on { opacity: 1; transform: translate(-50%, 0); }
+#bosstalk[hidden] { display: none; }
+#bosstalk canvas { flex: none; width: 30px; height: 30px; image-rendering: pixelated; background: rgba(0, 0, 0, .35); box-shadow: 0 0 0 1px var(--bt), 0 0 8px -2px var(--bt); }
+#bosstalk .t { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+#bosstalk small { font-size: 9px; letter-spacing: .2em; color: var(--bt); line-height: 1.1; }
+#bosstalk small:empty { display: none; }
+#bosstalk b { font-weight: normal; font-size: 12px; line-height: 1.35; color: #f4ecdc; text-shadow: 0 1px 0 #000; }
+@media (orientation: landscape) { html.touch #bosstalk { max-width: 46%; } }
+@media (orientation: portrait) { #bosstalk { max-width: 90%; } }
 
 /* ── 글 꾸미기 (메뉴 · 알림에서도) · 등급 색 ── */
 :is(#modal, #toasts, #choices, #banner) .y { color: var(--gold); }

@@ -3,7 +3,7 @@
    · 싸우는 동안 — 보스마다 둘레에 흩날리는 것(꽃잎 · 흙부스러기 · 불티 · 물거품 · 모래 · 유리 조각 · 바람 · 눈 · 은가루 · 그림자 · 데이터 …)
    · 둘째 막(체력 절반) — 멈추고, 그 보스만의 변신(만개 · 지진 · 분화 · 먹물 · 태양 · 거울 깨짐 · 번개 · 얼음 · 왕관 · 등불 꺼짐 · 경보 …)
      + 이름 카드 + 한마디. 그 뒤로 발밑에 기운이 감돌고 흩날림이 짙어진다
-   · 사람 보스 — 싸움 중 대사(얼굴 컷인)와, 끝나기 직전 칼날이 맞부딪치는 정지 화면
+   · 사람 보스 — 싸움 중 대사(화면 아래 자막 한 줄 — 싸움은 멈추지 않는다)와, 끝나기 직전 칼날이 맞부딪치는 한 박자
    · 흑점 — 셋째 막 「일식」 · 조각에서 들은 이름들이 속삭인다
    · 격파 — 보스마다 다른 마지막 문장
    균형: 체력 · 공격 · 속도는 그대로(둘째 막의 속도 ×1.3과 보스 고유 변화도 그대로). 멈춘 동안은 서로 다치지 않는다 */
@@ -31,15 +31,15 @@
     kraken: { col: '#b87aff', col2: '#6ac8e8', glyph: '≋', amb: 'bubbles', p2: ['먹물의 밤', '(꾸르르르…)', 'ink'], fin: '새끼 크라켄이 물러났다 — 동굴에 물빛이 돌아온다' },
     sphinx: { col: '#f0c860', col2: '#e86a3a', glyph: '☼', amb: 'sand', p2: ['태양의 눈', '답을 맞힌 자여. 이제 검으로 답하라.', 'sunburst'], fin: '스핑크스가 눈을 감았다 — 피라미드의 봉인이 풀린다' },
     mirror: { col: '#c8a8ff', col2: '#ffffff', glyph: '◇', amb: 'glints', kind: 'human', p2: ['깨진 거울', null, 'shatter'], fin: '거울 속의 내가 웃으며 부서졌다',
-      lines: () => ({ l1: [['hero', '배고프지? 나도야. 우린 같은 거잖아.', 'smirk', '거울 속 나']], p2: [['hero', '네가 나눠 준 빛, 전부 어디로 갔게? …나한테 왔어.', 'smirk', '거울 속 나']], clash: [['hero', '…안아 줄 거야? 아니면 벨 거야?', 'sad', '거울 속 나']] }) },
+      lines: () => ({ l1: [['hero', '배고프지? 나도야. 우린 같은 거잖아.', 'smirk', '거울 속 나']], p2: [['hero', '네가 나눠 준 빛, 다 어디로 갔게? …나한테 왔어.', 'smirk', '거울 속 나']], clash: [['hero', '…안아 줄 거야? 아니면 벨 거야?', 'sad', '거울 속 나']] }) },
     roc: { col: '#8ab8ff', col2: '#ffffff', glyph: '➶', amb: 'wind', p2: ['폭풍의 눈', '(끼아아악—!)', 'lightning'], fin: '폭풍새가 구름 속으로 흩어졌다 — 하늘이 갠다' },
     frost: { col: '#bfe8ff', col2: '#4a8ad8', glyph: '❄', amb: 'snow', p2: ['깨어난 겨울', '…춥다. 천 년째, 춥다.', 'freeze'], fin: '서리 거인이 녹아내렸다 — 얼음 속의 빛이 풀려난다' },
     hollowking: { col: '#d8d8f0', col2: '#8a7ab8', glyph: '♛', amb: 'silver', p2: ['빈 왕관', '……배고프다. 왕국 하나로는 모자랐다.', 'crown'], fin: '빈 왕이 무너졌다 — 투구 속은 처음부터 비어 있었다' },
     nocturne: { col: '#8a7ad8', col2: '#2a1a48', glyph: '☾', amb: 'shadow', kind: 'human', p2: ['그림자의 밤', null, 'shade'], fin: '그림자 녹턴이 무릎을 꿇었다 — 커튼 사이로 빛 한 줄',
-      lines: () => ({ l1: [['nocturne', '그분의 그림자로 16년. 명령은 하나였다. 「아이들을 지켜라.」', 'normal']], p2: [['nocturne', '등불을 꺼라. 그림자는 어둠 속에서 가장 길다.', 'angry']], clash: [['nocturne', '…너도 그분의 아이다. 그래서 더 물러설 수 없다.', 'sad']] }) },
+      lines: () => ({ l1: [['nocturne', '그분의 그림자로 16년. 명령은 하나 — 「아이들을 지켜라.」', 'normal']], p2: [['nocturne', '등불을 꺼라. 그림자는 어둠 속에서 가장 길다.', 'angry']], clash: [['nocturne', '…너도 그분의 아이다. 그래서 물러설 수 없다.', 'sad']] }) },
     core: { col: '#6ad8ff', col2: '#ff4a5a', glyph: '⬢', amb: 'data', kind: 'machine', p2: ['경계 단계 2', '[경고] 침입자 위협도 상향. 방위 출력 최대.', 'alarm'], fin: '방위 핵 정지 — 388년 만에 문이 열린다' },
     mk7: { col: '#ffb04a', col2: '#9a9aa8', glyph: '⚙', amb: 'steam', kind: 'machine', p2: ['임계 가동', '[MK-7] 목표 재설정. 목표: 전부.', 'overheat'], fin: 'MK-7 정지 — 쇳덩이 거인이 처음으로 조용해졌다',
-      lines: () => (party('sepia') ? { l1: [['sepia', 'MK-7, 정지 명령을 무시한다. …저 안에 녹음 장치가 있다. 990년 가을.', 'normal']] } : {}) },
+      lines: () => (party('sepia') ? { l1: [['sepia', '정지 명령을 무시한다. …저 안에 990년 가을의 녹음이 있다.', 'normal']] } : {}) },
     echogiant: { col: '#e8985a', col2: '#ffe0b0', glyph: '♪', amb: 'echo', p2: ['메아리의 폭주', '(…울… 울림… 림…)', 'echo'], fin: '울림이 잦아들었다 — 협곡에 내 발소리만 남는다' },
     swampqueen: { col: '#7ab87a', col2: '#c8b06a', glyph: '◎', amb: 'mist', p2: ['가라앉는 종', '(데엥— 데엥—)', 'bell'], fin: '벨루가 종을 내려놓았다 — 늪이 잠잠해진다' },
     trialshade: { col: '#e8e0ff', col2: '#b87aff', glyph: '✠', amb: 'runes', p2: ['셋째 시험', '힘은 보았다. 이제 마음을 보자.', 'rune'], fin: '트리아가 고개를 숙였다 — 시험 통과' },
@@ -47,20 +47,20 @@
     toadstar: { col: '#8a7ae8', col2: '#ffe86a', glyph: '★', amb: 'stars', p2: ['별 토하기', '(꾸에에엑!)', 'starfall'], fin: '유성두꺼비가 별을 뱉고 쓰러졌다' },
     lvslime: { col: '#6ae07a', col2: '#ffe86a', glyph: '▲', amb: 'pixels', kind: 'machine', p2: ['Lv.∞', '레벨 업! 레벨 업! 레벨 업!', 'levelup'], fin: 'Lv.9999 격파 — 옛 렙업의 땅이 조용히 반짝인다' },
     graus: { col: '#c84a5a', col2: '#e8c048', glyph: '⚖', amb: 'coins', kind: 'human', p2: ['장부의 끝', null, 'judge'], fin: '그라우스가 무너졌다',
-      lines: () => ({ l1: [['graus', '흰빛! 장부에 너는 숫자 하나다. 아주 비싼 숫자지!', 'smirk']], p2: [['graus', '기사들, 방패를 세워라! 이 광장 전부가 담보다!', 'angry'], ['toria', '찍…! 사람들 빛이 기둥으로 빨려 가! 빨리 끝내야 해!', 'cry']], clash: [['graus', '숫자는 거짓말을 안 해… 내가 이겨야 맞는 거다! 그래야 맞는 거라고!', 'angry']] }) },
+      lines: () => ({ l1: [['graus', '흰빛! 장부에 너는 숫자 하나다. 아주 비싼 숫자지!', 'smirk']], p2: [['graus', '기사들, 방패를 세워라! 이 광장 전부가 담보다!', 'angry']], clash: [['graus', '숫자는 거짓말을 안 해… 내가 이겨야 맞는 거다!', 'angry']] }) },
     cassian: { col: '#c8343a', col2: '#e8e8f0', glyph: '⚔', amb: 'blade', kind: 'human', p2: ['둘째 자세', null, 'blade'], fin: '',
       lines: (b) => {
-        if (b.name === '에델') return { l1: [['edel', '성녀님의 명이오. 나를 미워하시오. 그게 편하오.', 'normal'], ['toria', '찍… 미워하기 싫어. 너 나쁜 사람 아니잖아!', 'sad']], p2: [['edel', '백은의 창, 두 번째 자세. …그대의 빛이 따뜻해서, 창끝이 자꾸 무디어지오.', 'closed']], clash: [['edel', '「스스로 판단하라」… 성녀님이 그리 말씀하셨소. 지금 내 판단은—', 'shock']] };
-        if (ST.after('c6')) return { l1: [['cassian', '관중이 보고 있다. 스승님도 어딘가에서 보고 계실 거다.', 'normal'], ['toria', '찍, 우리도 보고 있어! 힘내! …아니, 너 말고!', 'happy']], p2: [['cassian', '블루에서의 나와는 다르다. 너도 그렇겠지.', 'smirk']], clash: [['cassian', '…무겁군. 그 검에 무엇이 실려 있지?', 'shock']] };
-        return { l1: [['cassian', '발이 가볍군. 누구한테 배웠지?', 'smirk'], ['toria', '찍! 할머니한테! 마당에서 허수아비 베면서!', 'angry']], p2: [['cassian', '좋다. 그럼 스승님께 배운 두 번째 자세다. 이건 막기 어려울 거다.', 'normal']], clash: [['cassian', '……좋은 눈이다. 검을 보는 게 아니라, 나를 보는군.', 'smirk']] };
+        if (b.name === '에델') return { l1: [['edel', '성녀님의 명이오. 나를 미워하시오. 그게 편하오.', 'normal']], p2: [['edel', '백은의 창, 두 번째 자세. …그대의 빛이 따뜻해 창끝이 무디어지오.', 'closed']], clash: [['edel', '「스스로 판단하라」… 지금 내 판단은—', 'shock']] };
+        if (ST.after('c6')) return { l1: [['cassian', '관중이 보고 있다. 스승님도 어딘가에서 보고 계실 거다.', 'normal']], p2: [['cassian', '블루에서의 나와는 다르다. 너도 그렇겠지.', 'smirk']], clash: [['cassian', '…무겁군. 그 검에 무엇이 실려 있지?', 'shock']] };
+        return { l1: [['cassian', '발이 가볍군. 누구한테 배웠지?', 'smirk'], ['toria', '찍! 할머니한테!', 'angry']], p2: [['cassian', '좋다. 스승님께 배운 두 번째 자세다.', 'normal']], clash: [['cassian', '……좋은 눈이다. 검이 아니라 나를 보는군.', 'smirk']] };
       } },
     cassian2: { col: '#e84a4a', col2: '#f4f0e0', glyph: '⚔', amb: 'blade', kind: 'human', p2: ['마지막 초식', null, 'blade'], fin: '',
-      lines: () => ({ l1: [['cassian', '스승님의 마지막 초식이다. 나도 아직 다 익히지 못했다. 같이 배우자.', 'smirk']], p2: [['cassian', '휘장 없이 드는 검은… 가볍군. 이상하게. 그래서 더 빠르다.', 'normal']], clash: [['cassian', '네 검은 누구를 위해 휘두르지? …대답 안 해도 된다. 보인다.', 'smile']] }) },
+      lines: () => ({ l1: [['cassian', '스승님의 마지막 초식이다. 같이 배우자.', 'smirk']], p2: [['cassian', '휘장 없이 드는 검은… 가볍군. 그래서 더 빠르다.', 'normal']], clash: [['cassian', '네 검은 누구를 위해 휘두르지? …대답 안 해도 된다.', 'smile']] }) },
     kairon: { col: '#f0c848', col2: '#ffffff', glyph: '✦', amb: 'light', kind: 'human', p2: ['챔피언', null, 'champion'], fin: '',
-      lines: () => ({ l1: [['kairon', '빠르다. 세린을 닮았군. 그 검 끝이.', 'normal']], p2: [['kairon', '레벨 99만 9999. 이 숫자가 나를 지켜 준 적은 한 번도 없다. 보여 주마, 왜 그런지.', 'closed']],
-        clash: [['kairon', '…그 눈. 16년 전 수정 앞에서 본 눈이다.', 'shock']].concat(party('lyra') ? [['lyra', '아버지! 이제 그만해요… 제발.', 'cry']] : []) }) },
+      lines: () => ({ l1: [['kairon', '빠르다. 세린을 닮았군, 그 검 끝이.', 'normal']], p2: [['kairon', '레벨 99만 9999. 이 숫자가 나를 지켜 준 적은 없다.', 'closed']],
+        clash: party('lyra') ? [['lyra', '아버지! 이제 그만해요… 제발.', 'cry']] : [['kairon', '…그 눈. 16년 전 수정 앞에서 본 눈이다.', 'shock']] }) },
     blacksun: { col: '#b87aff', col2: '#1a1028', glyph: '●', amb: 'void', kind: 'final', p2: ['닫히는 하늘', null, 'eclipse'], fin: '',
-      lines: () => ({ l1: [['kairon', '빛기둥을 맞춘다! 흰빛, 틈을 열어라!', 'angry']], p2: [['toria', '찍…! 하늘이 닫혀! 근데… 저 안에서 우는 소리가 나!', 'cry']], p3: [['serin', '조금만 더. 엄마가 안고 있을게. …저 아이들, 다 이름이 있었어.', 'sad']] }) },
+      lines: () => ({ l1: [['kairon', '빛기둥을 맞춘다! 흰빛, 틈을 열어라!', 'angry']], p2: [['toria', '찍…! 하늘이 닫혀! 저 안에서 우는 소리가 나!', 'cry']], p3: [['serin', '조금만 더. …저 아이들, 다 이름이 있었어.', 'sad']] }) },
   };
   const guardian = (b) => ({ col: b.D.col || '#c8c8d8', col2: '#f4ecdc', glyph: '▲', amb: /도깨비불/.test(b.name) ? 'souls' : /설인/.test(b.name) ? 'snow' : /집게/.test(b.name) ? 'bubbles' : /파수꾼/.test(b.name) ? 'steam' : 'crumbs', p2: ['수호자의 분노', null, 'guardian'], fin: U.josa(b.name, '이/가') + ' 길을 비켜섰다' });
   function stageOf(b) {
@@ -101,16 +101,58 @@
   }
   G.story.onTick.push((dt) => { if (HOLD.t > 0) HOLD.t -= dt; });
 
-  /** 얼굴 컷인을 차례로 (멈춘 동안) */
-  async function talk(b, st, lines) {
-    if (!lines || !lines.length) return;
-    let tot = 0; for (const l of lines) tot += 1.1 + l[1].length * 0.045;
-    hold(b, tot + 0.3);
-    for (const [who, text, face, nm] of lines) {
-      const sec = Math.min(3.4, 1.1 + text.length * 0.045);
-      if (b.dead) break;
-      await G.cine.cutin({ who, title: text, small: nm || (who === 'hero' ? '' : (G.cast.name && G.cast.name(who)) || ''), col: st.col, face: face || 'normal', sec, sfx: 'select' });
+  /* ═════════ 싸움 중 대사: 화면 아래 자막 한 줄 ═════════
+     싸움을 멈추지 않는다 — 보스 이름표 바로 위, 작은 얼굴 + 이름 + 한 줄. 화면 한가운데(싸우는 자리)는 가리지 않는다.
+     줄은 차례로 흐르고, 이야기 장면이 시작되거나 그 보스가 쓰러지면 바로 걷힌다 */
+  const TK = { q: [], cur: null, t: 0, gap: 0, el: null };
+  function talkEl() {
+    if (TK.el && TK.el.isConnected) return TK.el;
+    const stage = document.getElementById('stage'); if (!stage) return null;
+    const el = document.createElement('div'); el.id = 'bosstalk'; el.hidden = true;
+    el.innerHTML = '<canvas width="64" height="64"></canvas><div class="t"><small></small><b></b></div>';
+    stage.appendChild(el); TK.el = el; return el;
+  }
+  const lineSec = (text) => U.clamp(1.7 + String(text).length * 0.06, 2.2, 4.4);
+  /** 한 줄을 자막으로 (o: face · name · col · b(그 보스 — 쓰러지면 걷힌다)) */
+  function say(who, text, o) {
+    o = o || {};
+    if (TK.q.length > 3) TK.q.shift();   // 밀린 줄은 버린다 — 싸움보다 늦게 말하지 않게
+    TK.q.push({ who, text, face: o.face || 'normal', name: o.name, col: o.col || '#f0cc6e', b: o.b || null });
+  }
+  function show(l) {
+    const el = talkEl(); if (!el) return;
+    const nm = l.name || (l.who === 'hero' ? '' : (G.cast.name && G.cast.name(l.who)) || '');
+    el.style.setProperty('--bt', l.col);
+    const cv = el.querySelector('canvas'); cv.getContext('2d').clearRect(0, 0, 64, 64);
+    if (G.portraits) G.portraits.draw(cv, l.who === 'hero' ? 'hero' : l.who, l.face);
+    el.querySelector('small').textContent = nm;
+    el.querySelector('b').innerHTML = G.ui.markup(l.text);
+    el.hidden = false; el.classList.remove('on'); void el.offsetWidth; el.classList.add('on');
+    if (G.audio) G.audio.sfx('select');
+  }
+  function talkClear() { TK.q = []; TK.cur = null; TK.gap = 0; if (TK.el) { TK.el.classList.remove('on'); TK.el.hidden = true; } }
+  G.story.onTick.push((dt) => {
+    if (!TK.cur && !TK.q.length) return;
+    // 이야기 장면 · 연출 · 기억 속에서는 걷는다 (결투가 끝나 대화창이 뜨는 순간 겹치지 않게)
+    if (G.script.running || (G.cine.active && G.cine.active())) { talkClear(); return; }
+    if (TK.cur) {
+      TK.t -= dt;
+      const b = TK.cur.b;
+      if (b && (b.dead || b.dying) && TK.t > 0.35) TK.t = 0.35;
+      if (TK.t <= 0.3 && TK.el) TK.el.classList.remove('on');
+      if (TK.t <= 0) { TK.cur = null; TK.gap = 0.25; if (TK.el) TK.el.hidden = true; }
+      return;
     }
+    if ((TK.gap -= dt) > 0) return;
+    const l = TK.q.shift(); if (!l) return;
+    if (l.b && (l.b.dead || l.b.dying)) return;
+    TK.cur = l; TK.t = lineSec(l.text); show(l);
+  });
+  const talking = () => !!TK.cur || TK.q.length > 0;
+  /** 사람 보스의 대사 묶음을 자막으로 흘린다 (싸움은 그대로) */
+  function talk(b, st, lines) {
+    if (!lines || !lines.length || b.dead) return;
+    for (const [who, text, face, nm] of lines) say(who, text, { face, name: nm, col: st.col, b });
   }
 
   /* ═════════ 흩날림 ═════════ */
@@ -189,44 +231,44 @@
     sfx(st.kind === 'machine' ? 'impact' : st.kind === 'human' ? 'clank' : st.kind === 'final' ? 'thunder' : 'growl');
     W().shake(st.kind === 'final' ? 7 : 4, 0.6);
     G.fx.ring(b.x, b.y - (b.h || 30) / 2, st.col, 60, 0.8, 3);
-    b.bfxT = 0; b.barkT = 7 + Math.random() * 5;
+    b.bfxT = 0; b.barkT = 12 + Math.random() * 6; talkClear();
     emit('intro', b);
   }
   function phase2(b) {
     const st = stageOf(b), [, name] = titleParts(b);
     const L = st.lines ? st.lines(b) : null;
     W().slowmo(0.3, 0.7); W().hitstop(0.12);
-    hold(b, 2.2);
+    hold(b, 1.4);
     sfx('growl');
     burst(b, st, st.p2[2]);
     card(st, b, 'phase', st.p2[0], name, '둘째 막');
     if (st.p2[1]) setTimeout(() => { if (!b.dead) G.cine.bubble(b, st.p2[1], { life: 2.6 }); }, 900);
-    if (L && L.p2) setTimeout(() => { if (!b.dead) talk(b, st, L.p2); }, 2100);
+    if (L && L.p2) setTimeout(() => { if (!b.dead) talk(b, st, L.p2); }, 1100);
     emit('p2', b);
   }
   function clash(b) {
     const st = stageOf(b), p = W().player; if (!p) return;
     const L = st.lines ? st.lines(b) : null;
-    hold(b, 1.9);
-    W().slowmo(0.25, 1.1);
+    // 칼날이 맞부딪친다 — 짧은 한 박자(0.9초)만, 이름 카드 없이 불꽃 · 섬광 · 서로 튕겨 나기
+    hold(b, 0.9);
+    W().slowmo(0.35, 0.6);
     const mx = (b.x + p.x) / 2, my = (b.y + p.y) / 2 - 12;
     let n = 0;
-    const iv = setInterval(() => { if (++n > 7 || b.dead) { clearInterval(iv); return; } G.fx.sparks(mx, my, 10, n % 2 ? '#ffffff' : st.col, 140); sfx('clank'); W().shake(3, 0.12); }, 140);
-    setTimeout(() => { if (b.dead) return; flash('#ffffff', 0.75); const a = Math.atan2(p.y - b.y, p.x - b.x); p.kx = Math.cos(a) * 260; p.ky = Math.sin(a) * 260; b.kx = -Math.cos(a) * 200; b.ky = -Math.sin(a) * 200; G.fx.ring(mx, my, st.col, 50, 0.5, 3); }, 1100);
-    card(st, b, 'phase', '칼날이 맞부딪친다', titleParts(b)[1], '');
-    if (L && L.clash) setTimeout(() => { if (!b.dead) talk(b, st, L.clash); }, 1500);
+    const iv = setInterval(() => { if (++n > 5 || b.dead) { clearInterval(iv); return; } G.fx.sparks(mx, my, 10, n % 2 ? '#ffffff' : st.col, 140); sfx('clank'); W().shake(3, 0.12); }, 110);
+    setTimeout(() => { if (b.dead) return; flash('#ffffff', 0.6); const a = Math.atan2(p.y - b.y, p.x - b.x); p.kx = Math.cos(a) * 240; p.ky = Math.sin(a) * 240; b.kx = -Math.cos(a) * 200; b.ky = -Math.sin(a) * 200; G.fx.ring(mx, my, st.col, 50, 0.5, 3); for (let i = 0; i < 3; i++) G.fx.slash(mx, my, rnd(0, Math.PI * 2), i ? st.col : '#ffffff', 20); }, 650);
+    if (L && L.clash) setTimeout(() => { if (!b.dead) talk(b, st, L.clash); }, 700);
     emit('clash', b);
   }
   function phase3(b) {
     const st = stageOf(b), L = st.lines ? st.lines(b) : null;
     b.phase3 = true;
-    hold(b, 2.4); W().slowmo(0.3, 0.8);
+    hold(b, 1.4); W().slowmo(0.3, 0.8);
     burst(b, st, 'eclipse');
     card(st, b, 'phase', '일식', titleParts(b)[1], '셋째 막');
     // 조각에서 들은 이름들이 속삭인다
     const names = (G.story.shardNames && G.story.shardNames().length) ? G.story.shardNames() : ['아우룸', '벨라'];
     names.slice(0, 7).forEach((nm, i) => setTimeout(() => { if (!b.dead) G.cine.bubble(b, '…' + nm + '…', { life: 1.6 }); }, 600 + i * 420));
-    if (L && L.p3) setTimeout(() => { if (!b.dead) talk(b, st, L.p3); }, 900 + names.length * 420);
+    if (L && L.p3) setTimeout(() => { if (!b.dead) talk(b, st, L.p3); }, 900 + Math.min(7, names.length) * 420);
     emit('p3', b);
   }
   function tick(b, dt) {
@@ -237,7 +279,7 @@
     if (st.kind === 'human' && !b.bfxClash && r <= 0.34 && r > 0.04) { b.bfxClash = true; clash(b); }
     if (st.kind === 'final' && !b.phase3 && r <= 0.25 && r > 0.02) phase3(b);
     // 사람 보스의 짧은 외침
-    if (st.kind === 'human' && (b.barkT -= dt) <= 0) { b.barkT = 9 + Math.random() * 6; const BK = BARK[b.name] || BARK[b.type]; if (BK && HOLD.t <= 0) G.cine.bubble(b, U.pick(BK), { life: 1.8 }); }
+    if (st.kind === 'human' && (b.barkT -= dt) <= 0) { b.barkT = 15 + Math.random() * 9; const BK = BARK[b.name] || BARK[b.type]; if (BK && HOLD.t <= 0 && !talking()) G.cine.bubble(b, U.pick(BK), { life: 1.6 }); }
   }
   const BARK = {
     카시안: ['발이 늦다!', '정면은 막힌다고 했다.', '한 번 더!', '좋아. 그거다.'],
@@ -304,5 +346,5 @@
     }
     return draw0.apply(this, arguments);
   };
-  G.bossfx = { T, stageOf, card, hold, HOLD, on: (fn) => LIS.push(fn), emit };
+  G.bossfx = { T, stageOf, card, hold, HOLD, on: (fn) => LIS.push(fn), emit, say, talking, talkClear, TK };
 })();

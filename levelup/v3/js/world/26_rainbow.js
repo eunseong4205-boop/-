@@ -740,12 +740,13 @@
     for (;;) {
       await c.freeWhile(() => boss.hp <= 1 || s.hp <= 1);
       if (boss.hp <= 1) break;
-      // 쓰러지기 직전: 누군가 막아선다
-      c.lock(true); saves++;
+      // 쓰러지기 직전: 누군가 막아선다 — 싸움을 멈추지 않고 화면 아래 자막 한 줄로
+      saves++;
       const who = [rt === 'dawn' ? 'lea' : rt === 'order' ? 'cassian' : 'lyra', 'toria', 'viola'][Math.min(2, saves - 1)];
-      await c.say(who, who === 'toria' ? '찍——!! 비켜! 비키라고! …일어나! 날 수는 없어도 물 수는 있어!' : who === 'lea' ? '누워 있을 시간 없어! 새벽은 쓰러진 채로 안 와!' : who === 'cassian' ? '일어서라, 후보! 네가 쓰러지면 이 광장 전부가 쓰러진다!' : who === 'lyra' ? '…이 노래를 들어요. 끝까지. 끝날 때까지 쓰러지면 안 돼요.' : '당신이 지면 내 기록도 의미 없어져! 일어나!', { face: 'angry' });
-      c.heal(); c.flash('#ffffff', 0.2);
-      c.lock(false);
+      G.bossfx.say(who, who === 'toria' ? '찍——!! 일어나! 날 수는 없어도 물 수는 있어!' : who === 'lea' ? '누워 있을 시간 없어! 새벽은 쓰러진 채로 안 와!' : who === 'cassian' ? '일어서라, 후보! 네가 쓰러지면 이 광장 전부가 쓰러진다!' : who === 'lyra' ? '…이 노래를 들어요. 끝날 때까지 쓰러지면 안 돼요.' : '당신이 지면 내 기록도 의미 없어져! 일어나!', { face: 'angry', col: '#ffe8a8', b: boss });
+      c.heal(); c.flash('#ffffff', 0.2); c.sfx('heal');
+      p.inv = Math.max(p.inv || 0, 1.2);
+      G.fx.ring(p.x, p.y - 8, '#ffe8a8', 30, 0.5, 2); G.fx.glow(p.x, p.y - 10, '#ffe8a8', 20, 40);
     }
     s.duel = false;
     for (const kn of knights) kn.dead = true;
