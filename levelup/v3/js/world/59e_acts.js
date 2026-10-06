@@ -296,9 +296,11 @@
     live = { key: st.key, gen };
     for (const d of list) {
       let x = at.x + (d.dx || 0) * TS, y = at.y + (d.dy || 0) * TS;
-      if (d.from != null) { const n = waiting(null, A, st, d.from); if (n) { x = n.x; y = n.y; n._noFade = true; n.dead = true; } }
+      let from = null;
+      if (d.from != null) { const n = waiting(null, A, st, d.from); if (n) { x = n.x; y = n.y; n._noFade = true; n.dead = true; from = n; } }
       const e = G.foes.spawn(d.type, x, y, { tier: d.tier || 0, hpMul: d.hpMul, noElite: true });
       if (d.name) e.name = d.name;
+      if (from && from.look && e.look && !from.look.kind) { e.look = from.look; e.sheet = null; }   // 서 있던 그 사람의 생김새 그대로 싸운다
       e.actTag = st.key; e.aggro = true; e.keepAwake = true;
     }
   }

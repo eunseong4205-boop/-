@@ -68,8 +68,13 @@
       await ST.setChapter(c, 'c4');
       const b = buddy();
       ST.join(b);
+      if (b === 'rud') ST.join('lea');   // 새벽 갈래: 레아의 밀수선으로 왔다 — 남매가 함께 걷는다 (예전엔 루드만 따라오고 레아는 어디에도 없었다)
       await c.say('toria', '찍! 모래! 금화! 반짝반짝! 여기 공기에서 금 냄새 나!', { face: 'happy' });
-      if (b === 'rud') await c.say('rud', '옐로의 연간 거래액은 대륙 전체의 사십일 퍼센트. 그중 금화왕 몫이… 세기 싫다.', { face: 'angry' });
+      if (b === 'rud') {
+        await c.say('lea', '배는 항구 뒤 창고에 숨겨 뒀어. 옐로에선 나도 같이 다닐게. 금화왕 금고가 어떻게 생겼는지 구경 좀 하게.', { face: 'smirk' });
+        await c.say('rud', '옐로의 거래액은 대륙에서 제일 커. 그중 금화왕 몫이… 세기 싫다.', { face: 'angry' });
+        await c.say('lea', '세지 마. 보기만 해. 볼 건 많아.', { face: 'smile' });
+      }
       else if (b === 'cassian') await c.say('cassian', '금화왕 골디. 사천왕 노랑의 자리. 감찰관으로 온 이상, 장부를 봐야겠지. …그 자가 순순히 보여 줄 리 없지만.', { face: 'normal' });
       else await c.say('lyra', '옐로는 낮에는 금빛, 밤에는 그늘빛이에요. 그늘 골목의 참새들을 조심해요. 아니, 조심하지 마요. 친구예요.', { face: 'smile' });
       c.lock(false);
@@ -93,7 +98,7 @@
     await c.say(n, '나는 금화왕 골디. 사천왕 노랑의 자리. 여기선 모든 것에 값이 있다. 빛도, 이름도, 슬픔도.', { face: 'smirk' });
     const b = buddy();
     if (b === 'cassian') { await c.say('cassian', '감찰관으로서 경험 이자 장부를 요구합니다.', { face: 'normal' }); await c.say(n, '감찰? 좋아. 장부 열람료는 금화 백만. 법에 있지. 제7조. 공짜는 없어.', { face: 'smile' }); await c.say('cassian', '………', { face: 'angry' }); }
-    if (b === 'rud') { await c.say('rud', '경험 이자율 연 삼십 퍼센트. 그걸 갚느라 아이들이 빛을 팝니다. 따져 봤어요. 합법이지만, 사람이 죽어요.', { face: 'angry' }); await c.say(n, '셈이 되는 새벽단원이라. 드물군. 합법이면 된 거다, 꼬마.', { face: 'smirk' }); }
+    if (b === 'rud') { await c.say('rud', '경험 이자율 연 삼십 퍼센트. 그걸 갚느라 아이들이 빛을 팝니다. 따져 봤어요. 합법이지만, 사람이 죽어요.', { face: 'angry' }); await c.say(n, '셈이 되는 새벽단원이라. 드물군. 합법이면 된 거다, 꼬마.', { face: 'smirk' }); if ((S().party || []).includes('lea')) { await c.say('lea', '합법인 탑을 우리는 셋 부쉈어. 다음은 금고일지도.', { face: 'smirk' }); await c.say(n, '…레아. 기사단 장부 담당이던 그 레아로군. 너한테 걸린 현상금도 꽤 되지. 오늘은 손님이니 안 받겠다.', { face: 'smile' }); } }
     if (b === 'lyra') { await c.say(n, '음유시인 리라. 네 노래는 비싸게 팔리더군. 세금 좀 내지?', { face: 'smile' }); await c.say('lyra', '노래는 공짜예요. 듣는 사람이 알아서 울거든요.', { face: 'smirk' }); }
     await c.say(n, '거래하자. 서쪽 모래바다의 [y]태양 피라미드[/]. 거기 「태양의 눈」이라는 렌즈가 있다. 빛을 한 점에 모으는 물건.', { face: 'normal' });
     await c.say(n, '그걸 가져오면 두 가지를 주지. 퍼플로 가는 국경 통행 허가. 그리고 — 네 어미 세린에 대해 내가 아는 것.', { face: 'smirk' });
@@ -243,7 +248,11 @@
     ST.leave('yana');
     const b = buddy();
     if (b === 'cassian') await c.say('cassian', '나는 천년성으로 돌아가 보고해야 한다. …감찰 보고서에 「흰빛: 위험 요소 아님」이라고 적겠다. 아직은.', { face: 'smile' });
-    else if (b === 'rud') await c.say('rud', '나는 누나한테 돌아갈게. 옐로 장부, 누나가 좋아할 거야. 또 보자, 흰빛.', { face: 'smile' });
+    else if (b === 'rud') {
+      if ((S().party || []).includes('lea')) { await c.say('lea', '우린 여기서 배로 돌아가. 새벽단 연락책이 퍼플 숲 어귀에 있어. 거기까지 길은 네 몫이야.', { face: 'normal' }); await c.say('rud', '옐로 장부는 내가 정리해 둘게. 또 보자, 흰빛.', { face: 'smile' }); }
+      else await c.say('rud', '나는 누나한테 돌아갈게. 옐로 장부, 누나가 좋아할 거야. 또 보자, 흰빛.', { face: 'smile' });
+      ST.leave('lea', true);
+    }
     else await c.say('lyra', '저는 여기서 잠깐 노래하고 갈게요. 퍼플에서 봐요. 거긴… 제 노래를 싫어하는 사람이 있어요.', { face: 'smirk' });
     ST.leave(b, true);
   }

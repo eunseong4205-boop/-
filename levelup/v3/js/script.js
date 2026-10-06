@@ -86,7 +86,8 @@
         const cid = typeof w === 'string' ? w : e && e.cid ? e.cid : null;
         if (opt.bubble && e) { G.cine.bubble(e, text, { life: opt.life || 2.4, kind: opt.kind }); return wait(opt.wait || Math.min(3, 0.6 + text.length * 0.05)); }
         if (e && e !== W().player && e.npc && !opt.noTurn) { const p = W().player; e.dir = U.dir4(p.x - e.x, p.y - e.y, e.dir); }
-        if (e && opt.face && e.npc) e.mood = opt.face === 'smile' ? 'smile' : opt.face === 'sad' ? 'sad' : opt.face === 'angry' ? 'angry' : opt.face === 'shock' ? 'shock' : null;
+        // 들판의 얼굴은 넷(웃음 · 슬픔 · 화 · 놀람)뿐이라 가까운 것으로 — 기쁨 · 수줍음 · 비웃음은 웃음, 울음은 슬픔 (예전엔 무표정으로 굳었다)
+        if (e && opt.face && e.npc) e.mood = ({ smile: 'smile', happy: 'smile', blush: 'smile', smirk: 'smile', sad: 'sad', cry: 'sad', angry: 'angry', shock: 'shock' })[opt.face] || null;
         if (e && e.npc) e.talking = true;
         // 이야기 인물 목록에 없는 id(집 안 주민 tw_… 등)는 얼굴을 그 사람의 모습으로 그린다 — id만 넘기면 얼굴 칸이 비었다
         const inCast = !!(cid && G.cast && G.cast.get(cid));

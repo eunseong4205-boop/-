@@ -236,6 +236,7 @@
   ST.join = function (id) {
     const s = S(); s.party = s.party || []; if (!s.party.includes(id)) s.party.push(id);
     const p = W().player; if (!p || !W().map) return;
+    if (W().ents.some((e) => e.follower && e.cid === id && !e.dead)) return;   // 이미 따라오고 있다 (두 번 불러 같은 사람이 겹쳐 둘이던 것)
     const fw = W().add(new Follower({ cid: id, look: G.cast.get(id).look, name: G.cast.name(id) }));
     // 장면 속 그 사람(방금 지운 · 아직 선)이 있으면 그 자리에서 따라붙는다 — 주인공 옆에 뚝 나타나지 않게
     const was = W().ents.find((e) => e !== fw && e.npc && !e.follower && e.cid === id && (e.dead || !e.hidden) && U.dist(e.x, e.y, p.x, p.y) < 260);
