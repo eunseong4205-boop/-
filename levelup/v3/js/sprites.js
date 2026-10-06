@@ -369,6 +369,9 @@
       b.px(ex, t - 4, H[2]);
     }
   }
+  /** 모자 윗부분이 머리 모양을 따라 둥글게: 위에서부터 줄마다 [왼, 오른] (앞 · 뒤 / 옆) */
+  const HATROW = { down: [[8, 15], [6, 17], [5, 18], [4, 19]], left: [[8, 14], [6, 16], [5, 17], [4, 18]] };
+  const hatRow = (dir, ry) => (HATROW[dir === 'left' ? 'left' : 'down'])[Math.max(0, Math.min(3, ry))];
   function hat(b, s, dir, t, C) {
     const HT = tones(s.hatC || '#6a4a8a');
     const kind = s.hat;
@@ -377,19 +380,58 @@
       for (let x = 1; x < 23; x++) { b.px(x, t + 2, HT[2]); b.px(x, t + 3, HT[0]); }
       b.px(10, t + 1, '#ffe08a'); b.px(11, t + 1, '#fff4c0'); b.px(12, t + 1, '#ffe08a');
     } else if (kind === 'cap') {
-      for (let y = t - 1; y <= t + 3; y++) for (let x = 4; x <= 19; x++) b.px(x, y, y === t - 1 ? HT[3] : x > 16 ? HT[1] : HT[2]);
-      if (dir === 'down') for (let x = 5; x <= 18; x++) b.px(x, t + 4, HT[0]); else if (dir === 'left') for (let x = 1; x <= 6; x++) b.px(x, t + 4, HT[1]);
+      // 둥근 모자 + 챙 · 꼭지 단추 (예전엔 머리 위에 네모난 통)
+      for (let y = t - 1; y <= t + 3; y++) { const [x0, x1] = hatRow(dir, y - t + 1); for (let x = x0; x <= x1; x++) b.px(x, y, y === t + 3 ? HT[1] : x <= x0 + 1 ? HT[3] : x >= x1 - 1 ? HT[1] : y === t ? HT[3] : HT[2]); }
+      b.px(dir === 'left' ? 11 : 11, t - 2, HT[3]); b.px(dir === 'left' ? 12 : 12, t - 2, HT[2]);
+      if (dir === 'down') for (let x = 5; x <= 18; x++) { b.px(x, t + 4, HT[1]); if (x > 6 && x < 17) b.px(x, t + 5, HT[0]); }
+      else if (dir === 'left') for (let x = 1; x <= 7; x++) { b.px(x, t + 3, HT[1]); b.px(x, t + 4, HT[0]); }
     } else if (kind === 'hood') {
-      for (let y = t - 1; y <= t + 15; y++) for (let x = 3; x <= 20; x++) {
-        if (dir === 'down' && y > t + 4 && x > 5 && x < 18 && y < t + 14) continue;
-        if (dir === 'left' && y > t + 4 && x < 13 && y < t + 14) continue;
-        if (y > t + 12 && (x < 5 || x > 18)) continue;
-        b.px(x, y, x < 6 ? HT[3] : x > 17 ? HT[0] : (x + y) % 4 === 0 ? HT[1] : HT[2]);
+      // 둥근 두건: 머리 위는 둥글고 어깨로 흘러내리며 얼굴 둘레는 안쪽 그늘 (예전엔 빗금 친 네모 상자)
+      const side = dir === 'left';
+      for (let y = t - 2; y <= t + 15; y++) {
+        const ry = y - t + 2;
+        let [x0, x1] = ry < 3 ? hatRow(dir, ry) : [3, side ? 19 : 20];
+        if (y > t + 12) { x0 = 5; x1 = 18; }
+        for (let x = x0; x <= x1; x++) {
+          if (dir === 'down' && y > t + 4 && y < t + 14 && x > 6 && x < 17 && !(y === t + 5 && (x === 7 || x === 16))) continue;
+          if (side && y > t + 4 && y < t + 14 && x < 13) continue;
+          let c = x <= x0 + 1 ? HT[3] : x >= x1 - 1 ? HT[1] : HT[2];
+          if (dir === 'down' && y > t + 3 && y < t + 14 && (x === 6 || x === 17 || (y === t + 4 && x > 6 && x < 17))) c = HT[0];
+          if (dir === 'down' && y === t + 5 && (x === 7 || x === 16)) c = HT[0];   // 얼굴 둘레 위 모서리를 둥글게
+          if (side && y > t + 3 && y < t + 14 && (x === 13 || (y === t + 4 && x < 13))) c = HT[0];
+          if (dir === 'up' && x === 12 && y > t + 1 && y < t + 14) c = HT[1];
+          if (y === t + 15) c = HT[1];
+          b.px(x, y, c);
+        }
       }
     } else if (kind === 'helm') {
-      for (let y = t - 1; y <= t + 6; y++) for (let x = 4; x <= 19; x++) b.px(x, y, y === t + 6 ? HT[0] : x < 7 ? HT[4] : x > 16 ? HT[1] : HT[2]);
-      if (dir === 'down') for (let x = 6; x <= 17; x++) b.px(x, t + 7, HT[1]);
-      if (s.plume) for (let y = t - 6; y < t; y++) { b.px(12 + ((y & 1) ? 1 : 0), y, s.plume); b.px(13, y, U.shade(s.plume, 0.75)); }
+      // 둥근 투구(예전엔 머리에 씌운 네모난 통): 기사는 코 · 볼 · 뒷목 가리개, 일꾼은 챙과 이마 등불
+      const side = dir === 'left', knight = s.top === 'armor';
+      for (let y = t - 2; y <= t + 5; y++) {
+        const [x0, x1] = hatRow(dir, y - t + 2);
+        for (let x = x0; x <= x1; x++) {
+          let c = x <= x0 + 1 ? HT[3] : x >= x1 - 1 ? HT[1] : HT[2];
+          if (y <= t && x > x0 + 1 && x < x0 + 5) c = HT[4];
+          if (y >= t + 4) c = y === t + 5 ? HT[0] : HT[1];
+          b.px(x, y, c);
+        }
+      }
+      if (knight) {
+        if (dir === 'down') {
+          if (!s.plume) for (let y = t - 1; y < t + 4; y++) b.px(12, y, HT[3]);                      // 등줄
+          for (let y = t + 6; y <= t + 9; y++) { b.px(11, y, HT[2]); b.px(12, y, HT[1]); }          // 코 가리개
+          for (let y = t + 6; y <= t + 11; y++) { b.px(4, y, HT[3]); b.px(5, y, HT[2]); b.px(18, y, HT[1]); b.px(19, y, HT[0]); }   // 볼 가리개
+        } else if (side) {
+          for (let y = t + 6; y <= t + 9; y++) b.px(4, y, HT[2]);
+          for (let y = t + 6; y <= t + 12; y++) for (let x = 14; x <= 18; x++) b.px(x, y, x === 14 ? HT[0] : x > 16 ? HT[1] : HT[2]);
+        } else for (let y = t + 6; y <= t + 12; y++) for (let x = 5; x <= 18; x++) b.px(x, y, x < 7 ? HT[3] : x > 16 ? HT[1] : y === t + 12 ? HT[0] : HT[2]);
+      } else {
+        const [bx0, bx1] = side ? [1, 18] : [3, 20];
+        for (let x = bx0; x <= bx1; x++) b.px(x, t + 5, HT[0]);
+        if (dir === 'down') { b.rect(10, t + 1, 4, 3, '#4a4a52'); b.rect(11, t + 1, 2, 2, '#fff4c0'); b.px(11, t + 1, '#ffffff'); }
+        else if (side) { b.rect(3, t + 1, 3, 3, '#4a4a52'); b.px(3, t + 2, '#fff4c0'); b.px(4, t + 2, '#fff4c0'); }
+      }
+      if (s.plume) for (let y = t - 7; y < t - 1; y++) { b.px(12 + ((y & 1) ? 1 : 0), y, s.plume); b.px(13, y, U.shade(s.plume, 0.75)); }
     } else if (kind === 'crown') {
       for (let x = 7; x <= 16; x++) { b.px(x, t, '#e8b83a'); b.px(x, t - 1, '#ffd84a'); if (x % 3 === 1) { b.px(x, t - 2, '#ffd84a'); b.px(x, t - 3, '#fff0a8'); } }
       b.px(11, t, '#ff3a5a'); b.px(12, t, '#ff7a8a');
@@ -404,7 +446,8 @@
       for (let y = t - 2; y <= t + 2; y++) for (let x = 6; x <= 17; x++) b.px(x, y, y === t + 1 ? '#c83a3a' : x < 9 ? HT[3] : HT[2]);
     } else if (kind === 'veil') {
       // 머리를 덮는 짧은 두건 + 어깨 뒤로 흘러내리는 옅은 천 (얼굴과 몸 앞은 가리지 않는다)
-      for (let y = t - 1; y <= t + 16; y++) for (let x = 3; x <= 20; x++) {
+      for (let y = t - 2; y <= t + 16; y++) for (let x = 3; x <= 20; x++) {
+        if (y - t + 2 < 3) { const [x0, x1] = hatRow(dir, y - t + 2); if (x < x0 || x > x1) continue; }   // 위는 둥글게
         const face = dir === 'down' ? (y > t + 4 && x > 4 && x < 19) : dir === 'left' ? (y > t + 4 && x < 13) : false;
         if (face) continue;
         const drape = y > t + 13;
@@ -423,10 +466,13 @@
     const top = L.torso;
     if (a === 'scarf') { const SC = tones(s.scarfC || '#d83a3a'); for (let x = 6; x <= 17; x++) { b.px(x, top, SC[2]); b.px(x, top + 1, x > 14 ? SC[0] : SC[1]); } if (dir === 'down') { b.px(15, top + 2, SC[2]); b.px(15, top + 3, SC[1]); b.px(16, top + 4, SC[1]); } else if (dir === 'up') for (let y = top + 2; y < top + 8; y++) { b.px(13, y, SC[2]); b.px(14, y, SC[1]); } else for (let x = 16; x <= 19; x++) b.px(x, top + 1 + (x - 16 >> 1), SC[2]); }
     if (a === 'pauldron') { const P = tones(s.trim); for (const px of dir === 'left' ? [12] : [4, 17]) { b.px(px, top, P[4]); b.px(px + 1, top, P[3]); b.px(px + 2, top, P[2]); b.px(px, top + 1, P[2]); b.px(px + 1, top + 1, P[2]); b.px(px + 2, top + 1, P[1]); b.px(px + 1, top + 2, P[1]); } }
-    if (a === 'necklace' && dir === 'down') { b.px(10, top + 1, '#e8e0a8'); b.px(13, top + 1, '#e8e0a8'); b.px(11, top + 2, '#e8e0a8'); b.px(12, top + 2, '#6ad86a'); }
+    if (a === 'necklace' && dir === 'down') { b.px(10, top + 1, '#e8e0a8'); b.px(13, top + 1, '#e8e0a8'); b.px(11, top + 2, '#e8e0a8'); b.px(12, top + 2, s.gem || '#6ad86a'); }
     if (a === 'quiver') { if (dir === 'up') for (let y = top - 3; y < top + 8; y++) { b.px(14, y, '#8a5a30'); b.px(15, y, '#6a4424'); if (y < top - 1) b.px(14, y - 1, '#e8e0cc'); } else if (dir === 'left') for (let y = top - 2; y < top + 6; y++) b.px(16, y, '#8a5a30'); }
     if (a === 'earring' && dir !== 'up') b.px(dir === 'down' ? 5 : 13, L.head + 12, '#ffd84a');
-    if (a === 'flower' && dir !== 'up') { const x = dir === 'down' ? 16 : 13; b.px(x, L.head + 3, '#ffe060'); b.px(x - 1, L.head + 3, '#ff8ac8'); b.px(x + 1, L.head + 3, '#ff8ac8'); b.px(x, L.head + 2, '#ffd6ec'); b.px(x, L.head + 4, '#ffd6ec'); }
+    if (a === 'flower' && dir !== 'up' && !['helm', 'hood', 'veil'].includes(s.hat)) {   // 꽃 머리핀: 꽃잎은 모두 같은 색 + 노란 술 + 잎 (예전엔 위아래 흰 잎이라 「+」로 보였다)
+      const x = dir === 'down' ? 16 : 13, y = L.head + 3, F = s.flowerC || '#ff8ac8', F2 = U.shade(F, 0.78);
+      b.px(x - 1, y, F); b.px(x + 1, y, F2); b.px(x, y - 1, F); b.px(x, y + 1, F2); b.px(x, y, '#ffe060'); b.px(x + 1, y + 1, '#5aa84a');
+    }
     if (a === 'book' && dir === 'down') { b.rect(15, top + 4, 4, 5, '#8a3a4a'); b.px(15, top + 4, '#e8d8a8'); }
     if (a === 'staff') { for (let y = top - 8; y < L.foot; y++) b.px(dir === 'left' ? 4 : 19, y, '#8a6a3e'); b.px(dir === 'left' ? 4 : 19, top - 9, '#8ad8ff'); b.px(dir === 'left' ? 3 : 18, top - 9, '#c8f0ff'); }
     if (a === 'sword' && dir !== 'up') { for (let y = top + 1; y < top + 12; y++) b.px(dir === 'left' ? 16 : 5, y, y < top + 3 ? '#8a6a3e' : '#c8d0e0'); }

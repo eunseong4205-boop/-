@@ -1639,6 +1639,14 @@ html.touch #modal { z-index: 60; }
     const st = wallStyle(m), S = WS[st] || WS.brick;
     const below = m.T(tx, ty + 1);
     if (below !== T.WALL && below !== T.VOID) return wallFace(st, m, tx, ty, lx, ly, x, y, P);
+    // 실내 뒷벽 윗줄: 바로 아래가 앞면인 벽이면 이 칸도 앞면(위쪽 회벽) — 벽이 두 칸 높이로 서서 창 · 그림 · 시계가 벽에 걸린다
+    //   (예전엔 앞면이 한 칸뿐이라 창 · 그림이 어두운 벽 윗면 위에 떠 있었다)
+    if (upperFace(m, st, tx, ty)) {
+      const pw = mixc(rgb(P.s[2]), [246, 238, 222], 0.55);
+      if (ly < 2) return ly === 0 ? [70, 48, 34] : [110, 76, 50];                       // 천장 들보
+      if (ly === 2) return mul(pw, 0.8);
+      return mixc(pw, [255, 255, 255], (U.vnoise(x / 5, y / 5, 651) - 0.5) * 0.1);
+    }
     // 윗면
     let c = S.top.slice();
     const f = U.fbm(x / 7, y / 7, 601, 2);
@@ -1651,6 +1659,11 @@ html.touch #modal { z-index: 60; }
     if (nl && lx < 2) c = lx === 0 ? mul(S.rim, 0.6) : S.rim;
     if (nr && lx > 13) c = lx === 15 ? mul(S.rim, 0.6) : S.rim;
     return c;
+  }
+  function upperFace(m, st, tx, ty) {
+    if (!m.indoor || st !== 'house' || tx <= 0 || tx >= m.w - 1 || m.T(tx, ty + 1) !== T.WALL) return false;
+    const b2 = m.T(tx, ty + 2), up = m.T(tx, ty - 1);
+    return b2 !== T.WALL && b2 !== T.VOID && (ty === 0 || up === T.WALL || up === T.VOID) && m.T(tx - 1, ty + 1) !== T.VOID;
   }
   function wallFace(st, m, tx, ty, lx, ly, x, y, P) {
     const S = WS[st] || WS.brick;
@@ -1731,7 +1744,7 @@ html.touch #modal { z-index: 60; }
         // 회벽 + 아래 나무 판벽 + 걸레받이
         const pw = mixc(rgb(P.s[2]), [246, 238, 222], 0.55);
         c = ly < 9 ? mixc(pw, [255, 255, 255], (U.vnoise(x / 5, y / 5, 651) - 0.5) * 0.1) : ly === 9 ? [120, 84, 56] : ly > 13 ? [70, 48, 34] : ((x + (tx & 1) * 3) % 6 === 0 ? [110, 76, 50] : [146, 104, 70]);
-        if (ly === 0) c = [96, 66, 44]; else if (ly === 1) c = mul(pw, 0.85);
+        if (!upperFace(m, st, tx, ty - 1)) { if (ly === 0) c = [96, 66, 44]; else if (ly === 1) c = mul(pw, 0.85); }   // 위 칸도 앞면이면 회벽이 이어진다
         break;
       }
       default: {
@@ -3678,6 +3691,9 @@ html.touch #modal { z-index: 60; }
       b.px(ex, t - 4, H[2]);
     }
   }
+  /** 모자 윗부분이 머리 모양을 따라 둥글게: 위에서부터 줄마다 [왼, 오른] (앞 · 뒤 / 옆) */
+  const HATROW = { down: [[8, 15], [6, 17], [5, 18], [4, 19]], left: [[8, 14], [6, 16], [5, 17], [4, 18]] };
+  const hatRow = (dir, ry) => (HATROW[dir === 'left' ? 'left' : 'down'])[Math.max(0, Math.min(3, ry))];
   function hat(b, s, dir, t, C) {
     const HT = tones(s.hatC || '#6a4a8a');
     const kind = s.hat;
@@ -3686,19 +3702,58 @@ html.touch #modal { z-index: 60; }
       for (let x = 1; x < 23; x++) { b.px(x, t + 2, HT[2]); b.px(x, t + 3, HT[0]); }
       b.px(10, t + 1, '#ffe08a'); b.px(11, t + 1, '#fff4c0'); b.px(12, t + 1, '#ffe08a');
     } else if (kind === 'cap') {
-      for (let y = t - 1; y <= t + 3; y++) for (let x = 4; x <= 19; x++) b.px(x, y, y === t - 1 ? HT[3] : x > 16 ? HT[1] : HT[2]);
-      if (dir === 'down') for (let x = 5; x <= 18; x++) b.px(x, t + 4, HT[0]); else if (dir === 'left') for (let x = 1; x <= 6; x++) b.px(x, t + 4, HT[1]);
+      // 둥근 모자 + 챙 · 꼭지 단추 (예전엔 머리 위에 네모난 통)
+      for (let y = t - 1; y <= t + 3; y++) { const [x0, x1] = hatRow(dir, y - t + 1); for (let x = x0; x <= x1; x++) b.px(x, y, y === t + 3 ? HT[1] : x <= x0 + 1 ? HT[3] : x >= x1 - 1 ? HT[1] : y === t ? HT[3] : HT[2]); }
+      b.px(dir === 'left' ? 11 : 11, t - 2, HT[3]); b.px(dir === 'left' ? 12 : 12, t - 2, HT[2]);
+      if (dir === 'down') for (let x = 5; x <= 18; x++) { b.px(x, t + 4, HT[1]); if (x > 6 && x < 17) b.px(x, t + 5, HT[0]); }
+      else if (dir === 'left') for (let x = 1; x <= 7; x++) { b.px(x, t + 3, HT[1]); b.px(x, t + 4, HT[0]); }
     } else if (kind === 'hood') {
-      for (let y = t - 1; y <= t + 15; y++) for (let x = 3; x <= 20; x++) {
-        if (dir === 'down' && y > t + 4 && x > 5 && x < 18 && y < t + 14) continue;
-        if (dir === 'left' && y > t + 4 && x < 13 && y < t + 14) continue;
-        if (y > t + 12 && (x < 5 || x > 18)) continue;
-        b.px(x, y, x < 6 ? HT[3] : x > 17 ? HT[0] : (x + y) % 4 === 0 ? HT[1] : HT[2]);
+      // 둥근 두건: 머리 위는 둥글고 어깨로 흘러내리며 얼굴 둘레는 안쪽 그늘 (예전엔 빗금 친 네모 상자)
+      const side = dir === 'left';
+      for (let y = t - 2; y <= t + 15; y++) {
+        const ry = y - t + 2;
+        let [x0, x1] = ry < 3 ? hatRow(dir, ry) : [3, side ? 19 : 20];
+        if (y > t + 12) { x0 = 5; x1 = 18; }
+        for (let x = x0; x <= x1; x++) {
+          if (dir === 'down' && y > t + 4 && y < t + 14 && x > 6 && x < 17 && !(y === t + 5 && (x === 7 || x === 16))) continue;
+          if (side && y > t + 4 && y < t + 14 && x < 13) continue;
+          let c = x <= x0 + 1 ? HT[3] : x >= x1 - 1 ? HT[1] : HT[2];
+          if (dir === 'down' && y > t + 3 && y < t + 14 && (x === 6 || x === 17 || (y === t + 4 && x > 6 && x < 17))) c = HT[0];
+          if (dir === 'down' && y === t + 5 && (x === 7 || x === 16)) c = HT[0];   // 얼굴 둘레 위 모서리를 둥글게
+          if (side && y > t + 3 && y < t + 14 && (x === 13 || (y === t + 4 && x < 13))) c = HT[0];
+          if (dir === 'up' && x === 12 && y > t + 1 && y < t + 14) c = HT[1];
+          if (y === t + 15) c = HT[1];
+          b.px(x, y, c);
+        }
       }
     } else if (kind === 'helm') {
-      for (let y = t - 1; y <= t + 6; y++) for (let x = 4; x <= 19; x++) b.px(x, y, y === t + 6 ? HT[0] : x < 7 ? HT[4] : x > 16 ? HT[1] : HT[2]);
-      if (dir === 'down') for (let x = 6; x <= 17; x++) b.px(x, t + 7, HT[1]);
-      if (s.plume) for (let y = t - 6; y < t; y++) { b.px(12 + ((y & 1) ? 1 : 0), y, s.plume); b.px(13, y, U.shade(s.plume, 0.75)); }
+      // 둥근 투구(예전엔 머리에 씌운 네모난 통): 기사는 코 · 볼 · 뒷목 가리개, 일꾼은 챙과 이마 등불
+      const side = dir === 'left', knight = s.top === 'armor';
+      for (let y = t - 2; y <= t + 5; y++) {
+        const [x0, x1] = hatRow(dir, y - t + 2);
+        for (let x = x0; x <= x1; x++) {
+          let c = x <= x0 + 1 ? HT[3] : x >= x1 - 1 ? HT[1] : HT[2];
+          if (y <= t && x > x0 + 1 && x < x0 + 5) c = HT[4];
+          if (y >= t + 4) c = y === t + 5 ? HT[0] : HT[1];
+          b.px(x, y, c);
+        }
+      }
+      if (knight) {
+        if (dir === 'down') {
+          if (!s.plume) for (let y = t - 1; y < t + 4; y++) b.px(12, y, HT[3]);                      // 등줄
+          for (let y = t + 6; y <= t + 9; y++) { b.px(11, y, HT[2]); b.px(12, y, HT[1]); }          // 코 가리개
+          for (let y = t + 6; y <= t + 11; y++) { b.px(4, y, HT[3]); b.px(5, y, HT[2]); b.px(18, y, HT[1]); b.px(19, y, HT[0]); }   // 볼 가리개
+        } else if (side) {
+          for (let y = t + 6; y <= t + 9; y++) b.px(4, y, HT[2]);
+          for (let y = t + 6; y <= t + 12; y++) for (let x = 14; x <= 18; x++) b.px(x, y, x === 14 ? HT[0] : x > 16 ? HT[1] : HT[2]);
+        } else for (let y = t + 6; y <= t + 12; y++) for (let x = 5; x <= 18; x++) b.px(x, y, x < 7 ? HT[3] : x > 16 ? HT[1] : y === t + 12 ? HT[0] : HT[2]);
+      } else {
+        const [bx0, bx1] = side ? [1, 18] : [3, 20];
+        for (let x = bx0; x <= bx1; x++) b.px(x, t + 5, HT[0]);
+        if (dir === 'down') { b.rect(10, t + 1, 4, 3, '#4a4a52'); b.rect(11, t + 1, 2, 2, '#fff4c0'); b.px(11, t + 1, '#ffffff'); }
+        else if (side) { b.rect(3, t + 1, 3, 3, '#4a4a52'); b.px(3, t + 2, '#fff4c0'); b.px(4, t + 2, '#fff4c0'); }
+      }
+      if (s.plume) for (let y = t - 7; y < t - 1; y++) { b.px(12 + ((y & 1) ? 1 : 0), y, s.plume); b.px(13, y, U.shade(s.plume, 0.75)); }
     } else if (kind === 'crown') {
       for (let x = 7; x <= 16; x++) { b.px(x, t, '#e8b83a'); b.px(x, t - 1, '#ffd84a'); if (x % 3 === 1) { b.px(x, t - 2, '#ffd84a'); b.px(x, t - 3, '#fff0a8'); } }
       b.px(11, t, '#ff3a5a'); b.px(12, t, '#ff7a8a');
@@ -3713,7 +3768,8 @@ html.touch #modal { z-index: 60; }
       for (let y = t - 2; y <= t + 2; y++) for (let x = 6; x <= 17; x++) b.px(x, y, y === t + 1 ? '#c83a3a' : x < 9 ? HT[3] : HT[2]);
     } else if (kind === 'veil') {
       // 머리를 덮는 짧은 두건 + 어깨 뒤로 흘러내리는 옅은 천 (얼굴과 몸 앞은 가리지 않는다)
-      for (let y = t - 1; y <= t + 16; y++) for (let x = 3; x <= 20; x++) {
+      for (let y = t - 2; y <= t + 16; y++) for (let x = 3; x <= 20; x++) {
+        if (y - t + 2 < 3) { const [x0, x1] = hatRow(dir, y - t + 2); if (x < x0 || x > x1) continue; }   // 위는 둥글게
         const face = dir === 'down' ? (y > t + 4 && x > 4 && x < 19) : dir === 'left' ? (y > t + 4 && x < 13) : false;
         if (face) continue;
         const drape = y > t + 13;
@@ -3732,10 +3788,13 @@ html.touch #modal { z-index: 60; }
     const top = L.torso;
     if (a === 'scarf') { const SC = tones(s.scarfC || '#d83a3a'); for (let x = 6; x <= 17; x++) { b.px(x, top, SC[2]); b.px(x, top + 1, x > 14 ? SC[0] : SC[1]); } if (dir === 'down') { b.px(15, top + 2, SC[2]); b.px(15, top + 3, SC[1]); b.px(16, top + 4, SC[1]); } else if (dir === 'up') for (let y = top + 2; y < top + 8; y++) { b.px(13, y, SC[2]); b.px(14, y, SC[1]); } else for (let x = 16; x <= 19; x++) b.px(x, top + 1 + (x - 16 >> 1), SC[2]); }
     if (a === 'pauldron') { const P = tones(s.trim); for (const px of dir === 'left' ? [12] : [4, 17]) { b.px(px, top, P[4]); b.px(px + 1, top, P[3]); b.px(px + 2, top, P[2]); b.px(px, top + 1, P[2]); b.px(px + 1, top + 1, P[2]); b.px(px + 2, top + 1, P[1]); b.px(px + 1, top + 2, P[1]); } }
-    if (a === 'necklace' && dir === 'down') { b.px(10, top + 1, '#e8e0a8'); b.px(13, top + 1, '#e8e0a8'); b.px(11, top + 2, '#e8e0a8'); b.px(12, top + 2, '#6ad86a'); }
+    if (a === 'necklace' && dir === 'down') { b.px(10, top + 1, '#e8e0a8'); b.px(13, top + 1, '#e8e0a8'); b.px(11, top + 2, '#e8e0a8'); b.px(12, top + 2, s.gem || '#6ad86a'); }
     if (a === 'quiver') { if (dir === 'up') for (let y = top - 3; y < top + 8; y++) { b.px(14, y, '#8a5a30'); b.px(15, y, '#6a4424'); if (y < top - 1) b.px(14, y - 1, '#e8e0cc'); } else if (dir === 'left') for (let y = top - 2; y < top + 6; y++) b.px(16, y, '#8a5a30'); }
     if (a === 'earring' && dir !== 'up') b.px(dir === 'down' ? 5 : 13, L.head + 12, '#ffd84a');
-    if (a === 'flower' && dir !== 'up') { const x = dir === 'down' ? 16 : 13; b.px(x, L.head + 3, '#ffe060'); b.px(x - 1, L.head + 3, '#ff8ac8'); b.px(x + 1, L.head + 3, '#ff8ac8'); b.px(x, L.head + 2, '#ffd6ec'); b.px(x, L.head + 4, '#ffd6ec'); }
+    if (a === 'flower' && dir !== 'up' && !['helm', 'hood', 'veil'].includes(s.hat)) {   // 꽃 머리핀: 꽃잎은 모두 같은 색 + 노란 술 + 잎 (예전엔 위아래 흰 잎이라 「+」로 보였다)
+      const x = dir === 'down' ? 16 : 13, y = L.head + 3, F = s.flowerC || '#ff8ac8', F2 = U.shade(F, 0.78);
+      b.px(x - 1, y, F); b.px(x + 1, y, F2); b.px(x, y - 1, F); b.px(x, y + 1, F2); b.px(x, y, '#ffe060'); b.px(x + 1, y + 1, '#5aa84a');
+    }
     if (a === 'book' && dir === 'down') { b.rect(15, top + 4, 4, 5, '#8a3a4a'); b.px(15, top + 4, '#e8d8a8'); }
     if (a === 'staff') { for (let y = top - 8; y < L.foot; y++) b.px(dir === 'left' ? 4 : 19, y, '#8a6a3e'); b.px(dir === 'left' ? 4 : 19, top - 9, '#8ad8ff'); b.px(dir === 'left' ? 3 : 18, top - 9, '#c8f0ff'); }
     if (a === 'sword' && dir !== 'up') { for (let y = top + 1; y < top + 12; y++) b.px(dir === 'left' ? 16 : 5, y, y < top + 3 ? '#8a6a3e' : '#c8d0e0'); }
@@ -16659,7 +16718,10 @@ html.touch #modal { z-index: 60; }
     const two = use === 'inn' || use === 'church' || use === 'book';
     const W = w * TS, wallH = (S.tall ? 34 : 28) + (two ? 14 : 0), roofH = Math.max(12, h * TS - wallH + (S.tall ? 26 : 14) + (two ? 10 : 0));
     const H = roofH + wallH;
-    const b = X.brush(W, H + 2);
+    // 신전(교회)의 종탑은 지붕 위로 솟는다 — 그림 위쪽에 자리를 더 둔다 (예전엔 지붕 속 납작한 판처럼 박혀 있었다)
+    const lift = use === 'church' ? 24 : 0;
+    const b0 = X.brush(W, H + 2 + lift), b = lift ? shifted(b0, lift) : b0;
+    const occ = [];   // 창 · 문 · 장식이 차지한 자리 — 간판이 창을 가리지 않게
     const WL = R(S.wall), RF = R(S.roof), WD = R(S.wood);
     const wy = H - wallH;                      // 벽 윗줄
     // ── 벽 ──
@@ -16680,6 +16742,7 @@ html.touch #modal { z-index: 60; }
     const dx = (W >> 1) - 6;
     if (o.door !== false) {
       const dh = 20;
+      occ.push([dx - 2, H - dh - 2, 16, dh + 2]);
       b.rect(dx - 1, H - dh - 1, 14, dh + 1, S.trim); b.rect(dx, H - dh, 12, dh, R(S.door)[2]);
       b.rect(dx + 1, H - dh + 1, 4, dh - 2, R(S.door)[3]); b.rect(dx + 7, H - dh + 1, 4, dh - 2, R(S.door)[1]);
       b.px(dx + 9, H - 10, '#e8c860'); b.hline(dx, dx + 11, H - dh, R(S.door)[4]);
@@ -16690,9 +16753,10 @@ html.touch #modal { z-index: 60; }
     const wins = [];
     if (W >= 64) { wins.push(10, W - 20); if (W >= 96) wins.push(W / 2 - 30, W / 2 + 20); }
     else if (W >= 48) wins.push(6, W - 16);
-    if (two) for (const x0 of [10, W - 20, W / 2 - 5]) { if (W < 48 && x0 === W / 2 - 5) continue; const y2 = wy + 5; b.rect(x0 - 1, y2 - 1, 12, 10, S.trim); b.rect(x0, y2, 10, 8, use === 'church' ? '#a8c8ff' : '#ffe8a0'); b.rect(x0, y2, 10, 3, use === 'church' ? '#d8e8ff' : '#fff4c8'); b.vline(x0 + 4, y2, y2 + 7, S.trim); }
+    if (two) for (const x0 of [10, W - 20, W / 2 - 5]) { if ((W < 48 || use === 'church') && x0 === W / 2 - 5) continue; const y2 = wy + 5; occ.push([x0 - 2, y2 - 2, 14, 12]); b.rect(x0 - 1, y2 - 1, 12, 10, S.trim); b.rect(x0, y2, 10, 8, use === 'church' ? '#a8c8ff' : '#ffe8a0'); b.rect(x0, y2, 10, 3, use === 'church' ? '#d8e8ff' : '#fff4c8'); b.vline(x0 + 4, y2, y2 + 7, S.trim); }
     for (const x0 of wins) {
       if (Math.abs(x0 + 5 - W / 2) < 12) continue;
+      occ.push([x0 - 2, winY - 2, 14, 15]);
       b.rect(x0 - 1, winY - 1, 12, 11, S.trim);
       b.rect(x0, winY, 10, 9, o.win === 'dark' ? '#1a1830' : '#ffe8a0');
       b.rect(x0, winY, 10, 4, o.win === 'dark' ? '#2a2848' : '#fff4c8');
@@ -16703,24 +16767,42 @@ html.touch #modal { z-index: 60; }
     // ── 지붕 ──
     roof(b, S, W, roofH + 2, wy, RF, WD, style);
     // ── 굴뚝 ──
-    if (S.chimney && o.kind !== 'tent') { const cx = W - 22; b.rect(cx, 2, 8, roofH * 0.5, '#6a4a3a'); b.rect(cx - 1, 0, 10, 4, '#4a3a2a'); b.hline(cx, cx + 7, 4, '#8a6a5a'); }
+    if (S.chimney && o.kind !== 'tent') { const cx = W - 22; occ.push([cx - 1, 0, 10, Math.ceil(roofH * 0.5) + 1]); b.rect(cx, 2, 8, roofH * 0.5, '#6a4a3a'); b.rect(cx - 1, 0, 10, 4, '#4a3a2a'); b.hline(cx, cx + 7, 4, '#8a6a5a'); }
     // ── 용도별 겉모습 ──
-    facade(b, use, S, W, H, wy, wallH, roofH, dx, vr, style);
+    facade(b, use, S, W, H, wy, wallH, roofH, dx, vr, style, lift, occ);
     // ── 가게 간판 ──
-    if (o.sign) sign(b, o.sign, W, wy);
+    if (S.lamps) for (const x of [dx - 6, dx + 17]) occ.push([x - 1, H - 23, 5, 7]);
+    if (o.sign) sign(b, o.sign, W, H, wy, dx, occ, S.roofK === 'dome' ? Math.round(W * 0.36) : 0);
     if (S.lamps) { for (const x of [dx - 6, dx + 17]) { b.rect(x, H - 22, 3, 5, '#1a1626'); b.rect(x, H - 21, 3, 3, '#ffd86a'); } }
-    const c = X.outline(b.put(), OUT);
-    cache[key] = { c, W, H, footH: h * TS, doorX: W >> 1, chimney: !!(S.chimney && o.kind !== 'tent'), forge: use === 'forge' };
+    const c = X.outline(b0.put(), OUT);
+    cache[key] = { c, W, H: H + lift, footH: h * TS, doorX: W >> 1, chimney: !!(S.chimney && o.kind !== 'tent'), forge: use === 'forge' };
     return cache[key];
+  }
+  /** 그림 위쪽에 lift만큼 자리를 더 둔 붓: 그리는 쪽은 예전 좌표 그대로, 음수 y(지붕 위)까지 그릴 수 있다 */
+  function shifted(b0, L) {
+    return {
+      w: b0.w, h: b0.h - L,
+      px: (x, y, c, a) => b0.px(x, y + L, c, a), get: (x, y) => b0.get(x, y + L),
+      rect: (x, y, w, h, c, a) => b0.rect(x, y + L, w, h, c, a), hline: (x0, x1, y, c) => b0.hline(x0, x1, y + L, c), vline: (x, y0, y1, c) => b0.vline(x, y0 + L, y1 + L, c),
+      ellipse: (cx, cy, rx, ry, c, a) => b0.ellipse(cx, cy + L, rx, ry, c, a), line: (x0, y0, x1, y1, c) => b0.line(x0, y0 + L, x1, y1 + L, c),
+      stamp: (x, y, rows, pal) => b0.stamp(x, y + L, rows, pal), put: () => b0.put(),
+    };
   }
   function roof(b, S, W, rh, wy, RF, WD, style) {
     const k = S.roofK;
     const bottom = wy + 2;
     if (k === 'dome') {
-      b.rect(0, bottom - 6, W, 6, RF[1]); b.hline(0, W - 1, bottom - 6, RF[3]);
-      const rx = W * 0.36, ry = Math.min(rh * 0.7, rx * 0.9);
-      b.ellipse(W / 2, bottom - 6, rx, ry, RF[2]); b.ellipse(W / 2 - rx * 0.3, bottom - 6 - ry * 0.45, rx * 0.35, ry * 0.3, RF[3]);
-      b.rect(W / 2 - 1, bottom - 6 - ry - 5, 2, 6, '#e8c048'); b.px(W / 2 - 1, bottom - 6 - ry - 7, '#fff0a8');
+      // 벽 위 난간 띠 위에 반구 — 예전엔 온 타원을 그려 아래 절반이 벽 · 문 · 창을 덮었다
+      const cy = bottom - 6, rx = W * 0.36, ry = Math.max(8, Math.min(cy - 9, rx * 0.9));
+      for (let y = Math.floor(cy - ry); y < cy; y++) for (let x = Math.floor(W / 2 - rx); x <= Math.ceil(W / 2 + rx); x++) {
+        const ex = (x + 0.5 - W / 2) / rx, ey = (y + 0.5 - cy) / ry;
+        if (ex * ex + ey * ey > 1) continue;
+        const lit = ex < -0.35 + ey * 0.2 ? RF[3] : ex > 0.45 ? RF[1] : RF[2];
+        b.px(x, y, (y - Math.floor(cy - ry)) % 7 === 6 && Math.abs(ex) < 0.92 ? RF[1] : lit);
+      }
+      b.ellipse(W / 2 - rx * 0.32, cy - ry * 0.62, rx * 0.22, ry * 0.16, RF[4]);
+      b.rect(0, cy, W, 6, RF[1]); b.hline(0, W - 1, cy, RF[3]); for (let x = 3; x < W - 3; x += 6) b.rect(x, cy + 2, 3, 3, RF[0]);   // 난간
+      b.rect(W / 2 - 1, cy - ry - 5, 2, 6, '#e8c048'); b.px(W / 2 - 1, cy - ry - 7, '#fff0a8'); b.px(W / 2, cy - ry - 6, '#fff0a8');
       return;
     }
     if (k === 'tent') {
@@ -16757,7 +16839,7 @@ html.touch #modal { z-index: 60; }
     if (k === 'thatch') for (let x = 0; x < W; x += 3) b.px(x, bottom + 1, RF[1]);
   }
   /** 용도마다 멀리서도 알아보게: 차양 · 진열대 · 화덕 불 · 모루 · 종탑 · 기둥 · 첨탑 · 술통 · 톱니 · 꽃 상자 · 빨래줄 */
-  function facade(b, use, S, W, H, wy, wallH, roofH, dx, vr, style) {
+  function facade(b, use, S, W, H, wy, wallH, roofH, dx, vr, style, lift, occ) {
     const dr = H - 21;   // 문 윗줄 근처
     if (use === 'shop') {
       // 줄무늬 차양 (가게 색)
@@ -16774,7 +16856,7 @@ html.touch #modal { z-index: 60; }
     } else if (use === 'forge') {
       // 돌 아랫벽 · 화덕 불빛 창 · 모루
       for (let y = H - 14; y < H - 3; y++) for (let x = 2; x < W - 2; x++) if (Math.abs(x - W / 2) > 7) { const r = Math.floor((y - H) / 4), off = r & 1 ? 3 : 0; b.px(x, y, (y % 4 === 0 || (x + off) % 6 === 0) ? '#4a4048' : '#7a7078'); }
-      const fx = W - 18; if (fx > dx + 14) { b.rect(fx, H - 20, 12, 10, '#2a1a14'); b.rect(fx + 1, H - 19, 10, 8, '#ff7a2a'); b.rect(fx + 2, H - 16, 8, 4, '#ffd06a'); b.hline(fx + 3, fx + 8, H - 13, '#fff4c8'); }
+      const fx = W - 18; if (fx > dx + 14) { occ.push([fx - 1, H - 21, 14, 12]); b.rect(fx, H - 20, 12, 10, '#2a1a14'); b.rect(fx + 1, H - 19, 10, 8, '#ff7a2a'); b.rect(fx + 2, H - 16, 8, 4, '#ffd06a'); b.hline(fx + 3, fx + 8, H - 13, '#fff4c8'); }
       const ax = 4; b.rect(ax, H - 8, 10, 3, '#3a3a44'); b.rect(ax + 3, H - 5, 4, 3, '#2a2a34'); b.hline(ax - 1, ax + 10, H - 8, '#8a8a9a');
       b.rect(W - 23, 0, 10, 3, '#ff9a4a');   // 굴뚝 불씨
     } else if (use === 'magic') {
@@ -16787,18 +16869,23 @@ html.touch #modal { z-index: 60; }
       for (const bx of [3, W - 13]) { if (Math.abs(bx + 5 - W / 2) < 10) continue; b.ellipse(bx + 5, H - 8, 5, 5, '#8a5a32'); b.hline(bx, bx + 10, H - 10, '#4a4a5a'); b.hline(bx, bx + 10, H - 6, '#4a4a5a'); b.ellipse(bx + 5, H - 12, 4, 1.5, '#a8784a'); }
       for (let x = 3; x < W - 3; x += 5) b.px(x, wy + 3 + (Math.floor(x / 5) % 2), ['#ffd84a', '#ff8a6a', '#8ad8ff', '#a8f08a'][Math.floor(x / 5) % 4]);
     } else if (use === 'church') {
-      // 종탑 · 둥근 장미창
-      const tw = 16, tx = Math.round(W / 2 - tw / 2);
-      b.rect(tx, 0, tw, 26, R(S.wall)[2]); b.rect(tx, 0, tw, 3, R(S.roof)[1]); b.rect(tx + 4, 7, 8, 10, '#2a2238'); b.ellipse(tx + 8, 12, 3, 3, '#e8c048'); b.px(tx + 8, 15, '#a8802a');
-      b.vline(tx + 8, -2, 1, '#e8e0c8'); b.hline(tx + 6, tx + 10, -1, '#e8e0c8');
-      b.ellipse(W / 2, wy + 7, 5, 5, '#6a8ac8'); b.ellipse(W / 2, wy + 7, 3, 3, '#e8c8ff'); b.px(W / 2, wy + 7, '#ffffff');
+      // 종탑: 지붕 앞에서 솟아 뾰족 지붕과 십자가까지 (예전엔 지붕 속 납작한 판) · 둥근 장미창
+      const tw = 16, tx = Math.round(W / 2 - tw / 2), top = -lift + 12, WL = R(S.wall), RF = R(S.roof);
+      b.rect(tx, top, tw, wy - top, WL[2]); b.rect(tx, top, 3, wy - top, WL[3]); b.rect(tx + tw - 3, top, 3, wy - top, WL[1]);
+      b.hline(tx, tx + tw - 1, top, WL[4]); b.hline(tx - 1, tx + tw, wy - 1, WL[1]);
+      b.rect(tx + 4, top + 5, 8, 11, '#2a2238'); b.ellipse(tx + 8, top + 5, 4, 2.5, '#2a2238'); b.ellipse(tx + 8, top + 11, 3, 3, '#e8c048'); b.px(tx + 7, top + 10, '#fff0a8'); b.px(tx + 8, top + 14, '#a8802a');
+      b.rect(tx + 5, top + 20, 6, 6, '#e8e0c8'); b.rect(tx + 6, top + 21, 4, 4, '#4a5a7a'); b.px(tx + 8, top + 22, '#e8e0c8'); b.px(tx + 8, top + 23, '#e8e0c8');   // 시계
+      poly(b, [[tx - 2, top + 1], [tx + tw / 2, -lift + 4], [tx + tw + 2, top + 1]], RF[2]); poly(b, [[tx + tw / 2, -lift + 4], [tx + tw + 2, top + 1], [tx + tw / 2 + 2, top + 1]], RF[1]);
+      b.vline(tx + tw / 2, -lift, -lift + 4, '#e8c860'); b.hline(tx + tw / 2 - 2, tx + tw / 2 + 2, -lift + 1, '#e8c860');
+      occ.push([tx - 3, -lift, tw + 6, wy + lift]);
+      b.ellipse(W / 2, wy + 7, 5, 5, '#6a8ac8'); b.ellipse(W / 2, wy + 7, 3, 3, '#e8c8ff'); b.px(W / 2, wy + 7, '#ffffff'); occ.push([W / 2 - 6, wy + 1, 12, 12]);
     } else if (use === 'book') {
       // 기둥 넷 · 삼각 박공
-      for (const cx of [4, W / 4 + 2, W * 3 / 4 - 4, W - 8]) { if (Math.abs(cx + 2 - W / 2) < 9) continue; b.rect(cx, wy + 2, 4, wallH - 5, '#f0ece0'); b.vline(cx, wy + 2, H - 4, '#c8c0b0'); b.rect(cx - 1, wy + 2, 6, 2, '#d8d0c0'); b.rect(cx - 1, H - 5, 6, 2, '#d8d0c0'); }
+      for (const cx of [4, W / 4 + 2, W * 3 / 4 - 4, W - 8]) { if (Math.abs(cx + 2 - W / 2) < 9) continue; occ.push([cx - 1, wy + 2, 6, wallH - 3]); b.rect(cx, wy + 2, 4, wallH - 5, '#f0ece0'); b.vline(cx, wy + 2, H - 4, '#c8c0b0'); b.rect(cx - 1, wy + 2, 6, 2, '#d8d0c0'); b.rect(cx - 1, H - 5, 6, 2, '#d8d0c0'); }
       for (let y = 0; y < 8; y++) b.hline(Math.round(W / 2 - y * 2.5), Math.round(W / 2 + y * 2.5), wy - 8 + y, y === 7 ? '#c8c0b0' : '#e8e0d0');
     } else if (use === 'lab') {
       // 톱니 · 관
-      b.ellipse(W - 12, wy + 7, 5, 5, '#8a8a9a'); b.ellipse(W - 12, wy + 7, 2, 2, '#4a4a5a'); for (let k = 0; k < 8; k++) { const a = k * Math.PI / 4; b.px(Math.round(W - 12 + Math.cos(a) * 6), Math.round(wy + 7 + Math.sin(a) * 6), '#6a6a7a'); }
+      occ.push([W - 19, wy, 14, 14]); b.ellipse(W - 12, wy + 7, 5, 5, '#8a8a9a'); b.ellipse(W - 12, wy + 7, 2, 2, '#4a4a5a'); for (let k = 0; k < 8; k++) { const a = k * Math.PI / 4; b.px(Math.round(W - 12 + Math.cos(a) * 6), Math.round(wy + 7 + Math.sin(a) * 6), '#6a6a7a'); }
       b.hline(3, W - 4, wy + 16, '#6a8a9a'); b.vline(5, wy + 16, H - 4, '#6a8a9a');
     } else if (!use) {
       // 여느 집: 칸마다 조금씩 다르게 — 꽃 상자 · 빨래줄 · 장작 · 덧창
@@ -16808,8 +16895,13 @@ html.touch #modal { z-index: 60; }
       else if (k === 3) { for (const x0 of [6, W - 16]) { if (Math.abs(x0 + 5 - W / 2) < 12) continue; b.rect(x0 - 3, wy + 7, 2, 11, R(S.wood)[1]); b.rect(x0 + 11, wy + 7, 2, 11, R(S.wood)[1]); } }
     }
   }
-  function sign(b, kind, W, wy) {
-    const x = W - 20, y = wy - 3;
+  function sign(b, kind, W, H, wy, dx, occ, domeR) {
+    // 간판(16×12)이 창 · 문 · 종탑 · 굴뚝을 가리지 않는 자리: 벽 오른쪽 위 → 조금 올려 처마에 걸쳐 → 왼쪽 → 문 옆 → 벽을 따라 → 처마 위
+    const hit = (x, y) => occ.some(([ox, oy, ow, oh]) => x < ox + ow && x + 16 > ox && y < oy + oh && y + 12 > oy) || (domeR && y < wy - 6 && Math.abs(x + 8 - W / 2) < domeR + 8);
+    const cands = [[W - 20, wy - 3], [W - 20, wy - 6], [4, wy - 3], [4, wy - 6], [dx + 16, H - 33], [dx - 20, H - 33]];
+    for (let x = W - 20; x >= 4; x -= 2) cands.push([x, wy - 3], [x, wy + 2]);
+    cands.push([W - 20, wy - 13], [4, wy - 13]);
+    const [x, y] = cands.find(([cx, cy]) => cx >= 2 && cx + 16 <= W - 2 && !hit(cx, cy)) || [W - 20, wy - 13];
     b.rect(x, y, 16, 12, '#6a4424'); b.rect(x + 1, y + 1, 14, 10, '#e8d8b0');
     const ic = { shop: [['  y  ', ' yyy ', 'yyyyy', ' y y '], '#c83a3a'], inn: [['r   r', 'rrrrr', 'r   r'], '#3a6ab8'], forge: [['kkk  ', ' kkkk', '  k  ', '  k  '], '#4a4a5a'], book: [['bbbbb', 'bwbwb', 'bbbbb'], '#6a3a8a'], magic: [['  y  ', 'yyyyy', ' yyy ', 'y   y'], '#8a5ad8'], bar: [[' ccc ', ' ccc ', '  c  ', ' ccc '], '#c87a2a'], church: [['  w  ', 'wwwww', '  w  ', '  w  '], '#c8a040'], lab: [[' g g ', ' g g ', 'ggggg', ' ggg '], '#3aa86a'] }[kind] || [['yyyyy'], '#888'];
     const [rows, col] = ic;
@@ -16986,7 +17078,18 @@ html.touch #modal { z-index: 60; }
     constructor(o) { super(Object.assign({ kind: 'decor', solid: true, bw: 12, bh: 8, shadow: false }, o)); this.img = decor(o.decor, o.v); if (o.bw == null) { this.bw = Math.max(8, this.img.width - 4); this.bh = Math.min(12, Math.max(6, this.img.height * 0.35)); } }
     blockBox() { return this.solid ? { x: this.x - this.bw / 2, y: this.y - this.bh, w: this.bw, h: this.bh } : null; }
     update(dt) { this.t += dt; if (this.decor === 'fireplace' || this.decor === 'stove') { if (Math.random() < dt * 8) G.fx.part({ x: this.x + (Math.random() - 0.5) * 8, y: this.y, z: 8, vz: 18, g: 0, life: 0.4, col: Math.random() < 0.5 ? '#ffb040' : '#ffe080', size: 1, glow: true }); } }
-    draw(g, cx, cy) { g.drawImage(this.img, Math.round(this.x - cx - this.img.width / 2), Math.round(this.y - cy - this.img.height + 1 + (this.wall ? -18 : 0))); }
+    draw(g, cx, cy) { g.drawImage(this.img, Math.round(this.x - cx - this.img.width / 2), Math.round((this.wall ? this.wallTop() : this.y - this.img.height + 1) - cy)); }
+    /** 벽에 거는 것: 뒷벽(두 칸 높이)의 가운데에 — 창 · 그림은 회벽 한가운데, 키 큰 괘종시계는 벽에 기대 바닥에 선다.
+        예전엔 모두 18픽셀 올려 그려 창 · 그림이 벽 윗면 위에, 1줄에 둔 시계는 벽 위 허공에 떠 있었다 */
+    wallTop() {
+      if (this._wt == null) {
+        const m = G.world.map, tx = Math.floor(this.x / TS); let r = Math.floor((this.y - 1) / TS);
+        while (r > 0 && m && m.T(tx, r) !== T.WALL) r--;
+        const floorY = (r + 1) * TS, h = this.img.height;
+        this._wt = h > 26 ? floorY + 2 - h : Math.round(floorY - 18 - h / 2);
+      }
+      return this._wt;
+    }
     // 조사할 수 있는 가구
     canUse() { return !!this.text; }
     get label() { return this.verb || '살펴본다'; }
@@ -22408,7 +22511,8 @@ html.touch #modal { z-index: 60; }
     // 문
     b.rect(cx - 13, h - 34, 26, 34, '#2a2a3a'); b.ellipse(cx, h - 34, 13, 8, '#2a2a3a'); b.rect(cx - 11, h - 32, 22, 32, '#6a4a3a'); b.ellipse(cx, h - 32, 11, 6, '#6a4a3a'); b.vline(cx, h - 38, h - 1, '#3a2a1a'); b.px(cx - 3, h - 16, '#e8c860'); b.px(cx + 2, h - 16, '#e8c860');
     // 눈 쌓임
-    for (let x = 4; x < w - 4; x++) { const y = 47 - Math.round((1 - Math.abs(x - w / 2) / (w / 2)) * 31); b.px(x, y + 1, '#ffffff'); b.px(x, y + 2, '#f4f8ff'); }
+    // 눈 쌓임: 두 첨탑 사이 지붕 위에만 (예전엔 첨탑 · 첨탑 창을 가로질렀다)
+    for (let x = 22; x < w - 22; x++) { const y = 47 - Math.round((1 - Math.abs(x - w / 2) / (w / 2 - 4)) * 32); b.px(x, y + 1, '#ffffff'); b.px(x, y + 2, '#f4f8ff'); }
     b.rect(0, h - 3, w, 3, C[0]);
     return { c: X.outline(b.put(), OUT), W: w, H: h, footH: 2 * TS, door: true };
   };
@@ -42690,7 +42794,10 @@ html.touch #modal { z-index: 60; }
     if (L.hat === 'helm') L.plume = r() < 0.65 ? pick(r, PLUME) : null;   // 투구 꼭대기 깃털
     // 장신구: 들고 있는 물건(책 · 지팡이 · 류트 · 화살통 · 칼 · 어깨받이)은 두고, 꾸밈 하나를 고른다
     const keep = (L.acc || []).filter((a) => KEEP_ACC.includes(a));
-    const deco = r() < 0.45 ? pick(r, DECO) : null;
+    // 꾸밈: 투구 · 두건 · 수녀 두건을 쓴 사람은 머리 꾸밈(꽃 · 귀걸이) 없이, 꽃 머리핀은 여자 · 아이만 (예전엔 투구 위 · 짧은 머리 남자에게 「+」처럼 떠 있었다)
+    const covered = L.hat === 'helm' || L.hat === 'hood' || L.hat === 'veil';
+    const decos = DECO.filter((d) => !(covered && (d === 'flower' || d === 'earring')) && !(d === 'flower' && g !== 'girl' && age !== 'child'));
+    const deco = r() < 0.45 ? pick(r, decos) : null;
     L.acc = deco ? keep.concat([deco]) : keep;
     if (deco === 'scarf') L.scarfC = cloth();
     if (deco === 'necklace') L.gem = pick(r, ['#6ae07a', '#5ab8ff', '#ff5a7a', '#ffd84a', '#b87aff', '#ffffff']);

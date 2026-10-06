@@ -41,7 +41,10 @@
     const two = use === 'inn' || use === 'church' || use === 'book';
     const W = w * TS, wallH = (S.tall ? 34 : 28) + (two ? 14 : 0), roofH = Math.max(12, h * TS - wallH + (S.tall ? 26 : 14) + (two ? 10 : 0));
     const H = roofH + wallH;
-    const b = X.brush(W, H + 2);
+    // 신전(교회)의 종탑은 지붕 위로 솟는다 — 그림 위쪽에 자리를 더 둔다 (예전엔 지붕 속 납작한 판처럼 박혀 있었다)
+    const lift = use === 'church' ? 24 : 0;
+    const b0 = X.brush(W, H + 2 + lift), b = lift ? shifted(b0, lift) : b0;
+    const occ = [];   // 창 · 문 · 장식이 차지한 자리 — 간판이 창을 가리지 않게
     const WL = R(S.wall), RF = R(S.roof), WD = R(S.wood);
     const wy = H - wallH;                      // 벽 윗줄
     // ── 벽 ──
@@ -62,6 +65,7 @@
     const dx = (W >> 1) - 6;
     if (o.door !== false) {
       const dh = 20;
+      occ.push([dx - 2, H - dh - 2, 16, dh + 2]);
       b.rect(dx - 1, H - dh - 1, 14, dh + 1, S.trim); b.rect(dx, H - dh, 12, dh, R(S.door)[2]);
       b.rect(dx + 1, H - dh + 1, 4, dh - 2, R(S.door)[3]); b.rect(dx + 7, H - dh + 1, 4, dh - 2, R(S.door)[1]);
       b.px(dx + 9, H - 10, '#e8c860'); b.hline(dx, dx + 11, H - dh, R(S.door)[4]);
@@ -72,9 +76,10 @@
     const wins = [];
     if (W >= 64) { wins.push(10, W - 20); if (W >= 96) wins.push(W / 2 - 30, W / 2 + 20); }
     else if (W >= 48) wins.push(6, W - 16);
-    if (two) for (const x0 of [10, W - 20, W / 2 - 5]) { if (W < 48 && x0 === W / 2 - 5) continue; const y2 = wy + 5; b.rect(x0 - 1, y2 - 1, 12, 10, S.trim); b.rect(x0, y2, 10, 8, use === 'church' ? '#a8c8ff' : '#ffe8a0'); b.rect(x0, y2, 10, 3, use === 'church' ? '#d8e8ff' : '#fff4c8'); b.vline(x0 + 4, y2, y2 + 7, S.trim); }
+    if (two) for (const x0 of [10, W - 20, W / 2 - 5]) { if ((W < 48 || use === 'church') && x0 === W / 2 - 5) continue; const y2 = wy + 5; occ.push([x0 - 2, y2 - 2, 14, 12]); b.rect(x0 - 1, y2 - 1, 12, 10, S.trim); b.rect(x0, y2, 10, 8, use === 'church' ? '#a8c8ff' : '#ffe8a0'); b.rect(x0, y2, 10, 3, use === 'church' ? '#d8e8ff' : '#fff4c8'); b.vline(x0 + 4, y2, y2 + 7, S.trim); }
     for (const x0 of wins) {
       if (Math.abs(x0 + 5 - W / 2) < 12) continue;
+      occ.push([x0 - 2, winY - 2, 14, 15]);
       b.rect(x0 - 1, winY - 1, 12, 11, S.trim);
       b.rect(x0, winY, 10, 9, o.win === 'dark' ? '#1a1830' : '#ffe8a0');
       b.rect(x0, winY, 10, 4, o.win === 'dark' ? '#2a2848' : '#fff4c8');
@@ -85,24 +90,42 @@
     // ── 지붕 ──
     roof(b, S, W, roofH + 2, wy, RF, WD, style);
     // ── 굴뚝 ──
-    if (S.chimney && o.kind !== 'tent') { const cx = W - 22; b.rect(cx, 2, 8, roofH * 0.5, '#6a4a3a'); b.rect(cx - 1, 0, 10, 4, '#4a3a2a'); b.hline(cx, cx + 7, 4, '#8a6a5a'); }
+    if (S.chimney && o.kind !== 'tent') { const cx = W - 22; occ.push([cx - 1, 0, 10, Math.ceil(roofH * 0.5) + 1]); b.rect(cx, 2, 8, roofH * 0.5, '#6a4a3a'); b.rect(cx - 1, 0, 10, 4, '#4a3a2a'); b.hline(cx, cx + 7, 4, '#8a6a5a'); }
     // ── 용도별 겉모습 ──
-    facade(b, use, S, W, H, wy, wallH, roofH, dx, vr, style);
+    facade(b, use, S, W, H, wy, wallH, roofH, dx, vr, style, lift, occ);
     // ── 가게 간판 ──
-    if (o.sign) sign(b, o.sign, W, wy);
+    if (S.lamps) for (const x of [dx - 6, dx + 17]) occ.push([x - 1, H - 23, 5, 7]);
+    if (o.sign) sign(b, o.sign, W, H, wy, dx, occ, S.roofK === 'dome' ? Math.round(W * 0.36) : 0);
     if (S.lamps) { for (const x of [dx - 6, dx + 17]) { b.rect(x, H - 22, 3, 5, '#1a1626'); b.rect(x, H - 21, 3, 3, '#ffd86a'); } }
-    const c = X.outline(b.put(), OUT);
-    cache[key] = { c, W, H, footH: h * TS, doorX: W >> 1, chimney: !!(S.chimney && o.kind !== 'tent'), forge: use === 'forge' };
+    const c = X.outline(b0.put(), OUT);
+    cache[key] = { c, W, H: H + lift, footH: h * TS, doorX: W >> 1, chimney: !!(S.chimney && o.kind !== 'tent'), forge: use === 'forge' };
     return cache[key];
+  }
+  /** 그림 위쪽에 lift만큼 자리를 더 둔 붓: 그리는 쪽은 예전 좌표 그대로, 음수 y(지붕 위)까지 그릴 수 있다 */
+  function shifted(b0, L) {
+    return {
+      w: b0.w, h: b0.h - L,
+      px: (x, y, c, a) => b0.px(x, y + L, c, a), get: (x, y) => b0.get(x, y + L),
+      rect: (x, y, w, h, c, a) => b0.rect(x, y + L, w, h, c, a), hline: (x0, x1, y, c) => b0.hline(x0, x1, y + L, c), vline: (x, y0, y1, c) => b0.vline(x, y0 + L, y1 + L, c),
+      ellipse: (cx, cy, rx, ry, c, a) => b0.ellipse(cx, cy + L, rx, ry, c, a), line: (x0, y0, x1, y1, c) => b0.line(x0, y0 + L, x1, y1 + L, c),
+      stamp: (x, y, rows, pal) => b0.stamp(x, y + L, rows, pal), put: () => b0.put(),
+    };
   }
   function roof(b, S, W, rh, wy, RF, WD, style) {
     const k = S.roofK;
     const bottom = wy + 2;
     if (k === 'dome') {
-      b.rect(0, bottom - 6, W, 6, RF[1]); b.hline(0, W - 1, bottom - 6, RF[3]);
-      const rx = W * 0.36, ry = Math.min(rh * 0.7, rx * 0.9);
-      b.ellipse(W / 2, bottom - 6, rx, ry, RF[2]); b.ellipse(W / 2 - rx * 0.3, bottom - 6 - ry * 0.45, rx * 0.35, ry * 0.3, RF[3]);
-      b.rect(W / 2 - 1, bottom - 6 - ry - 5, 2, 6, '#e8c048'); b.px(W / 2 - 1, bottom - 6 - ry - 7, '#fff0a8');
+      // 벽 위 난간 띠 위에 반구 — 예전엔 온 타원을 그려 아래 절반이 벽 · 문 · 창을 덮었다
+      const cy = bottom - 6, rx = W * 0.36, ry = Math.max(8, Math.min(cy - 9, rx * 0.9));
+      for (let y = Math.floor(cy - ry); y < cy; y++) for (let x = Math.floor(W / 2 - rx); x <= Math.ceil(W / 2 + rx); x++) {
+        const ex = (x + 0.5 - W / 2) / rx, ey = (y + 0.5 - cy) / ry;
+        if (ex * ex + ey * ey > 1) continue;
+        const lit = ex < -0.35 + ey * 0.2 ? RF[3] : ex > 0.45 ? RF[1] : RF[2];
+        b.px(x, y, (y - Math.floor(cy - ry)) % 7 === 6 && Math.abs(ex) < 0.92 ? RF[1] : lit);
+      }
+      b.ellipse(W / 2 - rx * 0.32, cy - ry * 0.62, rx * 0.22, ry * 0.16, RF[4]);
+      b.rect(0, cy, W, 6, RF[1]); b.hline(0, W - 1, cy, RF[3]); for (let x = 3; x < W - 3; x += 6) b.rect(x, cy + 2, 3, 3, RF[0]);   // 난간
+      b.rect(W / 2 - 1, cy - ry - 5, 2, 6, '#e8c048'); b.px(W / 2 - 1, cy - ry - 7, '#fff0a8'); b.px(W / 2, cy - ry - 6, '#fff0a8');
       return;
     }
     if (k === 'tent') {
@@ -139,7 +162,7 @@
     if (k === 'thatch') for (let x = 0; x < W; x += 3) b.px(x, bottom + 1, RF[1]);
   }
   /** 용도마다 멀리서도 알아보게: 차양 · 진열대 · 화덕 불 · 모루 · 종탑 · 기둥 · 첨탑 · 술통 · 톱니 · 꽃 상자 · 빨래줄 */
-  function facade(b, use, S, W, H, wy, wallH, roofH, dx, vr, style) {
+  function facade(b, use, S, W, H, wy, wallH, roofH, dx, vr, style, lift, occ) {
     const dr = H - 21;   // 문 윗줄 근처
     if (use === 'shop') {
       // 줄무늬 차양 (가게 색)
@@ -156,7 +179,7 @@
     } else if (use === 'forge') {
       // 돌 아랫벽 · 화덕 불빛 창 · 모루
       for (let y = H - 14; y < H - 3; y++) for (let x = 2; x < W - 2; x++) if (Math.abs(x - W / 2) > 7) { const r = Math.floor((y - H) / 4), off = r & 1 ? 3 : 0; b.px(x, y, (y % 4 === 0 || (x + off) % 6 === 0) ? '#4a4048' : '#7a7078'); }
-      const fx = W - 18; if (fx > dx + 14) { b.rect(fx, H - 20, 12, 10, '#2a1a14'); b.rect(fx + 1, H - 19, 10, 8, '#ff7a2a'); b.rect(fx + 2, H - 16, 8, 4, '#ffd06a'); b.hline(fx + 3, fx + 8, H - 13, '#fff4c8'); }
+      const fx = W - 18; if (fx > dx + 14) { occ.push([fx - 1, H - 21, 14, 12]); b.rect(fx, H - 20, 12, 10, '#2a1a14'); b.rect(fx + 1, H - 19, 10, 8, '#ff7a2a'); b.rect(fx + 2, H - 16, 8, 4, '#ffd06a'); b.hline(fx + 3, fx + 8, H - 13, '#fff4c8'); }
       const ax = 4; b.rect(ax, H - 8, 10, 3, '#3a3a44'); b.rect(ax + 3, H - 5, 4, 3, '#2a2a34'); b.hline(ax - 1, ax + 10, H - 8, '#8a8a9a');
       b.rect(W - 23, 0, 10, 3, '#ff9a4a');   // 굴뚝 불씨
     } else if (use === 'magic') {
@@ -169,18 +192,23 @@
       for (const bx of [3, W - 13]) { if (Math.abs(bx + 5 - W / 2) < 10) continue; b.ellipse(bx + 5, H - 8, 5, 5, '#8a5a32'); b.hline(bx, bx + 10, H - 10, '#4a4a5a'); b.hline(bx, bx + 10, H - 6, '#4a4a5a'); b.ellipse(bx + 5, H - 12, 4, 1.5, '#a8784a'); }
       for (let x = 3; x < W - 3; x += 5) b.px(x, wy + 3 + (Math.floor(x / 5) % 2), ['#ffd84a', '#ff8a6a', '#8ad8ff', '#a8f08a'][Math.floor(x / 5) % 4]);
     } else if (use === 'church') {
-      // 종탑 · 둥근 장미창
-      const tw = 16, tx = Math.round(W / 2 - tw / 2);
-      b.rect(tx, 0, tw, 26, R(S.wall)[2]); b.rect(tx, 0, tw, 3, R(S.roof)[1]); b.rect(tx + 4, 7, 8, 10, '#2a2238'); b.ellipse(tx + 8, 12, 3, 3, '#e8c048'); b.px(tx + 8, 15, '#a8802a');
-      b.vline(tx + 8, -2, 1, '#e8e0c8'); b.hline(tx + 6, tx + 10, -1, '#e8e0c8');
-      b.ellipse(W / 2, wy + 7, 5, 5, '#6a8ac8'); b.ellipse(W / 2, wy + 7, 3, 3, '#e8c8ff'); b.px(W / 2, wy + 7, '#ffffff');
+      // 종탑: 지붕 앞에서 솟아 뾰족 지붕과 십자가까지 (예전엔 지붕 속 납작한 판) · 둥근 장미창
+      const tw = 16, tx = Math.round(W / 2 - tw / 2), top = -lift + 12, WL = R(S.wall), RF = R(S.roof);
+      b.rect(tx, top, tw, wy - top, WL[2]); b.rect(tx, top, 3, wy - top, WL[3]); b.rect(tx + tw - 3, top, 3, wy - top, WL[1]);
+      b.hline(tx, tx + tw - 1, top, WL[4]); b.hline(tx - 1, tx + tw, wy - 1, WL[1]);
+      b.rect(tx + 4, top + 5, 8, 11, '#2a2238'); b.ellipse(tx + 8, top + 5, 4, 2.5, '#2a2238'); b.ellipse(tx + 8, top + 11, 3, 3, '#e8c048'); b.px(tx + 7, top + 10, '#fff0a8'); b.px(tx + 8, top + 14, '#a8802a');
+      b.rect(tx + 5, top + 20, 6, 6, '#e8e0c8'); b.rect(tx + 6, top + 21, 4, 4, '#4a5a7a'); b.px(tx + 8, top + 22, '#e8e0c8'); b.px(tx + 8, top + 23, '#e8e0c8');   // 시계
+      poly(b, [[tx - 2, top + 1], [tx + tw / 2, -lift + 4], [tx + tw + 2, top + 1]], RF[2]); poly(b, [[tx + tw / 2, -lift + 4], [tx + tw + 2, top + 1], [tx + tw / 2 + 2, top + 1]], RF[1]);
+      b.vline(tx + tw / 2, -lift, -lift + 4, '#e8c860'); b.hline(tx + tw / 2 - 2, tx + tw / 2 + 2, -lift + 1, '#e8c860');
+      occ.push([tx - 3, -lift, tw + 6, wy + lift]);
+      b.ellipse(W / 2, wy + 7, 5, 5, '#6a8ac8'); b.ellipse(W / 2, wy + 7, 3, 3, '#e8c8ff'); b.px(W / 2, wy + 7, '#ffffff'); occ.push([W / 2 - 6, wy + 1, 12, 12]);
     } else if (use === 'book') {
       // 기둥 넷 · 삼각 박공
-      for (const cx of [4, W / 4 + 2, W * 3 / 4 - 4, W - 8]) { if (Math.abs(cx + 2 - W / 2) < 9) continue; b.rect(cx, wy + 2, 4, wallH - 5, '#f0ece0'); b.vline(cx, wy + 2, H - 4, '#c8c0b0'); b.rect(cx - 1, wy + 2, 6, 2, '#d8d0c0'); b.rect(cx - 1, H - 5, 6, 2, '#d8d0c0'); }
+      for (const cx of [4, W / 4 + 2, W * 3 / 4 - 4, W - 8]) { if (Math.abs(cx + 2 - W / 2) < 9) continue; occ.push([cx - 1, wy + 2, 6, wallH - 3]); b.rect(cx, wy + 2, 4, wallH - 5, '#f0ece0'); b.vline(cx, wy + 2, H - 4, '#c8c0b0'); b.rect(cx - 1, wy + 2, 6, 2, '#d8d0c0'); b.rect(cx - 1, H - 5, 6, 2, '#d8d0c0'); }
       for (let y = 0; y < 8; y++) b.hline(Math.round(W / 2 - y * 2.5), Math.round(W / 2 + y * 2.5), wy - 8 + y, y === 7 ? '#c8c0b0' : '#e8e0d0');
     } else if (use === 'lab') {
       // 톱니 · 관
-      b.ellipse(W - 12, wy + 7, 5, 5, '#8a8a9a'); b.ellipse(W - 12, wy + 7, 2, 2, '#4a4a5a'); for (let k = 0; k < 8; k++) { const a = k * Math.PI / 4; b.px(Math.round(W - 12 + Math.cos(a) * 6), Math.round(wy + 7 + Math.sin(a) * 6), '#6a6a7a'); }
+      occ.push([W - 19, wy, 14, 14]); b.ellipse(W - 12, wy + 7, 5, 5, '#8a8a9a'); b.ellipse(W - 12, wy + 7, 2, 2, '#4a4a5a'); for (let k = 0; k < 8; k++) { const a = k * Math.PI / 4; b.px(Math.round(W - 12 + Math.cos(a) * 6), Math.round(wy + 7 + Math.sin(a) * 6), '#6a6a7a'); }
       b.hline(3, W - 4, wy + 16, '#6a8a9a'); b.vline(5, wy + 16, H - 4, '#6a8a9a');
     } else if (!use) {
       // 여느 집: 칸마다 조금씩 다르게 — 꽃 상자 · 빨래줄 · 장작 · 덧창
@@ -190,8 +218,13 @@
       else if (k === 3) { for (const x0 of [6, W - 16]) { if (Math.abs(x0 + 5 - W / 2) < 12) continue; b.rect(x0 - 3, wy + 7, 2, 11, R(S.wood)[1]); b.rect(x0 + 11, wy + 7, 2, 11, R(S.wood)[1]); } }
     }
   }
-  function sign(b, kind, W, wy) {
-    const x = W - 20, y = wy - 3;
+  function sign(b, kind, W, H, wy, dx, occ, domeR) {
+    // 간판(16×12)이 창 · 문 · 종탑 · 굴뚝을 가리지 않는 자리: 벽 오른쪽 위 → 조금 올려 처마에 걸쳐 → 왼쪽 → 문 옆 → 벽을 따라 → 처마 위
+    const hit = (x, y) => occ.some(([ox, oy, ow, oh]) => x < ox + ow && x + 16 > ox && y < oy + oh && y + 12 > oy) || (domeR && y < wy - 6 && Math.abs(x + 8 - W / 2) < domeR + 8);
+    const cands = [[W - 20, wy - 3], [W - 20, wy - 6], [4, wy - 3], [4, wy - 6], [dx + 16, H - 33], [dx - 20, H - 33]];
+    for (let x = W - 20; x >= 4; x -= 2) cands.push([x, wy - 3], [x, wy + 2]);
+    cands.push([W - 20, wy - 13], [4, wy - 13]);
+    const [x, y] = cands.find(([cx, cy]) => cx >= 2 && cx + 16 <= W - 2 && !hit(cx, cy)) || [W - 20, wy - 13];
     b.rect(x, y, 16, 12, '#6a4424'); b.rect(x + 1, y + 1, 14, 10, '#e8d8b0');
     const ic = { shop: [['  y  ', ' yyy ', 'yyyyy', ' y y '], '#c83a3a'], inn: [['r   r', 'rrrrr', 'r   r'], '#3a6ab8'], forge: [['kkk  ', ' kkkk', '  k  ', '  k  '], '#4a4a5a'], book: [['bbbbb', 'bwbwb', 'bbbbb'], '#6a3a8a'], magic: [['  y  ', 'yyyyy', ' yyy ', 'y   y'], '#8a5ad8'], bar: [[' ccc ', ' ccc ', '  c  ', ' ccc '], '#c87a2a'], church: [['  w  ', 'wwwww', '  w  ', '  w  '], '#c8a040'], lab: [[' g g ', ' g g ', 'ggggg', ' ggg '], '#3aa86a'] }[kind] || [['yyyyy'], '#888'];
     const [rows, col] = ic;
@@ -368,7 +401,18 @@
     constructor(o) { super(Object.assign({ kind: 'decor', solid: true, bw: 12, bh: 8, shadow: false }, o)); this.img = decor(o.decor, o.v); if (o.bw == null) { this.bw = Math.max(8, this.img.width - 4); this.bh = Math.min(12, Math.max(6, this.img.height * 0.35)); } }
     blockBox() { return this.solid ? { x: this.x - this.bw / 2, y: this.y - this.bh, w: this.bw, h: this.bh } : null; }
     update(dt) { this.t += dt; if (this.decor === 'fireplace' || this.decor === 'stove') { if (Math.random() < dt * 8) G.fx.part({ x: this.x + (Math.random() - 0.5) * 8, y: this.y, z: 8, vz: 18, g: 0, life: 0.4, col: Math.random() < 0.5 ? '#ffb040' : '#ffe080', size: 1, glow: true }); } }
-    draw(g, cx, cy) { g.drawImage(this.img, Math.round(this.x - cx - this.img.width / 2), Math.round(this.y - cy - this.img.height + 1 + (this.wall ? -18 : 0))); }
+    draw(g, cx, cy) { g.drawImage(this.img, Math.round(this.x - cx - this.img.width / 2), Math.round((this.wall ? this.wallTop() : this.y - this.img.height + 1) - cy)); }
+    /** 벽에 거는 것: 뒷벽(두 칸 높이)의 가운데에 — 창 · 그림은 회벽 한가운데, 키 큰 괘종시계는 벽에 기대 바닥에 선다.
+        예전엔 모두 18픽셀 올려 그려 창 · 그림이 벽 윗면 위에, 1줄에 둔 시계는 벽 위 허공에 떠 있었다 */
+    wallTop() {
+      if (this._wt == null) {
+        const m = G.world.map, tx = Math.floor(this.x / TS); let r = Math.floor((this.y - 1) / TS);
+        while (r > 0 && m && m.T(tx, r) !== T.WALL) r--;
+        const floorY = (r + 1) * TS, h = this.img.height;
+        this._wt = h > 26 ? floorY + 2 - h : Math.round(floorY - 18 - h / 2);
+      }
+      return this._wt;
+    }
     // 조사할 수 있는 가구
     canUse() { return !!this.text; }
     get label() { return this.verb || '살펴본다'; }

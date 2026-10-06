@@ -59,7 +59,8 @@
     // 문
     b.rect(cx - 13, h - 34, 26, 34, '#2a2a3a'); b.ellipse(cx, h - 34, 13, 8, '#2a2a3a'); b.rect(cx - 11, h - 32, 22, 32, '#6a4a3a'); b.ellipse(cx, h - 32, 11, 6, '#6a4a3a'); b.vline(cx, h - 38, h - 1, '#3a2a1a'); b.px(cx - 3, h - 16, '#e8c860'); b.px(cx + 2, h - 16, '#e8c860');
     // 눈 쌓임
-    for (let x = 4; x < w - 4; x++) { const y = 47 - Math.round((1 - Math.abs(x - w / 2) / (w / 2)) * 31); b.px(x, y + 1, '#ffffff'); b.px(x, y + 2, '#f4f8ff'); }
+    // 눈 쌓임: 두 첨탑 사이 지붕 위에만 (예전엔 첨탑 · 첨탑 창을 가로질렀다)
+    for (let x = 22; x < w - 22; x++) { const y = 47 - Math.round((1 - Math.abs(x - w / 2) / (w / 2 - 4)) * 32); b.px(x, y + 1, '#ffffff'); b.px(x, y + 2, '#f4f8ff'); }
     b.rect(0, h - 3, w, 3, C[0]);
     return { c: X.outline(b.put(), OUT), W: w, H: h, footH: 2 * TS, door: true };
   };

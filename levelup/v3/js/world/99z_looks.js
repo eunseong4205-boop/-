@@ -101,7 +101,10 @@
     if (L.hat === 'helm') L.plume = r() < 0.65 ? pick(r, PLUME) : null;   // 투구 꼭대기 깃털
     // 장신구: 들고 있는 물건(책 · 지팡이 · 류트 · 화살통 · 칼 · 어깨받이)은 두고, 꾸밈 하나를 고른다
     const keep = (L.acc || []).filter((a) => KEEP_ACC.includes(a));
-    const deco = r() < 0.45 ? pick(r, DECO) : null;
+    // 꾸밈: 투구 · 두건 · 수녀 두건을 쓴 사람은 머리 꾸밈(꽃 · 귀걸이) 없이, 꽃 머리핀은 여자 · 아이만 (예전엔 투구 위 · 짧은 머리 남자에게 「+」처럼 떠 있었다)
+    const covered = L.hat === 'helm' || L.hat === 'hood' || L.hat === 'veil';
+    const decos = DECO.filter((d) => !(covered && (d === 'flower' || d === 'earring')) && !(d === 'flower' && g !== 'girl' && age !== 'child'));
+    const deco = r() < 0.45 ? pick(r, decos) : null;
     L.acc = deco ? keep.concat([deco]) : keep;
     if (deco === 'scarf') L.scarfC = cloth();
     if (deco === 'necklace') L.gem = pick(r, ['#6ae07a', '#5ab8ff', '#ff5a7a', '#ffd84a', '#b87aff', '#ffffff']);
