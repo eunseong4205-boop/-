@@ -43,7 +43,7 @@
     const cx = 32;
     const fy = 33 + oy;                          // 얼굴 가운데
     const faceRx = child ? 14.5 : girl ? 14.5 : 15, faceRy = 13.5;
-    const chinY = (child ? 49 : girl ? 51 : 51.5) + oy;
+    const chinY = (child ? 48.5 : girl ? 50 : 50.5) + oy;   // 얼굴 길이를 조금 줄여 턱이 길고 뾰족해 보이지 않게
     const jaw = s.build === 'broad' ? 2 : 0;
 
     /* 뒷머리 */
@@ -63,16 +63,12 @@
     clothes(b, s, T, TR, SK, cx, shY);
 
     /* 얼굴 */
-    for (let y = 18 + oy; y <= chinY; y++) for (let x = 14; x < 50; x++) {
-      let inside = inEll(x, y, cx, fy, faceRx + jaw * 0.5, faceRy);
-      if (!inside && y > fy) {
-        // 턱: 아래로 갈수록 좁아지는 V
-        const k = (y - fy) / (chinY - fy);
-        const half = (faceRx + jaw) * (1 - Math.pow(k, 1.6)) + (girl ? 0.5 : 1);
-        inside = Math.abs(x + 0.5 - cx) <= half;
-      }
-      if (inside) b.px(x, y, SK[2]);
-    }
+    // 턱: 볼에서 턱끝까지 부드럽게 좁아지고 턱끝은 살짝 갸름하게 둥글다 (예전엔 끝이 한 칸으로 모이는 뾰족한 V)
+    //   얼굴형마다: round 둥근 · oval 갸름한(기본) · slim 날렵한 — [턱끝 반폭, 좁아지는 정도]
+    const FS = { round: [5.6, 3.2], oval: [4.2, 2.8], slim: [3.3, 2.45] }[s.faceShape || (child ? 'round' : 'oval')] || [4.2, 2.8];
+    const halfAt = (y) => { const k = (y - fy) / (chinY - fy); let h = FS[0] + (faceRx + jaw - FS[0]) * (1 - Math.pow(k, FS[1])); if (y >= chinY - 0.5) h -= 1.2; return h; };
+    const faceIn = (x, y) => y >= 18 + oy && y <= chinY && (inEll(x, y, cx, fy, faceRx + jaw * 0.5, faceRy) || (y > fy && Math.abs(x + 0.5 - cx) <= halfAt(y)));
+    for (let y = 18 + oy; y <= chinY; y++) for (let x = 14; x < 50; x++) if (faceIn(x, y)) b.px(x, y, SK[2]);
     // 턱선: 얼굴 가장자리 아래쪽 절반에 짙은 살색 선
     const edge = U.mix(SK[0], SK[1], 0.35);
     const isSkin = (x, y) => sameCol(b, x, y, SK[2]);
@@ -88,7 +84,7 @@
     /* 표정 */
     const F = s.blind ? Object.assign({}, FACES[face] || FACES.normal, { eyes: 'closed', look: 0 }) : (FACES[face] || FACES.normal);
     const ey = (girl ? 33 : 34) + oy + (child ? 1 : 0);
-    const eyeW = child ? 8 : 8, eyeH = (girl ? 9 : 7) + (child ? 1 : 0) + (s.eyeBig ? 1 : 0);
+    const eyeW = child ? 8 : 8, eyeH = (girl ? 9 : 7) + (child ? 1 : 0) + (s.eyeBig ? 1 : 0) - (s.eyeShape === 'narrow' ? 2 : 0);
     // 볼터치
     if (F.blush || s.blush || girl && face !== 'angry' && face !== 'shock' && face !== 'empty') blush(b, cx, ey + eyeH + 1, F.blush ? 1 : 0.45);
     // 눈
@@ -98,10 +94,29 @@
     b.px(cx + 1, ey + eyeH + 3, SK[1]); b.px(cx + 1, ey + eyeH + 2, SK[1]); if (!girl && !child) b.px(cx, ey + eyeH + 3, SK[1]);
     // 입
     mouth(b, cx, 46 + oy - (child ? 1 : 0), F, SK, girl);
+    // 주근깨 · 점 (사람마다)
+    if (s.freckles) for (const [dx, dy] of [[-12, 0], [-9, 1], [-7, 0], [7, 0], [9, 1], [12, 0]]) b.px(cx + dx, ey + eyeH + 2 + dy, U.mix(SK[1], '#8a4a2a', 0.35));
+    if (s.mole) { const [mx, my] = s.mole === 2 ? [cx + 6, 48 + oy] : [cx + 11, ey + eyeH + 1]; b.px(mx, my, U.mix(SK[0], OUT, 0.4)); }
     // 흉터 · 수염 · 복면
     if (s.scar) { b.line(cx + 7, ey + eyeH + 1, cx + 11, ey + eyeH + 6, '#c86a6a'); b.px(cx + 8, ey + eyeH + 3, '#ffb8b8'); }
     if (old) { b.px(cx - 11, ey + eyeH + 1, SK[1]); b.px(cx - 10, ey + eyeH + 2, SK[1]); b.px(cx + 10, ey + eyeH + 1, SK[1]); b.px(cx + 11, ey + eyeH + 2, SK[1]); b.hline(cx - 3, cx - 1, ey + eyeH + 6, SK[1]); b.hline(cx + 2, cx + 4, ey + eyeH + 6, SK[1]); }
-    if (s.beard) { const bc = tones(s.beard); poly(b, [[cx - 12, fy + 3], [cx - 9, chinY + 2], [cx, chinY + 5], [cx + 9, chinY + 2], [cx + 12, fy + 3], [cx + 6, 45 + oy], [cx - 6, 45 + oy]], bc[2]); b.hline(cx - 3, cx + 3, 46 + oy, bc[0]); for (let i = 0; i < 6; i++) b.px(cx - 8 + i * 3, fy + 9 + (i % 2), bc[3]); }
+    if (s.beard) {
+      // 수염: 얼굴 모양(턱선)을 그대로 따라 구레나룻 → 볼 → 콧수염 → 턱 아래로 살짝 (예전엔 뾰족한 옛 턱에 맞춘 다각형이라 둥근 턱 밖으로 삐져나왔다)
+      const bc = tones(s.beard), my = 46 + oy - (child ? 1 : 0), hc = halfAt(chinY);
+      for (let y = fy + 2; y <= chinY + 3; y++) for (let x = 12; x < 52; x++) {
+        const dx = Math.abs(x + 0.5 - cx);
+        if (!(faceIn(x, y) || (y > chinY && dx <= hc + 0.6 - (y - chinY) * 1.4))) continue;
+        const st0 = ey + eyeH + 1;                                               // 구레나룻은 눈 아래부터
+        const top = dx > 10.5 ? st0 : dx > 6 ? st0 + (10.5 - dx) * (my - 3 - st0) / 4.5 : my - 3;
+        if (y < top) continue;
+        if (dx <= 3.6 && y >= my && y <= my + 2) continue;                   // 입은 보이게
+        let c = x > cx + 6 ? bc[1] : bc[2];
+        if (y >= chinY + 1 || (dx > 10.5 && !faceIn(x + (x < cx ? -1 : 1), y))) c = bc[1];
+        if ((x * 3 + y * 7) % 11 === 0 && c === bc[2]) c = bc[3];             // 결
+        b.px(x, y, c);
+      }
+      b.hline(cx - 2, cx + 2, my - 1, bc[0]);
+    }
     if (s.mask) { const mc = tones(s.hatC || '#4a3a30'); poly(b, [[cx - faceRx - 1, ey + eyeH + 2], [cx + faceRx + 1, ey + eyeH + 2], [cx + faceRx - 2, chinY], [cx, chinY + 2], [cx - faceRx + 2, chinY]], mc[2]); b.hline(cx - faceRx, cx + faceRx, ey + eyeH + 2, mc[3]); b.line(cx - 4, ey + eyeH + 5, cx + 5, ey + eyeH + 9, mc[1]); }
     if (s.robot) { b.line(cx - 12, fy + 6, cx - 9, fy + 9, '#8a98b0'); b.line(cx + 12, fy + 6, cx + 9, fy + 9, '#8a98b0'); b.rect(cx - 15, fy, 2, 5, '#9aa8c0'); b.rect(cx + 14, fy, 2, 5, '#7a88a0'); }
 
@@ -117,6 +132,7 @@
     if (F.sweat) { b.px(cx + 15, ey - 4, '#bfe8ff'); b.px(cx + 15, ey - 3, '#bfe8ff'); b.px(cx + 14, ey - 2, '#bfe8ff'); b.px(cx + 16, ey - 2, '#8ac8f0'); b.px(cx + 15, ey - 1, '#8ac8f0'); }
     if (F.anger) { const ax = cx + 13, ay = 14 + oy; b.px(ax, ay, '#ff4a5a'); b.px(ax + 2, ay, '#ff4a5a'); b.px(ax + 1, ay + 1, '#ff4a5a'); b.px(ax, ay + 2, '#ff4a5a'); b.px(ax + 2, ay + 2, '#ff4a5a'); }
     if (F.gloom) for (let x = cx - 12; x <= cx + 12; x += 3) b.vline(x, 18 + oy, 24 + oy + (x % 2), '#281e50');
+    X.fillHoles(b, 60);
     return X.outline(b.put(), OUT);
   }
   function sameCol(b, x, y, hex) { if (x < 0 || y < 0 || x >= SZ || y >= SZ) return false; const i = (y * SZ + x) * 4; const [r, g, bb] = U.rgb(hex); return b.d[i] === r && b.d[i + 1] === g && b.d[i + 2] === bb; }
@@ -145,7 +161,7 @@
     }
     if (F.eyes === 'closed') { for (let i = 0; i < w; i++) { const dy = Math.round(Math.abs(i - (w - 1) / 2) * 0.35); b.px(x + i, y + h - 3 - dy + 1, OUT); if (girl && i > 0 && i < w - 1) b.px(x + i, y + h - 2 - dy + 1, U.mix(E[0], OUT, 0.5)); } if (girl) { b.px(right ? x + w : x - 1, y + h - 3, OUT); } return; }
     if (F.eyes === 'squint') { for (let i = 0; i < w; i++) { const k = right ? i : w - 1 - i; b.px(x + i, y + 2 + Math.round(k * 0.5), OUT); b.px(x + i, y + 6 - Math.round(k * 0.5), OUT); } return; }
-    const sharp = s.eyeShape === 'sharp', sleepy = s.eyeShape === 'sleepy';
+    const sharp = s.eyeShape === 'sharp' || s.eyeShape === 'cat', sleepy = s.eyeShape === 'sleepy', droopy = s.eyeShape === 'droopy', cat = s.eyeShape === 'cat';
     let lid = (F.lid || 0) + (sleepy ? 2 : 0);
     if (F.wide) lid = -1;
     const top = y + Math.max(0, lid), bot = y + h - 1;
@@ -157,6 +173,8 @@
       if (yy === bot && (i === 0 || i === w - 1)) return false;
       if (yy === bot - 1 && inner === 0 && girl) return false;
       if (sharp && yy === top && inner < 2) return false;
+      if (droopy && yy === top && inner > w - 3) return false;                 // 처진 눈: 바깥 꼬리가 내려간다
+      if (cat && yy === bot && inner > w - 3) return false;                    // 고양이 눈: 바깥 꼬리가 치켜 올라간다
       return true;
     };
     for (let yy = top; yy <= bot; yy++) for (let xx = x; xx < x + w; xx++) if (inEye(xx, yy)) b.px(xx, yy, '#fbf8ff');
@@ -185,13 +203,15 @@
       const i = xx - x, inner = right ? i : w - 1 - i;
       let yy = top - 1;
       if (sharp && inner < 2) yy += 1;
+      if (droopy && inner > w - 3) yy += 1;
       if (F.brow === 'angry' && inner < 2) yy += 1;
       if (F.brow === 'sad' && inner > w - 3) yy += 1;
       if ((xx === x - 1 && right) || (xx === x + w && !right)) continue;          // 코 쪽 끝은 짧게
       b.px(xx, yy, OUT);
       if (girl || sharp) { if (i >= 0 && i < w) b.px(xx, yy + 1, i === 0 || i === w - 1 ? OUT : U.mix(OUT, E[0], 0.3)); }
     }
-    if (girl) { const ox = right ? x + w : x - 1; b.px(ox, top - 2, OUT); b.px(ox + (right ? 1 : -1), top - 3, OUT); b.px(ox, top, OUT); }
+    if (cat) { const ox = right ? x + w : x - 1, d = right ? 1 : -1; b.px(ox, top - 1, OUT); b.px(ox + d, top - 2, OUT); b.px(ox + d * 2, top - 3, OUT); }   // 치켜 올린 눈꼬리
+    if (girl) { const ox = right ? x + w : x - 1; b.px(ox, top - 2, OUT); b.px(ox + (right ? 1 : -1), top - 3, OUT); b.px(ox, top + (droopy ? 1 : 0), OUT); }
     else { const ox = right ? x + w : x - 1; b.px(ox, top, OUT); }
     // 아랫눈꺼풀: 바깥쪽 짧은 선
     const lo = U.mix(E[0], OUT, 0.35);
@@ -249,43 +269,68 @@
       case 'long': fill([[14, 22 + oy], [10, 40], [9, 63], [55, 63], [54, 40], [50, 22 + oy]]); fill([[16, 30], [13, 62], [18, 62]], H[0]); fill([[48, 30], [51, 62], [46, 62]], H[0]); break;
       case 'wavy': for (let y = 22 + oy; y < 64; y++) { const w = 20 + Math.sin(y / 3.2) * 2.5 + (y > 40 ? 3 : 0); b.hline(Math.round(32 - w), Math.round(32 + w), y, H[1]); } break;
       case 'hime': fill([[14, 22 + oy], [12, 60], [52, 60], [50, 22 + oy]]); b.hline(12, 51, 60, H[0]); break;
-      case 'bob': fill([[13, 24 + oy], [12, 48 + oy], [52, 48 + oy], [51, 24 + oy]]); break;
+      case 'bob': fill([[13, 24 + oy], [12, 41 + oy], [14, 46 + oy], [18, 48 + oy], [46, 48 + oy], [50, 46 + oy], [52, 41 + oy], [51, 24 + oy]]); break;   // 단발: 아래 모서리를 둥글게 (네모 상자 같았다)
       case 'pony': fill([[46, 16 + oy], [56, 22 + oy], [58, 44], [52, 56], [49, 40]]); fill([[49, 22 + oy], [55, 30], [53, 48], [50, 36]], H[2]); break;
       case 'twin':
         fill([[12, 18 + oy], [4, 30], [3, 50], [8, 60], [12, 44], [16, 28]]); fill([[52, 18 + oy], [60, 30], [61, 50], [56, 60], [52, 44], [48, 28]]);
         fill([[10, 26], [6, 44], [9, 52], [11, 38]], H[2]); fill([[54, 26], [58, 44], [55, 52], [53, 38]], H[2]);
         break;
-      case 'braid': fill([[15, 22 + oy], [13, 44], [51, 44], [49, 22 + oy]]); break;
+      case 'braid': fill([[15, 22 + oy], [13, 49], [51, 49], [49, 22 + oy]]); break;   // 땋은 머리와 턱 사이가 비지 않게 어깨까지
       case 'bun': b.ellipse(32, 11 + oy, 7, 6, H[1]); b.ellipse(31, 10 + oy, 5, 4, H[2]); b.hline(28, 34, 8 + oy, H[3]); break;
       case 'messy': case 'spiky': if (s.gender === 'girl') fill([[15, 22 + oy], [13, 50], [51, 50], [49, 22 + oy]]); break;
-      default: if (girl && st !== 'short' && st !== 'buzz' && st !== 'slick') fill([[15, 22 + oy], [14, 44], [50, 44], [49, 22 + oy]]); break;
+      case 'shaggy': { const by = girl ? 52 : 47; fill([[15, 24 + oy], [13, by - 7], [14, by - 2], [18, by], [23, by - 3], [27, by], [37, by], [41, by - 3], [46, by], [50, by - 2], [51, by - 7], [49, 24 + oy]]); break; }   // 늑대 컷: 목덜미까지 층지게
+      case 'curly': if (girl) for (let y = 24 + oy; y < 50; y++) { const w = 19 + Math.round(Math.sin(y * 0.9) * 1.5) + (y > 34 ? 2 : 0); b.hline(32 - w, 32 + w, y, H[1]); } break;
+      default: if (girl && st !== 'short' && st !== 'buzz' && st !== 'slick' && st !== 'bald') fill([[15, 22 + oy], [14, 44], [50, 44], [49, 22 + oy]]); break;
     }
   }
   function frontHair(b, s, H, SK, oy, girl, cx) {
     const st = s.hair;
-    if (st === 'bald') { b.ellipse(cx - 5, 18 + oy, 4, 2, SK[3]); return; }
-    const capCy = 27 + oy, capRx = st === 'buzz' ? 15.5 : 17.5, capRy = st === 'buzz' ? 14 : 17;
+    if (st === 'bald') {
+      // 민머리: 얼굴 위로 둥근 머리통 + 관자놀이부터 귀 위까지 짧은 옆머리
+      //   (예전엔 머리가 얼굴 타원 꼭대기에서 끊겨 납작하고 짧았으며, 윗빛 타원이 머리 밖으로 혹처럼 튀어나왔다)
+      const sy = 28 + oy, rx = 16.2, ry = 14.8, fyy = 33 + oy;
+      for (let y = Math.floor(sy - ry); y <= fyy; y++) for (let x = 8; x < 56; x++) {
+        if (!inEll(x, y, cx, sy, rx, ry)) continue;
+        const dx = Math.abs(x + 0.5 - cx), band = dx > 11.5 && y > sy - 5;
+        if (y >= 18 + oy && b.get(x, y) && !band) continue;                     // 얼굴은 그대로
+        let c = x > cx + 9 ? SK[1] : SK[2];
+        if (band) c = x > cx ? (dx > 14.5 ? H[0] : H[1]) : (dx > 14.5 ? H[1] : H[2]);
+        b.px(x, y, c);
+      }
+      b.ellipse(cx - 5, sy - ry + 5.5, 4, 2, SK[3]); b.hline(cx - 6, cx - 3, Math.round(sy - ry + 4), U.mix(SK[3], '#ffffff', 0.4));   // 윗빛 (머리통 안쪽)
+      return;
+    }
+    const capCy = 27 + oy, capRx = 17.5, capRy = st === 'buzz' ? 16 : 17;   // 아주 짧은 머리도 머리통을 덮는다 (예전엔 작은 모자처럼 얹혀 대머리 같았다)
     const topY = capCy - capRy;
     // 가닥 묶음: [뿌리 x, 끝 x, 끝 y, 폭]
     const C = [];
-    const base = 17 + oy;                 // 이마의 머리선 (가닥 사이 틈)
+    const base = 19 + oy;                 // 이마의 머리선 (가닥 사이 틈) — 예전 17: 이마가 너무 넓게 보였다
     const clump = (x0, tx, ty, w) => C.push({ x0, tx, ty: ty + oy, w });
     let side = girl ? 46 : 38, sideW = girl ? 4.2 : 3.6;
     switch (st) {
       case 'spiky': clump(17, 15, 34, 5); clump(22, 21, 32, 5); clump(27, 27, 34, 5); clump(32, 33, 31, 5); clump(37, 38, 34, 5); clump(42, 44, 32, 5); clump(47, 49, 34, 4); side = 40; break;
       case 'messy': clump(18, 16, 33, 5); clump(23, 22, 31, 5); clump(28, 29, 33, 5); clump(33, 32, 30, 4); clump(37, 39, 33, 5); clump(42, 44, 31, 5); clump(46, 48, 34, 4); side = girl ? 46 : 40; break;
       case 'short': case 'neat': clump(18, 17, 30, 5); clump(23, 23, 31, 5); clump(28, 28, 30, 5); clump(33, 33, 31, 5); clump(38, 38, 30, 5); clump(43, 44, 31, 5); clump(47, 48, 30, 4); side = girl ? 44 : 37; break;
+      // 가운데 가르마: 가운데서 양옆으로 갈라 넘긴 앞머리 (가르마 선으로 이마가 조금 보인다)
+      case 'parted': clump(30, 22, 31, 5); clump(26, 19, 33, 5); clump(22, 17, 35, 4.6); clump(34, 42, 31, 5); clump(38, 45, 33, 5); clump(42, 47, 35, 4.6); side = girl ? 48 : 41; sideW = 4.2; break;
+      // 곱슬: 짧고 둥근 가닥이 촘촘히
+      case 'curly': for (let x = 17; x <= 47; x += 4) clump(x, x + (((x >> 2) & 1) ? 1.5 : -1.5), 28 + ((x >> 2) & 1) * 2, 4.4); side = girl ? 46 : 40; sideW = 4.6; break;
+      // 늑대 컷: 층진 긴 가닥, 옆머리가 목까지
+      case 'shaggy': clump(17, 14, 36, 5); clump(22, 20, 34, 5); clump(27, 27, 32, 5); clump(32, 31, 34, 5); clump(37, 38, 32, 5); clump(42, 44, 34, 5); clump(47, 50, 36, 4.6); side = girl ? 50 : 46; sideW = 4.4; break;
+      // 옆으로 쓸어내린 긴 앞머리: 한쪽 눈썹 · 눈꼬리를 살짝 덮는다
+      case 'swept': clump(18, 17, 30, 5); clump(23, 26, 34, 6); clump(28, 33, 36, 6); clump(33, 40, 37, 5.6); clump(38, 45, 35, 5.2); clump(43, 48, 33, 5); side = girl ? 48 : 41; break;
       case 'side': clump(18, 16, 35, 6); clump(23, 22, 34, 6); clump(28, 28, 33, 6); clump(33, 35, 30, 5); clump(38, 41, 28, 5); clump(43, 46, 27, 5); side = girl ? 44 : 39; break;
       case 'long': case 'wavy': case 'braid': case 'pony': clump(18, 17, 32, 5); clump(22, 22, 33, 5); clump(26, 27, 31, 4); clump(30, 30, 26, 3); clump(34, 34, 26, 3); clump(38, 37, 31, 4); clump(42, 42, 33, 5); clump(46, 47, 32, 5); side = st === 'pony' ? 42 : 52; sideW = 4.6; break;
       case 'hime': for (let x = 17; x <= 47; x += 3) clump(x, x, 31, 3.6); side = 50; sideW = 5.2; break;
       case 'bob': clump(17, 17, 32, 5); clump(22, 22, 32, 5); clump(27, 27, 31, 5); clump(32, 32, 31, 5); clump(37, 37, 31, 5); clump(42, 42, 32, 5); clump(47, 47, 32, 5); side = 48; sideW = 5; break;
-      case 'twin': case 'bun': clump(18, 17, 32, 5); clump(23, 23, 33, 5); clump(28, 28, 31, 4); clump(32, 32, 27, 3); clump(36, 36, 31, 4); clump(41, 41, 33, 5); clump(46, 47, 32, 5); side = girl ? 45 : 40; break;
-      case 'slick': side = 33; sideW = 3; break;
+      case 'twin': case 'bun': clump(18, 17, 32, 5); clump(23, 23, 33, 5); clump(28, 28, 31, 4); clump(32, 32, 27, 3); clump(36, 36, 31, 4); clump(41, 41, 33, 5); clump(46, 47, 32, 5); side = st === 'twin' || girl ? 45 : 40; break;
+      // 넘긴 머리: 가르마에서 양옆으로 쓸어 넘긴 짧은 가닥 둘 + 귀 앞 구레나룻 (예전엔 가닥 · 옆머리가 없어 이마가 훤하고 얼굴 둘레에 빈 테만 남았다)
+      case 'slick': side = 32; sideW = 3.8; break;
       case 'buzz': side = 30; sideW = 2; break;
       default: clump(18, 17, 30, 5); clump(24, 24, 31, 5); clump(30, 30, 30, 5); clump(36, 36, 31, 5); clump(42, 42, 30, 5); clump(47, 48, 30, 4); break;
     }
     // 옆머리 (얼굴 양옆, 귀 앞)
-    if (st !== 'slick' && st !== 'buzz') { C.push({ x0: 16, tx: 15 - (girl ? 1 : 0), ty: side + oy, w: sideW, side: true }); C.push({ x0: 48, tx: 49 + (girl ? 1 : 0), ty: side + oy, w: sideW, side: true }); }
+    if (st !== 'buzz') { C.push({ x0: 16, tx: 15 - (girl ? 1 : 0), ty: side + oy, w: sideW, side: true }); C.push({ x0: 48, tx: 49 + (girl ? 1 : 0), ty: side + oy, w: sideW, side: true }); }
     // 칸마다 어느 가닥이 덮나: 가닥은 뿌리(base)에서 끝(ty)까지 좁아지는 띠
     const owner = new Int16Array(SZ * SZ).fill(-1), u = new Float32Array(SZ * SZ);
     C.forEach((c, i) => {
@@ -293,9 +338,10 @@
       for (let y = y0; y <= c.ty; y++) {
         const k = (y - y0) / Math.max(1, c.ty - y0);            // 0 뿌리 → 1 끝
         const xc = U.lerp(c.x0, c.tx, k * k);
-        const half = c.w * (1 - Math.pow(k, 1.8)) + 0.4;
+        const half = (c.side ? c.w : c.w * 1.18) * (1 - Math.pow(k, c.side ? 1.8 : 2.7)) + 0.6;   // 앞머리는 끝까지 도톰하게 (가닥 사이로 이마가 덜 보인다)
         for (let x = Math.floor(xc - half); x <= Math.ceil(xc + half); x++) {
           if (x < 0 || x >= SZ) continue;
+          if (!c.side && y < capCy && !inEll(x, y, cx, capCy, capRx + 1.2, capRy + 1.2)) continue;   // 앞머리 뿌리가 머리 밖으로 뿔처럼 삐져나오지 않게
           const d = (x + 0.5 - xc) / half;
           if (Math.abs(d) > 1) continue;
           const j = y * SZ + x;
@@ -306,7 +352,9 @@
     // 머리 덩어리: 윗 타원 (이마선 위) + 가닥
     for (let y = 2; y < 62; y++) for (let x = 6; x < 58; x++) {
       const j = y * SZ + x;
-      const inCap = inEll(x, y, cx, capCy, capRx, capRy) && (y < base + 1 || x < 17 || x > 47);
+      // 넘긴 머리: 관자놀이까지 두툼하고 이마선이 가운데로 살짝 올라간다 — 가닥 없이 한 덩어리라 구멍(테두리 고리)이 생기지 않는다
+      const sl = st === 'slick' || st === 'buzz';
+      const inCap = inEll(x, y, cx, capCy, capRx, capRy) && (y < base + 1 + (sl && Math.abs(x + 0.5 - cx) > 7 ? 2 : 0) || x < (sl ? 20 : 17) || x > (sl ? 43 : 47));
       const inStr = owner[j] >= 0;
       if (!inCap && !inStr) continue;
       let col = H[2];
@@ -321,9 +369,19 @@
         const lx = (x - (cx - 8)) / capRx, ly = (y - (topY + 5)) / capRy;
         const l = lx * lx + ly * ly;
         col = l < 0.18 ? H[3] : x > cx + 9 ? H[1] : H[2];
+        if (st === 'slick' && y > topY + 3 && (x < cx ? (x + y) % 6 === 0 : (x - y + 60) % 6 === 0)) col = col === H[3] ? H[2] : H[1];   // 빗어 넘긴 결: 가운데서 양옆 뒤로 비스듬히
+        if (st === 'buzz' && (x * 3 + y * 5) % 7 === 0 && col !== H[3]) col = H[1];                                                       // 짧게 깎은 결
       }
       b.px(x, y, col);
     }
+    // 넘긴 머리 · 아주 짧은 머리: 머리 덩어리와 이마 사이 빈틈(바깥선이 이마에 검은 띠로 그려지던 것)을 머리선으로 메운다
+    if (st === 'slick' || st === 'buzz') for (let x = 12; x < 52; x++) {
+      let y = 4; while (y < 40 && !b.get(x, y)) y++;
+      while (y < 40 && b.get(x, y) && !sameCol(b, x, y, SK[2])) y++;
+      for (let k = 0; y < 40 && k < 8 && !b.get(x, y); k++, y++) b.px(x, y, k === 0 ? H[2] : H[1]);
+    }
+    // 곱슬: 머리 둘레가 동글동글
+    if (st === 'curly') for (let i = 0; i < 9; i++) { const a = Math.PI * (1.08 + i * 0.105), bx = cx + Math.cos(a) * (capRx + 0.5), by = capCy + Math.sin(a) * (capRy + 0.5); b.ellipse(bx, by, 2.6, 2.6, i % 2 ? H[2] : H[1]); b.px(Math.round(bx - 1), Math.round(by - 1), H[3]); }
     // 삐죽머리는 위로도 솟는다
     if (st === 'spiky' || st === 'messy') {
       const tips = st === 'spiky' ? [[17, 13, 7], [24, 9, 8], [32, 8, 9], [40, 9, 8], [47, 13, 7]] : [[20, 11, 5], [30, 9, 6], [41, 10, 5]];

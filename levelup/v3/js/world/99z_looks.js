@@ -64,10 +64,22 @@
   const PALE = ['#e8eef8', '#f0e8e0', '#e0e8f0', '#e8e0f0', '#f4f4f0', '#d8e0e8'];
   const STRAW = ['#e8c878', '#d8b060', '#f0d890', '#c8a050', '#e0c090'];
   const STY = {
-    boy: ['short', 'messy', 'spiky', 'slick', 'neat', 'side', 'buzz', 'wavy'], girl: ['long', 'bob', 'twin', 'pony', 'bun', 'braid', 'hime', 'wavy', 'side'],
-    boyc: ['short', 'messy', 'spiky', 'buzz', 'side'], girlc: ['twin', 'bob', 'pony', 'braid', 'short'],
-    boyo: ['bald', 'short', 'side', 'slick', 'buzz'], girlo: ['bun', 'bob', 'short', 'braid', 'long'],
+    boy: ['short', 'messy', 'spiky', 'slick', 'neat', 'side', 'buzz', 'wavy', 'parted', 'curly', 'shaggy', 'swept'], girl: ['long', 'bob', 'twin', 'pony', 'bun', 'braid', 'hime', 'wavy', 'side', 'parted', 'curly', 'swept'],
+    boyc: ['short', 'messy', 'spiky', 'buzz', 'side', 'curly'], girlc: ['twin', 'bob', 'pony', 'braid', 'short', 'curly'],
+    boyo: ['bald', 'short', 'side', 'slick', 'buzz', 'parted'], girlo: ['bun', 'bob', 'short', 'braid', 'long', 'curly'],
   };
+  /** 얼굴 생김새(눈매 · 얼굴형 · 주근깨 · 점): 지문에는 넣지 않고 사람마다 이름으로 정한다 — 머리 · 옷이 손수 정한 그대로인 사람도 얼굴은 저마다 다르게 */
+  const EYES = { boy: ['round', 'round', 'sharp', 'narrow', 'droopy', 'cat', 'sleepy'], girl: ['round', 'round', 'droopy', 'cat', 'sharp', 'sleepy'], old: ['round', 'sleepy', 'narrow', 'droopy', 'sharp'] };
+  function features(L, key) {
+    const r = rng(hash('face:' + key));
+    const g = L.gender === 'girl' ? 'girl' : 'boy', age = L.age || 'teen';
+    if (L.eyeShape == null) L.eyeShape = pick(r, age === 'old' ? EYES.old : EYES[g]);
+    if (L.faceShape == null) L.faceShape = age === 'child' ? 'round' : pick(r, ['oval', 'oval', 'round', 'slim']);
+    if (L.freckles == null) L.freckles = age !== 'old' && r() < 0.14;
+    if (L.mole == null) L.mole = r() < 0.09 ? (r() < 0.5 ? 1 : 2) : 0;
+    if (L.eyeBig == null && g === 'girl' && age !== 'old' && r() < 0.3) L.eyeBig = true;
+    return L;
+  }
   const KEEP_ACC = ['book', 'staff', 'lute', 'quiver', 'sword', 'pauldron'];
   const DECO = ['scarf', 'earring', 'necklace', 'flower'];
 
@@ -117,7 +129,7 @@
   const BYKEY = new Map();     // 누구 → 생김새
   const RESOLVED = new WeakSet();
   const NAMEREG = new Map();   // 이름@지역 → 자리에 선 사람의 생김새 (장면에 같은 이름이 불려 나오면 같은 얼굴로)
-  function claim(L, key) { const s = sig(L); TAKEN.set(s, key); BYKEY.set(key, L); RESOLVED.add(L); return L; }
+  function claim(L, key) { if (!L.kind && !String(key).startsWith('cast:')) features(L, key); const s = sig(L); TAKEN.set(s, key); BYKEY.set(key, L); RESOLVED.add(L); return L; }
   function resolve(base, key, reg, mode, keep) {
     if (BYKEY.has(key)) return BYKEY.get(key);
     if (!base || base.kind) return base;
@@ -160,6 +172,8 @@
   const FARMER = sig(G.cast.folk('farmer'));
   for (const c of Object.values(G.cast.C)) {
     if (!c.look) continue;
+    // 이야기 인물: 손수 정한 눈매 · 얼굴형이 없으면 이름으로 정한다 (주근깨 · 점은 붙이지 않는다)
+    if (!c.look.kind && c.id !== 'hero') { if (c.look.freckles == null) c.look.freckles = false; if (c.look.mole == null) c.look.mole = 0; features(c.look, 'cast:' + c.id); }
     if (c.look.kind) { CASTLOOK.add(c.look); continue; }
     if (sig(c.look) === FARMER && c.id !== 'farmer') { PLACEHOLDER.push(c); CASTLOOK.add(c.look); continue; }
     const s = sig(c.look), owner = TAKEN.get(s);

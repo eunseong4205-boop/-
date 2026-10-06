@@ -41,7 +41,7 @@
 
   /* ── 옐로 ── */
   add('pika', { name: '피카', color: '#e8e8a0', voice: 1.35, desc: '그늘 골목의 소매치기. 고아들의 「그늘 참새단」 두목.', look: { age: 'child', hair: 'spiky', hc: '#1a1a22', eye: '#e8c040', skin: 'tan', top: 'vest', tc: '#c87a3a', bottom: 'shorts', bc: '#5a4a3a', acc: ['scarf'], scarfC: '#e84a4a' } });
-  add('goldy', { name: '금화왕 골디', color: '#ffd84a', voice: 0.9, desc: '사천왕 · 노랑의 자리. 「공짜는 없어.」', look: { hair: 'slick', hc: '#e8c040', eye: '#e89a20', eyeShape: 'sharp', top: 'coat', tc: '#c89a28', trim: '#fff0a8', bottom: 'pants', bc: '#5a3a1a', cape: '#8a1a3a', acc: ['earring', 'necklace'], gem: '#ff4a6a' } });
+  add('goldy', { name: '금화왕 골디', color: '#ffd84a', voice: 0.9, desc: '사천왕 · 노랑의 자리. 「공짜는 없어.」', look: { hair: 'swept', hc: '#e8c040', eye: '#e89a20', eyeShape: 'sharp', top: 'coat', tc: '#c89a28', trim: '#fff0a8', bottom: 'pants', bc: '#5a3a1a', cape: '#8a1a3a', acc: ['earring', 'necklace'], gem: '#ff4a6a' } });
   add('yana', { name: '야나', color: '#f0c080', voice: 1.15, desc: '모래바다의 길잡이. 여우 귀. 사막의 별자리를 다 외운다.', look: { gender: 'girl', hair: 'bob', hc: '#e8a040', eye: '#40a8a0', skin: 'tan', ears: 'fox', top: 'vest', tc: '#c8905a', trim: '#fff0d0', bottom: 'shorts', bc: '#8a6a4a', acc: ['scarf', 'earring'], scarfC: '#e8d0a0', gem: '#40a8a0' } });
 
   /* ── 퍼플 ── */
