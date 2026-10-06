@@ -38,7 +38,7 @@ html.touch #touch { display: block; position: absolute; inset: 0; pointer-events
 #stick.on { opacity: .9; }
 #knob { position: absolute; left: 50%; top: 50%; width: 42px; height: 42px; margin: -21px 0 0 -21px; border-radius: 50%;
   background: radial-gradient(circle at 40% 35%, #fff6d8, var(--gold) 45%, var(--gold-d)); box-shadow: 0 0 0 2px rgba(11, 9, 20, .8), 0 0 14px rgba(240, 204, 110, .45); }
-#btns { position: absolute; right: 10px; bottom: 10px; width: 218px; height: 196px; pointer-events: none; }
+#btns { position: absolute; right: max(26px, calc(env(safe-area-inset-right, 0px) + 14px)); bottom: 10px; width: 218px; height: 196px; pointer-events: none; }
 .tb { position: absolute; pointer-events: auto; width: 56px; height: 56px; border-radius: 50%; display: grid; place-content: center; text-align: center; line-height: 1; color: #fff;
   background: radial-gradient(circle at 38% 30%, rgba(255, 255, 255, .28), rgba(20, 16, 34, .55) 62%); box-shadow: 0 0 0 1px rgba(0, 0, 0, .6), inset 0 0 0 1px var(--hair), 0 4px 10px rgba(0, 0, 0, .45); opacity: .82; touch-action: none; }
 .tb i { font-style: normal; font-size: 19px; text-shadow: 0 1px 0 rgba(0, 0, 0, .6); }
@@ -49,6 +49,7 @@ html.touch #touch { display: block; position: absolute; inset: 0; pointer-events
 .tb.b { right: 84px; bottom: 0; background: radial-gradient(circle at 38% 30%, #d8e8ff, #5a8aff 34%, #2440b0 74%, #0e1650); }
 .tb.x { right: 88px; bottom: 70px; }
 .tb.y { right: 40px; bottom: 124px; }
+.tb.k2 { right: 108px; bottom: 138px; width: 46px; height: 46px; }
 .tb.r { right: 150px; bottom: 26px; width: 48px; height: 48px; }
 .tb.s { right: 150px; bottom: 96px; width: 52px; height: 52px; opacity: .35; }
 .tb.s.ready { opacity: 1; background: radial-gradient(circle at 38% 30%, #fff8d8, #ffcc4a 40%, #c87a10 80%); box-shadow: 0 0 0 1px #000, inset 0 0 0 1px #fff, 0 0 22px rgba(255, 210, 90, .8); animation: pulse 1s ease-in-out infinite; }
@@ -74,6 +75,10 @@ html.touch #touch { display: block; position: absolute; inset: 0; pointer-events
 #stage.cinema .cine { height: 11%; }
 #fade { position: absolute; inset: 0; background: #000; opacity: 0; pointer-events: none; z-index: 40; transition: opacity .35s; }
 #fade.white { background: #fff; }
+/* 처음 대륙에 들어설 때 한 번: 넓은 땅을 짓는 동안 멈춘 게 아니라는 것을 보인다 */
+#loading { position: absolute; inset: 0; z-index: 41; display: flex; align-items: center; justify-content: center; gap: 10px; pointer-events: none; color: var(--gold, #f0cc6e); font-size: 13px; letter-spacing: .12em; background: #000; }
+#loading[hidden] { display: none; }
+#loading i { width: 8px; height: 8px; background: currentColor; box-shadow: 0 0 10px currentColor; transform: rotate(45deg); }
 #stage.blackout #dialog { z-index: 41; } #stage.blackout #choices { z-index: 42; }
 #bubbles { position: absolute; inset: 0; pointer-events: none; z-index: 12; overflow: hidden; }
 .bub { position: absolute; left: 0; top: 0; max-width: 170px; padding: 5px 9px 6px; background: rgba(250, 245, 232, .97); color: #1e1628; border-radius: 10px;
@@ -264,6 +269,18 @@ html.touch #touch { display: block; position: absolute; inset: 0; pointer-events
 #bosstag b { font-family: var(--disp), 'Galmuri11', sans-serif; font-weight: normal; font-size: 15px; letter-spacing: .08em; color: #f6d77e; }
 #bosstag.rage b { color: #ff9ab8; }
 #bosstag[hidden] { display: none; }
+/* 싸움 중 대사: 보스 이름표 바로 위 자막 한 줄 (싸움을 멈추지도, 한가운데를 가리지도 않는다) */
+#bosstalk { position: absolute; left: 50%; bottom: calc(4.4% + 36px); transform: translate(-50%, 6px); z-index: 13; pointer-events: none; display: flex; align-items: center; gap: 7px; max-width: min(62%, 520px); padding: 3px 20px 3px 4px; --bt: #f0cc6e;
+  background: linear-gradient(90deg, rgba(8, 4, 16, .78), rgba(8, 4, 16, .7) 70%, rgba(8, 4, 16, 0)); border-left: 2px solid var(--bt); opacity: 0; transition: opacity .22s ease, transform .22s ease; }
+#bosstalk.on { opacity: 1; transform: translate(-50%, 0); }
+#bosstalk[hidden] { display: none; }
+#bosstalk canvas { flex: none; width: 30px; height: 30px; image-rendering: pixelated; background: rgba(0, 0, 0, .35); box-shadow: 0 0 0 1px var(--bt), 0 0 8px -2px var(--bt); }
+#bosstalk .t { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+#bosstalk small { font-size: 9px; letter-spacing: .2em; color: var(--bt); line-height: 1.1; }
+#bosstalk small:empty { display: none; }
+#bosstalk b { font-weight: normal; font-size: 12px; line-height: 1.35; color: #f4ecdc; text-shadow: 0 1px 0 #000; }
+@media (orientation: landscape) { html.touch #bosstalk { max-width: 46%; } }
+@media (orientation: portrait) { #bosstalk { max-width: 90%; } }
 
 /* ── 글 꾸미기 (메뉴 · 알림에서도) · 등급 색 ── */
 :is(#modal, #toasts, #choices, #banner) .y { color: var(--gold); }
@@ -324,6 +341,7 @@ button.stat small.fx { color: var(--paper-dim); }
 .ttab b { display: block; font-weight: normal; font-size: 13px; } .ttab small { display: block; font-size: 10px; color: var(--muted); font-variant-numeric: tabular-nums; }
 .ttab.can small { color: var(--exp); }
 .ttab.on { background: rgba(240, 204, 110, .12); box-shadow: inset 0 0 0 1px var(--hair); color: var(--gold); }
+.ttab.dim { opacity: .55; }
 .ttab .tag { position: absolute; top: -7px; right: 4px; }
 .trow { display: grid; grid-template-columns: 58px 1fr; gap: 8px; align-items: stretch; margin-bottom: 8px; }
 .trow .trh { display: grid; place-content: center; text-align: center; border-radius: 9px; background: rgba(0, 0, 0, .25); box-shadow: inset 0 0 0 1px var(--line); }
@@ -345,3 +363,84 @@ button.stat small.fx { color: var(--paper-dim); }
 .skill2.can { box-shadow: inset 0 0 0 1px rgba(110, 231, 176, .7), 0 0 10px rgba(110, 231, 176, .15); }
 .skill2.shut { opacity: .42; } .skill2.lock { opacity: .72; }
 @media (max-width: 560px) { .trow { grid-template-columns: 1fr; } .trow .trh { display: flex; gap: 8px; justify-content: flex-start; padding: 3px 8px; } .guide { flex-direction: column; } .guide .pts { width: 100%; } }
+
+/* ── 메뉴 다듬기: 넓은 화면에서는 가운데로 · 터치는 크게 · 탭 알림 ── */
+.m-body { padding-inline: max(14px, calc((100% - 980px) / 2)); }
+.m-tab { position: relative; }
+.m-tab.badge::after { content: attr(data-n); position: absolute; top: -3px; right: -2px; min-width: 14px; height: 14px; padding: 0 3px; border-radius: 7px; font-size: 9px; line-height: 14px; text-align: center; color: #1a1208; background: #ff8a6a; box-shadow: 0 0 0 1px #0b0914; }
+.m-foot .khint { color: var(--muted); opacity: .7; }
+@media (pointer: coarse) {
+  .m-tab { padding: 9px 14px 10px; font-size: 13px; }
+  .row { min-height: 44px; }
+  .m-foot .khint { display: none; }
+}
+@media (max-width: 520px) { .m-foot { flex-wrap: wrap; gap: 4px 10px; } }
+/* 수첩 */
+.subtabs { display: flex; flex-wrap: wrap; gap: 6px; margin: 2px 0 10px; }
+.subtabs .chip { cursor: pointer; padding: 6px 13px 7px; font-size: 12px; border-radius: 14px; }
+.subtabs .chip.sel { box-shadow: inset 0 0 0 1px var(--gold), 0 0 10px rgba(240, 204, 110, .25); }
+.subtabs .chip.on { color: var(--ink); background: linear-gradient(180deg, var(--gold-l), var(--gold) 55%, #d4a84a); }
+.subtabs .dot { font-style: normal; display: inline-block; min-width: 15px; padding: 0 4px; margin-left: 3px; border-radius: 8px; font-size: 10px; background: #ff8a6a; color: #1a1208; }
+.libhead { display: grid; grid-template-columns: 1fr auto; gap: 2px 10px; align-items: baseline; }
+.libhead b { font-family: var(--disp); font-weight: normal; font-size: 15px; color: var(--gold); }
+.libhead span { font-variant-numeric: tabular-nums; color: var(--paper-dim); font-size: 12px; }
+.libhead small { grid-column: 1 / -1; color: var(--muted); font-size: 11px; line-height: 1.5; word-break: keep-all; }
+.logline { display: grid; grid-template-columns: 4.2em 1fr; gap: 8px; font-size: 12px; line-height: 1.6; color: var(--paper-dim); padding: 3px 0; word-break: keep-all; }
+.logline i { font-style: normal; color: var(--muted); font-variant-numeric: tabular-nums; font-size: 11px; }
+.reader { max-width: 62ch; margin: 6px auto 10px; padding: 16px 18px 12px; background: linear-gradient(180deg, rgba(255, 244, 214, .07), rgba(255, 244, 214, .02)); }
+.reader h4 { font-family: var(--disp); font-weight: normal; font-size: 17px; margin: 0 0 2px; color: var(--gold); text-wrap: balance; }
+.reader .by { display: block; color: var(--muted); font-size: 11px; margin-bottom: 12px; }
+.reader .page { font-size: 14px; line-height: 1.95; color: var(--paper); word-break: keep-all; min-height: 6.5em; }
+.reader .pn { text-align: right; font-size: 11px; color: var(--muted); margin-top: 10px; font-variant-numeric: tabular-nums; }
+.readnav { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; max-width: 62ch; margin: 0 auto 8px; }
+.readnav .btn { padding: 9px 0 10px; text-align: center; }
+.readnav .btn.sel { box-shadow: inset 0 0 0 1px var(--gold), 0 0 12px rgba(240, 204, 110, .35); }
+/* 세로 휴대폰: 메뉴 탭을 두 줄로 — 옆으로 밀지 않아도 다 보이게 */
+@media (max-width: 480px) {
+  .m-tabs { flex-wrap: wrap; justify-content: center; overflow-x: visible; gap: 4px 3px; padding: 6px 8px 4px; }
+  .m-tab { padding: 7px 10px 8px; }
+}
+/* 휴대폰 가로: 메뉴 · 지도 · 가게 창이 조작판(조이스틱 · 버튼)보다 아래에 깔려, 버튼이 지도를 가리고 손가락을 가로채고 「닫기」까지 덮었다 → 창을 맨 위로 */
+html.touch #modal { z-index: 60; }
+/* 휴대폰 가로(화면이 낮다): 창 머리 · 탭을 얇게 — 지도 · 목록이 위로 올라와 한 화면에 더 들어온다 */
+@media (orientation: landscape) and (max-height: 520px) {
+  .m-head { padding: 5px 14px 4px; }
+  .m-title { font-size: 15px; }
+  .m-tabs { padding: 4px 12px 3px; }
+  .m-tab { padding: 4px 11px 5px; }
+  .m-body { padding-top: 4px; }
+  .m-foot { padding: 4px 14px; }
+}
+/* 세로 휴대폰: 메뉴 · 가게 창은 조작판까지 덮어 화면 전체를 쓴다 (예전: 게임 화면 58% 안에 갇혀 비좁던 것) */
+@media (orientation: portrait) {
+  html.touch #modal { position: fixed; inset: 0; z-index: 60; padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+}
+
+/* 기억 속(검은 조각): 살피기 버튼 하나만 */
+#touch.mem .tb:not([data-act="attack"]) { display: none; }
+#touch.mem .sb[data-act="cycle"], #touch.mem .sb[data-act="map"] { display: none; }
+
+/* ───────── 보스 무대 (57_bossfx): 이름 카드 · 2막 · 격파 ───────── */
+#bosscard { position: absolute; left: 0; right: 0; top: 30%; pointer-events: none; z-index: 38; display: flex; flex-direction: column; align-items: center; gap: 2px; --bc: #d84a6a; --bc2: #f4ecdc; font-family: 'Galmuri11', 'Galmuri14', monospace; }
+#bosscard[hidden] { display: none; }
+#bosscard .bc-band { position: absolute; left: -6%; right: -6%; top: -16px; bottom: -16px; background: linear-gradient(90deg, transparent, rgba(8, 4, 16, .9) 16%, rgba(8, 4, 16, .9) 84%, transparent); border-top: 2px solid var(--bc); border-bottom: 2px solid var(--bc); box-shadow: 0 0 24px -4px var(--bc); animation: bcBand var(--bcd, 2.4s) ease forwards; }
+#bosscard .bc-glyph { position: relative; color: var(--bc); font-size: clamp(18px, 4.4vw, 30px); line-height: 1; text-shadow: 0 0 14px var(--bc); animation: bcGlyph var(--bcd, 2.4s) ease forwards; }
+#bosscard .bc-small { position: relative; color: var(--bc2); font-size: clamp(10px, 2.2vw, 14px); letter-spacing: .45em; opacity: .92; animation: bcFade var(--bcd, 2.4s) ease forwards; }
+#bosscard .bc-name { position: relative; color: #fff; font-size: clamp(24px, 6.4vw, 46px); letter-spacing: .12em; white-space: nowrap; text-shadow: 0 0 18px var(--bc), 0 0 2px var(--bc), 0 3px 0 #000; animation: bcName var(--bcd, 2.4s) cubic-bezier(.2, .8, .2, 1) forwards; }
+#bosscard .bc-sub { position: relative; color: var(--bc); font-size: clamp(10px, 2.3vw, 15px); letter-spacing: .28em; text-shadow: 0 0 8px #000; animation: bcFade var(--bcd, 2.4s) ease forwards; }
+#bosscard .bc-slash { position: absolute; left: 50%; top: 50%; width: 0; height: 3px; background: linear-gradient(90deg, transparent, #fff, var(--bc), transparent); transform: translate(-50%, -50%) rotate(-12deg); box-shadow: 0 0 12px var(--bc); animation: bcSlash var(--bcd, 2.4s) ease forwards; }
+#bosscard .bc-sun { position: absolute; left: 50%; top: 50%; width: clamp(90px, 22vw, 170px); aspect-ratio: 1; max-width: 100%; border-radius: 50%; background: radial-gradient(circle, #000 55%, var(--bc) 58%, transparent 72%); transform: translate(-50%, -50%) scale(0); animation: bcSun var(--bcd, 2.4s) ease forwards; }
+#bosscard.k-machine .bc-name { animation: bcGlitch var(--bcd, 2.4s) steps(1) forwards; }
+#bosscard.k-machine .bc-band { background: repeating-linear-gradient(0deg, rgba(8, 4, 16, .92) 0 3px, rgba(20, 14, 34, .92) 3px 4px); }
+#bosscard.k-human .bc-band { animation-name: bcBandH; }
+#bosscard.phase { top: 22%; }
+#bosscard.phase .bc-name { font-size: clamp(20px, 5vw, 36px); }
+#bosscard.final .bc-name { font-size: clamp(20px, 5.2vw, 38px); color: var(--bc2); }
+@keyframes bcName { 0% { letter-spacing: .9em; opacity: 0; filter: blur(5px); } 22% { letter-spacing: .14em; opacity: 1; filter: none; } 80% { opacity: 1; } 100% { opacity: 0; letter-spacing: .26em; } }
+@keyframes bcFade { 0%, 12% { opacity: 0; transform: translateY(6px); } 28%, 80% { opacity: 1; transform: none; } 100% { opacity: 0; } }
+@keyframes bcBand { 0% { transform: scaleX(0); } 16% { transform: scaleX(1); } 82% { opacity: 1; } 100% { opacity: 0; transform: scaleX(1.04); } }
+@keyframes bcBandH { 0% { transform: skewY(-4deg) translateX(-110%); } 16% { transform: skewY(-4deg) translateX(0); } 82% { opacity: 1; } 100% { opacity: 0; transform: skewY(-4deg) translateX(8%); } }
+@keyframes bcGlyph { 0% { transform: scale(3) rotate(-40deg); opacity: 0; } 22% { transform: none; opacity: 1; } 84% { opacity: 1; } 100% { opacity: 0; transform: scale(.8); } }
+@keyframes bcSlash { 0% { width: 0; opacity: 1; } 14% { width: 120%; opacity: 1; } 30% { opacity: 0; } 100% { width: 120%; opacity: 0; } }
+@keyframes bcSun { 0% { transform: translate(-50%, -50%) scale(0); } 25% { transform: translate(-50%, -50%) scale(1); } 80% { opacity: .9; } 100% { opacity: 0; transform: translate(-50%, -50%) scale(1.2); } }
+@keyframes bcGlitch { 0% { opacity: 0; transform: translateX(-8px); } 8% { opacity: 1; transform: translateX(6px); } 12% { transform: translateX(-3px); } 16% { transform: none; } 50% { transform: none; } 52% { transform: translateX(4px); } 54% { transform: none; } 82% { opacity: 1; } 100% { opacity: 0; } }

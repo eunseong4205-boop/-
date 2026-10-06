@@ -31,11 +31,15 @@
       if (got() < 6) {
         const n = PARTS.find((p) => !f('part:' + p.id));
         // 표시는 그 부품을 가진 사람이 있는 집 문 앞
-        const wm = G.build.get('world'), b = wm.buildings.find((bb) => bb.id === n.map);
-        return { text: '부품 모으기 (' + got() + '/6) — 다음: ' + n.name + ' (' + n.where + ')', map: 'world', x: b ? b.doorX : 289, y: b ? b.doorY : 211 };
+        const wm = G.build.get('world'), b = wm.buildings.find((bb) => bb.id === n.map || bb.to === n.map);
+        const w = !b && (wm.warps || []).find((ww) => ww.to === n.map);
+        const at = b ? { x: b.doorX, y: b.doorY } : w ? { x: w.x, y: w.y + 1 } : OW.pt(289, 211);
+        return { text: '부품 모으기 (' + got() + '/6) — 다음: ' + n.name + ' (' + n.where + ')', map: 'world', ...at };
       }
+      // 발사대 방어 중에는 공방이 아니라 발사대를 가리킨다
+      if (ST.COLORFUL.defendT != null && !f('c10_launch')) return { text: '발사대를 지켜라! 다가오는 기사단을 막는다 — 예열 ' + Math.min(100, Math.floor(ST.COLORFUL.defendT / 60 * 100)) + '%', map: 'world', x: PAD.x + 3, y: PAD.y + 9 };
       if (!f('c10_launch')) return { text: '부품이 다 모였다. 피로스 박사에게!', map: 'world', ...OW.pt(289, 211) };
-      return { text: '하늘 정거장으로.', map: 'world', x: PAD.x + 2, y: PAD.y + 6 };
+      return { text: '하늘 정거장으로. (발사대의 무한호에 탄다)', map: 'world', x: PAD.x + 3, y: PAD.y + 8 };
     } });
 
   /* ───────── 물건 ───────── */
@@ -60,7 +64,7 @@
   ST.onMap('world', (m, Wd) => {
     const P = G.props;
     Wd.add(new P.Waystone({ x: px(CT.plaza.x - 3), y: py(CT.plaza.y + 3), wid: 'w_colorful', name: '알록달록 곶' }));
-    Wd.add(new P.Sign({ x: px(PAD.x + 3), y: py(PAD.y + 9), text: '무한호 발사대\n「제412안. 이번엔 진짜다」 — 피로스\n「지난번에도 그랬다」 — 봄바' }));
+    Wd.add(new P.Sign({ x: px(PAD.x + 6), y: py(PAD.y + 9), text: '무한호 발사대\n「제412안. 이번엔 진짜다」 — 피로스\n「지난번에도 그랬다」 — 봄바' }));
     Wd.add(new P.Sign({ x: px(X0 + 12), y: py(Y0 + 21), text: '알록달록 곶 — 쾅! 소리는 성공의 소리\n「폭발은 실패가 아니다. 방향이 틀렸을 뿐이다」' }));
   });
 
@@ -115,13 +119,15 @@
   /* ───────── 부품: 각자의 자리에서 ───────── */
   /** 지도 mapId의 인물 id에게, 조건이 맞을 때 먼저 할 말을 끼워 넣는다 */
   ST.hookTalk = function (mapId, id, cond, fn) {
-    const list = ST.people[mapId] || [];
-    const sp = list.find((x) => x.id === id);
-    if (!sp) { ST.person(mapId, { id, x: 5, y: 4, dir: 'down', when: cond, mark: () => '!', talk: fn }); return; }
-    const old = sp.talk, oldMark = sp.mark, oldWhen = sp.when;
-    sp.when = (s) => cond(s) || (oldWhen ? oldWhen(s) : true);
-    sp.mark = (s) => (cond(s) ? '!' : oldMark ? oldMark(s) : null);
-    sp.talk = async (c, n) => (cond(S()) ? fn(c, n) : old ? old(c, n) : undefined);
+    const all = (ST.people[mapId] || []).filter((x) => x.id === id);
+    if (!all.length) { ST.person(mapId, { id, x: 5, y: 4, dir: 'down', when: cond, mark: () => '!', talk: fn }); return; }
+    // 같은 사람이 장마다 따로 서 있으면(에블린 등) 모두에 건다. 억지로 세우는 건 아무도 안 서 있을 때 첫 사람만 — 둘이 겹쳐 서지 않게
+    all.forEach((sp, i) => {
+      const old = sp.talk, oldMark = sp.mark, oldWhen = sp.when;
+      if (i === 0) { const others = all.slice(1); sp.when = (s) => (oldWhen ? oldWhen(s) : true) || (cond(s) && !others.some((o) => !o.when || o.when(s))); }
+      sp.mark = (s) => (cond(s) ? '!' : oldMark ? oldMark(s) : null);
+      sp.talk = async (c, n) => (cond(S()) ? fn(c, n) : old ? old(c, n) : undefined);
+    });
   };
   const need = (id) => () => f('c10_parts') && !f('part:' + id);
   async function givePart(c, id) { c.flag('part:' + id); await c.getItem('part_' + id); const n = got(); await c.say(null, '무한호 부품 ' + n + '/6', { style: 'sys' }); if (n === 6) await c.say('toria', '찍! 여섯 개 다 모았어! 알록달록 곶으로!', { face: 'happy' }); }
@@ -139,11 +145,11 @@
   });
   ST.hookTalk('g_work', 'bolt', need('fuel'), async (c, n) => {
     c.lock(true);
-    await c.say(n, '피로스. 그 미친놈. …연료 계산을 네 번 틀렸더군. 편지로 고쳐 줬다. 쓸데없는 말 빼고 세 장.', { face: 'closed' });
+    await c.say(n, '피로스. 그 미친놈. …연료 배합을 네 번 틀렸더군. 편지로 고쳐 줬다. 쓸데없는 말 빼고 세 장.', { face: 'closed' });
     await c.say(n, '광맥 바닥 은빛 부스러기. 빛이 아니라 은이다. 먹을 수 없는 빛. 태울 수는 있다. 그러니 탑 없이도 난다.', { face: 'normal' });
-    await c.say('sepia', '연료통 세 개. 내가 채웠다. 3분 동안 계산했다. 이 감정의 이름: 「응원」.', { face: 'happy' });
+    await c.say('sepia', '연료통 세 개. 내가 채웠다. 이번엔 1분 만에 이름을 찾았다. 이 감정의 이름: 「응원」.', { face: 'happy' });
     await givePart(c, 'fuel');
-    await c.say(n, '…하늘에서 흑점을 보거든, 계산하지 마라. 그냥 봐라. 아내가 그랬다. 멈추는 것도 계산이라고.', { face: 'sad' });
+    await c.say(n, '…하늘에서 흑점을 보거든, 따지지 마라. 그냥 봐라. 아내가 그랬다. 멈추는 것도 답이라고.', { face: 'sad' });
     c.lock(false);
   });
   ST.person('g_work', { id: 'sepia', x: 15, y: 6, dir: 'left', when: () => ST.after('c9') || f('c8_done'), talk: async (c, n) => { await c.say(n, ST.lines({ c8: '볼트는 요즘 노래를 흥얼거린다. 음정이 3퍼센트 틀린다. 기록하지 않겠다.', c10: '색 표본 병을 새로 만들었다. 하늘색 칸이 비었다. 하늘에서 담아 와 줄 수 있나.' }), { face: 'smile' }); } });
@@ -167,7 +173,7 @@
       { t: '「하늘에서 본 걸 말해 줄게요. 제일 먼저.」', sub: '돈 대신 이야기로.' },
       { t: '「피카네 참새단도 같이 태워 주면요?」', sub: '농담 반.' },
     ]);
-    if (k === 0) { c.gold(-10000); await c.say(n, '만 닢. 좋아. 나머지 이만은… 돌아와서 갚아. 이자는 연 0퍼센트. 처음 해 보는 계산이군.', { face: 'smile' }); }
+    if (k === 0) { c.gold(-10000); await c.say(n, '만 닢. 좋아. 나머지 이만은… 돌아와서 갚아. 이자는 연 0퍼센트. 처음 해 보는 장사군.', { face: 'smile' }); }
     else if (k === 1) { await c.say(n, '……하. 이야기로 값을 치르겠다. 세린도 그랬지. 「돌아와서 하늘 이야기 해 줄게.」 안 돌아왔어. 그러니까 너는 — 돌아와서 해. 그게 값이다.', { face: 'sad' }); c.bond('goldy', 2); c.flag('goldy_promise'); }
     else { await c.say(n, '하하! 참새들을 로켓에? 그 녀석들이 하늘에서 정거장 전선을 다 훔쳐 올 거다. …좋아, 기분이 좋군. 외판은 공짜다. 오늘만. 평생 처음으로.', { face: 'happy' }); await c.say('pika', '(창문 밖에서) 들었어! 공짜래! 금화왕이 공짜래!', { face: 'happy' }); c.bond('goldy', 1); }
     await givePart(c, 'plating');
@@ -244,16 +250,16 @@
     const Wd = G.world, p = Wd.player;
     let t = 0, spawnT = 0, alive = [];
     const types = ['knight', 'knight', 'bandit', 'mage', 'drone'];
-    S().duel = true;
+    S().duel = true; ST.COLORFUL.defendT = 0;
     await c.freeWhile(() => {
-      t += 1 / 60; spawnT -= 1 / 60;
+      t += 1 / 60; spawnT -= 1 / 60; ST.COLORFUL.defendT = t;
       alive = alive.filter((e) => !e.dead);
       if (spawnT <= 0 && alive.length < 6 && t < 55) { spawnT = 3.2; const side = Math.random() < 0.5 ? -1 : 1; const e = G.foes.spawn(U.pick(types), px(PAD.x + 3) + side * 150, py(PAD.y + 12) + (Math.random() - 0.5) * 60, { tier: 9 }); e.aggro = true; alive.push(e); }
       if (Math.floor(t) !== Math.floor(t - 1 / 60) && Math.floor(t) % 10 === 0 && t > 1) G.ui.toast('예열 ' + Math.min(100, Math.floor(t / 60 * 100)) + '%', 'gold');
       if (S().hp <= 1) { S().hp = G.st.derive(S()).hpMax >> 1; G.ui.toast('봄바가 물약을 던졌다!', 'good'); }
       return t >= 60;
     });
-    S().duel = false;
+    S().duel = false; ST.COLORFUL.defendT = null;
     for (const e of alive) if (!e.dead) { G.fx.shards(e.x, e.y - 8, 8, '#ffffff'); e.dead = true; }
     c.lock(true);
     await c.cinema(true);
@@ -268,7 +274,7 @@
     c.flag('c10_fire_' + ['tower', 'voices', 'self'][k]);
     if (k === 0) {
       c.route('order', 2);
-      await c.narr('발사대 옆 징수탑의 핵을 열었다. 16년 동안 모인 빛이 관을 타고 무한호로 흘렀다. 탑이 꺼졌다. 곶의 마을 불빛이 조금 밝아졌다.\n모인 빛을 쓰는 건 이번이 마지막이다. 그렇게 정했다.');
+      await c.narr('발사대 옆 징수탑의 핵을 열었다. 탑이 모아 둔 빛이 관을 타고 무한호로 흘렀다. 탑이 꺼졌다. 곶의 마을 불빛이 조금 밝아졌다.\n모인 빛을 쓰는 건 이번이 마지막이다. 그렇게 정했다.');
     } else if (k === 1) {
       c.route('dawn', 1); c.route('night', 1);
       const ly = 'lyra';
@@ -295,6 +301,7 @@
     await c.narr('불꽃. 굉음. 몸이 의자에 짓눌렸다. 창밖으로 곶이, 대륙이, 바다가 작아졌다.' + (f('voices') ? '\n대륙 곳곳에서 등불이 반짝였다. 누군가가 보낸 빛 한 방울씩이, 로켓이 지나간 자리를 따라 별처럼 남았다.' : ''));
     await c.say('toria', '…날고 있어. 나 날고 있어. 로켓 안이지만. 이것도 나는 거지? 그렇지?', { face: 'cry' });
     await c.say('lyra', '…응. 나는 거예요.', { face: 'smile' });
+    c.flag('c10p_' + k);
     c.journal(k === 0 ? '무한호가 떴다. 징수탑 하나의 빛을 마지막으로 끌어 썼다.' : k === 1 ? '무한호가 떴다. 리라의 노래가 탑을 타고 흘렀고, 대륙 사람들이 등불 하나씩을 보냈다.' : '무한호가 떴다. 내 빛으로 불을 붙였다. 앞머리가 세 가닥 하얘졌다.');
     if (ST.startStation) await ST.startStation(c);
     else { await c.fade(false, { sec: 1 }); await c.cinema(false); c.lock(false); }
@@ -303,6 +310,6 @@
   /* ───────── 주민 · 가게 ───────── */
   ST.folk('c_shop', { name: '발명 공방 가게', folk: 'inventor', x: 5, y: 3, lines: { c10: async (c) => { const k = await c.choice('폭탄! 물약! 화살! 전부 조금씩 터진다!', ['물건을 산다', '괜찮아요'], { name: '발명 공방 가게' }); if (k === 0) await c.shop('colorful'); } } });
   ST.folk('c_inn', { name: '쾅쾅 여관 주인', folk: 'farmerw', x: 4, y: 3, lines: { c10: async (c) => { const k = await c.choice('베개에 귀마개가 달려 있어요. 쾅 소리 때문에. (60골드)', ['쉰다', '괜찮아요'], { name: '쾅쾅 여관 주인' }); if (k === 0) { if (S().gold >= 60) c.gold(-60); await c.rest(); } } } });
-  ST.folk('world', { name: '곶 아이', folk: 'kid', ...OW.pt(295, 214), wander: 30, barks: ['쾅!', '로켓이다!'], lines: { c10: ['피로스 박사님 로켓 412번째래! 411번째는 우리 집 지붕에 떨어졌어! 지붕에 구멍 났는데 별이 보여서 좋아!', '봄바 누나는 폭탄 던지기 대회 1등이야. 나는 2등. 참가자 둘.'] } });
+  ST.folk('world', { name: '곶 아이', folk: 'kid', ...OW.pt(295, 214), wander: 30, barks: ['쾅!', '로켓이다!'], lines: { c10: ['피로스 박사님이 로켓을 또 만든대! 지난번 건 우리 집 지붕에 떨어졌어! 지붕에 구멍 났는데 별이 보여서 좋아!', '봄바 누나는 폭탄 던지기 대회 1등이야. 나는 2등. 참가자 둘.'] } });
   ST.folk('world', { name: '곶 어부', folk: 'sailor', ...OW.pt(300, 222), lines: { c10: '바다에서 보면 곶이 하루에 세 번 번쩍여. 그걸로 시간을 알아. 로켓 시계야, 우리는.' } });
 })();

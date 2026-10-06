@@ -41,14 +41,24 @@
   function plainLen(sg) { return sg.reduce((a, s) => a + s.t.replace(/\|/g, '').length, 0); }
 
   /* ───────── 알림 · 현수막 ───────── */
-  function toast(text, kind) {
+  /** key를 주면 같은 key의 알림을 새로 쌓지 않고 그 자리에서 고친다 (수련 진행 등) */
+  function toast(text, kind, key) {
     const box = $('toasts');
-    const el = document.createElement('div');
+    let el = key ? box.querySelector('[data-key="' + key + '"]') : null;
+    if (!el) { el = document.createElement('div'); if (key) el.dataset.key = key; box.appendChild(el); }
     el.className = 'toast ' + (kind || '');
     el.innerHTML = markup(text);
-    box.appendChild(el);
+    // 같은 key로 다시 오면 처음부터 다시 보인다 — 예전엔 글만 바꾸고 사라지는 움직임(2.8초 뒤 투명)은 그대로 두어,
+    // 막힌 입구를 두 번째로 밟으면 이미 투명해진 알림에 글만 바뀌어 아무것도 뜨지 않았다
+    // 아직 보이는 중이면 떠오르는 움직임 없이 그대로 다시 머문다(거듭 밀 때 깜박이지 않게)
+    if (key) {
+      const now = performance.now(), shown = el._at && now - el._at < 3500;
+      el.style.animation = 'none'; void el.offsetWidth; el.style.animation = ''; el.style.animationDuration = '4.4s';
+      el.style.animationDelay = shown ? '-0.36s' : '';
+      el._at = shown ? now - 360 : now;
+    }
     while (box.children.length > 4) box.firstChild.remove();
-    setTimeout(() => el.remove(), 2900);
+    clearTimeout(el._t); el._t = setTimeout(() => el.remove(), key ? 4500 : 2900);
   }
   function banner(title, sub, sec) {
     const el = $('banner');
@@ -176,6 +186,15 @@
       M.tabsEl = tabs;
     }
     const body = document.createElement('div'); body.className = 'm-body'; el.appendChild(body); M.body = body;
+    // 마우스 · 손가락으로 누른 줄을 고른 줄로 (예전엔 고른 줄이 맨 위 그대로라, 다시 그린 뒤 그 줄로 — 맨 위로 — 끌려 올라갔다).
+    // 안쪽 탭(무기 · 재능 나무 고르기)은 탭처럼 맨 위부터
+    body.addEventListener('click', (e) => {
+      if (UI.modal !== M) return;
+      const n = e.target && e.target.closest ? e.target.closest('.nav') : null; if (!n || !body.contains(n)) return;
+      const i = navList().indexOf(n); if (i >= 0) { M.sel = i; M.selAt = { key: M.viewKey, sel: i }; }
+      if (e.detail > 0) M.ptr = true;
+      if (n.classList.contains('ttab')) M.resetScroll = true;
+    }, true);
     const foot = document.createElement('div'); foot.className = 'm-foot'; el.appendChild(foot); M.foot = foot;
     el.hidden = false;
     sfx('open');
@@ -183,24 +202,35 @@
     refresh();
     return new Promise((res) => { M.resolve = res; });
   }
-  function setTab(id) { const M = UI.modal; if (!M) return; M.tab = id; M.sel = 0; M.sub = null; sfx('page'); refresh(); M.body.scrollTop = 0; }
+  function setTab(id) { const M = UI.modal; if (!M) return; M.tab = id; M.sel = 0; M.sub = null; M.resetScroll = true; sfx('page'); refresh(); M.body.scrollTop = 0; }
   function refresh() {
     const M = UI.modal; if (!M) return;
-    if (M.tabsEl) [...M.tabsEl.children].forEach((b) => b.classList.toggle('on', b.dataset.tab === M.tab));
+    if (M.tabsEl) [...M.tabsEl.children].forEach((b) => { b.classList.toggle('on', b.dataset.tab === M.tab); const tt = M.o.tabs.find((x) => x.id === b.dataset.tab), n = tt && tt.badge ? tt.badge() : 0; b.classList.toggle('badge', !!n); b.dataset.n = n ? (n > 99 ? '99+' : String(n)) : ''; });
+    if (M.tabsEl && M.tabsEl.scrollWidth > M.tabsEl.clientWidth) { const on = M.tabsEl.querySelector('.on'); if (on) { const l = on.offsetLeft - M.tabsEl.offsetLeft, r = l + on.offsetWidth; if (l < M.tabsEl.scrollLeft) M.tabsEl.scrollLeft = l - 8; else if (r > M.tabsEl.scrollLeft + M.tabsEl.clientWidth) M.tabsEl.scrollLeft = r - M.tabsEl.clientWidth + 8; } }
     const t = M.o.tabs ? M.o.tabs.find((x) => x.id === M.tab) : null;
+    // 보던 자리 지키기: 같은 화면(같은 탭 · 같은 하위 화면)이면 다시 그려도 스크롤은 그대로 — 예전엔 무언가를 고르거나 누를 때마다 맨 위로 올라갔다.
+    // 탭을 바꿀 때 · 새 하위 화면(장비 고르기 · 책 다음 쪽 …)은 맨 위부터, 하위 화면에서 돌아오면 보던 자리로
+    const sc = M.scrolls || (M.scrolls = {});
+    if (M.viewKey != null) sc[M.viewKey] = { top: M.body.scrollTop, sel: M.selAt && M.selAt.key === M.viewKey ? M.selAt.sel : M.sel };
+    const key = M.tab + '|' + (M.sub == null ? '' : typeof M.sub === 'object' ? JSON.stringify(M.sub) : String(M.sub));
+    if (M.resetScroll) delete sc[key];
+    const back = key !== M.viewKey && sc[key];   // 하위 화면에서 돌아왔다 — 보던 자리 · 고른 줄로
+    if (back && !M.resetScroll && back.sel != null) M.sel = back.sel;
     M.body.innerHTML = '';
     if (t) t.render(M.body, M); else if (M.o.render) M.o.render(M.body, M);
+    M.body.scrollTop = M.resetScroll ? 0 : (sc[key] ? sc[key].top : 0);
+    M.viewKey = key; M.resetScroll = false; M.selAt = null;
     const s = S();
     M.foot.innerHTML = (M.o.foot ? M.o.foot() : '') + '<span class="gold">◎ ' + U.fmtInt(s.gold) + '</span>';
     const navs = navList();
     M.sel = U.clamp(M.sel, 0, Math.max(0, navs.length - 1));
-    hlNav();
+    hlNav(M.ptr); M.ptr = false;
   }
   function navList() { const M = UI.modal; return M ? [...M.body.querySelectorAll('.nav')] : []; }
-  function hlNav() {
+  function hlNav(noScroll) {
     const M = UI.modal, navs = navList();
     navs.forEach((n, i) => n.classList.toggle('sel', i === M.sel));
-    const el = navs[M.sel]; if (el && el.scrollIntoView) el.scrollIntoView({ block: 'nearest' });
+    const el = navs[M.sel]; if (!noScroll && el && el.scrollIntoView) el.scrollIntoView({ block: 'nearest' });   // 손으로 누른 뒤에는 화면을 끌지 않는다
   }
   function closeModal(v) {
     const M = UI.modal; if (!M) return;
@@ -239,7 +269,7 @@
     r.style.width = '100%'; r.style.textAlign = 'left';
     let ic = '';
     r.innerHTML = (o.icon ? '<div class="ic"></div>' : '') + '<div class="nm"><b>' + markup(o.name) + '</b>' + (o.desc ? '<small>' + markup(o.desc) + '</small>' : '') + '</div>' + (o.v != null ? '<div class="v">' + markup(String(o.v)) + '</div>' : '');
-    if (o.icon) { const c = o.icon.cloneNode ? o.icon : null; const box = r.querySelector('.ic'); const cv = document.createElement('canvas'); cv.width = 16; cv.height = 16; const g = cv.getContext('2d'); g.imageSmoothingEnabled = false; if (c) g.drawImage(o.icon, Math.round((16 - o.icon.width) / 2), Math.round((16 - o.icon.height) / 2)); box.appendChild(cv); }
+    if (o.icon) { const c = o.icon.cloneNode ? o.icon : null; const box = r.querySelector('.ic'); const cv = document.createElement('canvas'); const sz = o.icon.width > 16 ? 32 : 16; cv.width = sz; cv.height = sz; const g = cv.getContext('2d'); g.imageSmoothingEnabled = false; if (c) g.drawImage(o.icon, Math.round((sz - o.icon.width) / 2), Math.round((sz - o.icon.height) / 2)); box.appendChild(cv); }
     void ic;
     if (o.onClick) r.addEventListener('click', () => { o.onClick(); });
     return r;
@@ -249,6 +279,8 @@
   function itemIcon(id) {
     const it = G.data.ITEMS[id]; const H = G.hud;
     if (!it) return H.icon('none');
+    if (G.gear && G.gear.icon && !it.icon) { const gi = G.gear.icon(id); if (gi) return gi; }
+    if (G.itemArt) { const ai = G.itemArt.icon(id); if (ai) return ai; }   // 잡다한 아이템 · 기술서 · 비기 두루마리의 도트 그림
     if (it.icon) return H.icon(it.icon);
     if (it.type === 'use') return H.icon(it.heal ? 'heart' : 'light');
     if (it.type === 'sword') return swordIcon(it.col);
@@ -266,20 +298,22 @@
   /* ───────── 메뉴 ───────── */
   function menu(tab) {
     if (UI.modal || G.script.running) return;
+    if (UI.menuGate && UI.menuGate(tab)) return;   // 기억 속처럼 수첩을 펴지 않는 곳 (56_shards)
     const D = G.data;
     return openModal({
       title: '비전 수첩', tab: tab || 'bag',
       tabs: [
         { id: 'bag', name: '가방', render: tabBag },
         { id: 'gear', name: '장비', render: tabGear },
-        { id: 'stat', name: '성장', render: (b) => { tabStats(b); tabTree(b); } },
-        { id: 'arts', name: '기술', render: tabArts },
+        { id: 'stat', name: '성장', render: (b) => { tabStats(b); tabTree(b); }, badge: () => S().pts || 0 },
+        { id: 'skills', name: '스킬', render: tabSkills },
+        { id: 'tools', name: '도구', render: tabTools },
         { id: 'quest', name: '부탁', render: tabQuest },
-        { id: 'book', name: '수첩', render: tabBook },
+        { id: 'book', name: '수첩', render: tabBook, badge: () => (G.lib ? G.lib.unread(S()) : 0) },
         { id: 'map', name: '지도', render: tabMap },
         { id: 'opt', name: '설정', render: tabOpt },
       ],
-      foot: () => { const s = S(); return '<span>Lv ' + s.lv + '</span><span' + (s.pts > 0 ? ' style="color:var(--gold)"' : '') + '>성장 점수 ' + (s.pts || 0) + '</span><span>' + G.prog.diff().name + '</span><span>' + U.fmtTime(s.t) + '</span>'; },
+      foot: () => { const s = S(); return '<span>Lv ' + s.lv + '</span><span' + (s.pts > 0 ? ' style="color:var(--gold)"' : '') + '>성장 점수 ' + (s.pts || 0) + '</span><span>' + G.prog.diff().name + '</span><span>' + U.fmtTime(s.t) + '</span><span class="khint">Q · E 탭 · Esc 닫기</span>'; },
     });
     void D;
   }
@@ -355,6 +389,7 @@
     if (it.def && it.def < 1) p.push('피해 -' + Math.round((1 - it.def) * 100) + '%');
     if (it.resist) p.push({ heat: '더위', cold: '추위', all: '더위 · 추위' }[it.resist] + ' 막음');
     if (it.fx) for (const k of ['str', 'vit', 'sta', 'int', 'dex']) if (it.fx[k]) p.push(G.prog.STAT_NAME[k] + (it.fx[k] > 0 ? ' +' : ' ') + it.fx[k]);
+    if (G.gear && G.gear.line) { const gx = G.gear.line(it); if (gx) p.push(gx); }
     if (it.req) p.push('필요 ' + G.prog.reqText(S(), it.req));
     return p.join(' · ');
   }
@@ -403,15 +438,15 @@
     body.appendChild(row({ icon: G.hud.icon('special'), name: '필살기 — ' + gname(spc), desc: gradeLabel(spc) + ' · ' + spc.desc + ' (익힌 것 ' + Object.keys(s.specials).length + ' / ' + Object.keys(G.data.SPECIALS).length + ')', onClick: () => { M.sub = 'special'; M.sel = 0; sfx('select'); refresh(); } }));
     sec(body, '능력치');
     const dl = document.createElement('dl'); dl.className = 'kv card';
-    const kv = [['하트', (d.hpMax / 4) + '칸'], ['검 공격', d.atk.toFixed(1) + (d.el ? ' (' + { fire: '불', ice: '얼음', light: '빛', bolt: '번개', poison: '독', dark: '어둠' }[d.el] + ')' : '')], ['활 공격', d.bowAtk.toFixed(1)], ['마법 배율', '×' + d.magMul.toFixed(2)], ['치명타', Math.round(d.crit * 100) + '%'], ['받는 피해', Math.round(d.def * 100 * G.prog.diff().hurt) + '%'], ['MP', Math.floor(s.mp) + ' / ' + d.mpMax], ['기력', Math.round(d.stamMax)], ['구르기 무적', d.rollIframes.toFixed(2) + '초']];
+    const kv = [['하트', (d.hpMax / 4) + '칸'], ['검 공격', d.atk.toFixed(1) + (d.el ? ' (' + { fire: '불', ice: '얼음', light: '빛', bolt: '번개', poison: '독', dark: '어둠' }[d.el] + ')' : '')], ['활 공격', d.bowAtk.toFixed(1)], ['마법 배율', '×' + d.magMul.toFixed(2)], ['치명타', Math.round(d.crit * 100) + '%'], ['받는 피해', Math.round(d.def * 100 * G.prog.diff().hurt) + '%'], ['MP', Math.floor(s.mp) + ' / ' + d.mpMax], ['MP 회복', (d.mpRegen || 0).toFixed(1) + '/초' + (d.mpCalm ? ' (쉬는 중)' : '')], ['화살', s.ammo.arrows + ' / ' + s.ammo.arrowsMax + (d.arrowRet ? ' · 회수 ' + Math.round(d.arrowRet * 100) + '%' : '')], ['기력', Math.round(d.stamMax)], ['구르기 무적', d.rollIframes.toFixed(2) + '초']];
     dl.innerHTML = kv.map(([a, b]) => '<dt>' + a + '</dt><dd>' + b + '</dd>').join('');
     body.appendChild(dl);
   }
   /* ── 성장: 안내 카드 · 능력치 · 재능 나무 (갈래 탭) ── */
   const STYLE = {
-    sword: { name: '검', stat: 'str', tree: '검술', col: '#ff8a6a', why: '힘을 올리면 검 피해가 커지고 무거운 검을 든다. 체력을 곁들이면 앞에 서서 버틴다.', side: 'vit' },
-    bow: { name: '활', stat: 'dex', tree: '궁술', col: '#ffe066', why: '솜씨를 올리면 활 피해 · 치명타 · 시위 속도가 오른다. 기력을 곁들이면 구르며 쏜다.', side: 'sta' },
-    magic: { name: '마법', stat: 'int', tree: '마법', col: '#8ab8ff', why: '지력을 올리면 마법 피해 · MP · 필살 게이지가 오른다. 체력을 곁들이면 덜 쓰러진다.', side: 'vit' },
+    sword: { name: '검', stat: 'str', tree: '검술', col: '#ff8a6a', why: '장점: 가장 세고 자원이 들지 않으며 휘두르면 여럿을 함께 벤다. 단점: 붙어서 싸워야 해서 맞기 쉽다. 힘을 올리면 검 피해가 커지고 무거운 검을 든다. 체력을 곁들이면 앞에 서서 버틴다.', side: 'vit' },
+    bow: { name: '활', stat: 'dex', tree: '궁술', col: '#ffe066', why: '장점: 멀리서 안전하게, 멀수록 아프다. 다 모은 화살은 두 배 반 · 꿰뚫는다. 단점: 화살이 든다 — 맞힌 화살은 쓰러뜨린 자리에서 줍고, 10개 밑이면 저절로 깎는다. 솜씨를 올리면 활 피해 · 치명타 · 시위 속도 · 화살 회수가 오른다. 기력을 곁들이면 구르며 쏜다.', side: 'sta' },
+    magic: { name: '마법', stat: 'int', tree: '마법', col: '#8ab8ff', why: '장점: 여럿을 한꺼번에 · 얼리고 태우고 기절시킨다. 단점: MP가 든다 — 저절로 차고, 1.5초 쉬면 더 빨리 찬다. 한 적만 상대할 땐 검보다 약하다. 지력을 올리면 마법 피해 · MP · MP 회복이 오른다. 체력을 곁들이면 덜 쓰러진다.', side: 'vit' },
   };
   /** 지금 무엇으로 싸우는가: 능력치에 가장 많이 쓴 쪽, 비기면 든 무기 */
   function styleOf(s) {
@@ -436,10 +471,10 @@
     const next = (id) => { const s2 = JSON.parse(JSON.stringify(s)); s2.stats[id] = (s2.stats[id] || 0) + 1; return G.st.derive(s2); };
     const effect = {
       str: (a, b) => ['검 피해 ×' + (1 + P.soft(a.stats.str, 0.04)).toFixed(2), '×' + (1 + P.soft(b.stats.str, 0.04)).toFixed(2)],
-      vit: (a, b) => ['하트 ' + a.hpMax / 4 + '칸 · 받는 피해 ' + (Math.round(a.def * 1000) / 10) + '%', (b.hpMax > a.hpMax ? '하트 +¼칸 · ' : '') + '피해 ' + (Math.round(b.def * 1000) / 10) + '%'],
+      vit: (a, b) => { const v = a.stats.vit, left = 6 - (v % 6); return ['하트 ' + a.hpMax / 4 + '칸 · 받는 피해 ' + (Math.round(a.def * 1000) / 10) + '%', (b.hpMax > a.hpMax ? '하트 +1칸! · ' : '다음 하트까지 ' + left + '점 · ') + '피해 ' + (Math.round(b.def * 1000) / 10) + '%']; },
       sta: (a, b) => ['기력 ' + Math.round(a.stamMax) + ' · 회복 ×' + a.stamRegen.toFixed(2), '기력 ' + Math.round(b.stamMax)],
-      int: (a, b) => ['마법 ×' + a.magMul.toFixed(2) + ' · MP ' + a.mpMax, '×' + b.magMul.toFixed(2) + ' · MP ' + b.mpMax],
-      dex: (a, b) => ['활 ' + a.bowAtk.toFixed(1) + ' · 치명타 ' + Math.round(a.crit * 100) + '%', '활 ' + b.bowAtk.toFixed(1) + ' · ' + Math.round(b.crit * 100) + '%'],
+      int: (a, b) => ['마법 ×' + a.magMul.toFixed(2) + ' · MP ' + a.mpMax + ' · 회복 ' + (a.mpRegenNat || 0).toFixed(2) + '/초', '×' + b.magMul.toFixed(2) + ' · MP ' + b.mpMax + ' · ' + (b.mpRegenNat || 0).toFixed(2) + '/초'],
+      dex: (a, b) => ['활 ' + a.bowAtk.toFixed(1) + ' · 치명타 ' + Math.round(a.crit * 100) + '% · 회수 ' + Math.round((a.arrowRet || 0) * 100) + '%', '활 ' + b.bowAtk.toFixed(1) + ' · ' + Math.round(b.crit * 100) + '% · ' + Math.round((b.arrowRet || 0) * 100) + '%'],
     };
     for (const st of P.STATS) {
       const base = s.stats[st.id] || 0, bonus = d.stats[st.id] - base, rec = st.id === SY.stat || st.id === SY.side;
@@ -455,32 +490,94 @@
         const couldBefore = new Set(Object.keys(s.inv).filter((k) => G.data.ITEMS[k] && G.data.ITEMS[k].req && P.reqOk(s, G.data.ITEMS[k].req)));
         s.pts--; s.stats[st.id] = base + 1; sfx('skill');
         for (const k of Object.keys(s.inv)) { const it = G.data.ITEMS[k]; if (it && it.req && !couldBefore.has(k) && P.reqOk(s, it.req)) toast('이제 ' + gname(it) + '을(를) 다룰 수 있다!', 'gold'); }
-        if (st.id === 'vit') { const d2 = G.st.derive(s); if (Math.floor((base + 1) / 3) > Math.floor(base / 3)) s.hp = Math.min(d2.hpMax, s.hp + 1); }
+        if (st.id === 'vit') { const d2 = G.st.derive(s); if (d2.hpMax > d.hpMax) { s.hp = Math.min(d2.hpMax, s.hp + (d2.hpMax - d.hpMax)); toast('하트가 한 칸 늘었다!', 'good'); sfx('heart'); } }
         if (st.id === 'int') s.mp = Math.min(G.st.derive(s).mpMax, s.mp + 3);
         refresh();
       });
       body.appendChild(b);
     }
   }
-  function tabArts(body) {
-    const s = S(), D = G.data, P = G.prog;
-    sec(body, '도구 — 도구 버튼으로 쓴다');
+  /* ── 도구: 도구 버튼(I)으로 쓰는 것 · 화살 · 폭탄 ── */
+  function tabTools(body) {
+    const s = S(), D = G.data;
+    note(body, markup('도구는 무기가 아니다 — 든 무기와 상관없이 [y]도구 버튼(I)[/]으로 쓴다. 하나를 골라 둔다.'));
+    sec(body, '도구');
     const tools = Object.keys(s.tools).filter((k) => k !== 'bow');
     if (!tools.length) note(body, '아직 도구가 없다. 던전 깊은 곳 큰 상자에 잠들어 있다.');
     for (const k of tools) body.appendChild(row({ icon: G.hud.icon(D.ITEMS[k].icon || k), name: (s.tool === k ? '[y]◆ ' : '') + D.ITEMS[k].name + (s.tool === k ? '[/]' : ''), desc: D.ITEMS[k].desc, onClick: () => { s.tool = k; sfx('equip'); refresh(); } }));
-    sec(body, '마법 — 고른 하나를 마법 버튼으로 건다');
-    const sp = Object.keys(s.spells);
-    if (!sp.length) note(body, '아직 마법을 모른다. 마도서를 읽으면 배운다.');
-    const d = G.st.derive(s);
-    for (const k of sp) {
-      const S2 = D.SPELLS[k]; if (!S2) continue; const ok = P.reqOk(s, S2.req);
-      body.appendChild(row({ icon: G.hud.icon(S2.icon), name: (s.spell === k ? '[y]◆[/] ' : '') + gname(S2), v: 'MP ' + Math.round(S2.mp * d.mpCost), desc: gradeLabel(S2) + ' — ' + S2.desc + (S2.req ? ' · 필요 ' + P.reqText(s, S2.req) : ''), dim: !ok, onClick: () => {
-        if (!ok) { toast('아직 다룰 수 없다: ' + P.reqText(s, S2.req).replace(/\[\/?r\]/g, ''), 'bad'); sfx('buzz'); return; }
-        s.spell = k; sfx('equip'); refresh();
+    sec(body, '탄약');
+    body.appendChild(row({ icon: G.hud.icon('arrows'), name: '화살', v: s.ammo.arrows + ' / ' + s.ammo.arrowsMax, desc: s.tools.bow ? '활로 쏘고, 활 스킬에도 쓴다.' : '활이 없다' }));
+    body.appendChild(row({ icon: G.hud.icon('bomb'), name: '폭탄', v: s.ammo.bombs + ' / ' + s.ammo.bombsMax, desc: s.tools.bomb ? '도구로 폭탄을 골라 두면 도구 버튼으로 놓는다.' : '폭탄 가방이 없다' }));
+  }
+  /* ── 스킬: 무기 탭 → 등급별 스킬(L) 열다섯 · 마법은 공격 버튼으로 거는 주문 · 필살기(O) ── */
+  let skillW = null;
+  function tabSkills(body) {
+    const s = S(), D = G.data, P = G.prog, SN = G.stance, SKL = G.skills;
+    if (!SN) return;
+    const cur = SN.cur(s), have = SN.avail(s);
+    if (!skillW || !SN.WEAPONS.includes(skillW)) skillW = cur;
+    note(body, markup('지금 든 무기: [y]' + SN.WNAME[cur] + '[/] — [y]K[/]로 바꿔 든다. 무기마다 [y]스킬 둘(L · U)[/]과 [y]필살기(O)[/] 하나를 골라 둔다. 스킬은 쓸수록 [y]숙련 ★[/]이 오른다(★마다 피해 +8% · 대기 -5%).'));
+    // 무기 탭
+    const tabs = document.createElement('div'); tabs.className = 'ttabs';
+    for (const w of SN.WEAPONS) {
+      const list = Object.keys(SN.ASK).filter((k) => SN.ASK[k].w === w), got = list.filter((k) => s.askills && s.askills[k]).length;
+      const b = document.createElement('button'); b.className = 'nav ttab' + (w === skillW ? ' on' : '') + (have.includes(w) ? '' : ' dim');
+      b.innerHTML = '<b>' + SN.WNAME[w] + (w === cur ? ' ◆' : '') + '</b><small>스킬 ' + got + ' / ' + list.length + '</small>';
+      b.addEventListener('click', () => { skillW = w; sfx('page'); refresh(); });
+      tabs.appendChild(b);
+    }
+    body.appendChild(tabs);
+    const w = skillW, own = have.includes(w), d = G.st.derive(s);
+    if (!own) note(body, markup('[s]아직 ' + SN.WNAME[w] + '이 없다 — 스킬은 미리 익혀 둘 수 있다.[/]'));
+    const on = SN.equipped(s, w, 1), on2 = SN.equipped(s, w, 2);
+    const list = Object.keys(SN.ASK).filter((k) => SN.ASK[k].w === w);
+    note(body, markup('스킬 칸 둘 — [y]L[/](오른쪽 단추) · [y]U[/](R · Shift+오른쪽 단추 · 휴대폰 ✷). 지금: L ' + (on ? '[y]' + SN.ASK[on].name + '[/]' : '[s]비었다[/]') + ' · U ' + (on2 ? '[y]' + SN.ASK[on2].name + '[/]' : '[s]비었다[/]') + '\n[s]익힌 스킬을 누르면 L에 끼우고 원래 L의 스킬은 U로. 끼운 스킬을 누르면 L ↔ U를 바꾼다.[/]'));
+    for (let g = 1; g <= 5; g++) {
+      const lg = list.filter((k) => (SN.ASK[k].grade || 1) === g); if (!lg.length) continue;
+      const GR = P.GRADES[g];
+      sec(body, GR.name + ' 스킬' + (SKL && SKL.GREQ[g] ? ' — 필요 ' + P.STAT_NAME[{ sword: 'str', bow: 'dex', magic: 'int' }[w]] + ' ' + SKL.GREQ[g].s + ' · Lv ' + SKL.GREQ[g].lv : ''));
+      for (const k of lg) {
+        const A = SN.ASK[k], got = !!(s.askills && s.askills[k]), ok = P.reqOk(s, A.req), eq = on === k, eq2 = on2 === k;
+        const rk = SKL ? SKL.rank(s, k) : 1, nx = SKL && got ? G.stance.nextRank && G.stance.nextRank(s, k) : null;
+        const cost = [A.cost.st ? '기력 ' + A.cost.st : '', A.cost.ar ? '화살 ' + A.cost.ar : '', A.cost.mp ? 'MP ' + Math.round(A.cost.mp * d.mpCost) : '', A.cost.mpX ? 'MP 주문×' + A.cost.mpX : ''].filter(Boolean).join(' · ');
+        const src = SKL ? SKL.sources(k) : [];
+        const stars = got ? ' [y]' + '★'.repeat(rk) + '[/][s]' + '☆'.repeat(5 - rk) + '[/]' : '';
+        const tail = got ? (ok ? (nx ? ' — 숙련 ' + ((s.askUse && s.askUse[k]) || 0) + '회, 다음 ★까지 ' + nx + '번' : ' — 숙련 끝(★5)') : ' — [r]필요: ' + P.reqText(s, A.req).replace(/\[\/?r\]/g, '') + '[/]') : ' — [s]얻는 곳: ' + (src.length ? src.join(' · ') : '아직 알려지지 않았다') + '[/]' + (A.req && !ok ? ' · [r]필요 ' + P.reqText(s, A.req).replace(/\[\/?r\]/g, '') + '[/]' : '');
+        body.appendChild(row({ icon: G.hud.icon(A.icon || k), name: (eq ? '[y]◆L[/] ' : eq2 ? '[y]◆U[/] ' : '') + (got ? '[g' + g + ']' : '[s]') + A.name + '[/]' + stars, v: cost + ' · ' + A.cd + '초', desc: A.desc + tail, dim: !got || !ok, onClick: () => {
+          if (!got) { toast(src.length ? '얻는 곳: ' + src[0] : '아직 익히지 못했다', 'bad'); sfx('buzz'); return; }
+          if (!ok) { toast('아직 다룰 수 없다: ' + P.reqText(s, A.req).replace(/\[\/?r\]/g, ''), 'bad'); sfx('buzz'); return; }
+          // 안 낀 것 → L (원래 L은 U로) · L의 것 → U · U의 것 → L
+          if (eq) SN.setSlot(s, w, 2, k); else if (eq2) SN.setSlot(s, w, 1, k); else { const old = on; SN.setSlot(s, w, 1, k); if (old) SN.setSlot(s, w, 2, old); }
+          const a1 = SN.equipped(s, w, 1), a2 = SN.equipped(s, w, 2);
+          sfx('equip'); toast(SN.WNAME[w] + ' 스킬 — L ' + (a1 ? SN.ASK[a1].name : '없음') + ' · U ' + (a2 ? SN.ASK[a2].name : '없음'), 'gold'); refresh();
+        } }));
+      }
+    }
+    // 마법: 공격 버튼으로 거는 주문
+    if (w === 'magic') {
+      sec(body, '주문 — 마법을 들고 공격 버튼(J)');
+      const sp = Object.keys(s.spells);
+      if (!sp.length) note(body, '아직 주문을 모른다. 마도서를 읽으면 배운다.');
+      for (const k of sp) {
+        const S2 = D.SPELLS[k]; if (!S2) continue; const ok = P.reqOk(s, S2.req);
+        body.appendChild(row({ icon: G.hud.icon(S2.icon), name: (s.spell === k ? '[y]◆[/] ' : '') + '주문: ' + gname(S2), v: 'MP ' + Math.round(S2.mp * d.mpCost), desc: gradeLabel(S2) + ' — ' + S2.desc + (S2.req ? ' · 필요 ' + P.reqText(s, S2.req) : ''), dim: !ok, onClick: () => {
+          if (!ok) { toast('아직 다룰 수 없다: ' + P.reqText(s, S2.req).replace(/\[\/?r\]/g, ''), 'bad'); sfx('buzz'); return; }
+          s.spell = k; sfx('equip'); refresh();
+        } }));
+      }
+    }
+    // 필살기
+    sec(body, '필살기 — ' + SN.WNAME[w] + '을 들고 O');
+    const sps = Object.keys(D.SPECIALS).filter((k) => (D.SPECIALS[k].type || 'sword') === w && s.specials[k]);
+    for (const k of sps) {
+      const sp = D.SPECIALS[k], ok = P.reqOk(s, sp.req), eq = (s.specialBy && s.specialBy[w] === k) || (!(s.specialBy && s.specialBy[w]) && G.combat.specialFor && w === cur && G.combat.specialFor(s) === k);
+      body.appendChild(row({ icon: G.hud.icon('special'), name: (eq ? '[y]◆[/] ' : '') + '필살기: ' + gname(sp), desc: gradeLabel(sp) + ' — ' + sp.desc + (sp.req ? ' · 필요 ' + P.reqText(s, sp.req) : ''), dim: !ok, onClick: () => {
+        if (!ok) { toast('아직 다룰 수 없다: ' + P.reqText(s, sp.req).replace(/\[\/?r\]/g, ''), 'bad'); sfx('buzz'); return; }
+        s.specialBy = s.specialBy || {}; s.specialBy[w] = k; s.specialMove = k; sfx('equip'); toast(SN.WNAME[w] + ' 필살기: ' + sp.name, 'gold'); refresh();
       } }));
     }
-    const unknown = Object.keys(D.SPELLS).filter((k) => !s.spells[k]).length;
-    if (unknown) note(body, markup('[s]아직 모르는 마법 ' + unknown + '가지 — 마도구점 · 던전에서 마도서를 찾자.[/]'));
+    if (!sps.length) note(body, markup('[s]' + SN.WNAME[w] + ' 필살기가 아직 없다 — 비기 두루마리 · 비문 · 연성으로 익힌다.[/]'));
+    if (G.skills2 && G.skills2.craftSection) G.skills2.craftSection(body, w, { sec, note, markup, row, toast, refresh });
   }
   let treeSel = null;
   function tabTree(body) {
@@ -500,8 +597,8 @@
     }
     body.appendChild(tabs);
     const cols = D.SKILLS.filter((x) => x.tree === treeSel);
-    const ROWLV = [0, 1, 6, 12, 18, 26, 36];
-    for (let r = 1; r <= 6; r++) {
+    const ROWLV = [0, 1, 6, 12, 18, 26, 36, 44];
+    for (let r = 1; r <= 7; r++) {
       const list = cols.filter((x) => x.row === r); if (!list.length) continue;
       const lvOk = s.lv >= ROWLV[r];
       const wrap = document.createElement('div'); wrap.className = 'trow' + (lvOk ? '' : ' locked');
@@ -523,6 +620,8 @@
           s.pts -= sk.cost; s.skills[sk.id] = true; sfx('skill'); toast('재능: ' + sk.name + ' (' + P.gradeOf(sk).name + ')', 'gold');
           if (sk.id === 'sv_heart') s.hp = G.st.derive(s).hpMax;
           if (sk.id === 'bw_quiver') { s.ammo.arrowsMax += 30; }
+          if (sk.act && G.stance) G.stance.learn(s, sk.act);
+          if (sk.onLearn) sk.onLearn(s);
           refresh();
         });
         opts.appendChild(b);
@@ -544,8 +643,78 @@
     sec(body, '끝낸 부탁 ' + done.length);
     for (const k of done) body.appendChild(row({ name: '[s]' + Q[k].name + '[/]', desc: Q[k].after || '', dim: true }));
   }
-  function tabBook(body) {
-    const s = S(), T = G.data.TRUTHS || {}, B = G.data.BOOKS || {};
+  /* ───────── 수첩: 일지 · 사람 · 서재 · 발견 · 진실 (+ 책 읽기) ───────── */
+  let bookSub = 'log';
+  const BOOK_SUBS = [['log', '일지'], ['people', '사람'], ['lib', '서재'], ['disc', '발견'], ['truth', '진실']];
+  const REG_ORDER = ['green', 'red', 'amber', 'blue', 'yellow', 'purple', 'mist', 'rainbow', 'white', 'gray', 'black', 'colorful'];
+  function tabBook(body, M) {
+    const s = S();
+    if (M && M.sub && M.sub.read) { bookReader(body, M); return; }
+    const unread = G.lib ? G.lib.unread(s) : 0;
+    const bar = document.createElement('div'); bar.className = 'subtabs'; bar.dataset.cols = String(BOOK_SUBS.length);
+    for (const [id, nm] of BOOK_SUBS) {
+      const b = document.createElement('button'); b.className = 'chip nav' + (bookSub === id ? ' on' : '');
+      b.innerHTML = esc(nm) + (id === 'lib' && unread ? ' <i class="dot">' + unread + '</i>' : '');
+      b.addEventListener('click', () => { if (bookSub === id) return; bookSub = id; sfx('page'); const Mm = UI.modal; if (Mm) Mm.sel = BOOK_SUBS.findIndex((x) => x[0] === id); refresh(); });
+      bar.appendChild(b);
+    }
+    body.appendChild(bar);
+    ({ log: bookLog, people: bookPeople, lib: bookLib, disc: bookDisc, truth: bookTruth })[bookSub](body, s);
+  }
+  const openRead = (id) => { const M = UI.modal; if (!M) return; M.sub = { read: id, page: 0, back: M.sel }; M.sel = 2; sfx('page'); refresh(); M.body.scrollTop = 0; };
+  function bookLog(body, s) {
+    sec(body, '지금 할 일');
+    const goal = G.story && G.story.goalText ? G.story.goalText() : '';
+    note(body, goal ? markup(goal) : '마음 가는 대로.');
+    sec(body, '일지 ' + s.log.length);
+    if (!s.log.length) note(body, '아직 적은 것이 없다.');
+    for (const l of s.log.slice(0, 60)) { const d = document.createElement('div'); d.className = 'logline'; d.innerHTML = '<i>' + esc(U.fmtTime(l.t || 0)) + '</i><span>' + markup(l.text) + '</span>'; body.appendChild(d); }
+  }
+  function bookPeople(body, s) {
+    const met = G.cast ? G.cast.met() : [];
+    sec(body, '만난 사람 ' + met.length);
+    if (!met.length) note(body, '아직 이야기를 나눈 사람이 없다.');
+    for (const c of met) body.appendChild(row({ name: c.name, desc: c.note ? c.note(s) : c.desc, v: s.bond[c.id] ? '♥'.repeat(Math.min(5, s.bond[c.id])) : '' }));
+  }
+  function bookLib(body, s) {
+    const L = G.data.LIBRARY || {}, B = G.data.BOOKS || {};
+    const [got, all] = G.lib ? G.lib.count(s) : [0, 0];
+    const head = document.createElement('div'); head.className = 'card libhead';
+    head.innerHTML = '<b>서재</b><span>' + got + ' / ' + all + '권</span><small>블루 대도서관의 서가 · 마을 집 책장 · 들판에서 찾은 글이 여기 꽂힌다. 처음 들어선 땅의 길잡이 글도.</small>';
+    body.appendChild(head);
+    for (const [cat, cname] of (G.lib ? G.lib.CATS : [])) {
+      const list = Object.values(L).filter((e) => e.cat === cat);
+      const have = list.filter((e) => s.lib && s.lib[e.id]);
+      sec(body, cname + ' ' + have.length + ' / ' + list.length);
+      if (!have.length) { note(body, markup('[s]아직 한 권도 없다.[/]')); continue; }
+      for (const e of have) body.appendChild(row({ name: (s.libNew && s.libNew[e.id] ? '[y]● [/]' : '') + e.title, desc: e.by || '', v: e.pages.length + '쪽', onClick: () => openRead(e.id) }));
+    }
+    const books = Object.keys(s.books || {}).filter((k) => B[k]);
+    if (books.length) { sec(body, '찾은 기록 ' + books.length); for (const k of books) body.appendChild(row({ name: B[k].name, desc: B[k].short || '', v: B[k].pages.length + '쪽', onClick: () => openRead('B:' + k) })); }
+  }
+  function bookDisc(body, s) {
+    if (!G.explore) { note(body, '아직 찾은 곳이 없다.'); return; }
+    const [got, all] = G.explore.count();
+    const head = document.createElement('div'); head.className = 'card libhead';
+    head.innerHTML = '<b>발견</b><span>' + got + ' / ' + all + '곳</span><small>길 밖으로 걸어 처음 닿은 곳. 지도에 점으로 남는다. ◆는 작은 이야기 — 밤에만, 무언가를 가졌을 때만 풀리는 것도 있다.</small>';
+    body.appendChild(head);
+    const by = G.explore.byRegion(), NM = (G.ow && G.ow.SHORT) || {};
+    for (const reg of REG_ORDER) {
+      const list = by[reg]; if (!list) continue;
+      const found = list.filter((q) => q.found);
+      if (!found.length && !(G.story.regionOpen && G.story.regionOpen(reg))) continue;
+      sec(body, (NM[reg] || reg) + ' ' + found.length + ' / ' + list.length);
+      if (!found.length) { note(body, '아직 찾은 곳이 없다. 길에서 벗어나 걸어 보자.'); continue; }
+      found.sort((a, b) => (a.pl.tale ? 0 : 1) - (b.pl.tale ? 0 : 1));
+      for (const q of found) {
+        const st = q.state, tl = !!q.pl.tale;
+        const badge = !tl ? '' : st === 'done' ? '[g]끝맺음[/]' : st === 'more' ? '[y]이어지는 중[/]' : '[s]아직[/]';
+        body.appendChild(row({ name: (tl ? '◆ ' : '') + q.pl.name, desc: q.pl.blurb + (tl && st !== 'done' && q.hint ? ' — [y]' + q.hint + '[/]' : ''), v: badge, dim: tl && st === 'done' }));
+      }
+    }
+  }
+  function bookTruth(body, s) {
+    const T = G.data.TRUTHS || {};
     sec(body, '마음의 기울기');
     const r = s.route, tot = Math.max(1, r.dawn + r.order + r.night);
     const bars = document.createElement('div'); bars.className = 'card';
@@ -553,16 +722,28 @@
     body.appendChild(bars);
     if (G.story && G.story.routeNote) note(body, markup(G.story.routeNote()));
     sec(body, '진실의 조각 ' + Object.keys(s.truth).length + ' / ' + Object.keys(T).length);
-    for (const k of Object.keys(T)) { const have = !!s.truth[k]; body.appendChild(row({ name: have ? T[k].name : '???', desc: have ? T[k].text : T[k].hint, dim: !have, onClick: have && T[k].long ? () => { closeModal(); G.script.run(async (c) => { for (const l of T[k].long) await c.narr(l); }); } : null })); }
+    for (const k of Object.keys(T)) { const have = !!s.truth[k]; body.appendChild(row({ name: have ? T[k].name : '???', desc: have ? T[k].text : T[k].hint, dim: !have, v: have && T[k].long ? T[k].long.length + '쪽' : '', onClick: have && T[k].long ? () => openRead('T:' + k) : null })); }
     if (Object.keys(s.abyss).length) { sec(body, '심연 ' + Object.keys(s.abyss).length, 'abyss'); note(body, '들여다본 어둠. 너무 많이 알면, 그만큼 무거워진다.'); }
-    const met = G.cast ? G.cast.met() : [];
-    sec(body, '만난 사람 ' + met.length);
-    for (const c of met) body.appendChild(row({ name: c.name, desc: c.note ? c.note(s) : c.desc, v: s.bond[c.id] ? '♥'.repeat(Math.min(5, s.bond[c.id])) : '' }));
-    const books = Object.keys(s.books).filter((k) => B[k]);
-    if (books.length) { sec(body, '읽은 글 ' + books.length); for (const k of books) body.appendChild(row({ name: B[k].name, desc: B[k].short || '', onClick: () => { closeModal(); G.script.run(async (c) => { for (const l of B[k].pages) await c.narr(l); }); } })); }
-    sec(body, '일지');
-    if (!s.log.length) note(body, '아직 적은 것이 없다.');
-    for (const l of s.log.slice(0, 40)) { const d = document.createElement('div'); d.className = 'note'; d.style.margin = '4px 0'; d.innerHTML = '· ' + markup(l.text); body.appendChild(d); }
+  }
+  /** 책 읽기: 쪽 넘기기 (← → · 단추) */
+  function bookReader(body, M) {
+    const s = S(), id = M.sub.read;
+    let title = '', by = '', pages = [];
+    if (id.startsWith('B:')) { const b = (G.data.BOOKS || {})[id.slice(2)]; if (b) { title = b.name; by = b.short || ''; pages = b.pages; } }
+    else if (id.startsWith('T:')) { const t = (G.data.TRUTHS || {})[id.slice(2)]; if (t) { title = t.name; by = '진실의 조각'; pages = t.long || [t.text]; } }
+    else { const e = (G.data.LIBRARY || {})[id]; if (e) { title = e.title; by = e.by; pages = e.pages; if (G.lib) G.lib.seen(s, id); } }
+    if (!pages.length) { M.sub = null; refresh(); return; }
+    const pg = U.clamp(M.sub.page || 0, 0, pages.length - 1); M.sub.page = pg;
+    const card = document.createElement('div'); card.className = 'card reader';
+    card.innerHTML = '<h4>『' + esc(title) + '』</h4>' + (by ? '<small class="by">' + esc(by) + '</small>' : '') + '<div class="page">' + markup(pages[pg]).replace(/\n/g, '<br>') + '</div><div class="pn">' + (pg + 1) + ' / ' + pages.length + '</div>';
+    body.appendChild(card);
+    const nav = document.createElement('div'); nav.className = 'readnav'; nav.dataset.cols = '3';
+    const mk = (label, dis, fn) => { const b = document.createElement('button'); b.className = 'btn nav' + (dis ? '' : ' pri'); b.textContent = label; if (dis) b.disabled = true; b.addEventListener('click', () => { if (!dis) fn(); }); nav.appendChild(b); };
+    mk('◀ 앞 쪽', pg <= 0, () => { M.sub.page = pg - 1; sfx('page'); refresh(); });
+    const back = document.createElement('button'); back.className = 'btn nav'; back.textContent = '목록으로'; back.addEventListener('click', () => { const sel = M.sub.back || 0; M.sub = null; M.sel = sel; sfx('cancel'); refresh(); }); nav.appendChild(back);
+    mk('다음 쪽 ▶', pg >= pages.length - 1, () => { M.sub.page = pg + 1; sfx('page'); refresh(); });
+    body.appendChild(nav);
+    note(body, markup('[s]← → 로 고르고 확인으로 넘긴다 · 취소(Esc)는 목록으로[/]'));
   }
   function tabMap(body) {
     if (G.story && G.story.drawWorldMap) { G.story.drawWorldMap(body); return; }
@@ -577,6 +758,11 @@
     tog('music', '음악'); tog('sfx', '효과음'); tog('shake', '화면 흔들림'); tog('minimap', '작은 지도');
     body.appendChild(row({ name: '음량', v: Math.round((st.vol == null ? 0.7 : st.vol) * 10) + ' / 10', onClick: () => { st.vol = ((Math.round((st.vol == null ? 0.7 : st.vol) * 10) % 10) + 1) / 10; if (G.audio) G.audio.applySettings(); refresh(); } }));
     body.appendChild(row({ name: '글자 속도', v: ['', '느리게', '보통', '빠르게'][st.textSpeed || 2], onClick: () => { st.textSpeed = ((st.textSpeed || 2) % 3) + 1; refresh(); } }));
+    sec(body, '조준 (360°)');
+    body.appendChild(row({ name: '방향키', desc: st.arrowAim ? '조준 — WASD로 걷고 방향키로 겨눈 채 공격한다 (메뉴에서는 그대로 위아래)' : '이동 — WASD와 같이 걷는다. 겨누기는 마우스 · 오른쪽 스틱 · 자동 조준', v: st.arrowAim ? '조준' : '이동', onClick: () => { st.arrowAim = !st.arrowAim; sfx('select'); refresh(); } }));
+    body.appendChild(row({ name: '마우스 조준', desc: '마우스를 움직이면 그쪽을 겨눈다 · 왼쪽 단추 = 공격 · 오른쪽 = 스킬 · 바퀴 = 무기 바꾸기', v: st.mouseAim === false ? '끔' : '켬', onClick: () => { st.mouseAim = st.mouseAim === false; sfx('select'); refresh(); } }));
+    body.appendChild(row({ name: '자동 조준', desc: '직접 겨누지 않을 때, 바라보는 쪽 가까이의 적을 알아서 겨눈다', v: st.autoAim === false ? '끔' : '켬', onClick: () => { st.autoAim = st.autoAim === false; sfx('select'); refresh(); } }));
+    body.appendChild(row({ name: '조준 표시', desc: '주인공 둘레의 꺾쇠 · 마우스 조준점 · 자동 조준이 잡은 적', v: st.aimMark === false ? '끔' : '켬', onClick: () => { st.aimMark = st.aimMark === false; sfx('select'); refresh(); } }));
     sec(body, '기록');
     body.appendChild(row({ name: '지금 기록하기', desc: '빛의 이정표와 침대에서 쉬어도 기록된다.', onClick: () => { if (G.script.running || G.script.busy || !G.st.save(s)) { toast('지금은 기록할 수 없다 — 벌어지고 있는 일을 먼저 끝내자', 'bad'); return; } toast('기록했다', 'good'); sfx('save'); } }));
     body.appendChild(row({ name: '빠져나오기', desc: '어딘가에 끼었거나 갇혔을 때: 가까운 트인 곳으로 — 멀쩡한 자리면 이 지역에 들어온 곳으로 돌아간다.', onClick: () => {
@@ -586,7 +772,7 @@
     body.appendChild(row({ name: '타이틀로', desc: '기록하지 않은 것은 사라진다.', onClick: () => { closeModal(); G.game.toTitle(); } }));
     sec(body, '조작');
     const k = document.createElement('div'); k.className = 'keys card';
-    k.innerHTML = [['WASD · 방향키', '이동'], ['J · Z · Enter', '공격 · 말 걸기 (길게: 회전 베기)'], ['Space · X', '구르기 (기력)'], ['K · C', '활 (누른 채 조준, 떼면 쏜다)'], ['L · V', '마법'], ['I · B', '도구'], ['O · F', '필살기 (게이지 가득)'], ['Q · E', '메뉴 탭 넘기기'], ['Esc · Tab', '메뉴'], ['M', '지도'], ['턱을 밀기', '뛰어내리기']].map(([a, b]) => '<kbd>' + a + '</kbd><span>' + b + '</span>').join('');
+    k.innerHTML = [['WASD · 방향키', '이동 (방향키 조준 모드면 방향키 = 겨눠 공격)'], ['마우스', '겨누기 (360°) · 왼쪽 단추 공격 · 오른쪽 스킬 1 · Shift+오른쪽 · 옆 단추 스킬 2 · 바퀴 무기 바꾸기'], ['J · Z · Enter', '든 무기로 공격 · 말 걸기 (검: 길게 눌렀다 떼면 회전 베기 / 활: 누른 채 조준, 떼면 쏜다 / 마법: 고른 주문, 누르고 있으면 이어서)'], ['걸으며 공격', '공격 · 스킬 · 필살기 동안에도 걷는다. 겨누는 쪽은 따로 (직접 겨누지 않으면 바라보는 쪽의 적을 자동으로)'], ['Space · X', '구르기 (기력)'], ['K · C', '무기 바꾸기 (검 → 활 → 마법)'], ['L · V', '든 무기의 스킬 1 (재사용 대기)'], ['U · R', '든 무기의 스킬 2 (무기마다 스킬 둘 — 성장 › 스킬에서 끼운다)'], ['I · B', '도구 (폭탄 · 갈고리 · 등불 …)'], ['O · F', '든 무기의 필살기 (게이지 가득)'], ['Q · E', '메뉴 탭 넘기기'], ['Esc · Tab', '메뉴'], ['M', '지도'], ['턱을 밀기', '뛰어내리기']].map(([a, b]) => '<kbd>' + a + '</kbd><span>' + b + '</span>').join('');
     body.appendChild(k);
   }
 
@@ -602,7 +788,7 @@
     const s = S(), I2 = G.data.ITEMS;
     for (const k of sh.items) {
       const it = I2[k]; if (!it) continue;
-      const owned = ['sword', 'shield', 'armor', 'bow', 'acc'].includes(it.type) && s.inv[k] > 0 || it.type === 'tome' && s.spells[it.spell] || it.type === 'art' && s.specials[it.special];
+      const owned = ['sword', 'shield', 'armor', 'bow', 'acc'].includes(it.type) && s.inv[k] > 0 || it.type === 'tome' && s.spells[it.spell] || it.type === 'art' && s.specials[it.special] || it.type === 'sbook' && s.askills && s.askills[it.skill];
       const price = it.price;
       body.appendChild(row({ icon: itemIcon(k), name: gname(it) + (owned ? ' [s](가짐)[/]' : ''), desc: (statLine(it) ? statLine(it) + ' — ' : '') + it.desc, v: '◎ ' + U.fmtInt(price), dim: owned || s.gold < price, onClick: () => {
         if (owned) { toast('이미 가지고 있다', ''); return; }
@@ -699,14 +885,14 @@
     el.appendChild(menu2);
     el.insertAdjacentHTML('beforeend', '<div class="t-foot">가로 화면 권장 · 휴대폰은 왼쪽 스틱, 오른쪽 버튼 · 글꼴: 갈무리(SIL OFL)</div>');
     el.hidden = false;
-    UI.title = { btns, sel: 0 };
+    UI.titleSel = { btns, sel: 0 };
     hlTitle();
     G.game.scene = 'title';
     if (G.audio) G.audio.music('title');
   }
-  function hlTitle() { const T = UI.title; if (!T) return; T.btns.forEach((b, i) => b.classList.toggle('sel', i === T.sel)); }
+  function hlTitle() { const T = UI.titleSel; if (!T) return; T.btns.forEach((b, i) => b.classList.toggle('sel', i === T.sel)); }
   function titleUpdate() {
-    const T = UI.title; if (!T || !T.btns.length) return;
+    const T = UI.titleSel; if (!T || !T.btns.length) return;
     const nv = I.nav4();
     if (nv === 'up') { T.sel = (T.sel + T.btns.length - 1) % T.btns.length; hlTitle(); sfx('move'); }
     if (nv === 'down') { T.sel = (T.sel + 1) % T.btns.length; hlTitle(); sfx('move'); }
@@ -736,7 +922,7 @@
     }
     g.fillStyle = '#05040a'; g.fillRect(0, 0, w, h);
   }
-  function hideTitle() { $('title').hidden = true; UI.title = null; }
+  function hideTitle() { $('title').hidden = true; UI.titleSel = null; }
   function newGameForm(el) {
     el.innerHTML = '';
     const bg = UI.titleBg; if (bg) el.appendChild(bg);
@@ -782,7 +968,7 @@
     const back = document.createElement('button'); back.className = 't-btn'; back.textContent = '돌아가기'; back.addEventListener('click', () => title());
     m.appendChild(go); m.appendChild(back);
     el.appendChild(m);
-    UI.title = { btns: [go, back], sel: 0 };
+    UI.titleSel = { btns: [go, back], sel: 0 };
     hlTitle();
   }
   function keysHelp(el) {
@@ -790,19 +976,21 @@
     const bg = UI.titleBg; if (bg) el.appendChild(bg);
     el.insertAdjacentHTML('beforeend', '<div class="t-logo" style="font-size:24px"><small>조작</small>이렇게 움직인다</div>');
     const k = document.createElement('div'); k.className = 'keys card'; k.style.maxWidth = '420px';
-    k.innerHTML = [['이동', 'WASD · 방향키 / 왼쪽 스틱'], ['공격 · 말 걸기', 'J · Z · Enter / 빨간 버튼 (길게 눌렀다 떼면 회전 베기)'], ['구르기', 'Space · X / 파란 버튼 — 적의 공격 직전에 구르면 완벽 회피'], ['활', 'K · C (누른 채 방향으로 조준)'], ['마법', 'L · V'], ['도구', 'I · B (폭탄 · 갈고리 · 등불 …)'], ['필살기', 'O · F (게이지가 가득 찼을 때)'], ['바꾸기', 'Q · E / ⇄'], ['메뉴 · 지도', 'Esc · Tab / M'], ['높은 곳', '낮은 쪽 턱을 밀면 뛰어내린다. 오를 때는 계단으로']].map(([a, b]) => '<kbd>' + a + '</kbd><span>' + b + '</span>').join('');
+    k.innerHTML = [['이동', 'WASD · 방향키 / 왼쪽 스틱'], ['겨누기 (360°)', '마우스 · 오른쪽 스틱 / 휴대폰은 공격 · 스킬 · 필살 버튼을 누른 채 끌기 — 걸으면서 따로 겨눈다. 겨누지 않으면 바라보는 쪽의 적을 자동으로'], ['공격 · 말 걸기', 'J · Z · Enter · 마우스 왼쪽 / 빨간 버튼 — 지금 든 무기로 (검: 길게 눌렀다 떼면 회전 베기 · 활: 누른 채 조준 · 마법: 고른 주문)'], ['구르기', 'Space · X / 파란 버튼 — 적의 공격 직전에 구르면 완벽 회피'], ['무기 바꾸기', 'K · C / ⇄ 버튼 — 검 → 활 → 마법. 하나만 손에 든다'], ['스킬', 'L · V / ✸ 버튼 — 스킬 1, U · R / ✷ 버튼 — 스킬 2. 무기마다 둘을 끼운다 (기력 · 화살 · MP, 재사용 대기는 따로)'], ['도구', 'I · B (폭탄 · 갈고리 · 등불 …)'], ['필살기', 'O · F — 든 무기의 필살기 (게이지가 가득 찼을 때)'], ['바꾸기', 'Q · E / ⇄'], ['메뉴 · 지도', 'Esc · Tab / M'], ['높은 곳', '낮은 쪽 턱을 밀면 뛰어내린다. 오를 때는 계단으로']].map(([a, b]) => '<kbd>' + a + '</kbd><span>' + b + '</span>').join('');
     el.appendChild(k);
     const m = document.createElement('div'); m.className = 't-menu';
     const back = document.createElement('button'); back.className = 't-btn pri'; back.textContent = '돌아가기'; back.addEventListener('click', () => title());
     m.appendChild(back); el.appendChild(m);
-    UI.title = { btns: [back], sel: 0 }; hlTitle();
+    UI.titleSel = { btns: [back], sel: 0 }; hlTitle();
   }
 
   /* ───────── 쓰러짐 ───────── */
-  function gameOver() {
+  function gameOver(o) {
+    o = o || {};
     return openModal({ title: '쓰러졌다', menuCloses: false, render: (body) => {
-      note(body, '빛이 몸을 감싼다. 이리스 대륙에서는 싸움에 져도 죽지 않는다.<br>마지막으로 쉬었던 곳에서 눈을 뜬다.');
-      body.appendChild(row({ name: '[y]일어난다[/]', desc: '마지막 이정표 · 쉼터에서 하트 3칸으로', onClick: () => { closeModal('retry'); } }));
+      note(body, markup('빛이 몸을 감싼다. 이리스 대륙에서는 싸움에 져도 죽지 않는다.') + '<br>' + markup('다만 쓰러지면 [r]이번 레벨에서 모은 경험이 모두 흩어진다[/]. 레벨은 그대로 남는다.')
+        + (o.lv != null ? '<br>' + markup('Lv.' + o.lv + ' · 잃은 경험 [r]' + (o.lost || 0) + '[/]') : ''));
+      body.appendChild(row({ name: '[y]일어난다[/]', desc: '가까운 이정표 · 열린 마을(던전이면 입구)에서 하트 3칸으로', onClick: () => { closeModal('retry'); } }));
       body.appendChild(row({ name: '타이틀로', onClick: () => { closeModal('title'); } }));
     } });
   }

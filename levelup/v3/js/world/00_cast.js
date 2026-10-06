@@ -8,9 +8,9 @@
 
   /* ── 주인공 쪽 ── */
   add('toria', { name: '토리아', color: '#f0b070', voice: 1.6, look: { kind: 'squirrel' }, desc: '날지 못하는 하늘다람쥐. 레벨 9에서 16년째 멈춰 있다. 말끝마다 「찍」.' });
-  add('evelyn', { name: '에벨린 할머니', color: '#8ae08a', voice: 0.72, desc: '그린 마을 약초꾼. 사투리를 쓴다. 침대 밑에 무언가를 16년째 두고 산다.',
+  add('evelyn', { name: '에벨린 할머니', color: '#8ae08a', voice: 0.72, desc: '그린 마을 약초꾼. 사투리를 쓴다. 침대 밑에 무언가를 오래도록 두고 산다.',
     look: { gender: 'girl', age: 'old', hair: 'bun', hc: '#d4d0c4', eye: '#5a9a5a', skin: 'light', top: 'robe', tc: '#4a7a4a', trim: '#c8b890', bottom: 'long', bc: '#3a5a3a', glasses: true, acc: ['necklace'], gem: '#6ae07a' } });
-  add('serin', { name: '세린', color: '#ffffff', voice: 1.0, desc: '흰빛의 그릇. 아스트라의 수정 속에서 16년째 잠들어 있다.',
+  add('serin', { name: '세린', color: '#ffffff', voice: 1.0, desc: '흰빛의 그릇. 아스트라의 수정 속에서 오래 잠들어 있다.',
     look: { gender: 'girl', hair: 'long', hc: '#f4f0e8', eye: '#e8c878', skin: 'fair', top: 'dress', tc: '#f4f4f8', trim: '#e8c878', bottom: 'long', bc: '#e8eef8', eyeShape: 'sleepy', acc: ['necklace'], gem: '#ffffff' } });
   add('kairon', { name: '카이론', color: '#fff0a8', voice: 0.8, desc: '대륙의 챔피언. 레벨 99만 9999. 경험세를 만든 사람.',
     look: { hair: 'long', hc: '#e8e0c8', eye: '#d8a030', eyeShape: 'sharp', skin: 'light', top: 'coat', tc: '#e8eef8', trim: '#e8c048', bottom: 'pants', bc: '#3a3448', boots: '#2a2438', cape: '#7a1a2a', build: 'broad', acc: ['pauldron'] } });
@@ -30,7 +30,7 @@
   add('volkan', { name: '볼칸 아저씨', color: '#ff9a6a', voice: 0.75, desc: '불꽃 대장간 주인. 망치 소리로 사람을 판단한다.', look: { hair: 'bald', hc: '#c8402c', beard: '#c8402c', skin: 'tan', eye: '#c85a3a', top: 'vest', tc: '#8a3a2a', bottom: 'pants', bc: '#3a2a22', build: 'broad' } });
   add('rud', { name: '루드', color: '#ff7a6a', voice: 0.95, desc: '징수 기사단 견습. 뺨의 흉터. 「숫자는 거짓말 안 해.」', look: { hair: 'spiky', hc: '#d8402a', eye: '#e8a040', eyeShape: 'sharp', scar: true, top: 'armor', tc: '#6a6a80', trim: '#c8c8d0', bottom: 'pants', bc: '#2a2a32', cape: '#5a2a2a' } });
   add('lea', { name: '레아', color: '#ffa87a', voice: 0.95, desc: '새벽단 단장. 루드의 누나. 전 징수 기사.', look: { gender: 'girl', hair: 'pony', hc: '#c8402a', eye: '#e8a040', eyeShape: 'sharp', top: 'coat', tc: '#5a3a2a', trim: '#ffd84a', bottom: 'pants', bc: '#2a2a32', acc: ['scarf'], scarfC: '#ff7a4a' } });
-  add('astel', { name: '아스텔 박사', color: '#a8c8ff', voice: 0.8, desc: '붉은 산 관측소장. 993년에 무언가를 계산하고 입을 닫았다.', look: { age: 'old', hair: 'messy', hc: '#f0f0f0', eye: '#4a6ab8', top: 'coat', tc: '#2a3a6a', trim: '#e8e8f0', bottom: 'pants', bc: '#2a2a3a', glasses: true } });
+  add('astel', { name: '아스텔 박사', color: '#a8c8ff', voice: 0.8, desc: '붉은 산 관측소장. 993년 어느 밤 관측표를 덮고 입을 닫았다.', look: { age: 'old', hair: 'messy', hc: '#f0f0f0', eye: '#4a6ab8', top: 'coat', tc: '#2a3a6a', trim: '#e8e8f0', bottom: 'pants', bc: '#2a2a3a', glasses: true } });
   add('dorgan', { name: '광부 대장 도르간', color: '#ffd870', voice: 0.72, desc: '황금 광산의 전 광부 대장.', look: { age: 'old', hair: 'short', hc: '#3a2a1a', beard: '#5a4a3a', eye: '#a8803a', top: 'vest', tc: '#6a5a3a', bottom: 'pants', bc: '#3a3a3a', hat: 'helm', hatC: '#e8c048', build: 'broad' } });
 
   /* ── 블루 ── */
@@ -41,7 +41,7 @@
 
   /* ── 옐로 ── */
   add('pika', { name: '피카', color: '#e8e8a0', voice: 1.35, desc: '그늘 골목의 소매치기. 고아들의 「그늘 참새단」 두목.', look: { age: 'child', hair: 'spiky', hc: '#1a1a22', eye: '#e8c040', skin: 'tan', top: 'vest', tc: '#c87a3a', bottom: 'shorts', bc: '#5a4a3a', acc: ['scarf'], scarfC: '#e84a4a' } });
-  add('goldy', { name: '금화왕 골디', color: '#ffd84a', voice: 0.9, desc: '사천왕 · 노랑의 자리. 「공짜는 없어.」', look: { hair: 'slick', hc: '#e8c040', eye: '#e89a20', eyeShape: 'sharp', top: 'coat', tc: '#c89a28', trim: '#fff0a8', bottom: 'pants', bc: '#5a3a1a', cape: '#8a1a3a', acc: ['earring', 'necklace'], gem: '#ff4a6a' } });
+  add('goldy', { name: '금화왕 골디', color: '#ffd84a', voice: 0.9, desc: '사천왕 · 노랑의 자리. 「공짜는 없어.」', look: { hair: 'swept', hc: '#e8c040', eye: '#e89a20', eyeShape: 'sharp', top: 'coat', tc: '#c89a28', trim: '#fff0a8', bottom: 'pants', bc: '#5a3a1a', cape: '#8a1a3a', acc: ['earring', 'necklace'], gem: '#ff4a6a' } });
   add('yana', { name: '야나', color: '#f0c080', voice: 1.15, desc: '모래바다의 길잡이. 여우 귀. 사막의 별자리를 다 외운다.', look: { gender: 'girl', hair: 'bob', hc: '#e8a040', eye: '#40a8a0', skin: 'tan', ears: 'fox', top: 'vest', tc: '#c8905a', trim: '#fff0d0', bottom: 'shorts', bc: '#8a6a4a', acc: ['scarf', 'earring'], scarfC: '#e8d0a0', gem: '#40a8a0' } });
 
   /* ── 퍼플 ── */

@@ -37,7 +37,7 @@
   const item = (id, o) => { G.data.ITEMS[id] = Object.assign({ id, price: 0, desc: '' }, o); };
   item('snowherb', { type: 'key', name: '설화초', desc: '서리 무덤 안뜰에 핀 하얀 꽃. 줄기에 빛바랜 쪽지: 「빛바램 마지막 단계에. 달여서 세 모금. — S」' });
   item('crystal_snow', { type: 'key', name: '눈 결정', desc: '얼음 도깨비불이 흘린 결정. 니베가 모은다.' });
-  item('letter_lumie', { type: 'letter', name: '부치지 못한 편지', desc: '루미에가 세린에게 쓴 편지. 16년 치.', read: '「세린. 오늘도 세 사람을 고쳤어. 머리가 조금 더 하얘졌어. 너처럼 되고 싶어서 그러는 건 아니야. …아니, 그런 것 같아. 너는 나눠 주라고 했지. 나는 내 걸 다 줘 버리는 방법밖에 몰라. 그게 나눔이 아니라는 걸, 알아. 알면서도.」' });
+  item('letter_lumie', { type: 'letter', name: '부치지 못한 편지', desc: '루미에가 세린에게 쓴 편지. 한 묶음.', read: '「세린. 오늘도 세 사람을 고쳤어. 머리가 조금 더 하얘졌어. 너처럼 되고 싶어서 그러는 건 아니야. …아니, 그런 것 같아. 너는 나눠 주라고 했지. 나는 내 걸 다 줘 버리는 방법밖에 몰라. 그게 나눔이 아니라는 걸, 알아. 알면서도.」' });
   G.data.BOOKS.b_saint = { name: '초대 성녀의 비문', short: '서리 무덤 제단 옆 비문', pages: ['「희생 없는 구원은 없다.」 — 초대 성녀', '그 아래 둥근 글씨로 누군가 긁어 썼다. 「나눔 없는 희생은 배고픔이 된다. — S」', '그 아래 또 다른 글씨. 떨리는 손. 「알아. — L」'] };
 
   /* ───────── 대성당 그림 ───────── */
@@ -59,7 +59,8 @@
     // 문
     b.rect(cx - 13, h - 34, 26, 34, '#2a2a3a'); b.ellipse(cx, h - 34, 13, 8, '#2a2a3a'); b.rect(cx - 11, h - 32, 22, 32, '#6a4a3a'); b.ellipse(cx, h - 32, 11, 6, '#6a4a3a'); b.vline(cx, h - 38, h - 1, '#3a2a1a'); b.px(cx - 3, h - 16, '#e8c860'); b.px(cx + 2, h - 16, '#e8c860');
     // 눈 쌓임
-    for (let x = 4; x < w - 4; x++) { const y = 47 - Math.round((1 - Math.abs(x - w / 2) / (w / 2)) * 31); b.px(x, y + 1, '#ffffff'); b.px(x, y + 2, '#f4f8ff'); }
+    // 눈 쌓임: 두 첨탑 사이 지붕 위에만 (예전엔 첨탑 · 첨탑 창을 가로질렀다)
+    for (let x = 22; x < w - 22; x++) { const y = 47 - Math.round((1 - Math.abs(x - w / 2) / (w / 2 - 4)) * 32); b.px(x, y + 1, '#ffffff'); b.px(x, y + 2, '#f4f8ff'); }
     b.rect(0, h - 3, w, 3, C[0]);
     return { c: X.outline(b.put(), OUT), W: w, H: h, footH: 2 * TS, door: true };
   };
@@ -86,13 +87,13 @@
     // 묘지 (대성당 뒤): 비석 + 뚜껑문
     OW.clear(m, GRAVE.x - 2, GRAVE.y - 1, 8, 5, m.hgt[m.i(GRAVE.x, GRAVE.y + 2)], T.SNOW);
     for (const [dx, dy] of [[-1, 0], [1, 0], [3, 0], [-1, 2], [3, 2]]) G.build.placeBuilding(m, { special: 'statue', tx: GRAVE.x + dx, ty: GRAVE.y + dy, w: 1, h: 1, col: '#a8b0c0', door: false, veil: dx === 3 });
-    m.warps.push({ x: GRAVE.x + 1, y: GRAVE.y + 1, w: 1, h: 1, to: 'd7', id: 'd7_hatch', cond: () => f('c7_plan') && S().flags.route_lock !== 'order', msg: '눈 덮인 쇠 뚜껑문. 자물쇠가 얼어붙었다. 아직은 열 까닭이 없다.' });
+    m.warps.push({ x: GRAVE.x + 1, y: GRAVE.y + 1, w: 1, h: 1, to: 'd7', id: 'd7_hatch', cond: () => (f('c7_plan') && S().flags.route_lock !== 'order') || f('d7:boss'),   /* 보스를 이긴 뒤에는 어느 갈래든 (질서 갈래는 이 문이 영영 잠겨 있었다) */ msg: '눈 덮인 쇠 뚜껑문. 자물쇠가 얼어붙었다. 아직은 열 까닭이 없다.' });
     // 꾸미기: 화로 · 전나무
     for (const [dx, dy] of [[12, 8], [20, 8], [12, 13], [20, 13]]) { m.obj[m.i(X0 + dx, Y0 + dy)] = O.LAMP; m.lights.push({ x: (X0 + dx) * TS + 8, y: (Y0 + dy) * TS + 2, r: 60, warm: 'rgba(255,190,120,0.25)' }); }
     for (const [dx, dy] of [[0, 9], [31, 9], [0, 20], [31, 18], [9, 21], [22, 21]]) if (m.inb(X0 + dx, Y0 + dy) && !m.solidExtra[m.i(X0 + dx, Y0 + dy)]) m.obj[m.i(X0 + dx, Y0 + dy)] = O.PINE;
   });
   // 새벽단 은신처 실내
-  G.build.def('w_hide', { build() { const rm = G.build.room({ id: 'w_hide', region: 'white', name: '새벽단 은신처', w: 16, h: 10, floor: T.STONE, music: 'hollow', back: ['world', HIDE.x, HIDE.y + 1], furn: [['table', 7, 4, { text: '대성당 지하 지도. 「얼음 창고」에 붉은 동그라미. 옆에 루드 글씨: 「폭약 필요량 — 계산 끝」.' }], ['crate', 2, 3], ['crate', 3, 3], ['barrel', 13, 3], ['bed2', 12, 6, { v: '#8a5a3a' }], ['fireplace', 2, 7]] }); rm.dark = 0.3; return rm; } });
+  G.build.def('w_hide', { build() { const rm = G.build.room({ id: 'w_hide', region: 'white', name: '새벽단 은신처', w: 16, h: 10, floor: T.STONE, music: 'hollow', back: ['world', HIDE.x, HIDE.y + 1], furn: [['table', 7, 4, { text: '대성당 지하 지도. 「얼음 창고」에 붉은 동그라미. 옆에 루드 글씨: 「폭약 필요량 — 확인 끝」.' }], ['crate', 2, 3], ['crate', 3, 3], ['barrel', 13, 3], ['bed2', 12, 6, { v: '#8a5a3a' }], ['fireplace', 2, 7]] }); rm.dark = 0.3; return rm; } });
 
   ST.onMap('world', (m, Wd) => {
     const P = G.props;
@@ -169,20 +170,20 @@
     await c.say(n, '그건 빛을 너무 많이 쓴 사람한테 생기는 거예요. 나처럼.', { face: 'closed' });
     await c.say(n, '병동에 노아라는 아이가 있어요. 블루에서 옮겨 왔어요. 여기가 마지막 병원이거든요. 당신 이름을 불러요, 가끔.', { face: 'sad' });
     await c.say(n, '…그리고 하나 더. 말하지 않으면 당신은 모르고 천년성에 가겠죠. 그러면 안 돼요.', { face: 'normal' });
-    await c.say(n, '카이론의 계산은 이래요. 흑점이 오면, 아스트라의 수정 속 [y]세린의 그릇[/]으로는 더 막을 수 없어요. 16년 동안 닳았으니까.', { face: 'normal' });
+    await c.say(n, '카이론의 생각은 이래요. 흑점이 오면, 아스트라의 수정 속 [y]세린의 그릇[/]으로는 더 막을 수 없어요. 너무 오래 닳았으니까.', { face: 'normal' });
     await c.say(n, '[r]그래서 새 그릇이 필요해요. 세린의 아이.[/]', { face: 'sad' });
     await c.say('toria', '찍——!! 말도 안 돼! 새 그릇이라니, 수정 속에 넣는다는 거잖아! 엄마처럼!', { face: 'angry' });
     await c.say(n, '…나는 그게 사랑이라고 믿어요. 한 사람이 모두를 위해 빛나는 것. 세린이 그랬던 것처럼. 나도 매일 조금씩 그렇게 해요.', { face: 'closed' });
     await c.say(n, '그러니 여기 있어요. 대성당은 따뜻해요. 그날이 올 때까지, 내가 당신을 지킬게요.', { face: 'smile' });
     const b = buddy();
-    if (b === 'cassian') await c.say('cassian', '…스승님은 나한테 그 계산을 말씀하신 적이 없다. 단 한 번도.', { face: 'shock' });
+    if (b === 'cassian') await c.say('cassian', '…스승님은 나한테 그 이야기를 하신 적이 없다. 단 한 번도.', { face: 'shock' });
     else if (b === 'rud') await c.say('rud', '그러니까 대륙 전체를 위해서 한 명을. 계산상으로는 맞아. …계산상으로는.', { face: 'angry' });
     else await c.say('lyra', '……', { face: 'sad' });
     await c.say(n, '동쪽 얼음 예배당에 이스카라는 아이가 있어요. 눈이 보이지 않지만 빛을 봐요. 당신 빛을 한번 보여 줘요. 그 애가 당신을 어떻게 보는지, 나도 궁금해요.', { face: 'normal' });
     c.flag('c7_lumie');
     await c.cinema(false);
     c.lock(false);
-    c.journal('성녀 루미에를 만났다. 카이론의 계산: 흑점을 막으려면 세린의 그릇 대신 새 그릇 — 나를 쓴다.');
+    c.journal('성녀 루미에를 만났다. 카이론의 계획: 흑점을 막으려면 세린의 그릇 대신 새 그릇 — 나를 쓴다.');
   }
 
   /* ───────── 이스카: 눈먼 얼음 사제 ───────── */
@@ -220,7 +221,7 @@
     c.lock(true);
     await c.say('cassian', '성녀님. 기사단 감찰관 카시안입니다. 대성당 지하, 「얼음 창고」의 감찰을 청합니다. 챔피언께 보고되지 않은 빛의 보관은 방위령 위반입니다.', { face: 'normal' });
     await c.say(n, '……', { face: 'sad' });
-    await c.say(n, '거짓말은 못 해요. 있어요. 16년 동안 모았어요. 보고하지 않은 건… 카이론이 가져갈까 봐서요. 여기 아픈 사람들 몫이라서요.', { face: 'closed' });
+    await c.say(n, '거짓말은 못 해요. 있어요. 그동안 모았어요. 보고하지 않은 건… 카이론이 가져갈까 봐서요. 여기 아픈 사람들 몫이라서요.', { face: 'closed' });
     await c.say('cassian', '…규칙대로라면 압수입니다. 그러나 감찰이 먼저입니다. 서리 거인이 깨어난다면 보관 자체가 위험하니까.', { face: 'normal' });
     await c.say(n, '제단 뒤 계단이에요. 조심해요. 거인은 불을 싫어해요.', { face: 'normal' });
     c.flag('c7_plan'); c.flag('c7_under_ok');
@@ -234,9 +235,9 @@
     if (!f('c7_iska')) { await c.say(n, '왔구나. 먼저 성녀랑 예배당 사제를 만나 봐. 적을 알아야 부수지.', { face: 'smirk' }); return; }
     if (f('c7_plan')) { await c.say(n, '뚜껑문은 묘지에. 폭약은 루드가 들고 있어. 창고 앞에서 신호해.', { face: 'smirk' }); return; }
     c.lock(true);
-    await c.say(n, '얼음 창고. 16년 치 기도등 빛이 얼어 있어. 탑 수백 개 분량이야. 성녀는 그걸로 병자를 고친대. 공짜로.', { face: 'normal' });
+    await c.say(n, '얼음 창고. 기도등 빛이 몇 해째 얼어 있어. 탑 수백 개 분량이야. 성녀는 그걸로 병자를 고친대. 공짜로.', { face: 'normal' });
     await c.say(n, '공짜? 그 빛은 기도한 사람들 거야. 성녀가 조금씩 떼어 먹은 거라고. 착하게 떼어 먹은 거.', { face: 'angry' });
-    await c.say('rud', '창고를 부수면 빛이 눈보라처럼 흩어져서 원래 주인들한테 돌아가. 계산해 봤어. 대부분은.', { face: 'normal' });
+    await c.say('rud', '창고를 부수면 빛이 눈보라처럼 흩어져서 원래 주인들한테 돌아가. 어림해 봤어. 대부분은.', { face: 'normal' });
     await c.say(n, '묘지 뚜껑문 얼음은 녹여 놨어. 오늘 밤에 가.', { face: 'smirk' });
     c.flag('c7_plan');
     c.lock(false);
@@ -254,7 +255,7 @@
       const mn = c.spawn({ cid: 'midnight', x: px(GRAVE.x + 1), y: py(GRAVE.y + 2), dir: 'down' });
       c.jump(mn, 10);
       await c.say('midnight', '냐옹. 오랜만이군, 흰빛. 뚜껑문 얼음은 내가 녹였다. 고양이 혀는 따뜻하거든.', { face: 'smirk' });
-      await c.say('lyra', '미드나잇이 궁금해하는 건 창고 자체가 아니에요. 창고의 빛이 [p]어디로 새고 있는지[/]예요. 16년 치치고는 너무 적대요.', { face: 'normal' });
+      await c.say('lyra', '미드나잇이 궁금해하는 건 창고 자체가 아니에요. 창고의 빛이 [p]어디로 새고 있는지[/]예요. 모은 세월치고는 너무 적대요.', { face: 'normal' });
       await c.say('midnight', '누군가 빼돌리고 있다. 성녀는 아니다. 성녀는 거짓말을 못 하니까. 내려가서 봐라. 보이는 걸 다 기억해라.', { face: 'normal' });
       await c.move(mn, mn.x + 80, mn.y, { speed: 120 }); mn.dead = true;
       c.flag('met:midnight');
@@ -305,7 +306,7 @@
     const lu = c.spawn({ cid: 'lumie', x: n.x - 30, y: n.y + 20, dir: 'right' });
     await c.move(lu, n.x - 16, n.y + 10, { speed: 120 });
     await c.say(lu, '마지막 단계예요. 이 단계는 손을 잡고 나누는 걸로는 안 돼요. 누군가의 빛이 통째로 들어가야 해요.', { face: 'sad' });
-    await c.say(lu, '내가 할게요. 16년 동안 해 온 일이에요. 머리칼이 조금 더 하얘질 뿐이에요. …조금 더.', { face: 'smile' });
+    await c.say(lu, '내가 할게요. 늘 해 온 일이에요. 머리칼이 조금 더 하얘질 뿐이에요. …조금 더.', { face: 'smile' });
     const ed = c.spawn({ cid: 'edel', x: n.x + 30, y: n.y + 24, dir: 'left' });
     await c.say(ed, '성녀님. 지난달에도 그러셨소. 지난주에도. 이번엔 머리칼이 아니라 숨이 하얘질 거요.', { face: 'angry' });
     const opts = [];
@@ -319,7 +320,7 @@
       await c.narr('수녀가 약초를 달였다. 김이 오르자 병동에 겨울 아침 냄새가 퍼졌다.\n한 모금. 노아의 손목에서 투명함이 물러났다. 두 모금. 손가락이 돌아왔다. 세 모금.');
       await c.say(n, '…' + hyung() + '. 손이 보여. 손톱에 때도 보여. 헤헤.', { face: 'happy' });
       await c.say(lu, '……약초로? 빛을 쓰지 않고?', { face: 'shock' });
-      await c.say(lu, '서리 무덤에 16년 동안 다녔는데… 한 번도 안뜰의 꽃을 들여다보지 않았어요. 기도만 했어요.', { face: 'sad' });
+      await c.say(lu, '서리 무덤에 그렇게 오래 다녔는데… 한 번도 안뜰의 꽃을 들여다보지 않았어요. 기도만 했어요.', { face: 'sad' });
       await c.say(lu, '세린. 당신은 희생 말고 다른 걸 심어 두고 갔군요. 누가 찾아 주길 바라면서.', { face: 'cry' });
       c.flag('noah_herb'); c.bond('lumie', 2); c.bond('noah', 2);
     } else if (pick === '내 빛을 넣는다') {
@@ -363,13 +364,12 @@
     ed.dead = true;
     const boss = G.bosses.spawn('cassian', p.x, p.y + 40, { hpMul: 1.6 });
     boss.look = Object.assign({}, G.cast.get('edel').look); boss.name = '에델'; boss.title = '백은 기사 · 에델'; boss.atk = 5;
-    boss.duel = true; boss.home = { x: p.x, y: p.y + 30 };
+    boss.duel = true; boss.home = { x: p.x, y: p.y + 30 }; G.bosses.duelTo(boss, 0.2);
     S().duel = true;
     await c.cinema(false);
     c.lock(false);
     boss.start(); G.hud.setBoss(boss); c.music('boss2');
-    let win = false;
-    await c.freeWhile(() => { if (boss.hp <= boss.maxHp * 0.2) { win = true; return true; } return S().hp <= 1; });
+    const win = await c.duel(boss);
     S().duel = false;
     const bx = boss.x, by = boss.y; boss.dead = true; G.hud.boss = null;
     c.lock(true);
@@ -378,16 +378,18 @@
     c.music('white');
     if (!win) {
       await c.say(ed2, '…아직이오. 그대의 빛이 더 자라면 다시 오시오. 나는 여기 있겠소.', { face: 'normal' });
-      ed2.dead = true; S().flags.c7_edel_go = false;
-      c.heal();
+      S().flags.c7_edel_go = false;
+      await c.fade(true, { sec: 0.6 });   // 대성당으로 돌아가는 길 (예전엔 화면이 뚝 바뀌었다)
+      ed2.dead = true; c.heal();
       G.game.goto('w_cath', 12 * TS + 8, 14 * TS + 12, 'up');
+      await c.fade(false, { sec: 0.6 });
       await c.cinema(false); c.lock(false);
       return;
     }
     await c.say(ed2, '……졌소.', { face: 'shock' });
     await c.say(ed2, '백은 기사의 서약 셋째 조항. 「성녀와 약한 자가 부딪칠 때, 백은 기사는 투구를 벗고 스스로 판단한다.」', { face: 'closed' });
     await c.narr('에델이 처음으로 투구를 벗었다. 투구 아래에는 은색 머리칼의 젊은 여인이 있었다. 한쪽 눈썹이 하얗게 바래 있었다.');
-    await c.say(ed2, '어릴 적 나는 빛바램병으로 죽어 가고 있었소. 성녀님이 나를 살렸소. 그래서 성녀님의 모든 명을 따랐소. 16년을.', { face: 'sad' });
+    await c.say(ed2, '어릴 적 나는 빛바램병으로 죽어 가고 있었소. 성녀님이 나를 살렸소. 그래서 성녀님의 모든 명을 따랐소. 지금까지.', { face: 'sad' });
     await c.say(ed2, f('noah_herb') ? '그런데 오늘 그대는 꽃 한 송이로 아이를 살렸소. 희생 없이.' : f('noah_own') ? '그런데 오늘 그대는 필요한 만큼만 나누고 서 있었소. 쓰러지지 않고.' : '그런데 오늘 성녀님이 무릎 꿇는 것을 보았소. 기쁘다고 하셨소. 나는… 기쁘지 않았소.', { face: 'normal' });
     await c.say(ed2, '이 검을 가져가시오. 성기사의 [y]백은검[/]. 망자와 어둠을 벤다. 성녀님을 막는 데 쓰시오. 성녀님도… 사실은 누군가 자신을 막아 주길 기다리고 계셨소.', { face: 'normal' });
     await c.getItem('sw_silver');
@@ -403,22 +405,22 @@
   async function lumieLast(c, n) {
     c.lock(true);
     await c.cinema(true);
-    await c.say(n, '에델이 투구를 벗었군요. 16년 만에.', { face: 'sad' });
-    await c.say(n, '…말해 줘요. 희생 말고 다른 길이 정말 있어요? 나는 16년 동안 찾지 못했어요.', { face: 'normal' });
+    await c.say(n, '에델이 투구를 벗었군요. 처음으로.', { face: 'sad' });
+    await c.say(n, '…말해 줘요. 희생 말고 다른 길이 정말 있어요? 나는 끝내 찾지 못했어요.', { face: 'normal' });
     const k = await c.choice('루미에에게 뭐라고 할까?', [
       { t: '「세린은 나눠 주라고 했어요. 다 주라고 하지 않았어요.」', sub: '세린의 노트.', if: !!S().truth.t_note },
       { t: '「설화초를 심은 건 엄마예요. 누가 찾길 바라면서.」', if: f('noah_herb') },
       { t: '「필요한 만큼만 나눠도 서 있을 수 있어요.」', if: f('noah_own') || (S().shareCount || 0) >= 2 },
       { t: '「모르겠어요. 그래도 수정 속에 들어가진 않을 거예요.」' },
     ]);
-    if (k === 3) await c.say(n, '…그 말이 제일 정직하네요. 나도 16년 전에 그렇게 말할 걸 그랬어요.', { face: 'sad' });
-    else { await c.say(n, '……', { face: 'cry' }); await c.say(n, '16년 동안 나는 세린의 희생을 사랑이라고 불렀어요. 그렇게 부르지 않으면 견딜 수 없었으니까. 그런데 세린은… 희생을 원한 게 아니었죠.', { face: 'cry' }); c.bond('lumie', 2); c.flag('lumie_moved'); }
+    if (k === 3) await c.say(n, '…그 말이 제일 정직하네요. 나도 그때 그렇게 말할 걸 그랬어요.', { face: 'sad' });
+    else { await c.say(n, '……', { face: 'cry' }); await c.say(n, '그동안 나는 세린의 희생을 사랑이라고 불렀어요. 그렇게 부르지 않으면 견딜 수 없었으니까. 그런데 세린은… 희생을 원한 게 아니었죠.', { face: 'cry' }); c.bond('lumie', 2); c.flag('lumie_moved'); }
     await c.say(n, '이걸 가져가요. [y]치유의 빛[/]. 내 기도를 당신 손에 옮겨 둘게요. 이제 기도는 당신을 지키는 데 쓸게요. 가두는 데가 아니라.', { face: 'smile' });
     G.st.learnSpell(S(), 'heal'); c.sfx('heal'); c.flash('#e8fff0', 0.3);
     await c.say(null, '[g]치유의 빛[/]을 배웠다! 하트 2칸을 천천히 채운다.', { style: 'sys' });
-    await c.say(n, '그리고 이것. 부치지 못한 편지예요. 세린에게 쓴 거예요. 16년 치. …이제 당신한테 부칠게요.', { face: 'sad' });
+    await c.say(n, '그리고 이것. 부치지 못한 편지예요. 세린에게 쓴 거예요. 한 묶음. …이제 당신한테 부칠게요.', { face: 'sad' });
     await c.getItem('letter_lumie');
-    await c.say(n, '그레이 지방의 [y]강철공 볼트[/]를 만나요. 징수탑을 설계한 사람이에요. 은빛 왕국이 왜 잿빛이 되었는지, 그는 알아요. …그리고 16년 동안 모른 척했을 거예요. 나처럼.', { face: 'normal' });
+    await c.say(n, '그레이 지방의 [y]강철공 볼트[/]를 만나요. 징수탑을 설계한 사람이에요. 은빛 왕국이 왜 잿빛이 되었는지, 그는 알아요. …그리고 내내 모른 척했을 거예요. 나처럼.', { face: 'normal' });
     c.flag('c7_done'); c.flag('open:gray');
     ST.leave(buddy());
     await c.cinema(false);
@@ -459,7 +461,7 @@
     const got = S().snowC || 0;
     if (f('nive_done')) { await c.say(n, '아기 설인이 엄마 눈사람 옆에서 자! 코를 골아. 눈사람이 녹으면 어떡하지? …또 만들면 되지!', { face: 'happy' }); return; }
     if (got >= 10) {
-      S().snowC -= 10;
+      S().snowC -= 10; delete S().inv.crystal_snow;
       await c.say(n, '눈 결정 열 개! 이걸로 엄마 설인을 만들 수 있어! (뚝딱뚝딱)', { face: 'happy' });
       await c.narr('눈사람이 조금 커지고, 반짝이는 눈이 생겼다. 어딘가에서 커다란 아기 설인이 뒤뚱뒤뚱 걸어와 눈사람 옆에 앉았다. 그리고 잠들었다.');
       c.flag('nive_done'); await c.getItem('heartpiece');
@@ -468,7 +470,7 @@
     await c.say(n, '쉿! 저기 설원에 아기 설인 있지? 엄마를 잃어버렸대. 밤마다 울어.||눈사람으로 엄마를 만들어 주고 싶은데, 반짝이는 [y]눈 결정[/]이 열 개 필요해. 얼음 도깨비불이 가지고 있어. (' + got + '/10)', { face: 'sad' });
     c.flag('nive_q');
   } });
-  ST.killHooks.push((e, s) => { if (e.type === 'icewisp' && s.flags.nive_q && !s.flags.nive_done) { s.snowC = (s.snowC || 0) + 1; G.ui.toast('눈 결정 ' + Math.min(10, s.snowC) + '/10', 'good'); } });
+  ST.killHooks.push((e, s) => { if (e.type === 'icewisp' && s.flags.nive_q && !s.flags.nive_done) { s.snowC = (s.snowC || 0) + 1; s.inv.crystal_snow = Math.min(10, s.snowC); G.ui.toast('눈 결정 ' + Math.min(10, s.snowC) + '/10', 'good'); } });
 
   /* ───────── 빛 씨앗 (화이트) ───────── */
   ST.seed('w1', 'world', X0 - 8, Y0 + 6, { under: true });
@@ -487,7 +489,7 @@
       '1,2': { ter: [['deep', 1, 5, 18, 3]], props: [['sign', 9, 10, { text: '물길 너머 계단. 「얼음창은 물 위에 길을 낸다 — 잠깐만.」' }], ['torch', 3, 9], ['torch', 16, 9]], foes: [['icewisp', 5, 10], ['bat', 14, 3]] },
       '0,2': { ter: [['ice', 1, 2, 18, 11]], objs: [['icespike', 6, 4], ['icespike', 6, 5], ['icespike', 12, 8], ['icespike', 12, 9], ['icespike', 12, 10], ['icespike', 3, 10]], props: [['chest', 2, 3, { item: 'key_small' }], ['pot', 17, 11]], foes: [['icewisp', 9, 5], ['golem', 9, 9]] },
       '2,2': { solve: { type: 'torches', flag: 'd7:torch', msg: '상자가 떠올랐다' }, props: [['torch', 4, 4, { burn: 12 }], ['torch', 15, 4, { burn: 12 }], ['torch', 4, 10, { burn: 12 }], ['torch', 15, 10, { burn: 12 }], ['chest', 9, 7, { item: 'compass', hidden: 'd7:torch' }], ['sign', 9, 3, { text: '「네 불이 모두 탈 때 — 바람이 끄기 전에」' }]], foes: [['icewisp', 9, 5], ['wisp', 9, 10]] },
-      '2,1': { ter: [['grass', 4, 4, 12, 7], ['snow', 1, 2, 18, 2]], props: [['spot', 9, 6, { verb: '하얀 꽃을 살핀다', text: async (c) => { if (c.has('got_herb')) { await c.narr('꽃을 딴 자리에 새싹이 벌써 올라온다. 이 안뜰만 봄이다.'); return; } c.flag('got_herb'); await c.narr('얼음 무덤 한가운데, 여기만 흙이 따뜻하다. 하얀 꽃이 무더기로 피어 있다.\n줄기 하나에 빛바랜 종이가 묶여 있다. 「빛바램 마지막 단계에. 달여서 세 모금. 아무도 희생하지 않아도 돼. — S」'); await c.getItem('snowherb'); await c.say('toria', '…「S」. 엄마 글씨야. 금서고에서 본 거랑 똑같아. 엄마가 여기 꽃을 심었어. 16년 전에.', { face: 'cry' }); } }], ['chest', 16, 3, { item: 'map_d' }]], foes: [['ghost', 4, 3], ['ghost', 15, 11]] },
+      '2,1': { ter: [['grass', 4, 4, 12, 7], ['snow', 1, 2, 18, 2]], props: [['spot', 9, 6, { verb: '하얀 꽃을 살핀다', text: async (c) => { if (c.has('got_herb')) { await c.narr('꽃을 딴 자리에 새싹이 벌써 올라온다. 이 안뜰만 봄이다.'); return; } c.flag('got_herb'); await c.narr('얼음 무덤 한가운데, 여기만 흙이 따뜻하다. 하얀 꽃이 무더기로 피어 있다.\n줄기 하나에 빛바랜 종이가 묶여 있다. 「빛바램 마지막 단계에. 달여서 세 모금. 아무도 희생하지 않아도 돼. — S」'); await c.getItem('snowherb'); await c.say('toria', '…「S」. 엄마 글씨야. 금서고에서 본 거랑 똑같아. 엄마가 여기 꽃을 심었어. 나 태어나기 전에.', { face: 'cry' }); } }], ['chest', 16, 3, { item: 'map_d' }]], foes: [['ghost', 4, 3], ['ghost', 15, 11]] },
       '1,1': { solve: { type: 'clear' }, props: [['chest', 9, 5, { item: 'key_big', big: true, hidden: true }], ['spot', 15, 3, { verb: '비문을 읽는다', text: async (c) => { c.book('b_saint'); for (const pg of G.data.BOOKS.b_saint.pages) await c.narr(pg); if (!c.has('saw_saint')) { c.flag('saw_saint'); await c.say('toria', 'L… 루미에 성녀님이야. 「알아」. 성녀님은 알고 있었어.', { face: 'sad' }); } } }], ['torch', 3, 3, { lit: true }], ['torch', 16, 3, { lit: true }]], foes: [['hollow', 6, 7], ['hollow', 13, 7], ['icewisp', 9, 10]] },
       '0,1': { ter: [['ice', 1, 2, 18, 11]], props: [['chest', 9, 6, { item: 'heartpiece' }], ['chest', 3, 3, { item: 'arrows10' }], ['spot', 16, 10, { verb: '얼음 속을 들여다본다', text: async (c) => { await c.narr('얼음 속에 기도등 수백 개가 갇혀 있다. 등마다 빛 한 방울. 그런데 절반은 비었다.\n빈 등 밑에 작은 쇠 관이 이어져 있다. 관은 벽 속으로, 남쪽으로 — 천년성 쪽으로 뻗어 있다.'); if (!c.has('saw_leak')) { c.flag('saw_leak'); c.route('night', 1); await c.say('toria', '찍…! 성녀님이 모은 빛, 절반이 어디론가 새고 있어. 성녀님은 알까?', { face: 'shock' }); } } }]], foes: [['icewisp', 5, 8], ['icewisp', 14, 8], ['wisp', 9, 4]] },
       '1,0': { boss: true, ter: [['ice', 3, 3, 14, 9]], props: [['torch', 3, 3, { lit: true }], ['torch', 16, 3, { lit: true }], ['torch', 3, 11, { lit: true }], ['torch', 16, 11, { lit: true }], ['boss', 9, 5, { type: 'frost' }]] },
@@ -513,7 +515,7 @@
         await c.narr('거인이 누워 있던 자리 뒤로, 푸른 얼음벽이 갈라졌다. 얼음 창고. 기도등 수천 개가 벌집처럼 박혀 빛난다.');
         const rt = S().flags.route_lock || 'order';
         const b = buddy();
-        if (b === 'rud') await c.say('rud', '…탑 삼백 개 분량. 아니, 사백. 계산이 안 끝나. 누나가 폭약을 준비해 뒀어. 신호만 하면 돼.', { face: 'shock' });
+        if (b === 'rud') await c.say('rud', '…탑 수백 개 분량이야. 누나가 폭약을 준비해 뒀어. 신호만 하면 돼.', { face: 'shock' });
         else if (b === 'cassian') await c.say('cassian', '보고 대상이다. 규칙대로라면 전부 천년성으로 보내야 한다. …규칙대로라면.', { face: 'normal' });
         else await c.say('lyra', '절반이 비었어요. 쇠 관이 남쪽으로. 미드나잇 말이 맞았어요. 누군가 성녀님 몰래 가져가고 있어요.', { face: 'closed' });
         const k = await c.choice('얼음 창고의 빛을 어떻게 할까?', [
@@ -528,6 +530,7 @@
         else { await c.narr('관에 손을 대지 않았다. 대신 흰빛으로 관 이음새에 작은 표시를 남겼다. 빛을 따라가면 이 표시도 따라간다. 미드나잇이 좋아할 것이다.'); c.flag('c7_marked'); }
         await c.cinema(false);
         c.lock(false);
+        c.flag('c7p_' + pick);
         c.journal(pick === 'dawn' ? '서리 거인을 쓰러뜨리고 얼음 창고를 부쉈다. 빛이 눈이 되어 내렸다.' : pick === 'order' ? '서리 거인을 쓰러뜨리고 얼음 창고의 새는 관을 막았다. 기록으로 남긴다.' : '서리 거인을 쓰러뜨렸다. 얼음 창고의 새는 관에 흰빛 표시를 남겼다. 따라가 볼 것이다.');
       }); };
       r.ctl.R.onEnter = () => { G.script.run(async (c) => {

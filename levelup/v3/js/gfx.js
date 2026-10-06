@@ -104,5 +104,36 @@
   /** 명도 단계: 기준색에서 어둡게/밝게 n단 */
   function ramp(hex, n) { const out = []; for (let i = 0; i < n; i++) { const f = 0.55 + (i / (n - 1)) * 0.75; out.push(f <= 1 ? U.shade(hex, f) : U.mix(hex, '#ffffff', (f - 1) * 1.2)); } return out; }
 
-  G.gfx = { canvas, ctx, brush, outline, flipX, silhouette, tint, digits, digitsWidth, ramp };
+  /** 그림 속에 갇힌 작은 빈칸(가장자리와 이어지지 않은 투명 칸, max칸 이하 덩어리)을 둘레 색으로 메운다.
+      바깥선을 그으면 이런 빈칸은 검은 점 · 고리로 남아 머리 · 두건 · 얼굴 둘레가 「비어」 보였다 */
+  function fillHoles(b, max) {
+    const w = b.w, h = b.h, d = b.d, N = w * h;
+    const op = (i) => d[i * 4 + 3] > 40;
+    const mark = new Uint8Array(N), q = [];
+    const push = (i) => { if (!mark[i] && !op(i)) { mark[i] = 1; q.push(i); } };
+    for (let x = 0; x < w; x++) { push(x); push((h - 1) * w + x); }
+    for (let y = 0; y < h; y++) { push(y * w); push(y * w + w - 1); }
+    while (q.length) { const i = q.pop(), x = i % w, y = (i / w) | 0; if (x > 0) push(i - 1); if (x < w - 1) push(i + 1); if (y > 0) push(i - w); if (y < h - 1) push(i + w); }
+    for (let s = 0; s < N; s++) {
+      if (mark[s] || op(s)) continue;
+      const comp = [s]; mark[s] = 2;
+      for (let k = 0; k < comp.length; k++) { const i = comp[k], x = i % w, y = (i / w) | 0; for (const j of [x > 0 ? i - 1 : -1, x < w - 1 ? i + 1 : -1, y > 0 ? i - w : -1, y < h - 1 ? i + w : -1]) if (j >= 0 && !mark[j] && !op(j)) { mark[j] = 2; comp.push(j); } }
+      if (comp.length > max) continue;
+      // 바깥에서 안쪽으로: 이웃 가운데 가장 많은 색으로 한 칸씩
+      let left = comp.slice();
+      for (let pass = 0; pass < 16 && left.length; pass++) {
+        const next = [], put = [];
+        for (const i of left) {
+          const x = i % w, y = (i / w) | 0, cnt = new Map();
+          for (const j of [x > 0 ? i - 1 : -1, x < w - 1 ? i + 1 : -1, y > 0 ? i - w : -1, y < h - 1 ? i + w : -1]) if (j >= 0 && op(j)) { const k = (d[j * 4] << 16) | (d[j * 4 + 1] << 8) | d[j * 4 + 2]; cnt.set(k, (cnt.get(k) || 0) + 1); }
+          if (!cnt.size) { next.push(i); continue; }
+          let best = -1, bn = 0; for (const [k, n] of cnt) if (n > bn) { bn = n; best = k; }
+          put.push([i, best]);
+        }
+        for (const [i, k] of put) { d[i * 4] = k >> 16 & 255; d[i * 4 + 1] = k >> 8 & 255; d[i * 4 + 2] = k & 255; d[i * 4 + 3] = 255; }
+        left = next;
+      }
+    }
+  }
+  G.gfx = { canvas, ctx, brush, outline, flipX, silhouette, tint, digits, digitsWidth, ramp, fillHoles };
 })();

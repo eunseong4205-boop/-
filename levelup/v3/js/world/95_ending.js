@@ -26,7 +26,7 @@
         '세린은 16년 만에 수정 밖으로 걸어 나왔다. 걸음마를 다시 배우는 사람처럼. 그리고 수정에 이마를 대고 울었다.',
         '카이론은 새 장부를 폈다. 첫 줄: 「그릇 — 내 아이.」 그는 처음으로 그 두 글자를 썼다. 그리고 펜을 부러뜨렸다.',
         (f('lyra_sister') ? '리라는 아스트라에 남았다. 매일 수정 옆에서 노래한다. 「두 개의 등불이 있었네」. 가사를 또 바꿨다. 「하나는 수정 속에.」' : '밤마다 누군가 아스트라에서 노래를 부른다는 소문이 대륙에 돌았다.'),
-        '토리아는 수정 앞에서 16년을 기다리기로 했다. 다람쥐가 16년을 사느냐고? 레벨 9에서 멈춘 다람쥐니까, 아마도.',
+        '토리아는 수정 앞에서 기다리기로 했다. 다람쥐가 그렇게 오래 사느냐고? 레벨 9에서 멈춘 다람쥐니까, 아마도.',
         '천 년 뒤, 누군가 또 이 수정 앞에 설 것이다. 그때 그 아이는 답을 찾을까.\n…되풀이는 끝나지 않았다. 다만, 조금 늦어졌을 뿐.',
       ] },
     dawn: { no: 3, title: '새벽', sub: '탑을 거꾸로 돌려, 빛을 사람들에게 돌려주었다', col: '#ffa87a', music: 'epic',
@@ -43,7 +43,7 @@
         '역류 장치가 돌았다. 카시안이 기사단 전원에게 명령했다. 「오늘부터 탑은 빛을 모으지 않는다. 나눈다.」',
         '탑들은 헐리지 않았다. 대신 거꾸로 돌기 시작했다. 병든 마을에 빛을 보내는 둥지가 되었다. 빛바램병은 그해 겨울부터 줄었다.',
         '흑점은 모일 곳을 잃고 흩어졌다. 스텔라의 기록: 「접근 속도 0. 그다음 날부터 음수.」',
-        '카이론은 챔피언 자리를 내려놓았다. 새 챔피언 투표에서 카시안이 뽑혔다. 카시안은 거절했다. 대신 「감찰관」으로 남았다. 계산에 사람이 몇 명 들어가는지 세는 일.',
+        '카이론은 챔피언 자리를 내려놓았다. 새 챔피언 투표에서 카시안이 뽑혔다. 카시안은 거절했다. 대신 「감찰관」으로 남았다. 장부의 숫자마다 이름을 붙이는 일.',
         '고르디는 정직한 기사 훈장을 받았다. 그리고 그린 마을로 돌아가 감자를 캤다.',
         '토리아는 둥지가 된 그린 마을 탑 꼭대기에서 날개를 폈다. 바람이 불었다. 「찍.」 떠올랐다. 규칙대로라면 다람쥐는 못 난다. 규칙은 바뀌었다.',
       ] },
@@ -52,18 +52,18 @@
         '역류 장치가 돌았다. 대륙으로 흩어지는 빛에게 부탁했다. 「조금만. 한 방울만. 저기, 배고픈 사람들에게도.」',
         '대륙 곳곳에서 사람들이 등불을 켰다. 마리엔이, 볼칸이, 루체가, 참새들이, 학원생들이, 에델과 루미에가, 볼트와 세피아가, 등불 거리의 칸델이.\n한 방울씩. 누구의 빛도 바래지 않을 만큼.',
         '흑점 속의 목소리들이 조용해졌다. 금빛 소년이 먼저. 612년의 여자가 그다음.\n「…배불러.」 그리고 흑점은 — 별이 되었다. 수천 개의 작은 별. 채워진 그릇들.',
-        '수정이 열렸다. 세린이 걸어 나왔다. 카이론이 달려갔다. 챔피언이 넘어졌다. 레벨 99만 9999가.\n세린이 웃었다. 「여전히 계산하고 있었지? 바보.」',
-        (f('lyra_sister') ? '리라는 처음으로 엄마 앞에서 노래를 불렀다. 가사를 원래대로 돌렸다. 「두 개의 등불이 있었네 / 둘 다 집으로 돌아왔네.」' : '밤의 땅 블랙에 16년 만에 해가 떴다.'),
-        '그린 마을 참나무 아래. 에벨린 할머니가 문 앞에 서 있었다. 「…오늘도 렙업했나?」\n토리아가 날았다. 레벨 9에서 16년 동안 멈춰 있던 다람쥐가. 세린이 16년 전에 빌려 간 빛을 돌려받고.\n「찍. 이제야 알았어. 나는 못 나는 게 아니라, 빌려준 거였어.」',
+        '수정이 열렸다. 세린이 걸어 나왔다. 카이론이 달려갔다. 챔피언이 넘어졌다. 레벨 99만 9999가.\n세린이 웃었다. 「여전히 그 장부 들고 다녔지? 바보.」',
+        (f('lyra_sister') ? '리라는 처음으로 엄마 앞에서 노래를 불렀다. 가사를 원래대로 돌렸다. 「두 개의 등불이 있었네 / 둘 다 집으로 돌아왔네.」' : '밤의 땅 블랙에 마침내 해가 떴다.'),
+        '그린 마을 참나무 아래. 에벨린 할머니가 문 앞에 서 있었다. 「…오늘도 렙업했나?」\n토리아가 날았다. 레벨 9에서 그렇게 오래 멈춰 있던 다람쥐가. 세린이 16년 전에 빌려 간 빛을 돌려받고.\n「찍. 이제야 알았어. 나는 못 나는 게 아니라, 빌려준 거였어.」',
       ] },
     atone: { no: 6, title: '속죄', sub: '계산이 부른 것을, 계산한 사람이 끝냈다', col: '#e8c048', music: 'requiem',
       slides: () => [
-        '카이론이 앞으로 나섰다. 「내 계산이 부른 것이다. 16년 동안, 아니 천 년의 끝에서. 내가 끝낸다.」',
+        '카이론이 앞으로 나섰다. 「내 계산이 부른 것이다. 내가 끝낸다.」',
         '챔피언은 흑점을 안았다. 삼키지 않았다. 세린이 그랬던 것처럼, 안았다. 레벨 99만 9999의 빛이 흑점을 조금씩 채웠다.',
-        '「세린. 이번엔 내가 안고 있을게. 애들을 부탁해.」\n수정이 닫혔다. 안에 카이론이 있었다. 처음으로, 계산 없는 얼굴로.',
+        '「세린. 이번엔 내가 안고 있을게. 애들을 부탁해.」\n수정이 닫혔다. 안에 카이론이 있었다. 처음으로, 아무것도 세지 않는 얼굴로.',
         '세린은 수정 앞에 매일 꽃을 둔다. 그린 흙에서 키운 꽃.' + (f('lyra_sister') ? ' 리라와 함께.' : ''),
-        (f('c9_promise') ? '녹턴은 약속을 지켰다고 말했다. 「해치지 않고, 멈추게 했다.」 그리고 16년 만에 잠들었다. 사흘 동안.' : '녹턴은 아스트라에 남아 수정을 지킨다. 이번엔 그림자가 아니라, 그 사람 옆에서.'),
-        '흑점은 줄어들고 있다. 아주 천천히. 스텔라의 계산으로는 212년. 카이론은 계산이 싫다고 했지만, 이번 숫자는 좋아할 것이다.',
+        (f('c9_promise') ? '녹턴은 약속을 지켰다고 말했다. 「해치지 않고, 멈추게 했다.」 그리고 처음으로 잠들었다. 사흘 동안.' : '녹턴은 아스트라에 남아 수정을 지킨다. 이번엔 그림자가 아니라, 그 사람 옆에서.'),
+        '흑점은 줄어들고 있다. 아주 천천히. 스텔라의 예측으로는 212년. 카이론은 숫자가 싫다고 했지만, 이번 숫자는 좋아할 것이다.',
       ] },
     night: { no: 7, title: '밤', sub: '흑점을 밤 속에 숨겼다. 아무도 모르게', col: '#b87aff', music: 'dream',
       slides: () => [
@@ -92,7 +92,7 @@
     const add = (who, text) => out.push({ who, text });
     add('evelyn', id === 'repeat' ? '에벨린 할머니는 침대 밑 상자를 다시 닫았다. 「또 16년이가.」' : '에벨린 할머니는 침대 밑 상자를 드디어 비웠다. 안에는 세린이 남긴 편지 한 통. 「엄마, 우리 애가 오면 이거 줘.」');
     if (met('noah') || f('c1_dew_given')) add('noah', f('noah_herb') ? '노아는 봄에 퇴원했다. 머리칼 끝이 조금 갈색으로 돌아왔다. 설화초를 화분에 키운다.' : f('noah_own') ? '노아는 봄에 퇴원했다. 손끝이 따뜻하다. 「' + (girl() ? '누나' : '형아') + '가 준 빛이 아직 여기 있어.」' : f('noah_lumie') ? '노아는 살았다. 성녀님의 마지막 빛으로. 커서 의사가 되겠다고 한다. 빛 말고 약으로 고치는.' : '노아는 그린 마을 창가에서 하늘을 본다. 매일 조금씩 나아진다.');
-    if (met('cassian')) add('cassian', (s.bond.cassian || 0) >= 3 ? '카시안은 칼을 내려놓지 않았다. 대신 칼끝이 향하는 곳을 바꿨다. 「계산에 사람이 몇 명 들어가는지 세는 사람」이 되었다.' : '카시안은 기사단에 남았다. 가끔 블루 부두에 가서 바다를 본다. 누군가와 겨뤘던 자리.');
+    if (met('cassian')) add('cassian', (s.bond.cassian || 0) >= 3 ? '카시안은 칼을 내려놓지 않았다. 대신 칼끝이 향하는 곳을 바꿨다. 「장부 한 줄마다 얼굴을 떠올리는 사람」이 되었다.' : '카시안은 기사단에 남았다. 가끔 블루 부두에 가서 바다를 본다. 누군가와 겨뤘던 자리.');
     if (met('rud') || met('lea')) add('rud', s.flags.route_lock === 'dawn' ? '레아와 루드는 새벽단을 해산하고 「새벽 조합」을 만들었다. 광부와 농부와 아이들의 조합.' : '루드는 레드 광산의 장부를 맡았다. 동생들이 약을 사러 가는 길이 짧아졌다.');
     if (met('viola')) add('viola', '비올라는 세린의 기록 스물다섯을 모두 깼다. 스물여섯째 기록은 자기가 만들었다. 「흰빛에게 과녁 대결 이기기」. 아직 도전 중.');
     if (met('lumie')) add('lumie', f('noah_lumie') ? '루미에의 빛은 다했다. 이제 그녀는 약탕기 앞에 선다. 설화초를 달이며, 서툴게 웃는다.' : '루미에는 기도를 바꿨다. 「빛을 바치는 자는 복되다」 대신 「빛을 나누는 자는 배부르다」.');
@@ -135,7 +135,7 @@
     ov.appendChild(box);
     const show = async (html, min, max) => { box.style.opacity = '0'; await new Promise((r) => setTimeout(r, 500)); box.innerHTML = html; box.style.opacity = '1'; await waitKey(min, max); };
     await new Promise((r) => setTimeout(r, 1400));
-    await show('<div style="font-size:12px;letter-spacing:.5em;color:' + E.col + '">결말 ' + E.no + ' / 8</div><div style="font-size:34px;margin:14px 0;color:#fff;text-shadow:0 0 18px ' + E.col + '">' + E.title + '</div><div style="font-size:13px;color:#b8b0c8">' + E.sub + '</div>', 1.5, 6);
+    await show('<div style="font-size:12px;letter-spacing:.5em;color:' + E.col + '">결말 ' + E.no + ' / ' + Object.keys(ENDINGS).length + '</div><div style="font-size:34px;margin:14px 0;color:#fff;text-shadow:0 0 18px ' + E.col + '">' + E.title + '</div><div style="font-size:13px;color:#b8b0c8">' + E.sub + '</div>', 1.5, 6);
     for (const t of E.slides()) await show(rich(t), 1.2, 9);
     // 사람들의 그 뒤
     const fs = fates(id);
@@ -147,7 +147,7 @@
     await show('<div style="font-size:12px;letter-spacing:.4em;color:#8a82a0">무한렙업 대모험</div><div style="font-size:22px;margin:10px 0;color:#fff">빛의 검과 무한의 그릇</div><div style="font-size:13px;line-height:2;color:#c8c0d8">이야기 · 그림 · 소리 · 코드<br>한 파일 안에, 전부 손으로<br><br>원작의 마음 — 「무한으로 렙업하자!!」<br>함께 걸어 준 모든 사람에게</div>', 2, 10);
     const got = saveEnding(id);
     const list = Object.values(ENDINGS).sort((a, b) => a.no - b.no).map((e2) => { const k2 = Object.keys(ENDINGS).find((kk) => ENDINGS[kk] === e2); return '<span style="display:inline-block;margin:4px 6px;padding:4px 10px;border:1px solid ' + (got[k2] ? e2.col : '#3a3448') + ';color:' + (got[k2] ? e2.col : '#4a4458') + ';border-radius:3px">' + (got[k2] ? e2.title : '？') + '</span>'; }).join('');
-    await show('<div style="font-size:12px;letter-spacing:.4em;color:#8a82a0;margin-bottom:10px">찾은 결말 ' + Object.keys(got).filter((k2) => ENDINGS[k2]).length + ' / 8</div><div style="max-width:36ch">' + list + '</div><div style="font-size:12px;color:#8a82a0;margin-top:18px">다른 선택은 다른 결말로 이어진다.<br>새벽 · 질서 · 밤 — 그리고 나눈 만큼, 삼킨 만큼.</div>', 2, 20);
+    await show('<div style="font-size:12px;letter-spacing:.4em;color:#8a82a0;margin-bottom:10px">찾은 결말 ' + Object.keys(got).filter((k2) => ENDINGS[k2]).length + ' / ' + Object.keys(ENDINGS).length + '</div><div style="max-width:36ch">' + list + '</div><div style="font-size:12px;color:#8a82a0;margin-top:18px">다른 선택은 다른 결말로 이어진다.<br>새벽 · 질서 · 밤 — 그리고 나눈 만큼, 삼킨 만큼.</div>', 2, 20);
     await show('<div style="font-size:26px;color:#fff">끝</div><div style="font-size:13px;color:#b8b0c8;margin-top:12px">오늘도 렙업.</div>', 2, 8);
     S().flags['ended:' + id] = true; S().cleared = (S().cleared || 0) + 1;
     try { G.st.save(S(), true); } catch (e) { /* 저장 실패는 넘어간다 */ }

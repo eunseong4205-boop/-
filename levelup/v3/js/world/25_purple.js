@@ -19,7 +19,7 @@
       if (!f('c5_vera')) return { text: '라벤더 학원의 베라 교수를 찾아가자.', map: 'world', x: X0 + 6, y: Y0 + 6 };
       if (!f('c5_viola')) return { text: '학원 뜰의 천재, 비올라가 기다린다. (마법 과녁 대결)', map: 'world', x: X0 + 10, y: Y0 + 9 };
       if (!f('c5_sybil')) return { text: '거울 연못의 시빌 할멈에게 가자.', map: 'world', x: POND.x, y: POND.y - 6 };
-      if (!f('d5:boss')) return { text: '연못 아래, 거꾸로 선 탑 가장 깊은 곳으로.', map: 'world', x: POND.x, y: POND.y - 6 };
+      if (!f('d5:boss')) return { text: '연못 가운데 돌계단으로 내려가, 거꾸로 선 탑 가장 깊은 곳으로.', map: 'world', x: POND.x, y: POND.y };   // 연못 속 입구
       if (!f('c5_tea')) return { text: '베라 교수에게 돌아가자.', map: 'world', x: X0 + 6, y: Y0 + 6 };
       return { text: '구름고래의 초대장. 하늘섬 무지개의 천년제로.', map: 'world', x: X0 + 16, y: Y0 + 2 };
     } });
@@ -77,7 +77,7 @@
     const P = G.props;
     Wd.add(new P.Waystone({ x: px(PT.plaza.x + 3), y: py(PT.plaza.y - 3), wid: 'w_purple', name: '퍼플 라벤더 학원' }));
     Wd.add(new PondStair({ x: POND.x * TS + 16, y: POND.y * TS + 12 }));
-    Wd.add(new P.Sign({ x: px(POND.x - 1), y: py(POND.y - 7), text: '진실의 거울 연못\n「들여다보는 사람은 들여다보이는 사람이다」 — 시빌' }));
+    Wd.add(new P.Sign({ x: px(POND.x + 2), y: py(POND.y - 5), text: '진실의 거울 연못\n「들여다보는 사람은 들여다보이는 사람이다」 — 시빌' }));
     // 비올라의 마법 과녁
     if (f('c5_vera') && !f('c5_viola')) for (const [i, [dx, dy]] of [[5, 11], [9, 12], [13, 11]].entries()) { const t = G.foes.spawn('dummy', px(X0 + dx), py(Y0 + dy)); t.name = '마법 과녁'; t.targetNo = i; }
   });
@@ -121,7 +121,7 @@
     await c.cinema(true);
     c.music('mother');
     await c.say(n, '거울을 가져왔군요. 표정을 보니, 뭔가를 봤어요.', { face: 'sad' });
-    await c.say(n, '…이제 보여 줄 때가 됐네요. 16년 동안 찻잔 받침으로 쓴 종이. 버리지도, 읽지도 못하고.', { face: 'closed' });
+    await c.say(n, '…이제 보여 줄 때가 됐네요. 오랫동안 찻잔 받침으로 쓴 종이. 버리지도, 읽지도 못하고.', { face: 'closed' });
     c.truth('t_note');
     for (const l of G.data.TRUTHS.t_note.long) await c.narr(l);
     await c.say(n, '「이 아이에게는 나누는 법을 가르쳐 줘요.」 …나는 가르치지 못했어요. 당신은 여기 없었으니까.', { face: 'cry' });
@@ -145,7 +145,7 @@
     if (!f('c5_viola')) {
       c.lock(true);
       await c.say(n, '당신이 세린의 아이? 흥. 별로 안 닮았네. 눈 말고는.', { face: 'angry' });
-      await c.say(n, '나는 비올라. 열네 살. 라벤더 학원 최연소 수석. 세린의 기록 스물세 개 중에 열아홉 개를 깼어. 남은 네 개는 올해 안에 깰 거야.', { face: 'smirk' });
+      await c.say(n, '나는 비올라. 열네 살. 라벤더 학원 최연소 수석. 세린의 기록을 거의 다 깼어. 남은 것도 올해 안에 깰 거야.', { face: 'smirk' });
       await c.say(n, '당신이 정말 흰빛이면, 과녁 세 개쯤은 나보다 빨리 맞히겠지? 활이든 마법이든. 12초.', { face: 'smirk' });
       const ok = await c.confirm('과녁 대결을 받을까?', '받는다', '다음에');
       c.lock(false);

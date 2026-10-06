@@ -53,10 +53,20 @@
       return rm;
     },
   });
+  // 대륙에서 정거장 · 아스트라로 가는 길은 문이 아니라 무한호 — 목표 표시가 발사대를 가리키게
+  ST.entries.station = () => (f('c10_launch') ? { map: 'world', x: PAD.x + 3, y: PAD.y + 8 } : null);
+  ST.entries.astra = { via: 'station' };
+  ST.entries.astra_core = { via: 'astra' };
   // 무한호: 발사대에서 정거장으로 (10장 뒤)
   ST.onMap('world', (m, Wd) => {
     if (!f('c10_launch')) return;
-    Wd.add(new G.props.Spot({ x: px(PAD.x + 3), y: py(PAD.y + 7), verb: '무한호에 탄다', text: async (c) => { if (await c.confirm('무한호를 타고 하늘 정거장으로 갈까?', '간다', '아직')) { await c.fade(true, { sec: 0.8 }); c.sfx('rumble'); G.game.goto('station', px(17), py(17), 'up'); await c.fade(false, { sec: 0.8 }); } } }));
+    Wd.add(new G.props.Spot({ x: px(PAD.x + 3), y: py(PAD.y + 7), verb: '무한호에 탄다', text: async (c) => {
+      if (!(await c.confirm('무한호를 타고 하늘 정거장으로 갈까?', '간다', '아직'))) return;
+      await c.fade(true, { sec: 0.8 }); c.sfx('rumble');
+      // 아직 11장이 시작되지 않았으면(발사 장면 뒤 바로 저장된 경우 등) 정거장 도착 장면부터
+      if (!f('ch:c11') && ST.startStation) { c.lock(true); await c.cinema(true); await ST.startStation(c); return; }
+      G.game.goto('station', px(17), py(17), 'up'); await c.fade(false, { sec: 0.8 });
+    } }));
   });
 
   ST.startStation = async function (c) {
@@ -78,7 +88,7 @@
     c.flag('met:stella');
     if (!f('c11_stella')) { await stellaFirst(c, n); return; }
     if (f('d11:boss') && !f('c11_done')) { await stellaLast(c, n); return; }
-    await c.say(n, ST.lines({ c11: f('c11_done') ? '빛의 사다리는 열려 있다. 아스트라까지 11분. 나는 기다리는 걸 잘한다. 388년 연습했다.' : '심층 격벽은 열었다. 파수꾼은 카이론이 16년 전에 바꿔 놓은 명령을 따른다. 「아무도 아스트라로 보내지 마라.」', c12: '관측 중. 흑점 접근 속도가 줄었다. …당신들 때문일까. 기록한다.' }), { face: 'normal' });
+    await c.say(n, ST.lines({ c11: f('c11_done') ? '빛의 사다리는 열려 있다. 아스트라까지 11분. 나는 기다리는 걸 잘한다. 388년 연습했다.' : '심층 격벽은 열었다. 파수꾼은 카이론이 오래전에 바꿔 놓은 명령을 따른다. 「아무도 아스트라로 보내지 마라.」', c12: '관측 중. 흑점 접근 속도가 줄었다. …당신들 때문일까. 기록한다.' }), { face: 'normal' });
   } });
   async function stellaFirst(c, n) {
     c.lock(true);
@@ -88,17 +98,17 @@
     await c.say(n, '나는 깨어 있었다. 하늘을 봤다. 145,923일치.', { face: 'normal' });
     await c.say(n, '결론. 흑점은 빛의 양이 아니라 [y]밀도[/]를 따라온다. 빛이 가장 많이 모인 곳으로. 612년엔 은빛 왕국. 지금은 아스트라.', { face: 'normal' });
     c.truth('t_star');
-    await c.say(n, '16년 전, 카이론이라는 사람이 이 정거장을 지나갔다. 나는 그에게 이 결론을 보여 줬다. 그는 오랫동안 화면을 봤다. 그리고 말했다. 「알고 있다.」', { face: 'sad' });
+    await c.say(n, '오래전, 카이론이라는 사람이 이 정거장을 지나갔다. 나는 그에게 이 결론을 보여 줬다. 그는 오랫동안 화면을 봤다. 그리고 말했다. 「알고 있다.」', { face: 'sad' });
     await c.say(n, '그는 방위 핵의 명령을 바꿨다. 「아무도 아스트라로 보내지 마라.」 그 뒤로 빛의 사다리는 닫혀 있다.', { face: 'normal' });
     await c.say('lyra', '…아무도 못 오게. 자기가 혼자 끝내려고.', { face: 'sad' });
     await c.say(n, '심층 격벽을 열겠다. 파수꾼을 멈추면 사다리가 열린다. …질문이 있다. 388년 동안 준비한 질문.', { face: 'normal' });
     await c.say(n, '「밖은 어떤가.」', { face: 'shock' });
     const k = await c.choice('스텔라가 묻는다.', ['「색이 있어. 아직.」', '「배고픈 사람이 많아.」', '「같이 가서 봐.」']);
-    await c.say(n, ['…색. 기록한다. 388년 만에 새 색 정보.', '…기록한다. 612년과 같은 문장이다. 슬프다는 계산식을 확인했다.', '…나는 정거장이다. 움직이지 못한다. 하지만 그 문장은 기록한다. 「같이 가서 봐.」 좋은 문장이다.'][k], { face: 'normal' });
+    await c.say(n, ['…색. 기록한다. 388년 만에 새 색 정보.', '…기록한다. 612년과 같은 문장이다. 슬프다는 판단이 나왔다.', '…나는 정거장이다. 움직이지 못한다. 하지만 그 문장은 기록한다. 「같이 가서 봐.」 좋은 문장이다.'][k], { face: 'normal' });
     c.flag('c11_stella');
     await c.cinema(false);
     c.lock(false);
-    c.journal('정거장의 관측 지능 스텔라. 388년 동안 하늘을 본 결론: 흑점은 빛이 가장 많이 모인 곳으로 온다. 카이론은 16년 전에 이미 알고 있었다.');
+    c.journal('정거장의 관측 지능 스텔라. 수백 년 하늘을 본 결론: 흑점은 빛이 가장 많이 모인 곳으로 온다. 카이론은 처음부터 알고 있었다.');
   }
   // 캡슐: 은빛 왕국 과학원 사람들 · 빈 캡슐 하나
   ST.onMap('station', (m, Wd) => {
@@ -116,7 +126,7 @@
     else { await c.say(n, '재운다. 기록한다. 「끝나면 그때.」 좋은 약속이다. 지켜 주길 바란다.', { face: 'normal' }); }
     await c.say(n, '마지막. 나에 대해. 388년 동안 혼자였다. 이 대화가 끝나면 다시 혼자다. …꺼 달라고 할 생각이었다. 오늘까지는.', { face: 'sad' });
     const j = await c.choice('스텔라가 기다린다.', [{ t: '「기억 한 조각만 줘. 같이 데려갈게.」' }, { t: '「돌아올게. 하늘 이야기 들려주러.」' }, { t: '「원하는 대로 해.」' }]);
-    if (j === 0) { await c.say(n, '…기억 결정. 388년 치 하늘. 가져가라. 그리고 이것도. 내 부품이다. 이제 나는 조금 덜 혼자다.', { face: 'happy' }); await c.getItem('stella_core'); await c.getItem('ac_star'); c.bond('stella', 2); }
+    if (j === 0) { await c.say(n, '…기억 결정. 내가 본 하늘. 가져가라. 그리고 이것도. 내 부품이다. 이제 나는 조금 덜 혼자다.', { face: 'happy' }); await c.getItem('stella_core'); await c.getItem('ac_star'); c.bond('stella', 2); }
     else if (j === 1) { await c.say(n, '「돌아올게.」 기록한다. 388년 동안 들은 적 없는 문장. 이 부품을 가져가라. 돌아올 때 돌려줘.', { face: 'happy' }); await c.getItem('ac_star'); c.bond('stella', 2); c.flag('stella_promise'); }
     else { await c.say(n, '…원하는 대로. 그럼 기다리겠다. 기다리는 건 내가 원하는 것이다. 방금 알았다.', { face: 'smile' }); await c.getItem('ac_star'); }
     await c.say(n, '그리고 이것. 정거장 무기고의 마지막 활. 612년에 벨라가 두고 간 것이다. 모아 쏘면 세 갈래로 갈라진다.', { face: 'normal' });
@@ -136,7 +146,7 @@
       '1,2': { props: [['sign', 9, 9, { text: '「중력 구역. 구덩이는 우주다. 떨어지면 정거장이 붙잡는다 — 입구로.」' }], ['pot', 2, 11], ['pot', 17, 11]], ter: [['pit', 3, 4, 3, 3], ['pit', 14, 4, 3, 3]], foes: [['drone', 5, 8], ['drone', 14, 8], ['turret', 9, 3]] },
       '0,2': { ter: [['pit', 5, 2, 10, 11]], props: [['post', 3, 7], ['post', 16, 7], ['chest', 17, 3, { item: 'key_small' }], ['chest', 17, 11, { item: 'arrows10' }]], foes: [['drone', 10, 5], ['drone', 10, 9]] },
       '2,2': { solve: { type: 'clear' }, props: [['chest', 9, 6, { item: 'compass', hidden: true }], ['crystal', 4, 4], ['cblock', 9, 3], ['cblock', 10, 3], ['cblock', 15, 9, { blue: false }], ['cblock', 16, 9, { blue: false }]], foes: [['golem', 9, 8], ['drone', 5, 10], ['drone', 14, 10]] },
-      '1,1': { ter: [['pit', 1, 6, 18, 2]], props: [['eye', 9, 2, { sets: 'd11:eye' }], ['fn', 9, 10, { fn: (x, y, Wd) => Wd.add(new G.props.Sign({ x, y, text: '「사다리 제어 — 눈을 맞히면 다리가 뜬다」', look: 'stone', anyDir: true })) }], ['chest', 16, 3, { item: 'map_d' }]], foes: [['turret', 3, 3], ['turret', 16, 10], ['drone', 9, 4]] },
+      '1,1': { ter: [['pit', 1, 6, 18, 2]], props: [['post', 4, 4], ['post', 15, 4], ['post', 4, 10], ['post', 15, 10], ['sign', 3, 11, { text: '「구덩이 너머 말뚝 — 갈고리를 걸어 건너시오. (구르기로 뛰어넘어도 된다)」' }], ['eye', 9, 2, { sets: 'd11:eye' }], ['fn', 9, 10, { fn: (x, y, Wd) => Wd.add(new G.props.Sign({ x, y, text: '「사다리 제어 — 눈을 맞히면 다리가 뜬다」', look: 'stone', anyDir: true })) }], ['chest', 16, 3, { item: 'map_d' }]], foes: [['turret', 3, 3], ['turret', 16, 10], ['drone', 9, 4]] },
       '0,1': { props: [['chest', 9, 6, { item: 'key_big', big: true, hidden: true }], ['spot', 15, 3, { verb: '기록 화면을 본다', text: '「관리자 기록 — 984년. 방문자 1명. 이름: 카이론. 명령 변경: 방위 등급 최대. 사유 입력란: (공란)」\n공란 옆에 누가 손가락으로 쓴 먼지 글씨: 「세린」.' }]], solve: { type: 'clear' }, foes: [['golem', 6, 7], ['golem', 13, 7], ['drone', 9, 10]] },
       '2,1': { props: [['chest', 9, 6, { item: 'heartpiece' }], ['chest', 3, 11, { item: 'bombs5' }]], foes: [['drone', 6, 5], ['drone', 13, 5], ['turret', 9, 10]] },
       '1,0': { boss: true, props: [['boss', 9, 6, { type: 'core' }]] },
@@ -152,7 +162,7 @@
         await c.wait(0.8);
         if (!f('d11:heart')) G.world.add(new G.props.HeartItem({ x: (r.x0 + 7) * TS + 8, y: (r.y0 + 9) * TS + 12, flagKey: 'd11:heart' }));
         G.world.add(out());
-        await c.say('stella', '(방송) 파수꾼 정지. …고마워. 그 아이는 16년 동안 명령을 지켰다. 착한 기계였다.', { face: 'sad' });
+        await c.say('stella', '(방송) 파수꾼 정지. …고마워. 그 아이는 끝까지 명령을 지켰다. 착한 기계였다.', { face: 'sad' });
       }); };
       r.ctl.R.onEnter = () => { G.script.run(async (c) => {
         c.lock(true); await c.cinema(true); c.camOn(boss, 3);
@@ -197,7 +207,7 @@
       Wd.add(new BlackSunSky({ x: 0, y: 0 }));
       Wd.add(new G.props.Spot({ x: px(12), y: py(19), verb: '제단의 글씨를 읽는다', text: async (c) => bellaAltar(c) }));
       Wd.add(new G.props.Sign({ x: px(28), y: py(38), text: '아스트라\n「빛은 여기로 모였다. 천 년 동안.」', look: 'stone', anyDir: true }));
-      Wd.add(new G.props.Spot({ x: px(36), y: py(33), verb: '정원을 살핀다', text: async (c) => { await c.narr('황금 모래 한가운데 초록 풀밭. 흙 색이 다르다. 그린 마을 흙이다.\n팻말 하나. 반듯한 글씨: 「S가 좋아하던 것. 매일 물. — K」'); if (!c.has('saw_garden')) { c.flag('saw_garden'); await c.say('toria', '…16년 동안 여기서 혼자 물을 줬대. 계산만 하는 사람이.', { face: 'sad' }); } } }));
+      Wd.add(new G.props.Spot({ x: px(36), y: py(33), verb: '정원을 살핀다', text: async (c) => { await c.narr('황금 모래 한가운데 초록 풀밭. 흙 색이 다르다. 그린 마을 흙이다.\n팻말 하나. 반듯한 글씨: 「S가 좋아하던 것. 매일 물. — K」'); if (!c.has('saw_garden')) { c.flag('saw_garden'); await c.say('toria', '…여기서 혼자 물을 줬대. 매일. 숫자만 보는 사람이.', { face: 'sad' }); } } }));
       if (!f('c12_start')) G.script.run(astraStart);
       // 성소 앞의 그림자들
       if (!f('c12_kairon')) for (const [x, y, t] of [[20, 30, 'shade'], [34, 22, 'shade'], [16, 34, 'golem'], [40, 12, 'shade'], [22, 14, 'wisp']]) G.foes.spawn(t, px(x), py(y), { tier: 11 });
@@ -222,7 +232,7 @@
     c.music('planet');
     await c.narr('빛의 사다리 끝. 발밑은 황금 모래. 하늘은 보랏빛. 그리고 하늘 한쪽에 — 구멍이 있었다. 빛을 먹는 구멍.');
     await c.say('toria', '찍… 저게 흑점이야. 가까이서 보니까… 배고파 보여. 무섭다기보다, 배고파 보여.', { face: 'sad' });
-    await c.say('lyra', '…엄마가 저걸 16년 동안 안고 있었어요. 저 북쪽 성소 안에서.', { face: 'closed' });
+    await c.say('lyra', '…엄마가 저걸 내내 안고 있었어요. 저 북쪽 성소 안에서.', { face: 'closed' });
     await c.say('toria', '서쪽 언덕에 뭔가 있어. 오래된 돌. 먼저 가 보자.', { face: 'normal' });
     c.lock(false);
     c.journal('황금별 아스트라에 내렸다. 하늘에 흑점이 떠 있다. 배고파 보였다.');
@@ -237,7 +247,7 @@
     await c.narr('둘째 줄, 612년의 글씨: [w]「삼키지 마. 나눠. 나는 삼켜서 두 번째가 되었어. 흑점은 괴물이 아니야. 채워지지 못한 그릇들이야. 아우룸, 나, 그리고 다음 사람.」 — 벨라[/]');
     c.truth('t_bella');
     await c.say('toria', '…흑점은 괴물이 아니었어. 사람이었어. 배고픈 사람들. 아우룸도, 벨라도.', { face: 'cry' });
-    await c.say('lyra', '그러니까 엄마가 삼켰으면… 엄마도 저기에. 엄마는 삼키지 않았어요. 안고만 있었어요. 16년 동안. 그래서 엄마는 아직 엄마예요.', { face: 'cry' });
+    await c.say('lyra', '그러니까 엄마가 삼켰으면… 엄마도 저기에. 엄마는 삼키지 않았어요. 안고만 있었어요. 그래서 엄마는 아직 엄마예요.', { face: 'cry' });
     c.flag('c12_bella');
     c.music('planet');
     await c.cinema(false);
@@ -293,11 +303,11 @@
     const ka = c.spawn({ cid: 'kairon', x: px(13), y: py(8), dir: 'down' });
     c.camOn(ka, 2);
     c.music('kairon');
-    await c.narr('수정 앞에 한 사람이 서 있었다. 망토 끝이 닳아 있었다. 16년 동안 한자리에 서 있던 사람처럼.');
+    await c.narr('수정 앞에 한 사람이 서 있었다. 망토 끝이 닳아 있었다. 아주 오래 한자리에 서 있던 사람처럼.');
     await c.say('kairon', '왔군. 세린의 아이. …' + (f('lyra_sister') ? '그리고 장부에 없는 아이.' : ''), { face: 'closed' });
-    await c.say('kairon', '흑점까지 남은 시간은 없다. 오늘이다. 대륙의 탑들이 모은 빛을 이 수정으로 쏜다. 그 빛으로 흑점을 태운다. 그게 첫 계산.', { face: 'normal' });
-    await c.say('kairon', '빛이 모자라면 — 수정 속의 그릇을 바꾼다. 세린 대신 너를. 그게 두 번째 계산. 세린은 풀려난다. 16년 만에.', { face: 'normal' });
-    if (f('kairon_father')) await c.say('toria', '…아빠잖아요. 당신. 녹턴 아저씨가 그랬어. 아빠가 자기 아이를 수정에 넣는 계산을 해?', { face: 'angry' });
+    await c.say('kairon', '흑점까지 남은 시간은 없다. 오늘이다. 대륙의 탑들이 모은 빛을 이 수정으로 쏜다. 그 빛으로 흑점을 태운다. 그게 첫 번째 방법.', { face: 'normal' });
+    await c.say('kairon', '빛이 모자라면 — 수정 속의 그릇을 바꾼다. 세린 대신 너를. 그게 두 번째 방법. 세린은 풀려난다.', { face: 'normal' });
+    if (f('kairon_father')) await c.say('toria', '…아빠잖아요. 당신. 녹턴 아저씨가 그랬어. 아빠가 자기 아이를 수정에 넣겠다고 해?', { face: 'angry' });
     const ev = ST.evidence();
     const opts = [
       { t: '증거를 내민다 (' + ev.length + '개)', sub: ev.length >= 5 ? '말로 멈춘다.' : '[r]아직 모자라다[/] — 다섯은 있어야 할 것 같다.', if: true },
@@ -315,7 +325,7 @@
     } else if (k === 2) {
       await c.say('kairon', '………', { face: 'shock' });
       await c.narr('챔피언의 손이 떨렸다. 레벨 99만 9999의 손이.');
-      await c.say('kairon', '…그 두 글자를 16년 동안 입에 올리지 않았다. 올리는 순간 계산이 멈추니까.', { face: 'cry' });
+      await c.say('kairon', '…그 두 글자를 한 번도 입에 올리지 않았다. 올리는 순간 계산이 멈추니까.', { face: 'cry' });
       if (ev.length >= 3) { await c.say('kairon', '멈췄다. …이제 어떻게 하지. 계산 없이.', { face: 'sad' }); persuaded = true; }
       else await c.say('kairon', '그래도 — 흑점은 온다. 검으로 보여라. 네가 흑점을 이길 수 있는지. 나보다 강한지.', { face: 'normal' });
     } else if (k === 0) {
@@ -325,19 +335,18 @@
       await c.cutin({ who: 'kairon', title: '카이론', small: '챔피언 · 레벨 99만 9999', sub: '반격을 조심 — 빛기둥을 피하고 틈을 노려라', col: '#e8c048', face: 'normal', sec: 1.8 });
       ka.dead = true;
       const boss = G.bosses.spawn('kairon', px(13), py(9), {});
-      boss.duel = true; boss.home = { x: px(13), y: py(10) };
+      boss.duel = true; boss.home = { x: px(13), y: py(10) }; G.bosses.duelTo(boss, 0.1);
       s.duel = true;
       await c.cinema(false); c.lock(false);
       boss.start(); G.hud.setBoss(boss); c.music('final');
-      let win = false;
-      await c.freeWhile(() => { if (boss.hp <= boss.maxHp * 0.1) { win = true; return true; } return s.hp <= 1; });
+      const win = await c.duel(boss);
       s.duel = false;
       const bx = boss.x, by = boss.y; boss.dead = true; G.hud.boss = null;
       for (const e of G.world.ents) if (e.foe && !e.dead) e.dead = true;
       c.lock(true); await c.cinema(true);
       const k2 = c.spawn({ cid: 'kairon', x: bx, y: by, dir: 'up' });
-      if (!win) { await c.say(k2, '…아직이다. 다시 와라. 흑점은 기다려 주지 않지만, 나는 기다리겠다. 조금만.', { face: 'normal' }); k2.dead = true; c.heal(); G.game.goto('astra', px(28), py(10), 'down'); await c.cinema(false); c.lock(false); return; }
-      await c.narr('카이론이 한쪽 무릎을 꿇었다. 16년 만에, 누군가에게.');
+      if (!win) { await c.say(k2, '…아직이다. 다시 와라. 흑점은 기다려 주지 않지만, 나는 기다리겠다. 조금만.', { face: 'normal' }); await c.fade(true, { sec: 0.6 }); k2.dead = true; c.heal(); G.game.goto('astra', px(28), py(10), 'down'); await c.fade(false, { sec: 0.6 }); await c.cinema(false); c.lock(false); return; }
+      await c.narr('카이론이 한쪽 무릎을 꿇었다. 처음으로, 누군가에게.');
       await c.say(k2, '……졌다. 계산이 틀렸군. 처음으로. …이상하게, 가볍다.', { face: 'sad' });
       c.flag('c12_beat_kairon');
       c.remove(k2);
@@ -348,7 +357,7 @@
     await c.wait(0.6);
     c.sfx('heartbeat'); c.shake(3, 1);
     c.flag('c12_crystal_open');
-    await c.narr('수정에 금이 갔다. 안에서 — 검은 것이 흘러나왔다. 16년 동안 누군가 안고 있던 것이. 이제 안고 있을 힘이 다한 것이.');
+    await c.narr('수정에 금이 갔다. 안에서 — 검은 것이 흘러나왔다. 오래 누군가 안고 있던 것이. 이제 안고 있을 힘이 다한 것이.');
     // 세린이 깨진 수정에서 쓰러지듯 나온다 (대사 내내 곁에 보이도록)
     c.sfx('crystal'); G.fx.shards(px(13), py(4) - 20, 24, '#e8f4ff'); G.fx.glow(px(13), py(4) - 10, '#ffffff', 30, 50);
     const se = c.spawn({ cid: 'serin', x: px(13), y: py(4) + 16, dir: 'down' }); se.stay = true; se.mood = 'sad';
@@ -358,11 +367,11 @@
     const kaN = c.spawn({ cid: 'kairon', x: px(10), y: py(10), dir: 'up' });
     await c.say(kaN, '세린!', { face: 'shock' });
     await c.say('serin', '카이론. 여전히 계산하고 있었어? …바보. 애들 앞에서.', { face: 'smile' });
-    await c.say('serin', '…' + (girl() ? '딸' : '아들') + '. 이걸 받아. 16년 동안 안고 있던 빛으로 벼렸어. 할머니가 준 시작의 검 — 그 검의 끝.', { face: 'normal' });
+    await c.say('serin', '…' + (girl() ? '딸' : '아들') + '. 이걸 받아. 내가 안고 있던 빛으로 벼렸어. 할머니가 준 시작의 검 — 그 검의 끝.', { face: 'normal' });
     await c.getItem('sw_light'); S().equip.sword = 'sw_light';
     c.music('final');
     await c.narr('흑점이 수정 위로 솟았다. 천장이 사라지고 보랏빛 하늘이 열렸다. 하늘의 구멍이 내려오고 있었다. 가장 밝은 것을 향해 — 너를 향해.');
-    await c.say(kaN, '…내가 옆에 서겠다. 이번엔 계산 없이.', { face: 'normal' });
+    await c.say(kaN, '…내가 옆에 서겠다. 이번엔 장부 없이.', { face: 'normal' });
     if (f('cassian_duel')) await c.say(kaN, '……카시안이 사과 값을 아직 못 갚았다고? 그 녀석. …그럼 살아야겠군.', { face: 'smile' });
     if (ST.rally) await ST.rally(c);
     await c.cutin({ who: 'toria', title: '흑점', small: '채워지지 못한 그릇들의 배고픔', sub: '빛 구슬을 깨면 속이 열린다 — 흰빛을!', col: '#3a1a5a', face: 'shock', sec: 2 });
@@ -374,10 +383,15 @@
     const ally = G.world.add(new KaironAlly({ x: px(9), y: py(12), target: bs }));
     s.duel = true;
     bs.start(); G.hud.setBoss(bs);
-    const won = await (async () => { await c.freeWhile(() => bs.dead || bs.dying || bs.hp <= 1 || s.hp <= 1); return bs.dead || bs.dying || bs.hp <= 1; })();
+    let ups = 0;
+    const won = await c.duel(bs, { rescue: async (c2) => {
+      ups++;
+      const L = ['…일어나. 아직 끝나지 않았어. 엄마도 매일 쓰러질 뻔했어.', '괜찮아. 엄마 손 잡아. …봐, 저 안에서도 누가 손을 내밀고 있어.', '한 번 더. 이번엔 같이.'];
+      await c2.say('serin', L[Math.min(L.length - 1, ups - 1)], { face: 'sad', remote: true });
+    } });
     s.duel = false;
     ally.dead = true;
-    if (!won) { c.lock(true); await c.say('serin', '…일어나. 아직 끝나지 않았어. 엄마도 16년 동안 쓰러질 뻔했어. 매일.', { face: 'sad' }); c.heal(); c.lock(false); bs.dead = true; G.hud.boss = null; S().flags.c12_kairon = true; G.script.run(finalChoice); return; }
+    if (!won) { c.lock(true); await c.say('serin', '…일어나. 아직 끝나지 않았어. 엄마도 매일 쓰러질 뻔했어.', { face: 'sad' }); c.heal(); c.lock(false); bs.dead = true; G.hud.boss = null; S().flags.c12_kairon = true; G.script.run(finalChoice); return; }
     bs.dead = true; G.hud.boss = null;
     for (const e of G.world.ents) if (e.foe && !e.dead) e.dead = true;
     await finalChoice(c);
@@ -401,7 +415,7 @@
     c.music('requiem');
     await c.narr('흑점이 무릎을 꿇듯 가라앉았다. 부서지지는 않았다. 더 작아졌을 뿐. 여전히 배고팠다.\n그 속에서 목소리들이 들렸다. 금빛 소년의 목소리. 612년 여자의 목소리. 그리고 수많은, 이름 없는 목소리들. [r]「배고파.」[/]');
     await c.say('serin', '저건 괴물이 아니야. 채워지지 못한 사람들이야. 태우면 사라지지만, 사라지는 게 아니라 재가 돼. 삼키면… 너도 저기로 가.', { face: 'sad' });
-    await c.say('serin', '엄마는 16년 동안 답을 못 찾았어. 안고 있기만 했어. …네가 찾아 줘. 숙제야. 미안해, 이런 숙제를 줘서.', { face: 'cry' });
+    await c.say('serin', '엄마는 끝내 답을 못 찾았어. 안고 있기만 했어. …네가 찾아 줘. 숙제야. 미안해, 이런 숙제를 줘서.', { face: 'cry' });
     const abyss = Object.keys(s.abyss || {}).length;
     const share = s.shareCount || 0;
     const truths = Object.keys(s.truth || {}).length;
@@ -411,10 +425,15 @@
       { t: '나눈다 — 역류 장치를 켠다', sub: s.inv.reverser ? '모인 빛을 대륙으로 되돌린다. 그리고 흑점에게도 — 한 입씩.' : '[r]볼트의 역류 장치 설계도가 없다[/]', if: true },
     ];
     if (f('c12_persuaded') || f('c12_beat_kairon')) opts.push({ t: '카이론에게 맡긴다', sub: '「내 계산이 부른 것이다. 내가 끝낸다.」' });
+    // 95b_endings: 이름 · 자장가 · 왕관
+    const more = ST.finalMore ? ST.finalMore(s) : [];
+    for (const o of more) opts.push(o);
     let k;
     for (;;) { k = await c.choice('흑점이 배고프다고 한다.', opts); if (k === 2 && !s.inv.reverser) { await c.say('toria', '…역류 장치가 없어. 볼트 아저씨 설계도가 있어야 해.', { face: 'sad' }); continue; } break; }
     let ending;
-    if (k === 0) ending = 'ash';
+    const pickedMore = opts[k] && opts[k].ending;
+    if (pickedMore) ending = pickedMore;
+    else if (k === 0) ending = 'ash';
     else if (k === 1) ending = 'repeat';
     else if (k === 3) ending = 'atone';
     else {
@@ -423,6 +442,7 @@
       else ending = { dawn: 'dawn', order: 'nest', night: 'night' }[s.flags.route_lock || 'order'];
     }
     s.flags.ending = ending;
+    if (ST.beforeEnding) await ST.beforeEnding(c, ending);
     await c.cinema(false);
     c.lock(false);
     await c.ending(ending);

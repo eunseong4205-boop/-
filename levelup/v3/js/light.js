@@ -25,6 +25,27 @@
     return out;
   }
 
+  /* 빛 도장: 반지름마다 한 번 그려 둔 둥근 번짐 (예전에는 빛 하나마다 매 프레임 새 그라데이션을 만들었다) */
+  const HOLES = new Map(), WARMS = new Map();
+  function hole(r) {
+    let c = HOLES.get(r); if (c) return c;
+    c = X.canvas(r * 2, r * 2); const g = c.getContext('2d');
+    const gr = g.createRadialGradient(r, r, 0, r, r, r);
+    gr.addColorStop(0, 'rgba(0,0,0,1)'); gr.addColorStop(0.55, 'rgba(0,0,0,0.8)'); gr.addColorStop(1, 'rgba(0,0,0,0)');
+    g.fillStyle = gr; g.beginPath(); g.arc(r, r, r, 0, Math.PI * 2); g.fill();
+    if (HOLES.size > 240) HOLES.clear();
+    HOLES.set(r, c); return c;
+  }
+  function warmStamp(r, col) {
+    const k = r + '|' + col; let c = WARMS.get(k); if (c) return c;
+    c = X.canvas(r * 2, r * 2); const g = c.getContext('2d');
+    const gr = g.createRadialGradient(r, r, 0, r, r, r);
+    gr.addColorStop(0, col); gr.addColorStop(1, 'rgba(0,0,0,0)');
+    g.fillStyle = gr; g.fillRect(0, 0, r * 2, r * 2);
+    if (WARMS.size > 240) WARMS.clear();
+    WARMS.set(k, c); return c;
+  }
+
   function draw(g, cx, cy) {
     const W = G.world, m = W.map, v = W.view;
     for (const f of L.flares) f.t += 1 / 60;
@@ -47,11 +68,11 @@
     lg.globalAlpha = dark; lg.fillRect(0, 0, v.w, v.h); lg.globalAlpha = 1;
     lg.globalCompositeOperation = 'destination-out';
     for (const l of lightsIn(m, W, cx, cy, v.w, v.h)) {
-      const x = l.x - cx, y = l.y - cy;
-      const gr = lg.createRadialGradient(x, y, 0, x, y, Math.max(1, l.r));
-      gr.addColorStop(0, 'rgba(0,0,0,' + l.a + ')'); gr.addColorStop(0.55, 'rgba(0,0,0,' + (l.a * 0.8) + ')'); gr.addColorStop(1, 'rgba(0,0,0,0)');
-      lg.fillStyle = gr; lg.beginPath(); lg.arc(x, y, l.r, 0, Math.PI * 2); lg.fill();
+      const x = l.x - cx, y = l.y - cy, r = Math.max(1, Math.round(l.r));
+      if (x < -r || y < -r || x > v.w + r || y > v.h + r) continue;
+      lg.globalAlpha = Math.min(1, l.a); lg.drawImage(hole(r), Math.round(x) - r, Math.round(y) - r);
     }
+    lg.globalAlpha = 1;
     g.drawImage(L.layer, 0, 0);
     // 빛의 따뜻한 번짐
     g.globalCompositeOperation = 'lighter';
@@ -59,9 +80,8 @@
       if (l.on === false || !l.warm) continue;
       const x = l.x - cx, y = l.y - cy;
       if (x < -60 || y < -60 || x > v.w + 60 || y > v.h + 60) continue;
-      const gr = g.createRadialGradient(x, y, 0, x, y, l.r * 0.6);
-      gr.addColorStop(0, l.warm); gr.addColorStop(1, 'rgba(0,0,0,0)');
-      g.fillStyle = gr; g.fillRect(x - l.r, y - l.r, l.r * 2, l.r * 2);
+      const r = Math.max(1, Math.round(l.r * 0.6));
+      g.drawImage(warmStamp(r, l.warm), Math.round(x) - r, Math.round(y) - r);
     }
     g.globalCompositeOperation = 'source-over';
     tintAll();

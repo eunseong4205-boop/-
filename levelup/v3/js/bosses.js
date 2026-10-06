@@ -20,6 +20,40 @@
   const AC = new Map();
   function art(key, w, h, f) { let c = AC.get(key); if (!c) { const b = X.brush(w, h); f(b); c = X.outline(b.put(), OUT); AC.set(key, c); } return c; }
 
+  /* ───────── 보스 난이도: 그 무렵 주인공의 힘에 맞춘다 ─────────
+     예전엔 보스마다 체력 · 공격이 고정이라, 장이 갈수록 주인공 하트 · 무기만 커져 후반 보스가 검 7~12번에 쓰러지고
+     열 대 넘게 맞아도 버텼다(보통). 이제 만날 때 그 무렵의 힘을 기준으로:
+     · 체력 — 검으로 이만큼은 베어야 쓰러지게 (보스 원래 체력보다 낮아지지는 않는다)
+     · 공격 — 하트를 이만큼 맞으면 쓰러지게 (갑옷은 그대로 덜어 준다 · 원래 공격보다 약해지지는 않는다)
+     그 장에서 기대하는 힘의 1.35배까지만 따라간다 — 그보다 강해지면(레벨을 많이 올렸으면) 그만큼 쉬워진다.
+     첫 두 보스는 조금 너그럽게. 시련의 탑 · 오락기처럼 스스로 맞추는 곳은 noScale */
+  // 장(티어)별 기대 검 공격. 예전엔 장마다 바로 가기 상태(시작의 검 그대로) 기준이라 ★3~6이 5.6~8이었다 —
+  // 가게 검(바람 단검 · 도끼검 · 거인의 대검 …)을 사 든 사람에겐 보스가 반쯤(보통 32번 → 15번) 베면 쓰러졌다.
+  // 이제 그 장까지 열린 가게의 좋은 검을 든 공격의 ¾ (주인공 힘은 여전히 이 값의 1.35배까지만 따라간다)
+  const EXP_ATK = [3, 5.6, 7.5, 13.4, 13.6, 14, 15.3, 22, 23.5, 25.1, 25.5, 26.5];
+  const EXP_HP = [4, 5, 6, 7, 8, 9, 11, 12, 14, 16, 17, 18];                // 기대 하트
+  const BOSS_DIFF = [{ sw: 22, hits: 6.5 }, { sw: 32, hits: 3.9 }, { sw: 42, hits: 2.9 }, { sw: 52, hits: 2.2 }];   // 쉬움 · 보통 · 어려움 · 매우 어려움
+  function bossTier(o) {
+    if (o.tier != null) return o.tier;
+    const Dn = o.did && G.dungeon && G.dungeon.DUN && G.dungeon.DUN[o.did];
+    if (Dn && Dn.tier != null) return Dn.tier;
+    return G.story && G.story.chIdx ? G.story.chIdx() : 5;
+  }
+  function bossScale(b, o) {
+    const s = G.state; if (!s || !G.st || !G.prog) return;
+    const d = G.st.derive(s), df = G.prog.diff(), T = BOSS_DIFF[df.id] || BOSS_DIFF[1];
+    const t = U.clamp(Math.round(bossTier(o)), 0, EXP_ATK.length - 1);
+    const ramp = t === 0 ? 0.75 : t === 1 ? 0.87 : 1;
+    const atkEff = Math.min(d.atk || 1, EXP_ATK[t] * 1.35);
+    const hpNeed = Math.round(T.sw * ramp * atkEff * Math.sqrt(o.hpMul || 1) * (b.D.scaleMul || 1));   // 이야기 결투의 체력 배율은 반쯤만 · 마지막 둘은 조금 더 무겁게
+    if (hpNeed > b.maxHp) b.maxHp = b.hp = hpNeed;
+    const hpEff = Math.min(d.hpMax || 12, EXP_HP[t] * 4 * 1.3);
+    const early = df.early ? Math.min(1, 0.7 + (s.lv || 1) * 0.025) : 1;
+    const q = hpEff / (T.hits / ramp) / ((df.hurt || 1) * early);
+    if (q > b.atk) b.atk = Math.round(q * 4) / 4;
+    b.scaled = { t, hp: b.maxHp, atk: b.atk };
+  }
+
   /* ───────── 보스 몸 ───────── */
   class Boss extends G.foes.Foe {
     constructor(type, o) {
@@ -29,13 +63,21 @@
       this.dunId = o.did || o.dunId || null; this.did = false;   // did는 공격 판정용으로 쓰인다
       this.maxHp = this.hp = Math.round(D.hp * (o.hpMul || 1) * (G.prog ? G.prog.diff().hp : 1));
       this.atk = D.atk; this.exp = D.exp; this.gold = D.gold; this.speed = D.speed;
+      if (!o.noScale) bossScale(this, o);
       this.st = 'wait'; this.stT = 0; this.phase2 = false; this.pat = 0; this.parts = [];
       this.phases = [0.5];
       this.noContact = !!D.noContact; this.col = D.col || '#ffffff';
       this.dir = 'down'; this.state = 'idle';
       if (D.init) D.init(this);
     }
-    start() { if (this.st === 'wait') { this.set('idle'); this.aggro = true; } }
+    start() { if (this.st === 'wait') { this.set('idle'); this.aggro = true; } if (this.spd0 == null) this.spd0 = this.speed; }
+    /** 결투를 처음부터 다시: 체력 · 둘째 막 · 속도 · 칼날 장면 */
+    resetDuel() {
+      this.hp = this.maxHp; this.phase2 = false; this.phase3 = false; if (this.spd0 != null) this.speed = this.spd0;
+      this.settled = false; this.bfxClash = false; this.combo = 0; this.stunT = 0; this.inv = 0; this.burnT = 0;
+      if (this.home) { this.x = this.home.x; this.y = this.home.y; }
+      this.set('idle');
+    }
     update(dt, Wd) {
       if (G.prog) dt *= G.prog.diff().spd;
       this.t += dt; this.stT += dt;
@@ -60,7 +102,10 @@
     guards(info) { return this.D.guards ? this.D.guards(this, info) : false; }
     preKill(info) {
       if (this.dying) return true;
-      if (this.duel) { this.hp = 1; this.stunT = 1; return true; }
+      if (this.duel) {   // 이야기 결투: 쓰러지지 않고 무릎 꿇는다 — 막대가 다 닳은 그 순간이 결착
+        if (!this.settled) { this.settled = true; W().slowmo(0.35, 0.7); G.cine.flash('#fff', 0.25); G.fx.ring(this.x, this.y - this.h / 2, '#ffffff', 40, 0.5, 3); }
+        this.hp = 1; this.stunT = 1; return true;
+      }
       if (this.D.preKill && this.D.preKill(this, info)) return true;
       // 쓰러질 때 연출: 잠깐 버티며 폭발
       this.dying = true; this.hp = 0; this.noContact = true;
@@ -132,7 +177,15 @@
      꽃봉오리 몸은 움직이지 않는다. 덩굴이 줄을 따라 내리친다. 눈이 열렸을 때 화살 → 봉오리가 숙인다 → 벤다 */
   def('thornqueen', { name: '가시덩굴 여왕', title: '뿌리굴의 주인 · 가시덩굴 여왕', hp: 42, atk: 3, r: 18, h: 36, col: '#d84a6a', noContact: false, exp: 60, gold: 40,
     init(e) { e.eyeOpen = false; e.vulnerable = false; },
-    guards(e, info) { if (info.src === 'arrow' || info.src === 'beam') { if (e.eyeOpen && !e.vulnerable) { e.vulnerable = true; e.stunT = 3.2; e.eyeOpen = false; sfx('shriek'); G.fx.sparks(e.x, e.y - 30, 14, '#ffe066'); G.ui.toast('봉오리가 고개를 숙였다 — 지금!', 'gold'); } return true; } if (!e.vulnerable || e.stunT <= 0) { sfx('clank'); return true; } return false; },
+    // 눈(봉오리)이 열렸을 때 화살 · 빛줄기 · 주문으로 맞히면 고개를 숙인다. 숙인 동안은 무엇으로 쳐도 들어간다 (든 무기를 바꿀 틈이 없어도 되게)
+    guards(e, info) {
+      const ranged = info.src === 'arrow' || info.src === 'beam' || info.src === 'spell' || info.src === 'shot';
+      if (ranged && e.eyeOpen && !e.vulnerable) { e.vulnerable = true; e.stunT = 4.2; e.eyeOpen = false; e.set('idle'); sfx('shriek'); G.fx.sparks(e.x, e.y - 30, 14, '#ffe066'); G.ui.toast('봉오리가 고개를 숙였다 — 지금! 칼이든 화살이든 마구 쳐라', 'gold'); return true; }
+      if (e.vulnerable && e.stunT > 0) return false;
+      if (!ranged) sfx('clank');
+      if (!e.toldEye && !e.eyeOpen) { e.toldEye = true; G.ui.toast('단단하다 — 봉오리가 [y]눈을 뜰 때[/] 멀리서 맞혀라', ''); }
+      return true;
+    },
     stunned(e) { e.vulnerable = e.stunT > 0; },
     ai(e, dt, Wd) {
       const p = Wd.player; e.vulnerable = false;
@@ -396,7 +449,7 @@
       const p = Wd.player;
       if (e.st === 'charge') { if (e.stT < 0.02) { e.telegraph(0.6); e.cv = U.norm(p.x - e.x, p.y - e.y); sfx('growl'); } if (e.stT > 0.6) { const r = e.go(e.cv[0] * 240 * dt, e.cv[1] * 240 * dt); if (U.dist(e.x, e.y, p.x, p.y) < 16) C().hurtPlayer(p, e.atk + 1, e, {}); if (r.hitX || r.hitY) { e.stunT = 2; W().shake(4, 0.3); sfx('impact'); e.set('idle'); } else if (e.stT > 1.6) e.set('idle'); } }
       if (e.st === 'slam') { e.state = 'attack'; if (e.stT < 0.02) { e.telegraph(0.7); warnCircle(e.x, e.y, 42, 0.8, () => { hitCircle(e.x, e.y, 42, e.atk); W().shake(5, 0.3); G.fx.dust(e.x, e.y, 16); G.fx.ring(e.x, e.y, '#ffd8a8', 42, 0.4, 3); sfx('impact'); }); } if (e.stT > 1.2) e.set('idle'); }
-      if (e.st === 'call') { if (e.stT < 0.02) { G.cine.bubble(e, U.pick(['세금은 목숨보다 먼저 내는 것이다.', '장부에 적힌 대로!', '기사들, 저놈을 계산에서 지워라!']), { life: 2 }); const n = e.phase2 ? 2 : 1; for (let i = 0; i < n; i++) minion(e, i ? 'bandit' : 'knight', e.x + (i ? 50 : -50), e.y + 20); } if (e.stT > 1) e.set('idle'); }
+      if (e.st === 'call') { if (e.stT < 0.02) { G.cine.bubble(e, U.pick(['세금은 목숨보다 먼저 내는 것이다.', '장부에 적힌 대로!', '기사들, 저놈을 장부에서 지워라!']), { life: 2 }); const n = e.phase2 ? 2 : 1; for (let i = 0; i < n; i++) minion(e, i ? 'bandit' : 'knight', e.x + (i ? 50 : -50), e.y + 20); } if (e.stT > 1) e.set('idle'); }
       if (e.st === 'coins') { if (e.stT < 0.02) { ring(e, e.phase2 ? 14 : 10, 110, { kind: 'rock', drawFn(g, x, y) { g.fillStyle = '#e8c048'; g.fillRect(x - 2, y - 2, 4, 4); g.fillStyle = '#fff0a8'; g.fillRect(x - 1, y - 2, 1, 1); } }); sfx('coin'); } if (e.stT > 0.8) e.set('idle'); }
     },
     gear(e, g, x, y) {
@@ -423,7 +476,7 @@
     update(dt, Wd) { this.t += dt; const p = Wd.player; this.toward(p.x, p.y, 50, dt); this.walkT = (this.walkT || 0) + dt; this.dir = U.dir4(p.x - this.x, p.y - this.y, this.dir); if (U.dist(this.x, this.y, p.x, p.y) < 12) C().hurtPlayer(p, this.atk, this, {}); if (this.revealed) this.dead = true; }
     reveal() { this.revealed = true; G.fx.shards(this.x, this.y - 10, 12, '#b8a8ff'); sfx('mirror'); }
     draw(g, cx, cy) { G.sprites.drawChar(g, this, cx, cy); }
-    preKill() { G.fx.shards(this.x, this.y - 10, 10, '#8a3aff'); this.dead = true; return true; }
+    preKill() { G.fx.shards(this.x, this.y - 10, 10, '#8a3aff'); this.dead = true; this._noFade = true; return true; }
   }
 
   /* ═════════════ 폭풍새 (구름 신전) — 화살로 떨어뜨린다 ═════════════ */
@@ -506,7 +559,7 @@
     } });
 
   /* ═════════════ 그림자 녹턴 (천년성) — 순간이동 · 분신 · 어둠 ═════════════ */
-  def('nocturne', { name: '그림자 녹턴', title: '사천왕 · 검정의 자리 · 그림자 녹턴', hp: 150, atk: 6, r: 8, h: 22, speed: 110, dark: true, weak: ['light'], exp: 300, gold: 0,
+  def('nocturne', { scaleMul: 1.1, name: '그림자 녹턴', title: '사천왕 · 검정의 자리 · 그림자 녹턴', hp: 150, atk: 6, r: 8, h: 22, speed: 110, dark: true, weak: ['light'], exp: 300, gold: 0,
     init(e) { e.look = Object.assign({}, G.cast.get('nocturne').look); },
     ai(e, dt, Wd) {
       const p = Wd.player;
@@ -518,7 +571,7 @@
     gear: swordGear('#b87aff') });
 
   /* ═════════════ 방위 핵 (하늘 정거장) ═════════════ */
-  def('core', { name: '방위 핵', title: '하늘 정거장 · 방위 핵 「파수꾼」', hp: 200, atk: 6, r: 22, h: 40, col: '#6ad8ff', weak: ['bolt'], exp: 360, gold: 0, noContact: true,
+  def('core', { scaleMul: 1.1, name: '방위 핵', title: '하늘 정거장 · 방위 핵 「파수꾼」', hp: 200, atk: 6, r: 22, h: 40, col: '#6ad8ff', weak: ['bolt'], exp: 360, gold: 0, noContact: true,
     init(e) { e.shield = 3; },
     guards(e, info) { if (e.shield > 0) { sfx('clank'); return true; } return false; },
     ai(e, dt, Wd) {
@@ -538,7 +591,7 @@
     }, noShadow: false });
 
   /* ═════════════ 카이론 — 대륙의 절대 강자 ═════════════ */
-  def('kairon', { name: '카이론', title: '챔피언 · 레벨 99만 9999 · 카이론', hp: 320, atk: 7, r: 9, h: 24, speed: 90, exp: 800, gold: 0,
+  def('kairon', { scaleMul: 1.2, name: '카이론', title: '챔피언 · 레벨 99만 9999 · 카이론', hp: 320, atk: 7, r: 9, h: 24, speed: 90, exp: 800, gold: 0,
     init(e) { e.look = Object.assign({}, G.cast.get('kairon').look); },
     guards(e, info) { if (e.st === 'idle' && !info.unblockable && !info.crit && Math.random() < 0.5) { e.set('counter'); return true; } return false; },
     ai(e, dt, Wd) {
@@ -555,7 +608,7 @@
 
   /* ═════════════ 흑점 — 마지막 ═════════════
      검은 태양. 다섯 빛깔 구슬이 흑점을 지킨다: 구슬을 부수면 속이 드러난다. 마지막엔 필살기로 */
-  def('blacksun', { name: '흑점', title: '채워지지 못한 그릇들의 배고픔 · 흑점', hp: 400, atk: 7, r: 30, h: 60, col: '#1a1028', fly: true, dark: true, weak: ['light'], exp: 0, gold: 0, noContact: true,
+  def('blacksun', { scaleMul: 1.35, name: '흑점', title: '채워지지 못한 그릇들의 배고픔 · 흑점', hp: 400, atk: 7, r: 30, h: 60, col: '#1a1028', fly: true, dark: true, weak: ['light'], exp: 0, gold: 0, noContact: true,
     init(e) { e.orbs = []; e.core = false; },
     guards(e, info) { if (!e.core) { if (info.src === 'sword' || info.src === 'arrow') sfx('clank'); return true; } return false; },
     ai(e, dt, Wd) {
@@ -599,14 +652,44 @@
   }
 
   /* ───────── 만들기 ───────── */
+  /** 둘레에서 보스가 설 수 있는 땅(물 · 용암 · 구름 · 벽이 아닌, 둘레 3×3이 트인 칸) — 없으면 null */
+  const WET = () => { const T = TL.T; return [T.WATER, T.DEEP, T.LAVA, T.CLOUD, T.VOID].filter((v) => v != null); };
+  function groundAt(m, x, y, r, ent) {
+    const tx0 = Math.floor(x / TS), ty0 = Math.floor(y / TS), wet = WET();
+    const okT = (tx, ty) => m.inb(tx, ty) && !m.blocked(tx, ty, ent) && !wet.includes(m.ter[m.i(tx, ty)]);
+    const open = (tx, ty) => { if (!okT(tx, ty)) return false; let n = 0; for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (okT(tx + dx, ty + dy)) n++; return n >= 7; };
+    for (let d = 0; d <= (r || 12); d++) for (let dy = -d; dy <= d; dy++) for (let dx = -d; dx <= d; dx++) {
+      if (Math.max(Math.abs(dx), Math.abs(dy)) !== d) continue;
+      if (open(tx0 + dx, ty0 + dy)) return { x: (tx0 + dx) * TS + 8, y: (ty0 + dy) * TS + 12 };
+    }
+    return null;
+  }
+  /** 이야기 결투: 예전엔 체력이 frac만큼 남으면 끝났다(막대가 남은 채로 싸움이 끝나 보였다).
+      이제 막대가 다 닳을 때 끝난다 — 같은 수고가 들도록 체력을 (1 - frac)로 줄인다 */
+  function duelTo(b, frac) {
+    b.maxHp = b.hp = Math.max(2, Math.round(b.maxHp * (1 - (frac || 0))));
+    if (b.scaled) b.scaled.hp = b.maxHp;
+    return b;
+  }
   function spawn(type, x, y, o) {
     const b = new Boss(type, Object.assign({ x, y }, o || {}));
     b.home = { x, y };
-    if (W().map) E.settle(W().map, b);
+    const m = W().map;
+    if (m) {
+      E.settle(m, b);
+      // 물 · 벽 속에 세우면(부두 위 결투 등) 움직이지 못한다 → 가장 가까운 트인 땅으로, 무대도 그곳으로
+      if (!b.fly && !m.dungeon) {
+        const tx = Math.floor(b.x / TS), ty = Math.floor(b.y / TS);
+        if (m.blocked(tx, ty, b) || WET().includes(m.ter[m.i(tx, ty)])) {
+          const q = groundAt(m, b.x, b.y, 14, b);
+          if (q) { b.x = q.x; b.y = q.y; const hq = groundAt(m, b.home.x, b.home.y, 14, b) || q; b.home = { x: hq.x, y: hq.y }; }
+        }
+      }
+    }
     return W().add(b);
   }
 
   /** 변종: 몸과 행동은 base, 이름 · 체력 · 빛깔은 새로 */
   function variant(id, base, o) { B[id] = Object.assign({}, B[base], o, { id }); }
-  G.bosses = { B, Boss, spawn, def, variant, warnRect, warnCircle, hitRect, hitCircle, minion, ring, Tentacle, MirrorClone, art, poly, R, aim, shoot, roomRect, clampRoom };
+  G.bosses = { B, Boss, spawn, duelTo, groundAt, def, variant, warnRect, warnCircle, hitRect, hitCircle, minion, ring, Tentacle, MirrorClone, art, poly, R, aim, shoot, roomRect, clampRoom };
 })();

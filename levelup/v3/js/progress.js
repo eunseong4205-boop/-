@@ -21,7 +21,7 @@
   /* ───────── 능력치 ───────── */
   const STATS = [
     { id: 'str', name: '힘', col: '#ff8a6a', desc: '검 피해 · 넉백. 무거운 검을 든다.' },
-    { id: 'vit', name: '체력', col: '#ff6a8a', desc: '최대 체력(3점마다 ¼칸) · 받는 피해 조금 줄임.' },
+    { id: 'vit', name: '체력', col: '#ff6a8a', desc: '6점마다 하트 한 칸 · 받는 피해 조금 줄임.' },
     { id: 'sta', name: '기력', col: '#8ae07a', desc: '최대 기력 · 기력 회복 · 구르기 부담.' },
     { id: 'int', name: '지력', col: '#8ab8ff', desc: '마법 피해 · 최대 MP · 필살 게이지.' },
     { id: 'dex', name: '솜씨', col: '#ffe066', desc: '활 피해 · 치명타 · 시위 당기는 속도.' },
@@ -76,7 +76,7 @@
   item('ar_knight', { grade: 4, req: { vit: 18, str: 12 } });
   item('ar_star', { grade: 5 });
   // 장신구
-  item('ac_sprout', { grade: 1 });
+  item('ac_sprout', { grade: 1, price: 400 });
   item('ac_str', { type: 'acc', grade: 2, name: '힘의 팔찌', fx: { str: 4 }, price: 1500, desc: '힘 +4.' });
   item('ac_shell', { type: 'acc', grade: 2, name: '거북 등딱지', fx: { vit: 5 }, price: 1800, desc: '체력 +5.' });
   item('ac_thief', { type: 'acc', grade: 2, name: '도둑의 장갑', fx: { gold: 0.5 }, price: 4200, desc: '떨어뜨리는 골드 +50%.' });
@@ -195,7 +195,7 @@
 
   /* ───────── 가게 물건 (마을마다 그 마을에 어울리는 것 · 장이 갈수록 윗 등급) ───────── */
   Object.assign(D.SHOPS, {
-    green: { name: '초록 바구니 잡화점', items: ['potion_r', 'food_corn', 'arrows10', 'ar_leather', 'bw_bone', 'ac_str', 'ac_shell'] },
+    green: { name: '초록 바구니 잡화점', items: ['potion_r', 'food_corn', 'arrows10', 'ar_leather', 'bw_bone', 'ac_sprout', 'ac_str', 'ac_shell'] },
     red: { name: '볼칸의 대장간', items: ['sw_iron', 'sh_iron', 'ar_chain', 'ar_heat', 'potion_r', 'bombs5', 'food_tteok', 'art_whirl'], forge: true },
     blue: { name: '파도 잡화점', items: ['sw_tide', 'sw_dagger', 'ar_scale', 'potion_r', 'potion_b', 'arrows10', 'food_udon', 'ac_roll', 'tome_wind'] },
     yellow: { name: '대바자르', items: ['bw_long', 'sw_great', 'ac_ring_crit', 'ac_thief', 'potion_g', 'bombs5', 'arrows10', 'ac_mp', 'art_rain', 'art_triple'] },
@@ -216,11 +216,14 @@
   delete D.FORGE.sw_wood;
 
   /* ───────── 난이도 ───────── */
+  /* 장마다 그 장의 던전 적(같은 레벨 · 장비)에게 몇 대 맞으면 쓰러지는가로 맞췄다 (진짜 피해 계산 경로로 잼)
+     예전 보통: 2.8~4.8대 — 2장에선 세 대 만에 쓰러져 보통이 어려웠다. 지금: 쉬움 9~17 · 보통 4~7 · 어려움 3~5 · 매우 어려움 2~3.5
+     한 단계마다 받는 피해 ×1.4쯤, 적 체력 ×1.25쯤 */
   const DIFF = [
-    { id: 0, name: '쉬움', desc: '이야기를 따라가고 싶을 때. 받는 피해가 적고 적이 무르다.', hurt: 0.65, hp: 0.85, spd: 0.92, heal: 1.4, exp: 1.2, tele: 1.25 },
-    { id: 1, name: '보통', desc: '처음이라면. 적도 방심하지 않는다 — 구르기와 방패를 쓰게 된다.', hurt: 1.25, hp: 1.15, spd: 1, heal: 1, exp: 1, tele: 1 },
-    { id: 2, name: '어려움', desc: '한 번 한 번이 싸움이다. 받는 피해 +30%, 적 체력 +20%, 회복이 드물다.', hurt: 1.65, hp: 1.4, spd: 1.07, heal: 0.75, exp: 1.1, tele: 0.85 },
-    { id: 3, name: '악몽', desc: '한 번의 실수가 무겁다. 받는 피해 거의 두 배, 적 체력 +50%, 회복이 아주 드물다.', hurt: 2.3, hp: 1.75, spd: 1.13, heal: 0.5, exp: 1.2, tele: 0.72 },
+    { id: 0, name: '쉬움', desc: '이야기를 따라가고 싶을 때. 받는 피해가 보통의 절반 남짓, 적이 무르고 하트가 자주 떨어진다. 보스도 너그럽다.', hurt: 0.55, hp: 0.8, spd: 0.92, heal: 1.5, exp: 1.2, tele: 1.25, early: true },
+    { id: 1, name: '보통', desc: '처음이라면. 적의 공격을 읽고 구르면 넉넉히 버틴다. 보스는 다르다 — 몸짓을 익혀야 이긴다.', hurt: 0.95, hp: 1.05, spd: 1, heal: 1.1, exp: 1, tele: 1, early: true },
+    { id: 2, name: '어려움', desc: '한 번 한 번이 싸움이다. 보통보다 받는 피해 +40%, 적 체력 +25%, 정예가 잦고 하트가 드물다. 보스는 서너 대에 쓰러뜨린다.', hurt: 1.35, hp: 1.3, spd: 1.06, heal: 0.8, exp: 1.1, tele: 0.85 },
+    { id: 3, name: '매우 어려움', desc: '한 번의 실수가 무겁다. 보통보다 받는 피해 두 배, 적 체력 +50%, 적이 빠르고 회복이 아주 드물다. 보스 앞에서는 두세 대가 끝이다.', hurt: 1.9, hp: 1.6, spd: 1.12, heal: 0.55, exp: 1.2, tele: 0.72 },
   ];
   const diff = () => DIFF[(G.state && G.state.settings && G.state.settings.diff != null) ? G.state.settings.diff : 1] || DIFF[1];
 

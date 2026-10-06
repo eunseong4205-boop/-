@@ -625,6 +625,14 @@
     const st = wallStyle(m), S = WS[st] || WS.brick;
     const below = m.T(tx, ty + 1);
     if (below !== T.WALL && below !== T.VOID) return wallFace(st, m, tx, ty, lx, ly, x, y, P);
+    // 실내 뒷벽 윗줄: 바로 아래가 앞면인 벽이면 이 칸도 앞면(위쪽 회벽) — 벽이 두 칸 높이로 서서 창 · 그림 · 시계가 벽에 걸린다
+    //   (예전엔 앞면이 한 칸뿐이라 창 · 그림이 어두운 벽 윗면 위에 떠 있었다)
+    if (upperFace(m, st, tx, ty)) {
+      const pw = mixc(rgb(P.s[2]), [246, 238, 222], 0.55);
+      if (ly < 2) return ly === 0 ? [70, 48, 34] : [110, 76, 50];                       // 천장 들보
+      if (ly === 2) return mul(pw, 0.8);
+      return mixc(pw, [255, 255, 255], (U.vnoise(x / 5, y / 5, 651) - 0.5) * 0.1);
+    }
     // 윗면
     let c = S.top.slice();
     const f = U.fbm(x / 7, y / 7, 601, 2);
@@ -637,6 +645,11 @@
     if (nl && lx < 2) c = lx === 0 ? mul(S.rim, 0.6) : S.rim;
     if (nr && lx > 13) c = lx === 15 ? mul(S.rim, 0.6) : S.rim;
     return c;
+  }
+  function upperFace(m, st, tx, ty) {
+    if (!m.indoor || st !== 'house' || tx <= 0 || tx >= m.w - 1 || m.T(tx, ty + 1) !== T.WALL) return false;
+    const b2 = m.T(tx, ty + 2), up = m.T(tx, ty - 1);
+    return b2 !== T.WALL && b2 !== T.VOID && (ty === 0 || up === T.WALL || up === T.VOID) && m.T(tx - 1, ty + 1) !== T.VOID;
   }
   function wallFace(st, m, tx, ty, lx, ly, x, y, P) {
     const S = WS[st] || WS.brick;
@@ -717,7 +730,7 @@
         // 회벽 + 아래 나무 판벽 + 걸레받이
         const pw = mixc(rgb(P.s[2]), [246, 238, 222], 0.55);
         c = ly < 9 ? mixc(pw, [255, 255, 255], (U.vnoise(x / 5, y / 5, 651) - 0.5) * 0.1) : ly === 9 ? [120, 84, 56] : ly > 13 ? [70, 48, 34] : ((x + (tx & 1) * 3) % 6 === 0 ? [110, 76, 50] : [146, 104, 70]);
-        if (ly === 0) c = [96, 66, 44]; else if (ly === 1) c = mul(pw, 0.85);
+        if (!upperFace(m, st, tx, ty - 1)) { if (ly === 0) c = [96, 66, 44]; else if (ly === 1) c = mul(pw, 0.85); }   // 위 칸도 앞면이면 회벽이 이어진다
         break;
       }
       default: {

@@ -43,22 +43,28 @@
         case 'dead': return;
         default: break;
       }
-      // 무기 동작 (공격 · 활 · 마법 …)이 진행 중이면 그쪽에 맡긴다
+      // 무기 동작 (공격 · 활 · 마법 …)이 진행 중이면 그쪽에 맡긴다 — 그동안에도 느리게 걸을 수 있다 (겨누는 쪽과 따로)
       if (this.state !== 'idle' && this.state !== 'walk' && this.state !== 'hurt') {
+        // 갈고리는 걷지 않는다 (쏘는 동안 · 끌려가는 동안 방향키에 밀려 엇나갔다)
+        if (ctl && !this.autoMove && this.state !== 'hook') this.actMove(dt, m);
         const a = this.actions[this.state];
         if (a && a.update) a.update(this, dt, m, ctl);
-        this.checkGround(m, dt);
+        // 갈고리에 끌려가는 동안은 구덩이 · 물 위를 지나간다 — 예전엔 걷기 공격을 넣으며 여기서 발밑을 재어, 말뚝에 걸어도 첫 구덩이 칸에서 떨어졌다
+        if (!(this.state === 'hook' && this.hook && this.hook.pull)) this.checkGround(m, dt);
         return;
       }
       let ax = ctl ? I.axisX : 0, ay = ctl ? I.axisY : 0;
       if (this.autoMove) { ax = this.autoMove[0]; ay = this.autoMove[1]; }
       const mag = Math.min(1, U.len(ax, ay));
+      // 직접 겨누고 있으면(마우스 · 오른쪽 스틱 · 방향키 조준) 걷는 쪽과 상관없이 그쪽을 바라본다
+      const aimX = ctl && !this.autoMove && G.combat && G.combat.explicitAim ? G.combat.explicitAim(this) : null;
+      if (aimX && aimX.src !== 'touch') { this.face = [aimX.x, aimX.y]; this.dir = U.dir4(aimX.x, aimX.y, this.dir); }
       if (mag > 0.05) {
         const n = U.norm(ax, ay);
-        this.face = n;
-        this.dir = U.dir4(ax, ay, this.dir);
+        this.walkFace = n;
+        if (!aimX || aimX.src === 'touch') { this.face = n; this.dir = U.dir4(ax, ay, this.dir); }
         const P = TL.PROP[m.groundAt(this.x, this.y - 2)];
-        const sp = this.speed * (P.slow || 1) * (this.swimming ? 0.7 : 1) * (0.35 + 0.65 * mag) * (this.slowMul || 1);
+        const sp = this.speed * (P.slow || 1) * (this.swimming ? 0.7 : 1) * (0.35 + 0.65 * mag) * (this.slowMul || 1) * (this.veilMul || 1);
         const r = E.move(m, this, n[0] * sp * dt, n[1] * sp * dt);
         this.vx = n[0] * sp; this.vy = n[1] * sp;
         this.walkT += dt * (sp / 60);
@@ -87,6 +93,23 @@
       this.checkGround(m, dt);
     }
     setState(s) { this.state = s; this.st = 0; }
+    /** 공격 · 스킬 · 필살기 동안 걷기 (느리게). 겨누지 않을 때는 걷는 쪽이 다음 공격의 방향이 된다 */
+    actMove(dt, m) {
+      const K = Player.ACT_MOVE[this.state];
+      if (!K) return;
+      if (this.state === 'skill' && this.skill && (this.skill.dir || this.skill.noMove)) return;   // 스스로 움직이는 스킬 (돌진 · 물러나기 …)
+      if (this.state === 'sp' && this.spx && this.spx.noMove) return;
+      if (this.state === 'attack' && this.lunge > 30) return;
+      const ax = I.axisX, ay = I.axisY, mag = Math.min(1, U.len(ax, ay));
+      if (mag < 0.05) { this.vx = 0; this.vy = 0; return; }
+      const n = U.norm(ax, ay);
+      const P = TL.PROP[m.groundAt(this.x, this.y - 2)] || {};
+      const sp = this.speed * K * (P.slow || 1) * (this.swimming ? 0.7 : 1) * (0.35 + 0.65 * mag) * (this.slowMul || 1) * (this.actMoveMul || 1) * (this.veilMul || 1);
+      E.move(m, this, n[0] * sp * dt, n[1] * sp * dt);
+      this.vx = n[0] * sp; this.vy = n[1] * sp;
+      this.walkT += dt * (sp / 60); this.actWalk = 0.12;
+      if (!(G.combat && G.combat.explicitAim && G.combat.explicitAim(this))) this.face = n;
+    }
 
     /* ── 구르기: 짧은 무적 · 기력 소모 ── */
     tryRoll(ax, ay) {
@@ -114,6 +137,7 @@
       if ((r.hitX || r.hitY) && this.st > 0.05) {
         const L = E.ledgeAhead(m, this, this.rollDir[0], this.rollDir[1]);
         if (L) { this.startJump(L); return; }
+        if (this.rollBump) this.rollBump(this);
       }
       if (G.fx && Math.random() < dt * 20) G.fx.dust(this.x, this.y, 1);
       // 구르는 공 뒤로 옅은 잔상
@@ -191,5 +215,7 @@
     }
   }
 
+  // 동작마다 걷는 빠르기 (평소의 몇 배)
+  Player.ACT_MOVE = { attack: 0.55, bow: 0.5, cast: 0.6, skill: 0.45, spin: 0.5, sp: 0.4 };
   G.Player = Player;
 })();

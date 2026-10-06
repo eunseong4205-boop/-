@@ -12,7 +12,7 @@
   const after = (id) => { const order = ['c1', 'c2', 'c3', 'c4', 'c5', 'c6', 'c7', 'c8', 'c9', 'c10', 'c11', 'c12']; return order.indexOf(ch()) >= order.indexOf(id); };
   const GT = OW.towns.green;
   const X0 = GT.x, Y0 = GT.y;           // 82, 170
-  ST.GREEN = { X0, Y0, cave: { x: 94, y: 155 } };
+  ST.GREEN = { X0, Y0, cave: OW.pt(94, 155) };   // 넓어진 대륙에서도 마을 북쪽 숲 (예전 좌표 그대로면 그레이 땅에 떨어져 1장에서 들어갈 수 없었다)
 
   /* ───────── 넓은 지도에 짓기 ───────── */
   OW.hooks.push((m) => {
@@ -108,11 +108,11 @@
   }
 
   // 베르덱스 이장
-  ST.person('g_chief', { id: 'verdex', x: 6, y: 5, dir: 'down', talk: async (c, n) => {
+  ST.person('g_chief', { id: 'verdex', x: 6, y: 5, dir: 'down', mark: () => (f('c1_trained') && !f('c1_tower') && !f('met:verdex') ? '!' : null), talk: async (c, n) => {
     c.flag('met:verdex');
     if (!after('c2')) {
       await c.say(n, '오, {n}. 생일이라며. 축하한다. …허, 경사스러운 날에 이런 얼굴이라 미안하구나.', { face: 'sad' });
-      await c.say(n, '올해 그린 마을 징수 목표가 작년의 두 배다. 사백이십만. 아이들이 일 년 내내 김을 매도 채울 수 없는 숫자지.');
+      await c.say(n, '올해 그린 마을 징수 목표가 작년의 두 배다. 아이들이 일 년 내내 김을 매도 못 채운다.');
       await c.say(n, '모자라면 탑이 알아서 가져간다더구나. 사람 몸에서. 노아가… 그래서 저렇게 된 거다.', { face: 'angry' });
     } else if (!after('c6')) {
       await c.say(n, f('c1_route') === 'dawn' ? '네가 탑을 베고 떠난 뒤로 기사들이 마을을 뒤졌다. 그래도 아무도 네 이름을 말하지 않았다. 그게 그린 마을이다.' : f('c1_route') === 'order' ? '카시안 기사가 장부를 다시 매겼다. 조금 숨통이 트였어. 기사단에도 사람이 있구나.' : '그 음유시인이 떠나고 나서 밤마다 탑 불빛이 약해진다. 탑이 배탈이라도 난 건지. 허허.');
@@ -122,7 +122,7 @@
   } });
 
   // 노아 · 노아 엄마
-  ST.person('g_noah', { id: 'noah', x: 2, y: 4, dir: 'right', state: 'sit', when: () => !f('c1_noah_gone'), mark: () => (f('c1_quest_dew') && !f('c1_dew_given') && S().inv.dew ? '!' : null), talk: async (c, n) => {
+  ST.person('g_noah', { id: 'noah', x: 2, y: 4, dir: 'right', state: 'sit', when: () => !f('c1_noah_gone'), mark: () => ((f('c1_quest_dew') && !f('c1_dew_given') && S().inv.dew) || (f('c1_trained') && !f('c1_tower') && !f('met:noah')) ? '!' : null), talk: async (c, n) => {
     c.flag('met:noah');
     if (!f('c1_quest_dew')) {
       await c.say(n, '…{n} 형아' + (S().gender === 'girl' ? '… 아니, 누나' : '') + '? 생일이지. 나도 알아. 엄마가 말해 줬어.', { face: 'smile' });
@@ -161,7 +161,7 @@
   } });
 
   // 마을 사람들 (넓은 지도)
-  ST.person(W, { id: 'berna', x: tx(12), y: ty(10), wander: 24, barks: ['하나! 둘! 천 번 휘두르면 전설이 된대!', '카렐 바보!'], when: () => !after('c6') || true, talk: async (c, n) => {
+  ST.person(W, { id: 'berna', x: tx(12), y: ty(10), wander: 24, barks: ['천 번 휘두르면 전설이 된대!', '카렐 바보!'], when: () => !after('c6') || true, talk: async (c, n) => {
     c.flag('met:berna');
     if (!f('g_berna_duel')) {
       await c.say(n, '{n}! 그거 진짜 검이야? 우와… 나랑 대련해! 허수아비 셋을 나보다 빨리 쓰러뜨리면 인정해 줄게!', { face: 'happy' });
@@ -169,8 +169,8 @@
       if (k === 0) await ST.bernaDuel(c, n);
     } else await c.say(n, after('c6') ? '나도 언젠가 너처럼 흰빛으로 렙업할 거야! …안 되면 초록빛도 괜찮고.' : '두고 봐. 다음엔 내가 이겨!', { face: 'smile' });
   } });
-  ST.person(W, { id: 'karel', x: tx(15), y: ty(11), wander: 20, barks: ['베르나는 매일 천 번. 나는 매일 천한 번.'], talk: async (c, n) => { c.flag('met:karel'); await c.say(n, U.pick(['베르나가 너한테 대련하재? 걔 목검 진짜 아파.', '내 꿈은 기사단에 들어가는 거야. 아니… 요즘은 잘 모르겠어. 노아 보면.'])); } });
-  ST.person(W, { name: '감자 농부 브람', folk: 'farmer', x: tx(29), y: ty(8), dir: 'down', mark: () => (!f('q_bram') ? '!' : S().quests.bram && S().quests.bram.st === 'on' && (S().bramKills || 0) >= 5 ? '!' : null), talk: async (c, n) => {
+  ST.person(W, { id: 'karel', x: tx(15), y: ty(11), wander: 20, barks: ['베르나보다 딱 한 번 더 휘두르는 게 내 규칙이야.'], talk: async (c, n) => { c.flag('met:karel'); await c.say(n, U.pick(['베르나가 너한테 대련하재? 걔 목검 진짜 아파.', '내 꿈은 기사단에 들어가는 거야. 아니… 요즘은 잘 모르겠어. 노아 보면.'])); } });
+  ST.person(W, { name: '감자 농부 브람', folk: 'farmer', x: tx(34), y: ty(7), dir: 'down', mark: () => (!f('q_bram') ? '!' : S().quests.bram && S().quests.bram.st === 'on' && (S().bramKills || 0) >= 5 ? '!' : null), talk: async (c, n) => {
     const q = S().quests.bram;
     if (!q) {
       await c.say(n, '저 젤리 놈들이 밭을 다 뭉개. 감자가 빛을 먹고 자라야 하는데, 젤리가 먼저 먹어 치워.', { face: 'angry' });
@@ -234,10 +234,12 @@
     const dummies = Wd.ents.filter((e) => e.type === 'dummy');
     if (dummies.length < 3) { await c.say(n, '허수아비가 없네… 다음에!'); return; }
     await c.say(n, '준비… 시작! 각각 세 번씩 때리면 돼!');
+    // 수련 중에 대련해도 수련이 이어지게: 원래 처리를 잠시 비켜 두었다가 되돌린다
+    const prevHurt = new Map(dummies.map((d) => [d, d.onHurt])); ST.dummyUntil = performance.now() + 15000;   // 대련이 끊겨도 15초면 풀린다
     const hits = new Map(); dummies.forEach((d) => { hits.set(d, 0); d.onHurt = function () { hits.set(this, hits.get(this) + 1); this.hpShow = 0; if (hits.get(this) === 3) { G.fx.ring(this.x, this.y - 8, '#6ae07a', 14, 0.4); G.audio.sfx('clickspot'); } }; });
     let t = 0;
     const ok = await (async () => { let done = false; await c.freeWhile(() => { t += 1 / 60; done = [...hits.values()].every((v) => v >= 3); return done || t > 12; }); return done; })();
-    dummies.forEach((d) => { d.onHurt = null; });
+    dummies.forEach((d) => { d.onHurt = prevHurt.get(d) || null; }); ST.dummyUntil = 0;
     c.lock(true);
     if (ok) { c.flag('g_berna_duel'); c.bond('berna', 1); await c.say(n, t.toFixed(1) + '초?! 말도 안 돼… 인정! 오늘부터 너는 내 라이벌 2호야!', { face: 'shock' }); await c.getItem('arrows10', 1).catch(() => {}); c.gold(30); }
     else await c.say(n, '에이, 12초 넘었어! 다시 해!', { face: 'smile' });

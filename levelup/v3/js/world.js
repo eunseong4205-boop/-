@@ -19,21 +19,53 @@
     if (p) { p.x = x; p.y = y; if (dir) p.dir = dir; G.ent.settle(map, p); p.jz = 0; p.vx = p.vy = 0; }
     snap();
     W.lastTx = Math.floor(x / TS); W.lastTy = Math.floor((y - 2) / TS);
-    map.warm(x, y, 360);
+    if (map.warmView) map.warmView(Math.round(W.cam.x), Math.round(W.cam.y), W.view.w, W.view.h); else map.warm(x, y, 360);   // 둘레는 걸으면서 미리 칠한다
     if (G.world.onLoad) G.world.onLoad(map);
   }
   function add(e) { W.ents.push(e); return e; }
   function remove(e) { e.dead = true; }
 
-  /** 소품(상자 · 블록 · 문 등)이 막는가 */
-  function propBlock(x, y, w, h, who) {
+  /** 소품(상자 · 블록 · 문 등)이 막는가.
+      주인공이 미는 동안 비켜 서는 사람(yieldT)은 주인공을 막지 않는다 (96_sanity의 비켜 주기).
+      걸음 하나마다 여러 번 불리므로, 세계가 도는 동안에는 64픽셀 칸 격자에서 근처 것만 본다 —
+      예전에는 들판의 존재 760여 개를 걸음마다 전부 훑어 그것만으로 한 프레임이 넘게 걸렸다 */
+  const PB = { cell: 64, grid: new Map(), arr: null, len: 0, n: -1, stamp: 0, r: null };
+  function hits(e, x, y, w, h, who) {
+    if (e === who || !e.solid || e.dead || !e.blockBox) return false;
+    if (who && who === W.player && (e.yieldT > 0 || (e.npc && e.passT > 0))) return false;
+    const b = e.blockBox();
+    return !!(b && x < b.x + b.w && x + w > b.x && y < b.y + b.h && y + h > b.y);
+  }
+  function pbBuild() {
+    const C = PB.cell, grid = PB.grid; grid.clear();
+    PB.arr = W.ents; PB.len = W.ents.length; PB.n = W.tickN;
+    // 넓은 들판에서는 깨어 있는 둘레(+160픽셀)의 것만 칸에 넣는다. 그 밖을 묻는 일(멀리서 깨어 있는 것)은 전부 훑는다
+    const r = PB.r = W.cullR ? { x0: W.cullR.x0 - 160, x1: W.cullR.x1 + 160, y0: W.cullR.y0 - 160, y1: W.cullR.y1 + 160 } : null;
     for (const e of W.ents) {
-      if (e === who || !e.solid || e.dead || !e.blockBox) continue;
-      const b = e.blockBox();
-      if (b && x < b.x + b.w && x + w > b.x && y < b.y + b.h && y + h > b.y) return true;
+      if (!e.solid || e.dead || !e.blockBox) continue;
+      if (r && (e.x < r.x0 || e.x > r.x1 || e.y < r.y0 || e.y > r.y1)) continue;
+      const b = e.blockBox() || { x: e.x - 8, y: e.y - 8, w: 16, h: 16 };   // 지금은 막지 않는 것(숨은 사람)도 곧 막을 수 있다
+      const x0 = Math.floor((b.x - 16) / C), x1 = Math.floor((b.x + b.w + 16) / C), y0 = Math.floor((b.y - 16) / C), y1 = Math.floor((b.y + b.h + 16) / C);
+      for (let cy = y0; cy <= y1; cy++) for (let cx = x0; cx <= x1; cx++) { const k = cx + cy * 8192; let a = grid.get(k); if (!a) grid.set(k, a = []); a.push(e); }
     }
+  }
+  function propBlock(x, y, w, h, who) {
+    if (!W.inTick) { for (const e of W.ents) if (hits(e, x, y, w, h, who)) return true; return false; }
+    if (PB.arr !== W.ents || PB.n !== W.tickN) pbBuild();
+    const r = PB.r;
+    if (r && (x < r.x0 + 100 || x + w > r.x1 - 100 || y < r.y0 + 100 || y + h > r.y1 - 100)) { for (const e of W.ents) if (hits(e, x, y, w, h, who)) return true; return false; }
+    const C = PB.cell, st = ++PB.stamp;
+    const x0 = Math.floor(x / C), x1 = Math.floor((x + w) / C), y0 = Math.floor(y / C), y1 = Math.floor((y + h) / C);
+    for (let cy = y0; cy <= y1; cy++) for (let cx = x0; cx <= x1; cx++) {
+      const a = PB.grid.get(cx + cy * 8192); if (!a) continue;
+      for (const e of a) { if (e._pbs === st) continue; e._pbs = st; if (hits(e, x, y, w, h, who)) return true; }
+    }
+    for (let i = PB.len; i < W.ents.length; i++) if (hits(W.ents[i], x, y, w, h, who)) return true;   // 이번 갱신 중에 새로 생긴 것
     return false;
   }
+
+  /** 지금 깨어 있는 것들: 넓은 들판에서는 화면 둘레의 것만 (주인공 앞 상호작용 · 적 찾기에 쓴다). 그 밖에는 전부 */
+  function awake() { return W.act && W.actMap === W.map && W.actN === W.tickN ? W.act : W.ents; }
 
   /* ───────── 카메라 ───────── */
   function camTarget() {
@@ -68,17 +100,66 @@
   function slowmo(f, sec) { W.slow = f; W.slowT = sec; }
 
   /* ───────── 갱신 ───────── */
+  // 존재 하나가 오류를 내도 다른 존재 · 카메라 · 문 판정은 계속 돈다 (종류마다 한 번만 남긴다)
+  const entErrSeen = {};
+  function entErr(e, err) { const k = (e && (e.kind || (e.constructor && e.constructor.name))) || '?'; if (!entErrSeen[k]) { entErrSeen[k] = 1; console.error('[ent ' + k + ']', err); } }
   function update(dt) {
     if (W.stopT > 0) { W.stopT -= dt; updateCam(dt); G.fx && G.fx.update(dt * 0.2); return; }
     if (W.slowT > 0) { W.slowT -= dt; dt *= W.slow; if (W.slowT <= 0) W.slow = 1; }
     W.t += dt;
     if (!W.paused) {
-      for (const e of W.ents.slice()) if (!e.dead && e.update) e.update(dt, W);
-      W.ents = W.ents.filter((e) => !e.dead || e === W.player);
+      W.tickN = (W.tickN || 0) + 1;
+      // 넓은 들판에서는 화면 둘레(±280픽셀) 밖의 것은 쉬게 한다: 들판 하나에 사람 · 표지판 · 상자 · 건물이 760개 넘게 있다.
+      // 주인공 · 동료 · 연출이 움직이는 것 · 보스 · 깨어 있어야 하는 것(keepAwake)은 늘 돈다
+      const m = W.map, cull = m && (m.overworld || W.ents.length > 200);
+      const c = W.cam, M = 280, ax0 = c.x - M, ax1 = c.x + W.view.w + M, ay0 = c.y - M, ay1 = c.y + W.view.h + M;
+      W.cullR = cull ? { x0: ax0, x1: ax1, y0: ay0, y1: ay1 } : null;
+      W.inTick = true;
+      const act = cull ? [] : null;
+      const arr = W.ents, n = arr.length;   // 이번 갱신 중에 생긴 것은 다음 갱신부터 (예전의 slice()와 같다)
+      try {
+        for (let i = 0; i < n; i++) {
+          const e = arr[i];
+          if (e.dead) continue;
+          if (cull) {
+            if ((e.x < ax0 || e.x > ax1 || e.y < ay0 || e.y > ay1) && e !== W.player && !e.follower && !e.script && !e.boss && !e.keepAwake) continue;
+            act.push(e);
+          }
+          if (!e.update) continue;
+          try { e.update(dt, W); } catch (err) { entErr(e, err); }
+        }
+      } finally { W.inTick = false; }
+      W.act = act; W.actMap = m; W.actN = W.tickN;
+      let anyDead = false; for (const e of W.ents) if (e.dead && e !== W.player) { anyDead = true; break; }
+      if (anyDead) {
+        // 화면 안에서 지워지는 사람은 바로 사라지지 않고 걸어 나가거나 흐려진다 (world/96d_presence)
+        const born = [];
+        if (W.onGone) for (const e of W.ents) if (e.dead && e !== W.player) { try { W.onGone(e, born); } catch (err) { entErr(e, err); } }
+        W.ents = W.ents.filter((e) => !e.dead || e === W.player);
+        for (const b of born) W.ents.push(b);
+      }
     }
     if (G.fx) G.fx.update(dt);
     updateCam(dt);
     checkTiles();
+  }
+
+  /** 열리지 않는 입구를 밟았다: 까닭을 알리고, 그 칸 밖으로 한 걸음 물린다.
+      예전: 6픽셀만 물려 입구 칸 안에 남는 때가 있었고(옆이나 비스듬히 다가오면), 같은 칸이라 다시 밀어도 아무 말이 없었다 —
+      이제 입구 칸을 벗어날 때까지 물리고, 다시 밟을 때마다 같은 까닭을 다시 띄운다 */
+  function refuse(p, m, w) {
+    const msg = w.msg ? (typeof w.msg === 'function' ? w.msg() : w.msg) : '지금은 들어갈 수 없다.';
+    G.ui.toast(msg, 'bad', 'warp:' + (w.id || w.to));
+    if (G.audio) G.audio.sfx('bump');
+    const inW = () => { const tx = Math.floor(p.x / TS), ty = Math.floor((p.y - 2) / TS); return tx >= w.x && ty >= w.y && tx < w.x + (w.w || 1) && ty < w.y + (w.h || 1); };
+    // 들어온 쪽으로: 걷던 방향의 반대, 그쪽이 막혔으면 입구 칸의 가장 가까운 바깥(대개 아래)
+    let [ux, uy] = U.DV[p.dir] || [0, -1];
+    if (Math.abs(p.vx || 0) + Math.abs(p.vy || 0) > 4) [ux, uy] = U.norm(p.vx, p.vy);
+    for (let k = 0; k < 10 && inW(); k++) G.ent.move(m, p, -ux * 2, -uy * 2);
+    if (inW()) { const by = (w.y + (w.h || 1)) * TS + 12; for (let k = 0; k < 12 && inW(); k++) G.ent.move(m, p, 0, Math.sign(by - p.y) * 2 || 2); }
+    if (inW()) { p.y = (w.y + (w.h || 1)) * TS + 12; G.ent.settle(m, p); }
+    p.vx = p.vy = 0;
+    W.lastTx = Math.floor(p.x / TS); W.lastTy = Math.floor((p.y - 2) / TS);
   }
 
   /* ───────── 발밑 칸: 문(다른 지도) · 칸 트리거 ───────── */
@@ -93,7 +174,7 @@
     W.lastTx = tx; W.lastTy = ty;
     for (const w of m.warps || []) {
       if (tx < w.x || ty < w.y || tx >= w.x + (w.w || 1) || ty >= w.y + (w.h || 1)) continue;
-      if (w.cond && !w.cond()) { if (w.msg) { G.ui.toast(typeof w.msg === 'function' ? w.msg() : w.msg, 'bad'); const [ux, uy] = U.DV[p.dir]; p.x -= ux * 6; p.y -= uy * 6; } continue; }
+      if (w.cond && !w.cond()) { refuse(p, m, w); return; }
       if (G.game.useWarp) G.game.useWarp(w);
       return;
     }
@@ -114,12 +195,18 @@
     W.rcx = cx; W.rcy = cy;
     g.fillStyle = '#000'; g.fillRect(0, 0, v.w, v.h);
     m.drawGround(g, cx, cy, v.w, v.h, 2);
+    if (m.prefetch) { const p = W.player; m.prefetch(cx, cy, v.w, v.h, 2.5, p ? p.vx : 0, p ? p.vy : 0); }
     // 물결 · 용암 빛
     const tx0 = Math.floor(cx / TS) - 1, ty0 = Math.floor(cy / TS) - 1, tx1 = Math.floor((cx + v.w) / TS) + 1, ty1 = Math.floor((cy + v.h) / TS) + 1;
-    for (let ty = ty0; ty <= ty1; ty++) for (let tx = tx0; tx <= tx1; tx++) TL.waterFx(g, m, tx, ty, tx * TS - cx, ty * TS - cy, W.t);
+    const TT = TL.T, ter = m.ter, mw = m.w;
+    for (let ty = Math.max(0, ty0); ty <= Math.min(m.h - 1, ty1); ty++) for (let tx = Math.max(0, tx0); tx <= Math.min(mw - 1, tx1); tx++) {
+      const t = ter[ty * mw + tx];
+      if (t === TT.WATER || t === TT.DEEP || t === TT.LAVA) TL.waterFx(g, m, tx, ty, tx * TS - cx, ty * TS - cy, W.t);
+    }
     // 바닥에 붙는 것 (그림자 · 떨어진 물건 · 효과)
     for (const e of W.ents) if (!e.dead && !e.hidden && e.drawShadow && e.x > cx - 60 && e.x < cx + v.w + 60 && e.y > cy - 20 && e.y < cy + v.h + 60) e.drawShadow(g, cx, cy);
     if (G.fx) G.fx.drawUnder(g, cx, cy);
+    if (G.gear && G.gear.drawUnder) { try { G.gear.drawUnder(g, cx, cy); } catch (_) { /* 무시 */ } }
     // y 정렬: 서 있는 사물 + 존재
     const list = [];
     m.collect(list, tx0, ty0, tx1, ty1 + 3);
@@ -127,7 +214,7 @@
     for (const e of W.ents) if (!e.dead && !e.hidden && e.draw && e.x > x0 && e.x < x1 && e.y > y0 && e.y < y1) list.push({ y: e.y + (e.sortBias || 0), ent: e });
     list.sort((a, b) => a.y - b.y);
     for (const it of list) {
-      if (it.ent) it.ent.draw(g, cx, cy);
+      if (it.ent) { try { it.ent.draw(g, cx, cy); } catch (err) { entErr(it.ent, err); } }
       else {
         // 플레이어가 큰 나무 뒤에 있으면 잎을 조금 비친다
         const p = W.player;
@@ -139,10 +226,14 @@
       }
     }
     if (G.combat && G.combat.drawBolts) G.combat.drawBolts(g, cx, cy);
+    if (G.combat && G.combat.drawAim) { try { G.combat.drawAim(g, cx, cy); } catch (_) { /* 무시 */ } }
     if (G.fx) G.fx.drawOver(g, cx, cy);
     if (G.light) G.light.draw(g, cx, cy);
+    if (G.fx && G.fx.drawGlow) G.fx.drawGlow(g, cx, cy);   // 마법 · 불 · 별빛은 어둠 위에서도 빛난다
+    // 덧그림: 지역 날씨 장막 등 (빛 위에)
+    if (W.overlays) for (const f of W.overlays) { try { f(g, cx, cy, v); } catch (err) { if (!W.ovErr) { W.ovErr = true; console.error('[overlay]', err); } } }
   }
 
-  Object.assign(W, { load, add, remove, propBlock, snap, update, render, shake, hitstop, slowmo });
+  Object.assign(W, { load, add, remove, propBlock, awake, snap, update, render, shake, hitstop, slowmo });
   G.world = W;
 })();

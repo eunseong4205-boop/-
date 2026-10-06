@@ -36,20 +36,33 @@
       for (const [dx, dy] of [[0, 0], [-1, 0], [1, 0], [0, -1], [0, 1]]) {
         const k = (((x + dx) / CH) | 0) + ',' + (((y + dy) / CH) | 0);
         this.chunks.delete(k);
+        if (this.jobs) this.jobs.delete(k);   // 그리던 중이면 처음부터 다시
       }
     }
-    dirtyAll() { this.chunks.clear(); }
+    dirtyAll() { this.chunks.clear(); if (this.jobs) this.jobs.clear(); }
 
     /* ───────── 그리기 ───────── */
+    /* 묶음 하나는 256×256 픽셀을 한 점씩 칠한다 (휴대폰에서 0.2초 남짓).
+       한 줄씩 나눠 칠할 수 있게 해 두고, 걸어갈 쪽의 묶음은 프레임마다 조금씩 미리 칠한다 (prefetch) —
+       예전에는 새 땅에 들어설 때마다 그 자리에서 다 칠하느라 화면이 멈칫했다 */
     chunk(cx, cy) {
       const k = cx + ',' + cy;
-      let c = this.chunks.get(k);
+      const c = this.chunks.get(k);
       if (c) return c;
-      const b = X.brush(CPX, CPX), d = b.d;
-      const x0 = cx * CPX, y0 = cy * CPX;
-      for (let y = 0; y < CPX; y++) {
-        const wy = y0 + y;
-        if ((wy >> 4) >= this.h) break;
+      return this.chunkRows(this.chunkJob(cx, cy), Infinity);
+    }
+    chunkJob(cx, cy) {
+      const k = cx + ',' + cy, J = this.jobs || (this.jobs = new Map());
+      let j = J.get(k);
+      if (!j) { if (J.size >= 6) J.delete(J.keys().next().value); j = { k, cx, cy, b: X.brush(CPX, CPX), y: 0 }; J.set(k, j); }   // 지나쳐 버린 밑그림은 버린다
+      return j;
+    }
+    /** 칠할 줄을 이어 칠한다: until(performance.now 기준)을 넘기면 멈춘다. 다 칠했으면 그 묶음을, 아니면 null */
+    chunkRows(j, until) {
+      const d = j.b.d, x0 = j.cx * CPX, y0 = j.cy * CPX;
+      while (j.y < CPX) {
+        const y = j.y, wy = y0 + y;
+        if ((wy >> 4) >= this.h) { j.y = CPX; break; }
         for (let x = 0; x < CPX; x++) {
           const wx = x0 + x;
           if ((wx >> 4) >= this.w) break;
@@ -57,8 +70,15 @@
           const i = (y * CPX + x) * 4;
           d[i] = col[0]; d[i + 1] = col[1]; d[i + 2] = col[2]; d[i + 3] = 255;
         }
+        j.y++;
+        if (until !== Infinity && performance.now() > until) return null;
       }
-      c = b.put();
+      this.jobs.delete(j.k);
+      return this.chunkDone(j);
+    }
+    chunkDone(j) {
+      const { k, cx, cy } = j, x0 = cx * CPX, y0 = cy * CPX;
+      const c = j.b.put();
       // 묶음은 최대 64개만 기억한다 (넓은 지도에서 메모리 절약)
       if (this.chunks.size > 64) { const first = this.chunks.keys().next().value; this.chunks.delete(first); }
       // 바닥에 붙은 사물 (꽃 · 풀숲 · 자갈 …)
@@ -85,7 +105,27 @@
         g.drawImage(c, Math.round(cx * CPX - camX), Math.round(cy * CPX - camY));
       }
     }
-    /** 주변 묶음을 미리 만든다 (지도에 들어설 때) */
+    /** 보이는 둘레 한 묶음씩을 시간이 남는 만큼 미리 칠한다 (가는 쪽 · 가까운 것부터) */
+    prefetch(camX, camY, vw, vh, ms, vx, vy) {
+      const until = performance.now() + ms;
+      const ccx = (camX + vw / 2 + (vx || 0) * 1.2) / CPX, ccy = (camY + vh / 2 + (vy || 0) * 1.2) / CPX;
+      const cx0 = Math.max(0, Math.floor((camX - CPX * 0.75) / CPX)), cy0 = Math.max(0, Math.floor((camY - CPX * 0.75) / CPX));
+      const cx1 = Math.min(Math.ceil(this.w / CH) - 1, Math.floor((camX + vw + CPX * 0.75) / CPX)), cy1 = Math.min(Math.ceil(this.h / CH) - 1, Math.floor((camY + vh + CPX * 0.75) / CPX));
+      let want = null;
+      for (let cy = cy0; cy <= cy1; cy++) for (let cx = cx0; cx <= cx1; cx++) {
+        if (this.chunks.has(cx + ',' + cy)) continue;
+        (want || (want = [])).push([(cx + 0.5 - ccx) ** 2 + (cy + 0.5 - ccy) ** 2, cx, cy]);
+      }
+      if (!want) return;
+      want.sort((a, b) => a[0] - b[0]);
+      for (const [, cx, cy] of want) { if (!this.chunkRows(this.chunkJob(cx, cy), until)) return; if (performance.now() > until) return; }
+    }
+    /** 화면에 보일 묶음만 바로 만든다 (지도에 들어설 때 — 둘레는 prefetch가 이어서) */
+    warmView(camX, camY, vw, vh) {
+      const cx0 = Math.max(0, Math.floor(camX / CPX)), cy0 = Math.max(0, Math.floor(camY / CPX)), cx1 = Math.floor((camX + vw) / CPX), cy1 = Math.floor((camY + vh) / CPX);
+      for (let cy = cy0; cy <= cy1; cy++) for (let cx = cx0; cx <= cx1; cx++) if (cx * CH < this.w && cy * CH < this.h) this.chunk(cx, cy);
+    }
+    /** 주변 묶음을 미리 만든다 */
     warm(px, py, r) {
       const cx0 = Math.floor((px - r) / CPX), cy0 = Math.floor((py - r) / CPX), cx1 = Math.floor((px + r) / CPX), cy1 = Math.floor((py + r) / CPX);
       for (let cy = cy0; cy <= cy1; cy++) for (let cx = cx0; cx <= cx1; cx++) if (cx >= 0 && cy >= 0 && cx * CH < this.w && cy * CH < this.h) this.chunk(cx, cy);

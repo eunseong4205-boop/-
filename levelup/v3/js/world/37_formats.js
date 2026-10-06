@@ -75,9 +75,10 @@
     for (const [a, b] of W.merge || []) (Dn.merge = Dn.merge || []).push([K(a), K(b)]);
     Dn.floors = Dn.floors || {};
     for (const r of W.rooms) Dn.floors[K(r.k)] = W.name;
-    // 큰 열쇠는 구역 끝으로. 원래 상자에는 다른 것을.
+    // 큰 열쇠는 구역 끝으로. 원래 상자에는 다른 것을. (49_dungeons2가 다시 본 던전으로 되돌린다 — 자리를 적어 둔다)
     const hr = Dn.rooms[host];
     const ch = (hr.props || []).find((pr) => pr[0] === 'chest' && pr[3] && pr[3].item === 'key_big');
+    Dn.deepHost = host; Dn.deepEntry = K(W.entry); Dn.deepFinal = K(W.final); Dn.deepKeyChest = ch || null;
     const fin = Dn.rooms[K(W.final)];
     fin.props = fin.props || [];
     if (ch) { ch[3] = Object.assign({}, ch[3], { item: W.consolation || 'potion_r', big: false }); fin.props.push(['chest', 7, 5, { item: 'key_big', big: true, hidden: !W.finalOpen }]); }
@@ -195,7 +196,7 @@
     sign: '은빛 왕국 기록 제612-3호.\n「광맥 가장 깊은 곳에 미궁을 파고 파수꾼을 두었다. 파수꾼은 벽에 부딪혀야 멈춘다. 벽 가까이 서라.」' });
   arena('d9', { name: '그림자 투기장', trophy: 'ac_shadowband', cshape: 'hall',
     waves: [[['assassin', 5, 5], ['assassin', 14, 9], ['skel', 9, 4], ['skel', 9, 10]], [['summoner', 16, 4], ['priest', 3, 10], ['berserk', 9, 7], ['berserk', 13, 5]], [['assassin', 9, 7, { elite: true }], ['lancer', 4, 4], ['lancer', 15, 10], ['priest', 16, 4]], [['berserk', 9, 7, { elite: ['rage', 'vamp'] }], ['summoner', 4, 10], ['wraith', 15, 4], ['wraith', 4, 4]]],
-    sign: '「녹턴의 성 지하 투기장. 그림자들이 주인 없이 16년을 싸웠다. 마지막까지 선 자가 문을 연다.」' });
+    sign: '「녹턴의 성 지하 투기장. 그림자들이 주인 없이 오래 싸웠다. 마지막까지 선 자가 문을 연다.」' });
   arena('d11', { name: '격납고', trophy: 'ac_core', cshape: 'rect',
     waves: [[['drone', 5, 5], ['drone', 14, 5], ['drone', 9, 10], ['sniper', 16, 11]], [['sniper', 3, 3], ['sniper', 16, 11], ['eye', 9, 5], ['eye', 12, 9]], [['cgolem', 9, 7, { elite: true }], ['drone', 4, 4], ['drone', 15, 10], ['sniper', 16, 3]]],
     sign: '「격납고 — 방위 체계 시험장. 경고: 시험은 아직 끝나지 않았습니다.」 (스텔라의 목소리가 녹음되어 있다)' });

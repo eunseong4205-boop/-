@@ -11,7 +11,8 @@
   const sfx = (k) => G.audio && G.audio.sfx(k);
 
   const DUN = {};
-  const RW0 = 20, RH0 = 14;          // 방 크기 기본값 (벽 포함) — 던전마다 D.rw · D.rh 로 키울 수 있다
+  const RW0 = 20, RH0 = 14;
+  const RESPAWN = 1800;              // 쓰러뜨린 던전 적이 다시 나오기까지 (놀이 시간 30분)          // 방 크기 기본값 (벽 포함) — 던전마다 D.rw · D.rh 로 키울 수 있다
 
   /* 던전 모양 (방마다 또는 던전 전체): rect(네모) · cave(굽은 자연 벽) · round(둥근 방) · open(벽 없이 허공 위의 섬) · hall(기둥이 늘어선 큰 방)
      D.pos: 방 이름 → 격자 자리 (이름은 이야기와 깃발에 쓰이니 그대로, 자리만 옮긴다)
@@ -133,9 +134,20 @@
     // 방 사이 문: 벽에 2칸 구멍 (이웃한 방) · 계단 (떨어진 방)
     m.doorways = []; m.stairLinks = [];
     const stairRes = new Uint8Array(m.w * m.h);
+    // 이웃한 두 방의 문 구멍이 던전 출구 칸과 겹치면(출구 방 바로 아래에 붙은 깊은 구역) 계단으로 잇는다: 그 문으로 걸어가면 밖으로 나가 버렸다
+    const exitCells = new Set();
+    if (D.exit) { const er = m.rooms[D.exit.at[0]]; if (er) for (let dx = 0; dx < 2; dx++) exitCells.add(m.i(er.x0 + D.exit.at[1] + dx, er.y0 + D.exit.at[2])); }
+    const clashExit = (a, b) => {
+      if (!exitCells.size) return false;
+      const [ax, ay] = P[a], [bx, by] = P[b];
+      if (ay === by) return false;
+      const y = Math.max(ay, by) * RH, x = ax * RW + (RW >> 1);
+      for (const [cx, cy] of [[x - 1, y - 1], [x, y - 1], [x - 1, y], [x, y]]) if (exitCells.has(m.i(cx, cy))) return true;
+      return false;
+    };
     for (const d of D.doors || []) {
       const [a, b, kind, extra] = d;
-      if (!adj(a, b)) {
+      if (!adj(a, b) || clashExit(a, b)) {
         // 계단 자리: 정해 두지 않았으면 방 네 귀퉁이 중 빈 곳
         const pick = (k) => {
           const r = m.rooms[k];
@@ -151,6 +163,8 @@
         else if (D.stairAt && D.stairAt[b + '>' + a]) [sb, sa] = D.stairAt[b + '>' + a];
         else { sa = pick(a); sb = pick(b); }
         const ra = m.rooms[a], rb = m.rooms[b];
+        // 계단 칸과 내려서는 칸(바로 아래)은 늘 단단한 바닥: 구덩이 · 물 방에서 빈자리가 없어 아무 데나 고른 계단이 구덩이 위로 내려놓던 것
+        for (const [r2, sp] of [[ra, sa], [rb, sb]]) for (let dy = 0; dy <= 1; dy++) for (let dx = 0; dx <= 1; dx++) { const rx = sp[0] + dx, ry = sp[1] + dy; if (rx < 1 || rx > RW - 2 || ry < 2 || ry > RH - 2) continue; const i = m.i(r2.x0 + rx, r2.y0 + ry); m.ter[i] = r2.R.floor || floor; m.obj[i] = 0; }
         mark(ra.x0 + sa[0], ra.y0 + sa[1], 2); mark(rb.x0 + sb[0], rb.y0 + sb[1], 2);
         for (const [X, Y] of [[ra.x0 + sa[0], ra.y0 + sa[1]], [rb.x0 + sb[0], rb.y0 + sb[1]]]) for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 3; dx++) if (m.inb(X + dx, Y + dy)) stairRes[m.i(X + dx, Y + dy)] = 1;
         m.stairLinks.push({ a, b, kind, extra, pa: [ra.x0 + sa[0], ra.y0 + sa[1]], pb: [rb.x0 + sb[0], rb.y0 + sb[1]] });
@@ -299,19 +313,52 @@
   class RoomCtl extends E.Ent {
     constructor(o) { super(Object.assign({ kind: 'roomctl', solid: false, hidden: true }, o)); this.active = false; this.foes = []; }
     get flagClear() { return this.did + ':' + this.k + ':clear'; }
-    spawnList(list, Wd) {
+    /** 쓰러뜨린 적 기록 (방 · 적 차례). 놀이 시간 RESPAWN초가 지나기 전에는 다시 나오지 않는다 */
+    slainRec() {
+      const s = S(), key = this.did + ':' + this.k;
+      s.slain = s.slain || {};
+      const r = s.slain[key];
+      // 던전을 나갔다 다시 들어왔고(방문 번호가 바뀜) 놀이 시간도 충분히 흘렀을 때만 다시 채운다
+      if (r && s.t - r.t >= RESPAWN && r.v !== (s.dgVisit || 0)) { delete s.slain[key]; return null; }
+      return r || null;
+    }
+    spawnList(list, Wd, tag) {
       const s = S();
       const hpK = G.dungeon.HP_MUL;
-      for (const f of list || []) {
+      const rec = tag ? this.slainRec() : null;
+      (list || []).forEach((f, i) => {
         const [type, fx, fy, fo] = f;
-        if (fo && fo.once && s.flags[this.did + ':' + this.k + ':f' + fx + fy]) continue;
+        const sid = tag ? tag + i : null;
+        if (sid && rec && rec.ids.includes(sid)) return;
+        if (fo && fo.once && s.flags[this.did + ':' + this.k + ':f' + fx + fy]) return;
         const e = G.foes.spawn(type, (this.x0 + fx) * TS + 8, (this.y0 + fy) * TS + 12, Object.assign({ tier: this.tier, hpMul: hpK, inDungeon: true }, fo || {}));
-        e.room = this.k; e.home = { x: e.x, y: e.y }; e.aggro = !(fo && fo.sleep);
+        e.room = this.k; e.home = { x: e.x, y: e.y }; e.aggro = !(fo && fo.sleep); e.slainId = sid;
         G.fx.glow(e.x, e.y - 8, '#b8a8ff', 6);
         this.foes.push(e);
+      });
+    }
+    /** 이 방에서 쓰러진 적을 적어 둔다 (방을 나갔다 들어와도 되살아나지 않게) */
+    noteSlain() {
+      for (const e of this.foes) {
+        if (!e.dead || e._slainNoted || !e.slainId || e.hp > 0) continue;
+        e._slainNoted = true;
+        const s = S(), key = this.did + ':' + this.k;
+        const r = this.slainRec() || (s.slain[key] = { t: s.t, ids: [], v: s.dgVisit || 0 });
+        if (!r.ids.includes(e.slainId)) r.ids.push(e.slainId);
+        r.t = s.t; r.v = s.dgVisit || 0;
       }
     }
     get RW() { return G.world.map.RW || RW0; } get RH() { return G.world.map.RH || RH0; }
+    /** 풀지 못한 채 방을 나가면 돌덩이를 처음 자리로 (구석에 밀어 넣거나 구덩이에 빠뜨려 퍼즐이 막히던 것) */
+    resetBlocks(Wd) {
+      const rr = Wd.map.rooms && Wd.map.rooms[this.k]; if (!rr || !rr.blockSpecs || !rr.blockSpecs.length) return;
+      if (S().flags[this.flagClear]) return;
+      for (const sp of rr.blockSpecs) {
+        const b = sp.ent;
+        if (b && !b.dead) { if (!b.moving && (b.x !== sp.x || b.y !== sp.y)) { b.x = sp.x; b.y = sp.y; b.moved = false; b.pushT = 0; } }
+        else { const nb = new (P().Block)({ x: sp.x, y: sp.y, col: sp.col }); nb.room = this.k; sp.ent = Wd.add(nb); }
+      }
+    }
     inside(p) { return p.x > (this.x0 + 1) * TS && p.x < (this.x0 + this.RW - 1) * TS && p.y > (this.y0 + 2) * TS && p.y < (this.y0 + this.RH - 1) * TS + 4; }
     update(dt, Wd) {
       const p = Wd.player; if (!p) return;
@@ -325,10 +372,13 @@
         const R = this.R;
         if (R.onEnter && !this.enteredOnce) { this.enteredOnce = true; R.onEnter(this, Wd); }
         const solvedClear = R.solve && (R.solve.type === 'clear' || R.solve.type === 'waves') && s.flags[this.flagClear] && !R.respawn;
-        if (!solvedClear) this.spawnList(R.waves ? R.waves[0] : R.foes, Wd);
+        if (!solvedClear) this.spawnList(R.waves ? R.waves[0] : R.foes, Wd, R.waves ? null : 'f:');   // 파도 방은 적지 않는다 (다시 들어오면 첫 파도부터)
+        // 「방 정리」 방의 적을 이미 다 쓰러뜨렸으면 풀린 것으로
+        this.allSlain = !solvedClear && !R.waves && (R.foes || []).length > 0 && !this.foes.length;
         this.wave = 0;
         if (R.solve && (R.solve.type === 'clear' || R.solve.type === 'waves') && !s.flags[this.flagClear] && this.foes.length) { this.trap = true; sfx('door'); if (R.waves) G.ui.toast('시련의 방 — 파도 1 / ' + R.waves.length, 'bad'); }
       }
+      if (this.active) this.noteSlain();
       // 파도: 다 쓰러뜨리면 다음 무리
       if (this.active && this.R.waves && !s.flags[this.flagClear] && this.foes.length && this.foes.every((e) => e.dead) && this.wave < this.R.waves.length - 1) {
         this.waveT = (this.waveT || 0) + dt;
@@ -336,14 +386,14 @@
       }
       if (!inside && this.active && !this.trap) {
         // 방을 나가면 적은 사라진다 (다시 들어오면 새로)
-        if (U.dist(p.x, p.y, (this.x0 + this.RW / 2) * TS, (this.y0 + this.RH / 2) * TS) > Math.max(this.RW, this.RH) * TS) { for (const e of this.foes) if (!e.dead) e.dead = true; this.foes = []; this.active = false; }
+        if (U.dist(p.x, p.y, (this.x0 + this.RW / 2) * TS, (this.y0 + this.RH / 2) * TS) > Math.max(this.RW, this.RH) * TS) { for (const e of this.foes) if (!e.dead) e.dead = true; this.foes = []; this.active = false; this.resetBlocks(Wd); }
       }
       // 퍼즐 · 청소
       const R = this.R;
       if (R.solve && !s.flags[this.flagClear]) {
         const sv = R.solve;
         let ok = false;
-        if (sv.type === 'clear') ok = this.active && this.foes.length > 0 && this.foes.every((e) => e.dead);
+        if (sv.type === 'clear') ok = this.active && ((this.foes.length > 0 && this.foes.every((e) => e.dead)) || this.allSlain);
         else if (sv.type === 'waves') ok = this.active && this.foes.length > 0 && this.foes.every((e) => e.dead) && this.wave >= (this.R.waves || [0]).length - 1;
         else if (sv.type === 'order') ok = !!this.seqDone;
         else if (sv.type === 'torches') ok = Wd.ents.filter((e) => e.room === this.k && e instanceof P().Torch).every((t) => t.lit);
@@ -372,7 +422,22 @@
     }
     blockBox() { return this.isOpen ? null : { x: this.bx, y: this.by, w: this.bw2, h: this.bh2 }; }
     get solid() { return !this.isOpen; } set solid(v) { /* 계산값 */ }
-    update(dt) { this.t += dt; const want = this.isOpen ? 1 : 0; if (want !== this.last) { if (this.last != null) { sfx(want ? 'door' : 'block'); G.fx.dust(this.bx + this.bw2 / 2, this.by + this.bh2, 4); } this.last = want; } this.anim = U.approach(this.anim, want, dt * 5); }
+    update(dt) {
+      this.t += dt; const want = this.isOpen ? 1 : 0; if (want !== this.last) { if (this.last != null) { sfx(want ? 'door' : 'block'); G.fx.dust(this.bx + this.bw2 / 2, this.by + this.bh2, 4); } this.last = want; } this.anim = U.approach(this.anim, want, dt * 5);
+      // 열쇠를 가진 채 자물쇠 문을 밀면 저절로 연다 (J를 몰라도 막히지 않게)
+      if (!want && (this.kind2 === 'key' || this.kind2 === 'big')) {
+        const p = G.world.player, s = S();
+        const has = this.kind2 === 'big' ? !!s.bigkeys[this.did] : (s.keys[this.did] || 0) > 0;
+        if (has && p && (p.pushT || 0) > 0.18 && !p.dead) {
+          const cx = this.bx + this.bw2 / 2, cy = this.by + this.bh2 / 2, dx = cx - p.x, dy = cy - (p.y - 4);
+          const near = Math.abs(dx) < this.bw2 / 2 + 12 && Math.abs(dy) < this.bh2 / 2 + 14;
+          if (near && (p.vx || 0) * dx + (p.vy || 0) * dy > 0) this.use(p);
+        } else if (!has && this.kind2 === 'big' && p && (p.pushT || 0) > 0.4 && !(this.hintT > this.t)) {
+          const dx = this.bx + this.bw2 / 2 - p.x, dy = this.by + this.bh2 / 2 - (p.y - 4);
+          if (Math.abs(dx) < this.bw2 / 2 + 12 && Math.abs(dy) < this.bh2 / 2 + 14) { this.hintT = this.t + 6; G.ui.toast('[r]큰 자물쇠[/] — 이 던전 어딘가 [y]붉은 큰 상자[/]에 큰 열쇠가 있다 (지도에서 붉은 표시)', 'bad', 'bigdoor'); }
+        }
+      }
+    }
     canUse(p) { return !this.isOpen && (this.kind2 === 'key' || this.kind2 === 'big') && U.dist(p.x, p.y, this.x, this.y) < 30; }
     get label() { return '연다'; }
     use() {
@@ -522,6 +587,7 @@
         const tier = D.tier || 0;
         for (const k of Object.keys(m.rooms)) {
           const { x0, y0, R } = m.rooms[k];
+          m.rooms[k].blockSpecs = [];
           const ctl = Wd.add(new RoomCtl({ did: id, k, x0, y0, R, tier, floorName: m.rooms[k].floor, x: (x0 + m.RW / 2) * TS, y: (y0 + m.RH / 2) * TS }));
           m.rooms[k].ctl = ctl;
           for (const pr of R.props || []) addProp(m, Wd, id, k, x0, y0, pr);
@@ -576,7 +642,7 @@
       }
       case 'torch': { const t = tag(new PR.Torch({ x, y, flagKey: did + ':torch:' + k + ':' + px + ',' + py, burn: o.burn, alwaysLit: o.lit })); if (o.lit) t.lit = true; return t; }
       case 'plate': return tag(new PR.Plate({ x, y: y + 4, sets: o.sets || (did + ':plate:' + k + ':' + px + ',' + py), hold: o.hold !== false }));
-      case 'block': return tag(new PR.Block({ x, y: y + 4, col: o.col }));
+      case 'block': { const spec = { x, y: y + 4, col: o.col }; const bl = tag(new PR.Block(spec)); spec.ent = bl; const rr = m.rooms[k]; (rr.blockSpecs = rr.blockSpecs || []).push(spec); return bl; }
       case 'pot': return tag(new PR.Pot({ x, y, v: o.v, drop: o.drop }));
       case 'crystal': return tag(new PR.Crystal({ x, y }));
       case 'cblock': return tag(new PR.ColorBlock({ x, y: y + 4, blue: o.blue !== false }));

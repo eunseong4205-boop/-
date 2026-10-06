@@ -18,7 +18,7 @@
   ST.CH.push({ no: '제3장', id: 'c3', title: '파도와 지혜', sub: '책장이 파도처럼 넘어가는 항구. 엄마가 찾던 것이 금서고 깊은 곳에 잠들어 있다.',
     goal(s) {
       if (!f('c3_octavio')) return { text: '블루 대도서관의 옥타비오 관장을 찾아가자.', map: 'world', x: X0 + 18, y: Y0 + 6 };
-      if (!f('c3_archive')) return { text: '사서 헤미아의 수수께끼 셋을 풀고 금서고에 들어가자.', map: 'b_lib', x: 4, y: 4 };
+      if (!f('c3_archive')) return f('c3_riddles') ? { text: '수수께끼를 다 풀었다. 뒤쪽 책장의 세 번째 책을 당겨 금서고로.', map: 'b_lib', x: 15, y: 7 } : { text: '사서 헤미아의 수수께끼 셋을 풀고 금서고에 들어가자.', map: 'b_lib', x: 4, y: 4 };
       if (!f('c3_luce')) return { text: '동쪽 등대의 루체가 무언가를 알고 있다고 한다.', map: 'world', x: LH.x, y: LH.y };
       if (!f('d3:boss')) return { text: '물갈퀴로 헤엄쳐 서쪽 바다 동굴로. 루체 아버지의 나침반이 거기 있다.', map: 'world', x: CAVE.x, y: CAVE.y };
       if (!f('c3_luce_done')) return { text: '루체에게 나침반을 돌려주자.', map: 'world', x: LH.x, y: LH.y };
@@ -54,6 +54,7 @@
     const cx = CAVE.x, cy = CAVE.y;
     for (let y = cy - 6; y <= cy; y++) for (let x = cx - 5; x <= cx + 6; x++) { if (!m.inb(x, y)) continue; const i = m.i(x, y); m.hgt[i] = 1; m.ter[i] = T.GRASS; m.obj[i] = (x + y) % 3 === 0 ? O.PALM : 0; }
     G.gen.caveMouth(m, cx, cy, 2);
+    for (const x of [cx, cx + 1]) m.hgt[m.i(x, cy)] = 0;   // 입구는 물높이에: 언덕 위에 두면 앞 물칸이 절벽 면이 된다
     for (let y = cy + 1; y <= cy + 4; y++) for (let x = cx - 3; x <= cx + 4; x++) { if (!m.inb(x, y)) continue; const i = m.i(x, y); m.hgt[i] = 0; m.ter[i] = y === cy + 1 && (x === cx || x === cx + 1) ? T.WATER : T.DEEP; m.obj[i] = 0; }
     G.build.placeBuilding(m, { special: 'cave', tx: cx, ty: cy, w: 2, h: 1, to: 'd3', id: 'd3_gate', col: '#566a72' });
     // 마을 꾸미기
@@ -65,7 +66,7 @@
     const P = G.props;
     Wd.add(new P.Waystone({ x: px(BT.plaza.x + 3), y: py(BT.plaza.y - 3), wid: 'w_blue', name: '블루 항구' }));
     Wd.add(new P.Sign({ x: px(X0 + 17), y: py(Y0 + 19), text: '블루 항구 부두\n「고등어호」 — 옐로 연안 · 알록달록 곶 (운항 중단)' }));
-    Wd.add(new P.Sign({ x: px(LH.x - 3), y: py(LH.y + 3), text: '블루 등대\n「불이 꺼진 지 16년. 루체가 지킨다.」' }));
+    Wd.add(new P.Sign({ x: px(LH.x - 3), y: py(LH.y + 3), text: '블루 등대\n「불이 꺼진 지 오래. 루체가 지킨다.」' }));
     // 배 세 척 (결투 뒤)
     spawnBoats(Wd);
   });
@@ -171,7 +172,7 @@
   ST.person('b_light', { id: 'luce', x: 5, y: 5, dir: 'down', mark: () => (f('c3_archive') && !f('c3_luce') ? '!' : f('d3:boss') && !f('c3_luce_done') ? '!' : null), talk: async (c, n) => {
     c.flag('met:luce');
     if (!f('c3_luce')) {
-      if (!f('c3_archive')) { await c.say(n, '등대는 16년째 불이 꺼져 있어. 아빠가 돌아오면 켤 거야.', { face: 'sad' }); return; }
+      if (!f('c3_archive')) { await c.say(n, '등대는 내가 아기 때부터 불이 꺼져 있어. 아빠가 돌아오면 켤 거야.', { face: 'sad' }); return; }
       c.lock(true);
       await c.say(n, '항해일지? …관장님이 보냈구나. 983년 겨울 이야기.', { face: 'sad' });
       await c.say(n, '아빠는 그날 밤 하늘에서 흰 줄기가 떨어지는 걸 봤대. 그걸 적고, 그다음 봄에 서쪽 바다 동굴에 들어갔다가… 안 나왔어.', { face: 'sad' });
@@ -189,7 +190,7 @@
       await c.say(n, '약속대로. 아빠의 일지야.', { face: 'smile' });
       c.truth('t_log');
       for (const l of G.data.TRUTHS.t_log.long) await c.narr(l);
-      await c.say(n, '그리고… 오늘 밤 등대에 불 켤 거야. 16년 만에. 아빠가 아니라, 너희가 돌아올 수 있게.', { face: 'smile' });
+      await c.say(n, '그리고… 오늘 밤 등대에 불 켤 거야. 아주 오랜만에. 아빠가 아니라, 너희가 돌아올 수 있게.', { face: 'smile' });
       c.flag('c3_luce_done'); c.bond('luce', 2); c.exp(40);
       c.lock(false);
       c.journal('루체에게 아버지의 나침반을 돌려주었다. 983년 겨울, 하늘에서 흰 줄기가 떨어져 바다를 갈랐다. 그날 엄마가 잠들었다.');
@@ -210,7 +211,7 @@
     c3: ['983년 겨울 밤? 기억하지. 바다가 숨을 멈췄어. 파도가 한 번도 안 쳤다. 그러고 하늘이 하얘졌지.', '루체 아비? 좋은 뱃사람이었다. 나침반을 믿었지. 나침반은 북쪽만 가리키는데, 그 녀석은 뭘 찾으러 서쪽으로 갔을까.'],
     c6: '천년제 불꽃이 여기서도 보였다. 그 한가운데 흰빛이… 등대보다 밝더구나.',
   } });
-  ST.folk('world', { name: '부두 인부', folk: 'sailor', x: X0 + 20, y: Y0 + 18, wander: 12, barks: ['영차!', '오늘도 렙업!'], lines: { c3: ['고등어호가 옐로까지 간다고? 요즘은 기사단 증명서 있어야 태워 줘.', '바다 동굴엔 문어 괴물이 산대. 새끼인데도 배만 해.'] } });
+  ST.folk('world', { name: '부두 인부', folk: 'sailor', x: X0 + 20, y: Y0 + 18, wander: 12, barks: ['영차!', '하나 둘, 영차!'], lines: { c3: ['고등어호가 옐로까지 간다고? 요즘은 기사단 증명서 있어야 태워 줘.', '바다 동굴엔 문어 괴물이 산대. 새끼인데도 배만 해.'] } });
   ST.folk('world', { name: '학자', folk: 'scholar', x: X0 + 10, y: Y0 + 9, wander: 14, lines: { c3: ['대도서관 책은 삼십만 권. 금서는 한 권도 목록에 없어. 그러니까 금서지.', '다섯 빛깔 신화? 수업 첫날 배우는 거지. 의심해 본 적은… 없네.'] } });
   ST.folk('world', { name: '어부의 아이', folk: 'kidg', x: X0 + 22, y: Y0 + 14, wander: 20, barks: ['게 잡았다!'], lines: { c3: ['루체 언니는 밤마다 등대 꼭대기에 올라가. 불도 안 켜면서.', '바위 게는 정면이 딱딱해. 뒤로 돌아가서 때려!'] } });
 
@@ -233,7 +234,7 @@
       '1,1': { ter: [['pit', 1, 4, 18, 6]], props: [['chest', 9, 11, { item: 'hook', col: '#3a6ab8' }], ['post', 9, 2], ['sign', 3, 11, { text: '구덩이 너머 말뚝. 갈고리가 있으면 건널 수 있다.' }], ['chest', 13, 2, { item: 'luce_compass' }], ['post', 4, 11]], foes: [['bat', 4, 11], ['bat', 15, 11]] },
       '2,2': { ter: [['water', 2, 2, 16, 11], ['stone', 8, 5, 4, 4]], props: [['eye', 17, 7, { sets: 'd3:eye', timer: 6 }], ['chest', 10, 6, { item: 'map_d' }]], foes: [['octo', 4, 5], ['octo', 14, 10]] },
       '2,1': { solve: { type: 'clear' }, foes: [['bandit', 6, 6], ['bandit', 13, 6], ['crab', 9, 9]], props: [['chest', 9, 5, { item: 'key_big', big: true, hidden: true }], ['torch', 3, 3, { lit: true }], ['torch', 16, 3, { lit: true }]] },
-      '0,1': { ter: [['pit', 1, 4, 18, 2], ['pit', 1, 9, 18, 2]], props: [['post', 9, 7], ['post', 15, 2], ['chest', 16, 3, { item: 'heartpiece' }], ['chest', 3, 7, { item: 'compass' }], ['sign', 4, 12, { text: '말뚝에서 말뚝으로.' }]], foes: [['bat', 9, 7]] },
+      '0,1': { ter: [['pit', 1, 4, 18, 2], ['pit', 1, 9, 18, 2]], props: [['post', 9, 7], ['post', 15, 2], ['post', 14, 12], ['chest', 16, 3, { item: 'heartpiece' }], ['chest', 3, 7, { item: 'compass' }], ['sign', 4, 12, { text: '말뚝에서 말뚝으로.' }]], foes: [['bat', 9, 7]] },
       '1,0': { boss: true, ter: [['deep', 2, 2, 16, 5], ['water', 2, 7, 16, 1]], props: [['boss', 9, 4, { type: 'kraken' }]] },
     },
     doors: [['1,3', '1,2', 'open'], ['1,2', '0,2', 'open'], ['1,2', '2,2', 'open'], ['1,2', '1,1', 'key'], ['2,2', '2,1', 'switch', 'd3:eye'], ['0,2', '0,1', 'open'], ['1,1', '1,0', 'big']],
@@ -269,27 +270,31 @@
     G.script.run(duel);
   });
   async function duel(c) {
-    const P0 = { x: px(X0 + 18), y: py(Y0 + 19) };
+    // 부두 끝(물 위의 두 칸짜리 다리)이 아니라 부두 앞 뭍에서 겨룬다 — 예전엔 카시안이 바다 위에 서서 움직이지 못했다
+    const m0 = G.world.map;
+    const g0 = G.bosses.groundAt(m0, px(X0 + 18), py(Y0 + 15), 12) || { x: px(X0 + 18), y: py(Y0 + 19) };
+    const P0 = { x: g0.x, y: g0.y };
+    const gC = G.bosses.groundAt(m0, P0.x + 32, P0.y, 4) || G.bosses.groundAt(m0, P0.x - 32, P0.y, 4) || { x: P0.x, y: P0.y - 32 };
     c.lock(true);
     await c.cinema(true);
     c.music('danger');
-    const cs = c.spawn({ cid: 'cassian', x: P0.x + 60, y: P0.y });
-    await c.move(cs, P0.x + 30, P0.y);
+    { const pl = G.world.player; await c.move('hero', P0.x, P0.y); if (pl) pl.dir = gC.x > P0.x ? 'right' : 'left'; }
+    const cs = c.spawn({ cid: 'cassian', x: gC.x + (gC.x >= P0.x ? 30 : -30), y: gC.y });
+    await c.move(cs, gC.x, gC.y);
     c.faceEach('hero', cs);
     const rt = ST.route();
     await c.say('cassian', rt === 'order' ? '두 번째 심사다, 후보. 루드의 장부는 잘 받았다. 그라우스는 지금 천년성 법정에 서 있다. …그런데 챔피언께서 한 가지를 더 물으셨다. 「그 아이, 검은 쓸 줄 아나.」' : rt === 'dawn' ? '광산을 부쉈다더군. 새벽단 목도리를 두르고. …탑 하나, 기계 하나. 다음은 뭐지? 천년성인가?' : '레드에서 그라우스의 금고가 비었다. 루드네 문 앞에는 약상자가 놓였고. 고양이 발자국만 남긴 채로. …네 짓이 아니라고 말해 봐.', { face: 'normal' });
     await c.say('cassian', '말로는 모르겠다. 검으로 묻지.', { face: 'smirk' });
     await c.cutin({ who: 'cassian', title: '카시안', small: '카이론의 마지막 제자', sub: '정면은 막는다 — 완벽 회피 뒤에 반격을', col: '#8a1a2a', face: 'smirk', sec: 1.6 });
     cs.dead = true;
-    const boss = G.bosses.spawn('cassian', P0.x + 30, P0.y, { hpMul: 1 });
-    boss.duel = true; boss.home = { x: P0.x, y: P0.y };
+    const boss = G.bosses.spawn('cassian', gC.x, gC.y, { hpMul: 1 });
+    boss.duel = true; boss.home = { x: (P0.x + gC.x) / 2, y: (P0.y + gC.y) / 2 }; G.bosses.duelTo(boss, 0.25);
     S().duel = true;
     await c.cinema(false);
     c.lock(false);
     boss.start(); G.hud.setBoss(boss);
     c.music('boss2');
-    let win = false;
-    await c.freeWhile(() => { if (boss.hp <= boss.maxHp * 0.25) { win = true; return true; } return S().hp <= 1; });
+    const win = await c.duel(boss);
     S().duel = false;
     c.lock(true);
     await c.cinema(true);
@@ -304,7 +309,7 @@
     } else {
       await c.say('cassian', '검이 아직 네 것이 아니군. 괜찮다. 나도 열여섯 땐 그랬다.', { face: 'smirk' });
     }
-    await c.say('cassian', '스승님… 카이론께서는 계산을 틀린 적이 없다. 경험세도 계산이다. 대륙을 지키는.', { face: 'normal' });
+    await c.say('cassian', '스승님은 틀리신 적이 없다. 경험세도 대륙을 지키기 위한 셈이다.', { face: 'normal' });
     await c.say('cassian', '…그런데 요즘은 가끔, 계산에 사람이 몇 명 들어가 있는지 궁금하다.', { face: 'sad' });
     await c.say('cassian', '옐로로 간다면 배를 고르게 될 거다. 부두에 세 척이 있더군. 어느 배를 타든, 네가 누구 편인지 대륙이 알게 될 거다.', { face: 'normal' });
     await c.move(cs2, bx + 120, by); cs2.dead = true;

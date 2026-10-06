@@ -38,7 +38,10 @@
   function move(m, e, dx, dy) {
     if (e.noClip) { e.x += dx; e.y += dy; return { hitX: false, hitY: false }; }
     let hitX = false, hitY = false;
-    const free = (x, y) => m.boxFree(x - e.bw / 2, y - e.bh, e.bw, e.bh, e.z, e) && !(G.world && G.world.propBlock(x - e.bw / 2, y - e.bh, e.bw, e.bh, e));
+    const tileFree = (x, y) => m.boxFree(x - e.bw / 2, y - e.bh, e.bw, e.bh, e.z, e);
+    // 이미 소품 · 사람과 겹쳐 서 있으면(장면이 끝나며 의자 위에 놓였다 등) 소품은 무시하고 걸어 나올 수 있게 — 예전엔 어느 쪽으로도 못 움직였다
+    const inProp = G.world && G.world.propBlock && tileFree(e.x, e.y) && G.world.propBlock(e.x - e.bw / 2, e.y - e.bh, e.bw, e.bh, e);
+    const free = inProp ? tileFree : (x, y) => tileFree(x, y) && !(G.world && G.world.propBlock(x - e.bw / 2, y - e.bh, e.bw, e.bh, e));
     // 가로
     if (dx) {
       const steps = Math.ceil(Math.abs(dx) / 4);
@@ -82,6 +85,7 @@
     // 착지 칸 전체가 비어 있어야
     const lx = ux ? land.tx * TS + 8 : e.x, ly = uy ? land.ty * TS + 12 : e.y;
     if (!m.boxFree(lx - e.bw / 2, ly - e.bh, e.bw, e.bh, land.h, e)) return null;
+    if (G.world && G.world.map === m && G.world.propBlock(lx - e.bw / 2, ly - e.bh, e.bw, e.bh, e)) return null;   // 표지판 · 상자 위로 뛰어내려 박히지 않게
     return { x: lx, y: ly, h: land.h, dir: d };
   }
 

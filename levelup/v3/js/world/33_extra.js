@@ -40,7 +40,7 @@
   ST.onTick.push(() => {
     if (!f('c2_done') || f('sala_done') || f('sala_on') || G.script.running) return;
     const Wd = G.world, m = Wd.map, p = Wd.player; if (!m || !m.overworld || !p) return;
-    if (U.dist(p.x / TS, p.y / TS, VX, VY) > 4) return;
+    if (U.dist(p.x / TS, p.y / TS, VX, VY) > 6) return;   // 한가운데는 용암이라 걸어서는 4칸 안까지 못 들어가 깨어나지 않던 것
     S().flags.sala_on = true;
     G.script.run(async (c) => {
       c.lock(true);

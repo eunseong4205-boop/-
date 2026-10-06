@@ -21,6 +21,28 @@
     return g || null;
   };
   ST.goalText = function () { const g = ST.goal(); return g ? g.text : ''; };
+  /** 다른 지도로 들어가는 길이 문이 아닌 곳(무한호처럼): ST.entries[지도] = () => ({ map, x, y }) 또는 { via: 거쳐 가는 지도 } */
+  ST.entries = {};
+  /** 목표를 지금 지도 위의 자리로 옮겨 본다: 목표가 다른 지도에 있으면 그리로 가는 문(대륙이면 그 집 문 · 무한호, 실내 · 던전이면 출구) */
+  ST.goalOn = function (mapId) {
+    const g = ST.goal(); if (!g || !g.map || g.map === mapId) return g;
+    let m; try { m = G.build.get(mapId); } catch (e) { return null; }
+    if (!m) return null;
+    const ok = (w) => { try { return !w.cond || w.cond(); } catch (e) { return false; } };
+    const at = (x, y) => Object.assign({}, g, { map: mapId, x, y, via: true });
+    const door = (mm, to) => (mm.warps || []).find((w) => w.to === to && ok(w));
+    // 목표 지도로 들어가는 자리(대륙 쪽): 문, 따로 적어 둔 길, 거쳐 가는 지도의 문 — 두 단계까지
+    const entry = (to, depth) => {
+      const e = ST.entries[to];
+      if (e && typeof e === 'function') { const r = e(); if (r && r.map === mapId) return [r.x, r.y]; }
+      const w = door(m, to); if (w) return [w.x, w.y + (w.exit || w.dir === 'down' ? -1 : 1)];
+      if (e && e.via && depth < 3) return entry(e.via, depth + 1);
+      return null;
+    };
+    const r = entry(g.map, 0); if (r) return at(r[0], r[1]);
+    if (!m.overworld) { const w = (m.warps || []).find((w2) => (w2.exit || w2.to === 'world') && ok(w2)); if (w) return at(w.x, w.y - 1); }
+    return null;
+  };
   ST.routeNote = function () {
     const r = S().route; const tot = r.dawn + r.order + r.night;
     if (!tot) return '아직 어느 쪽에도 기울지 않았다.';
@@ -46,20 +68,35 @@
     spawnPeople(m, Wd);
     // 동료
     for (const f of ST.followers()) Wd.add(new Follower(f));
-    if (ST.decorate[m.id]) for (const fn of ST.decorate[m.id]) fn(m, Wd, S());
+    if (ST.decorate[m.id]) for (const fn of ST.decorate[m.id]) ST.safe(fn, [m, Wd, S()], 'map ' + m.id);
   };
   /** 이야기가 바뀌어 사람들이 오가야 할 때: 지금 지도의 사람들을 다시 세운다 */
   ST.refreshPeople = function () {
     const Wd = W(), m = Wd.map; if (!m) return;
-    for (const e of Wd.ents) if (e.fromPeople) e.dead = true;
-    spawnPeople(m, Wd);
+    spawnPeople(m, Wd, true);
   };
-  function spawnPeople(m, Wd) {
+  /** keep: 이야기가 바뀌어 다시 세울 때 — 그대로 남을 사람은 지금 자리 그대로 둔다(예전엔 모두 지우고 다시 세워, 돌아다니던 사람이
+      제자리로 순간 이동하고 화면 안의 사람이 깜박였다). 떠날 사람은 걸어 나가고(world/96d_presence), 새로 올 사람은 걸어 들어온다.
+      서야 할 자리가 바뀐 사람은 그 자리로 걸어간다(화면 밖이면 바로) */
+  function spawnPeople(m, Wd, keep) {
     const s = S();
-    // 두 번 세우지 않는다 (들어서는 장면이 먼저 사람들을 다시 세운 경우)
-    for (const e of Wd.ents) if (e.fromPeople) e.dead = true;
+    const old = new Map();
+    for (const e of Wd.ents) if (e.fromPeople && !e.dead) { if (keep && e.spec && !old.has(e.spec)) old.set(e.spec, e); else e.dead = true; }
     for (const sp of ST.people[m.id] || []) {
       if (sp.when && !sp.when(s)) continue;
+      const was = old.get(sp);
+      if (was) {
+        old.delete(sp);
+        const pos = typeof sp.at === 'function' ? sp.at(s) : [sp.x, sp.y];
+        const hx = pos[0] * TS + 8, hy = pos[1] * TS + 12;
+        // 정한 자리(칸)가 바뀐 사람만 (자리 고치기 96_sanity가 옮긴 home과 견주지 않는다)
+        if (was.specPos && (was.specPos[0] !== pos[0] || was.specPos[1] !== pos[1])) {
+          was.home = { x: hx, y: hy }; was.specPos = [pos[0], pos[1]];
+          if (G.presence && G.presence.onScreen(was) && !G.presence.dark()) G.presence.walkTo(was, hx, hy, sp.dir || 'down');   // 조작을 막지 않는 걸음
+          else { was.x = hx; was.y = hy; was.baseDir = was.dir = sp.dir || 'down'; E.settle(m, was); }
+        }
+        continue;
+      }
       const cast = sp.id && G.cast.get(sp.id);
       const look = sp.look || (cast && cast.look) || G.cast.folk(sp.folk || 'farmer');
       const pos = typeof sp.at === 'function' ? sp.at(s) : [sp.x, sp.y];
@@ -70,10 +107,12 @@
       if (look && look.kind && !sp.drawFn) npc.drawFn = beastDraw(npc, look.kind);
       if (sp.met !== false && sp.id) npc.onTalkMet = true;
       E.settle(m, npc);
-      npc.fromPeople = true;
+      npc.fromPeople = true; npc.spec = sp; npc.specPos = [pos[0], pos[1]];
       Wd.add(npc);
       if (sp.init) sp.init(npc, s);
+      if (keep && G.presence) G.presence.enter(npc, {});
     }
+    for (const e of old.values()) e.dead = true;   // 이제 이 지도에 없을 사람
   }
   ST.decorate = {};   // 지도 id → [fn(m, W, s)]: 들어설 때마다 (조건부 소품 · 적 · 사건)
   ST.onMap = function (mapId, fn) { (ST.decorate[mapId] = ST.decorate[mapId] || []).push(fn); };
@@ -83,7 +122,7 @@
   function beastImg(kind, f, dir) {
     const key = kind + f + dir;
     if (BC[key]) return BC[key];
-    const X = G.gfx; const SZ = { whale: [48, 30], spirit: [28, 34], armor: [24, 30] }[kind] || [20, 20]; const b = X.brush(SZ[0], SZ[1]);
+    const X = G.gfx; const SZ = { whale: [48, 30], spirit: [28, 34], armor: [24, 30], camel: [24, 24] }[kind] || [20, 20]; const b = X.brush(SZ[0], SZ[1]);
     if (kind === 'whale') { // 구름고래: 둥실 떠 있는 구름 덩어리, 등에 무지개 깃발
       const bob = f % 2, C = ['#8aa8d8', '#bcd4f4', '#e4f0ff', '#ffffff'];
       b.ellipse(22, 18 - bob, 18, 9, C[1]); b.ellipse(20, 16 - bob, 16, 7, C[2]); b.ellipse(16, 13 - bob, 8, 4, C[3]);
@@ -117,6 +156,13 @@
       b.rect(9, 1, 8, 5, K); b.rect(8, 5, 10, 1, K); b.hline(9, 16, 4, '#8a2a3a');
       if (dir !== 'up') { b.px(11, 9, '#ffe070'); b.px(15, 9, '#ffe070'); b.px(16, 9, '#e8c860'); }
       b.rect(6, 16, 2, 3, K); b.rect(12, 16, 2, 3, K);
+    } else if (kind === 'camel') { // 낙타 (기억의 조각 — 모래 위의 별지기)
+      const C1 = '#c89a5a', C2 = '#a87a3a', C3 = '#e8c890', step = f % 2;
+      b.ellipse(12, 14, 8, 5, C1); b.ellipse(11, 9, 4, 4, C2); b.ellipse(10, 8, 2.5, 2, C3);   // 몸 · 혹
+      const hx = dir === 'left' ? 3 : 20; b.line(dir === 'left' ? 6 : 18, 12, hx, 5, C1); b.line(dir === 'left' ? 5 : 19, 12, hx + (dir === 'left' ? 1 : -1), 5, C1); b.ellipse(hx, 4, 3, 2, C1);   // 목 · 머리
+      if (dir !== 'up') b.px(hx + (dir === 'left' ? -1 : 1), 3, '#1a1020');
+      b.rect(6, 18, 2, 6 - step, C2); b.rect(10, 18, 2, 5 + step, C2); b.rect(14, 18, 2, 6 - step, C2); b.rect(17, 18, 2, 5 + step, C2);
+      b.rect(8, 10, 8, 2, '#c84a3a'); b.px(9, 12, '#ffd84a'); b.px(14, 12, '#ffd84a');   // 안장 천
     } else if (kind === 'octopus') {
       const P = '#d86a8a';
       b.ellipse(10, 8, 7, 7, P); b.ellipse(8, 6, 3, 2.5, '#f0a0b8');
@@ -161,7 +207,7 @@
       const last = this.trail[this.trail.length - 1];
       if (!last || U.dist(last[0], last[1], p.x, p.y) > 4) this.trail.push([p.x, p.y, p.z]);
       if (this.trail.length > 60) this.trail.shift();
-      const idx = (Wd.ents.filter((e) => e.follower).indexOf(this) + 1) * 6;
+      let idx = 6; for (const e of Wd.awake()) { if (e === this) break; if (e.follower) idx += 6; }   // 몇 번째 동료인가 (줄 선 순서)
       const tgt = this.trail[Math.max(0, this.trail.length - idx)];
       if (tgt && U.dist(this.x, this.y, tgt[0], tgt[1]) > 3 && U.dist(this.x, this.y, p.x, p.y) > 14) {
         const [nx, ny] = U.norm(tgt[0] - this.x, tgt[1] - this.y);
@@ -169,7 +215,16 @@
         this.x += nx * sp * dt; this.y += ny * sp * dt; this.z = tgt[2];
         this.dir = U.dir4(nx, ny, this.dir); this.state = 'walk'; this.walkT += dt; this.vx = nx * sp; this.vy = ny * sp;
       } else { this.state = 'idle'; this.vx = this.vy = 0; }
-      if (U.dist(this.x, this.y, p.x, p.y) > 200) { this.x = p.x - 10; this.y = p.y + 4; this.trail = []; }
+      // 멀리 떨어지면 뛰어서 따라온다 (예전엔 200픽셀만 떨어져도 주인공 옆으로 순간 이동했다).
+      // 아주 멀면(같은 지도 안에서 주인공이 옮겨진 때) 화면 밖 주인공 뒤쪽에 서서 뛰어 들어온다
+      const far = U.dist(this.x, this.y, p.x, p.y);
+      if (far > 150) {
+        if (far > 640) { const [bx, by] = U.norm(this.x - p.x, this.y - p.y); this.x = p.x + bx * 240; this.y = p.y + by * 150; this.trail = []; }
+        const [nx, ny] = U.norm(p.x - this.x, p.y - this.y), sp = Math.max(this.speed * 2.4, far * 1.6);
+        this.x += nx * sp * dt; this.y += ny * sp * dt; this.z = p.z;
+        this.dir = U.dir4(nx, ny, this.dir); this.state = 'walk'; this.walkT += dt * 2; this.vx = nx * sp; this.vy = ny * sp;
+        if (U.dist(this.x, this.y, p.x, p.y) <= 150) this.trail = [];
+      }
       // 가끔 혼잣말
       this.chatT -= dt;
       if (this.chatT <= 0 && !G.script.running) { this.chatT = 25 + Math.random() * 30; const line = ST.chatter ? ST.chatter(this.cid) : null; if (line) G.cine.bubble(this, line, { life: 3 }); }
@@ -178,7 +233,16 @@
     draw(g, cx, cy) { if (this.drawFn) this.drawFn(g, cx, cy); else G.sprites.drawChar(g, this, cx, cy); }
   }
   ST.Follower = Follower;
-  ST.join = function (id) { const s = S(); s.party = s.party || []; if (!s.party.includes(id)) s.party.push(id); const p = W().player; if (p && W().map) W().add(new Follower({ cid: id, look: G.cast.get(id).look, name: G.cast.name(id) })); };
+  ST.join = function (id) {
+    const s = S(); s.party = s.party || []; if (!s.party.includes(id)) s.party.push(id);
+    const p = W().player; if (!p || !W().map) return;
+    if (W().ents.some((e) => e.follower && e.cid === id && !e.dead)) return;   // 이미 따라오고 있다 (두 번 불러 같은 사람이 겹쳐 둘이던 것)
+    const fw = W().add(new Follower({ cid: id, look: G.cast.get(id).look, name: G.cast.name(id) }));
+    // 장면 속 그 사람(방금 지운 · 아직 선)이 있으면 그 자리에서 따라붙는다 — 주인공 옆에 뚝 나타나지 않게
+    const was = W().ents.find((e) => e !== fw && e.npc && !e.follower && e.cid === id && (e.dead || !e.hidden) && U.dist(e.x, e.y, p.x, p.y) < 260);
+    if (was) { fw.x = was.x; fw.y = was.y; fw.dir = was.dir; if (!was.dead) was.dead = true; was._noFade = true; }
+    else if (G.presence) G.presence.enter(fw, {});
+  };
   /** 동료가 떠난다. walk면 걸어서 나간다 (대사 중에 도트가 사라지지 않게) */
   ST.leave = function (id, walk) {
     const s = S(); s.party = (s.party || []).filter((x) => x !== id);
@@ -250,11 +314,22 @@
   };
   let lastOk = null, pushT = 0;
   ST.onTick = ST.onTick || [];
+  function nearOpen(tx, ty, r) {
+    for (let d = 1; d <= r; d++) for (let dy = -d; dy <= d; dy++) for (let dx = -d; dx <= d; dx++) {
+      if (Math.max(Math.abs(dx), Math.abs(dy)) !== d) continue;
+      if (ST.regionOpen(G.ow.regionOf(tx + dx, ty + dy))) return true;
+    }
+    return false;
+  }
   function checkRegion(dt) {
+    if (ST.regionVeil) return ST.regionVeil(dt);   // 날씨 장막 (48_explore): 순간 이동 대신 바람 · 비 · 눈이 되민다
     const Wd = W(), m = Wd.map, p = Wd.player;
     if (!m || !m.overworld || !p || G.script.running) return;
-    const n = G.ow.regionOf(Math.floor(p.x / TS), Math.floor(p.y / TS));
+    const tx = Math.floor(p.x / TS), ty = Math.floor(p.y / TS);
+    const n = G.ow.regionOf(tx, ty);
     if (ST.regionOpen(n)) { if (p.state !== 'jump' && p.state !== 'fall') lastOk = { x: p.x, y: p.y, z: p.z }; return; }
+    // 경계에서 몇 칸은 들어설 수 있다: 경계 위의 일(산사태 바위 · 문 앞 등)을 열린 쪽에서 마칠 수 있게
+    if (nearOpen(tx, ty, 4)) return;
     if (!lastOk) return;
     p.x = lastOk.x; p.y = lastOk.y; p.z = lastOk.z; p.kx = p.ky = 0; if (p.state === 'roll') p.setState('idle');
     pushT -= dt;
@@ -266,14 +341,19 @@
   ST.cave = function (m, o) {
     const x = o.x, y = o.y, base = m.hgt[m.i(x, y + 1)];
     const rx = o.rx || 7, ry = o.ry || 4;
+    // 다른 입구와 그 앞길은 언덕으로 덮지 않는다 (가까이 놓인 두 동굴이 서로를 묻던 것)
+    const near = (xx, yy) => (m.warps || []).some((w) => xx >= w.x - 2 && xx <= w.x + (w.w || 1) + 1 && yy >= w.y - 1 && yy <= w.y + 4);
     for (let yy = y - ry * 2; yy <= y; yy++) for (let xx = x - rx; xx <= x + rx + 1; xx++) {
-      if (!m.inb(xx, yy)) continue;
+      if (!m.inb(xx, yy) || near(xx, yy)) continue;
       const d = Math.hypot((xx - x - 0.5) / rx, (yy - (y - ry)) / (ry + 0.5));
       if (d < 1 && m.hgt[m.i(xx, yy)] <= base) { m.hgt[m.i(xx, yy)] = base + (o.h || 1); const t = m.ter[m.i(xx, yy)]; if (t === T.WATER || t === T.DEEP || t === T.CLIFF || t === T.STAIRS || t === T.BRIDGE) m.ter[m.i(xx, yy)] = o.ground || T.GRASS; m.obj[m.i(xx, yy)] = o.cover && d < 0.8 && G.u.noise2(xx, yy, 7) > 0.4 ? o.cover : 0; }
     }
     G.gen.caveMouth(m, x, y, 2);
+    // 입구는 언덕 발치(아래 땅과 같은 높이)에 판다: 언덕 위에 두면 앞 칸이 절벽 면이 되어 걸어서 닿지 못한다
+    // 언덕이 두 층 이상이면 면이 여러 줄이 되니, 입구 아래 줄들도 절벽 면에서 뺀다
+    for (const xx of [x, x + 1]) { m.hgt[m.i(xx, y)] = base; for (let k = 1; k < (o.h || 1); k++) m.noCliff.add(m.i(xx, y + k)); }
     G.build.placeBuilding(m, { special: 'cave', tx: x, ty: y, w: 2, h: 1, to: o.to, id: o.id, col: o.col || '#6e5640', cond: o.cond, msg: o.msg });
-    for (let yy = y + 1; yy < y + (o.path || 3); yy++) for (const xx of [x, x + 1]) { const i = m.i(xx, yy); if (m.ter[i] === T.CLIFF || m.ter[i] === T.STAIRS) continue; m.ter[i] = m.ter[i] === T.WATER || m.ter[i] === T.DEEP ? T.BRIDGE : (o.road || T.DIRT); m.obj[i] = 0; m.hgt[i] = base; }
+    for (let yy = y + 1; yy < y + (o.path || 3); yy++) for (const xx of [x, x + 1]) { const i = m.i(xx, yy); if (m.ter[i] === T.CLIFF || m.ter[i] === T.STAIRS) { m.ter[i] = T.STAIRS; m.obj[i] = 0; continue; } m.ter[i] = m.ter[i] === T.WATER || m.ter[i] === T.DEEP ? T.BRIDGE : (o.road || T.DIRT); m.obj[i] = 0; m.hgt[i] = base; }
     return { x, y };
   };
   /** 장(章)마다 다른 말: { c1: [...], c3: [...] } → 지금 장 이하에서 가장 늦은 것 */
@@ -301,18 +381,24 @@
   };
 
   /* ───────── 매 프레임 ───────── */
+  // 갈고리 하나가 오류를 내도 나머지(이야기 진행 · 수련 판정 …)는 계속 돈다. 오류는 갈고리마다 한 번만 남긴다
+  const failed = new WeakSet();
+  ST.safe = function (f, args, tag) {
+    try { return f.apply(null, args); }
+    catch (e) { if (!failed.has(f)) { failed.add(f); console.error('[story ' + (tag || 'hook') + ']', e); } }
+  };
   ST.tick = function (dt) {
-    if (ST.onTick) for (const f of ST.onTick) f(dt);
+    if (ST.onTick) for (const f of ST.onTick) ST.safe(f, [dt], 'tick');
   };
   ST.onTick = [checkRegion];
   ST.onKill = function (e) {
     const s = S(); s.kills = (s.kills || 0) + 1;
-    if (ST.killHooks) for (const f of ST.killHooks) f(e, s);
+    if (ST.killHooks) for (const f of ST.killHooks) ST.safe(f, [e, s], 'kill');
   };
   ST.killHooks = [];
-  ST.onLevel = function (lv) { if (ST.levelHooks) for (const f of ST.levelHooks) f(lv); };
+  ST.onLevel = function (lv) { if (ST.levelHooks) for (const f of ST.levelHooks) ST.safe(f, [lv], 'level'); };
   ST.levelHooks = [];
-  ST.onEnter = function (m) { if (ST.enterHooks) for (const f of ST.enterHooks) f(m); };
+  ST.onEnter = function (m) { if (ST.enterHooks) for (const f of ST.enterHooks) ST.safe(f, [m], 'enter'); };
   ST.enterHooks = [];
   /** 지역 단계 이상으로 적이 강해지지 않게 (장에 맞춰) */
   ST.foeScale = function () { return 0; };

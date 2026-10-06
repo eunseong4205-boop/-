@@ -72,7 +72,7 @@
       L({ id: 'igni', name: '도제 이그니', house: '이그니의 풀무간', kind: 'smith', folk: 'smith', look: { hc: '#c84a2a', build: null },
         lines: { c2: '볼칸 스승님은 983년 이후로 제일 좋은 검은 안 만든대. 누굴 위해서도.', c3: '스승님이 요즘 밤마다 뭘 두드려. 네 검이랑 모양이 비슷했어.', c6: '천년제 망치 노점 봤어? 스승님이 사람들 앞에서 웃는 거 처음 봤어.', c8: '그레이 강철은 색이 없어서 불에 넣어도 빛이 안 나. 이상하지?', c10: '로켓 노즐! 스승님이랑 사흘 밤을 새웠어. 내 망치 자국도 하나 있다.' } }),
       L({ id: 'bel', name: '관측 조수 벨', house: '벨의 다락방', kind: 'scholar', folk: 'student', look: { gender: 'girl', hair: 'bob', hc: '#5a3a2a', tc: '#8a3a2a', glasses: true },
-        lines: { c2: '아스텔 박사님은 별을 세. 요즘은 검은 점도 센대. 조금씩 커진다나.', c4: '박사님이 말을 안 해. 계산을 끝낸 사람 얼굴이야.', c5: '관측표 봤어? 흑점은 빛이 제일 많은 곳을 따라온대. 양이 아니라… 쏠림.', c9: '블랙은 별이 제일 잘 보인대. 밤이 안 끝나니까. 부러워.', c11: '정거장에서 보는 별은 어때? 박사님이 부러워서 잠을 못 주무셔.' } }),
+        lines: { c2: '아스텔 박사님은 별을 세. 요즘은 검은 점도 센대. 조금씩 커진다나.', c4: '박사님이 말을 안 해. 답을 알아 버린 사람 얼굴이야.', c5: '관측표 봤어? 흑점은 빛이 제일 많은 곳을 따라온대. 양이 아니라… 쏠림.', c9: '블랙은 별이 제일 잘 보인대. 밤이 안 끝나니까. 부러워.', c11: '정거장에서 보는 별은 어때? 박사님이 부러워서 잠을 못 주무셔.' } }),
       L({ id: 'roen', name: '꼬마 로엔', house: '로엔네', kind: 'home', folk: 'kid', look: { hc: '#8a3a2a', tc: '#5a3a2a', acc: ['scarf'], scarfC: '#ff7a4a' },
         lines: { c2: '루드 형이 새벽단이래! 탑 같은 건 다 부숴 버려야 해.', c3: '형이 그러는데 탑을 부수면 빛이 돌아온대. 나 벌써 망치 있어.' },
         route: { dawn: '새벽단이랑 같이 간다며? 나도 크면 들어갈 거야. 망치는 벌써 있어.', order: '기사단이랑 손잡았다고? 루드 형이 한숨 쉬던데.||…그래도 너는 나쁜 사람 아니지?', night: '밤의 사람들이 네 이름을 속삭인대. 멋있다. 나도 속삭여 볼까.' }, routeFrom: 'c4' }),
@@ -195,7 +195,7 @@
   /* ───────── 편지 다섯 통 ───────── */
   // 누가 → 누구: [보내는 사람, 받는 사람, 편지, 열리는 장, 보상]
   const CHAINS = {
-    hanna: { to: 'sophie', item: 'letter_hanna', from: 'c3', ask: '블루에 딸 소피가 살아. 등대 옆 집이야. 이 편지랑 빵 좀 전해 줄래?||갓 구운 거라 식기 전에… 는 무리겠지. 부탁해.', thanks: '엄마 편지다! 빵도…! 아직 조금 따뜻해.||고마워. 이거 받아. 등대 계단에서 주운 거야. 그리고 답장 좀 부탁해도 될까?', reward: 'heartpiece', reply: 'letter_sophie', replyThanks: '소피 답장이다…! 조개껍데기까지. 이 애는 참.||고마워. 이거 가져가. 보리빵 스무 개어치 돈이야. 빵으로 주면 무겁잖아.', replyReward: { gold: 300 } },
+    hanna: { to: 'sophie', item: 'letter_hanna', from: 'c3', ask: '블루에 딸 소피가 살아. 등대 옆 집이야. 이 편지랑 빵 좀 전해 줄래?||갓 구운 거라 식기 전에…는 무리겠지. 부탁해.', thanks: '엄마 편지다! 빵도…! 아직 조금 따뜻해.||고마워. 이거 받아. 등대 계단에서 주운 거야. 그리고 답장 좀 부탁해도 될까?', reward: 'heartpiece', reply: 'letter_sophie', replyThanks: '소피 답장이다…! 조개껍데기까지. 이 애는 참.||고마워. 이거 가져가. 보리빵 스무 개어치 돈이야. 빵으로 주면 무겁잖아.', replyReward: { gold: 300 } },
     osborn: { to: 'regina', item: 'letter_osborn', from: 'c7', ask: '화이트 대성당 옆에 레지나라는 수녀가 있다. 983년에 나와 같이 장부를 적던 사람이지.||이걸 전해 다오. 우리가 적은 숫자의 끝을, 그 사람도 알아야 해.', thanks: '오스본… 살아 있었군요. 이 장부 한 장.||「허용 손실: 그린 마을 몫」. 우리 손으로 적은 거예요.||기도만으로는 안 되겠네요. 이걸 가져가요. 대성당 창고에서 오래 잠자던 거예요.', reward: 'heartpiece' },
     dora: { to: 'luke', item: 'letter_dora', from: 'c8', ask: '그레이에 가면 우리 루크한테 이것 좀. 털양말하고 편지야.||거긴 추워서 발이 시리대. 색도 없고.', thanks: '도라 양말이다…! 화산 흙 냄새가 나. 집 냄새.||고마워. 이거 가져가. 폐광에서 캔 은빛 조각을 판 돈이야.||…나, 집에 가야겠어.', reward: { gold: 800, item: 'bombs5' } },
     zara: { to: 'kasim', item: 'letter_zara', from: 'c5', ask: '아들 카심이 퍼플 라벤더 학원에 있어. 편지 좀 전해 줘.||밥은 먹고 다니는지. 고추도 한 봉지 넣었어.', thanks: '엄마 편지…! 고추까지. 여기 음식은 하나도 안 매워서 죽을 뻔했어.||고마워. 이거 가져가. 학원 약초실에서 몰래… 아니, 정당하게 받은 거야.', reward: { item: 'potion_g', gold: 200 } },
@@ -264,7 +264,7 @@
       if (P.id === 'sophie' && ST.after('c7') && !f('gift:sophie')) { await c.say(npc, '엄마가 또 빵을 보냈어. 이번엔 네 몫이래.', { face: 'happy' }); c.flag('gift:sophie'); await c.getItem('food_corn'); return; }
       const rt = ST.route();
       let t = P.route && P.route[rt] && ST.after(P.routeFrom || 'c4') ? P.route[rt] : ST.lines(P.lines || {});
-      if (!t) t = '…오늘도 렙업!';
+      if (!t) t = G.talk && G.talk.greet ? G.talk.greet(npc.look) : '어서 와. 이 동네는 처음이지?';
       c.flag('met:tw_' + P.id);
       for (const l of String(t).split('||')) await c.say(npc, l.trim());
     };
@@ -291,7 +291,7 @@
           const E = C.outer || { x0: C.x, y0: C.y, x1: C.x + C.w, y1: C.y + C.h };
           const sx = k % 2 ? E.x1 - 3 - k : E.x0 + 3 + k, sy = k % 3 === 0 ? C.y - 2 : k % 3 === 1 ? C.y + C.h + 1 : C.plaza.y + 3;
           const [x, y] = OW.near(m, sx, sy, (xx, yy, t) => t === OW.PLAN[n].pave || t === OW.PLAN[n].lane || t === T.PLAZA, 14);
-          ST.person('world', { id: 'tw_' + P.id, name: P.name, look, x, y, dir: 'down', wander: 2, talk: folkTalk(P), mark: folkMark(P) });
+          ST.person('world', { id: 'tw_' + P.id, name: P.name, look, x, y, dir: 'down', wander: 2, talk: folkTalk(P), mark: folkMark(P), lines: P.lines || {} });
           return;
         }
         const w = hm.w, h = hm.h;
@@ -302,7 +302,7 @@
         hm.doorAt = ST.house(m, opts);
         const px = rw >> 1, py = 4 + (rh > 9 ? 1 : 0);
         if (P.note) { ST.onMap(hid, (mm, Wd) => { Wd.add(new G.props.Sign({ x: (px + 1) * TS + 8, y: (py + 1) * TS + 12, text: P.note, anyDir: true })); }); return; }
-        ST.person(hid, { id: 'tw_' + P.id, name: P.name, look, x: px, y: py + 1, dir: 'down', wander: 1, talk: folkTalk(P), mark: folkMark(P) });
+        ST.person(hid, { id: 'tw_' + P.id, name: P.name, look, x: px, y: py + 1, dir: 'down', wander: 1, talk: folkTalk(P), mark: folkMark(P), lines: P.lines || {} });
       });
       // 남는 집: 문이 잠긴 집
       for (let k = list.length; k < homes.length; k++) {
@@ -313,9 +313,9 @@
     // 길을 걷는 사람들: 마을마다 둘
     const WALK = {
       green: [['farmer', '농부 댄', ['올해 보리는 알이 작아. 탑 때문인지 날씨 때문인지.', '할머니 참나무 밑에서 쉬면 허리가 낫는대.']], ['kidg', '꼬마 넬', ['토리아다! 찍찍!', '광장 탑 밑에 가면 머리가 어지러워.']]],
-      red: [['miner', '광부 조', ['곡괭이는 무겁지만 빛은 가볍지.', '마그다 할매 떡볶이 먹었어? 안 먹었으면 레드에 안 온 거야.']], ['smith', '짐꾼 바크', ['화산이 요즘 코를 골아.', '오늘도 렙업! …아, 인사 안 받아 주네.']]],
+      red: [['miner', '광부 조', ['곡괭이는 무겁지만 빛은 가볍지.', '마그다 할매 떡볶이 먹었어? 안 먹었으면 레드에 안 온 거야.']], ['smith', '짐꾼 바크', ['화산이 요즘 코를 골아.', '짐 좀 들어 줄래? …아, 바쁘구나. 괜찮아.']]],
       blue: [['sailor', '선원 킷', ['갈매기가 내 빵을 채 갔어.', '등대 불빛이 요즘 두 번씩 깜빡여.']], ['scholar', '필사공 로라', ['금서고 먼지는 400년 묵었대.', '책은 파도처럼 와서 파도처럼 가.']]],
-      yellow: [['merchant', '행상 알리', ['세 개 사면 하나 더! 네 개 사면… 그냥 네 개.', '골디 님 금화는 테두리를 세어 봐.']], ['merchantw', '물장수 샤', ['물 한 잔 5원. 오아시스 물이야.', '모래바다에 신기루가 떴어. 탑이 없는 도시였어.']]],
+      yellow: [['merchant', '행상 알리', ['세 개 사면 하나 더! 네 개 사면… 그냥 네 개.', '골디 님 금화는 테두리를 세어 봐.']], ['merchantw', '물장수 샤', ['물 한 잔에 5골드. 오아시스 물이야.', '모래바다에 신기루가 떴어. 탑이 없는 도시였어.']]],
       purple: [['student', '학생 오린', ['과제가 「그릇을 설명하시오」야. 누가 좀 설명해 줘.', '베라 교수님 찻잔 밑에 뭐가 있대.']], ['mage', '마녀 견습 플로', ['빗자루는 아직 못 타. 대신 잘 쓸어.', '연못에 너무 오래 비치면 안 돼.']]],
       rainbow: [['clown', '광대 피피', ['풍선 하나에 웃음 하나!', '구름 밑은 보지 마. 발이 저려.']], ['kidg', '꼬마 무무', ['구름고래 누베 봤어? 등에 탈 수 있대!', '천년제 도장 몇 개 모았어?']]],
       white: [['nun', '수련 수녀 이리', ['발밑을 조심하세요. 얼음이 기도를 안 들어줘요.', '성녀님은 요즘 잠을 못 주무세요.']], ['farmer', '나무꾼 오드', ['장작 하나에 온기 하나.', '온천에 가면 얼어붙은 게 다 풀려. 마음도.']]],

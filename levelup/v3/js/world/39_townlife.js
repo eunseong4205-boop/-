@@ -20,7 +20,7 @@
     rainbow: { special: 'fountain', w: 2, h: 2, name: '일곱 빛 분수', text: '분수 물줄기가 해를 받아 일곱 빛깔로 갈라진다. 천년 전에도 이 분수는 있었다고 한다.', fx: 'exp' },
     white: { special: 'statue', w: 1, h: 1, name: '얼음 성녀상', text: '얼음으로 깎은 성녀상. 한 번도 녹은 적이 없다. 발밑에 촛불 대신 작은 눈사람들이 줄지어 있다.', fx: 'vit' },
     gray: { special: 'tower', w: 3, h: 2, col: '#7a7a86', name: '멈춘 시계탑', text: '612년에 멈춘 시계. 바늘이 셋. 하나는 시, 하나는 분, 하나는 — 거꾸로 돈다. 볼트가 고치겠다고 한 지 40년.', fx: 'dex' },
-    black: { special: 'tower', w: 3, h: 2, col: '#4a3a6a', name: '등불 탑', text: '밤의 도시에서 가장 높은 등불. 16년 동안 꺼진 적이 없다. 등불지기 칸델의 할아버지가 처음 붙였다.', fx: 'int' },
+    black: { special: 'tower', w: 3, h: 2, col: '#4a3a6a', name: '등불 탑', text: '밤의 도시에서 가장 높은 등불. 한 번도 꺼진 적이 없다. 등불지기 칸델의 할아버지가 처음 붙였다.', fx: 'int' },
     colorful: { special: 'tent', w: 3, h: 2, col: '#ff8a3a', name: '발명품 전시 천막', text: '피로스 박사의 실패작 전시장. 「제1안: 날지 않는 로켓」 「제2안: 조금 나는 로켓」 … 「제411안: 거의 나는 로켓」.', fx: 'dex' },
     mist: { special: 'well', w: 1, h: 1, name: '소원 우물', text: '안개가 고여 있는 우물. 동전 대신 이름을 속삭여 넣는다고 한다. 우물이 대답하면 소원이 이루어진다고.', wish: true },
     amber: { special: 'statue', w: 1, h: 1, name: '메아리 석상', text: '귀를 기울인 사냥꾼의 석상. 말을 걸면 석상이 한 박자 늦게 따라 한다.', fx: 'sta' },
@@ -119,7 +119,9 @@
           case 'leaf': q.y += 16 * q.v * dt; q.x += (10 + Math.sin(q.ph * 2) * 14) * dt; break;
           default: q.y += Math.sin(q.ph) * 2 * dt; break;
         }
-        if (Math.abs(q.x - p.x) > 260 || Math.abs(q.y - p.y) > 170) { q.x = p.x + (Math.random() - 0.5) * 460; q.y = p.y + (Math.random() < 0.5 ? -1 : 1) * (80 + Math.random() * 80); }
+        // 멀어진 알갱이는 반대편 화면 밖에서 다시 들어온다 (예전엔 화면 안 아무 데나 뚝 생겼다)
+        if (Math.abs(q.x - p.x) > 260) { q.x = p.x - Math.sign(q.x - p.x) * 250; q.y = p.y + (Math.random() - 0.5) * 300; }
+        else if (Math.abs(q.y - p.y) > 170) { q.y = p.y - Math.sign(q.y - p.y) * 160; q.x = p.x + (Math.random() - 0.5) * 480; }
       }
       this.night = night;
     }

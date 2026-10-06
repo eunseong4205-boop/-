@@ -141,7 +141,9 @@
     back: (t) => { const c1 = 1.70158, c3 = c1 + 1; return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2); },
     elastic: (t) => (t === 0 || t === 1 ? t : Math.pow(2, -10 * t) * Math.sin((t * 10 - 0.75) * (2 * Math.PI) / 3) + 1),
   };
-  const rgb = (hex) => { const n = parseInt(hex.slice(1), 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; };
+  // 같은 색 글자를 몇백만 번 풀던 것(건물 그림 · 작은 지도): 한 번 푼 것은 기억한다. 돌려준 배열은 읽기만 한다
+  const RGBC = new Map();
+  const rgb = (hex) => { let c = RGBC.get(hex); if (c) return c; const n = parseInt(hex.slice(1), 16); c = [(n >> 16) & 255, (n >> 8) & 255, n & 255]; if (RGBC.size < 4096) RGBC.set(hex, c); return c; };
 
   G.u = { fmt, fmtInt, fmtMult, fmtTime, fin, clamp, lerp, josa, nameSub, hasBatchim, hash, rng, noise2, vnoise, fbm, pick, shade, mix, rgb, MAX,
     len, norm, dist, angle, angDiff, dir4, DV, approach, overlap, ease };

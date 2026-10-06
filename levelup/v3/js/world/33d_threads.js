@@ -143,9 +143,7 @@
     await c.narr('천년력 983년, 겨울. 밤 열한 시.');
     await c.narr('황금별 아스트라. 대륙의 모든 빛이 모이는 곳.\n그 한가운데, 사람 하나가 들어갈 만한 빈 수정.');
     c.sfx('page');
-    await c.say(ka, '……삼백열하나. 삼백열둘.', { face: 'closed' });
-    c.sfx('page');
-    await c.say(ka, '삼백열셋.', { face: 'closed' });
+    await c.say(ka, '……삼백열셋.', { face: 'closed' });
     const se = c.spawn({ cid: 'serin', x: px(10), y: py(12), dir: 'up' });
     c.sfx('door');
     await c.move(se, px(10), py(8), { speed: 40 });
@@ -219,7 +217,7 @@
       await c.say(gr, '잡아 올까요? 흰빛 한 줌이면 탑 열 개 몫입니다.', { face: 'smirk' });
       await c.say(ka, '손대지 마라. 지켜보기만 해라. 빛이 다 자랄 때까지.', { face: 'normal' });
       await c.say(gr, '…다 자라면요?', { face: 'smirk' });
-      await c.say(ka, '그때 계산한다.', { face: 'normal' });
+      await c.say(ka, '그때 생각한다.', { face: 'normal' });
       await c.move(gr, px(8), py(10), { speed: 50 }); gr.dead = true; c.sfx('door');
       c.face(ka, 'right');
       await c.narr('수정 구슬 속, 얼음 안에서 잠든 여자. 가슴께에 검은 점 하나.');
@@ -269,7 +267,7 @@
       await c.say(mn, '흑점이 또 반 뼘 가까워졌군. 반 뼘이면 고양이 걸음으로 천 년이고, 사람 걸음으로는 백 일쯤이지.', { face: 'smirk' });
       await c.say(nc, '카이론은.', { face: 'normal' });
       await c.say(mn, '여전히 세고 있지. 이번엔 탑이 아니라 날짜를.', { face: 'normal' });
-      await c.say(ly, '…언제 말해도 돼요? 16년이면 충분히 기다렸잖아요.', { face: 'angry' });
+      await c.say(ly, '…언제 말해도 돼요? 이만하면 충분히 기다렸잖아요.', { face: 'angry' });
       await c.say(nc, '네 이름을 장부에서 지운 칼이 아직 내 손에 있다. 이름을 다시 부르면, 줄이 다시 생긴다.', { face: 'closed' });
       c.face(ly, 'up');
       await c.say(ly, '[p]♪ 세는 사람아 세는 사람아 / 하나만 빼먹어라\n♪ 빼먹은 하나가 / 밤에 숨어 자란다[/]', { face: 'closed' });
@@ -323,16 +321,16 @@
       c.face(ka, 'down'); c.emote(ka, '!');
       await c.say('serin', '(목소리) 배… 고파.', { face: 'sad' });
       c.music('dread');
-      await c.narr('16년 동안 한 번도 없던 일이었다.');
+      await c.narr('한 번도 없던 일이었다.');
       c.face(ka, 'up');
-      await c.say(ka, '…조금만 더 안고 있어 줘. 조금만. 계산이 거의 끝났어.', { face: 'cry' });
+      await c.say(ka, '…조금만 더 안고 있어 줘. 조금만. 거의 다 됐어.', { face: 'cry' });
       await c.narr('구슬을 짚은 챔피언의 손끝이 검게 물들어 있었다.');
     } },
     c7: { room: 'x_study', cam: [8, 5], title: '열여섯', play: async (c) => {
       const ka = c.spawn(who('kairon', 8, 4, 'up')); ka.forceAnim = 'cast'; ka.forceFps = 3;
       const gr = c.spawn(who('graus', 4, 7, 'right'));
       await c.narr('[s]막간[/] — 천년성. 천년제가 끝난 밤.');
-      await c.say(gr, '하나. 둘. 셋. 넷.', { face: 'closed' });
+      await c.say(gr, '하나. 둘…', { face: 'closed' });
       const cs = c.spawn(who('cassian', 8, 10, 'up'));
       c.sfx('door');
       await c.move(cs, px(8), py(6), { speed: 50 });
@@ -344,7 +342,7 @@
       await c.say(cs, '그 아이를 수정에 넣으실 겁니까.', { face: 'angry' });
       ka.forceAnim = null;
       await c.narr('펜 소리가 멈췄다.');
-      await c.say(ka, '계산이 그렇게 나오면.', { face: 'normal' });
+      await c.say(ka, '답이 그렇게 나오면.', { face: 'normal' });
       await c.say(gr, '열. 열하나. 열둘.', { face: 'closed' });
       await c.narr('카시안이 감찰관 휘장을 책상 위에 내려놓았다.');
       await c.say(cs, '…그럼 저는 스승님의 계산에서 빠지겠습니다.', { face: 'closed' });
@@ -394,7 +392,7 @@
     } },
     c10: { room: 'x_night', cam: [7, 5], title: '발자국 편지', play: async (c) => {
       const nc = c.spawn(who('nocturne', 7, 4, 'up')); nc.forceAnim = 'cast'; nc.forceFps = 3;
-      await c.narr('[s]막간[/] — 영원한 밤의 성. 16년 만에 커튼을 걷은 방.');
+      await c.narr('[s]막간[/] — 영원한 밤의 성. 처음으로 커튼을 걷은 방.');
       await c.say(nc, '「에벨린. 약속을 어겼다. 아이들이 만났다.」', { face: 'closed' });
       await c.say(nc, '「첫째는 노래를 한다. 둘째는 검을 쓴다. 둘 다… 세린을 닮았다. 셈을 싫어하는 얼굴이.」', { face: 'sad' });
       nc.forceAnim = null;
@@ -404,7 +402,7 @@
       await c.say(mn, '뭐라고?', { face: 'normal' });
       await c.say(nc, '「그만 세라.」', { face: 'sad' });
       await c.say(mn, '그건 편지로는 안 돼. 그 애들이 직접 가서 말해야지.', { face: 'normal' });
-      await c.narr('녹턴이 펜을 내려놓았다. 창밖, 16년 만에 처음으로— 하늘 끝이 조금 밝았다.');
+      await c.narr('녹턴이 펜을 내려놓았다. 창밖, 처음으로— 하늘 끝이 조금 밝았다.');
       c.flag('nocturne_letter');
     } },
     c11: { room: null, title: '같은 하늘', play: async (c) => {
@@ -456,11 +454,11 @@
       c.emote('toria', '!');
       await c.say('toria', '찍?! …나 잠꼬대했어? 뭐라고 했어?', { face: 'shock' });
       const k = await c.choice('토리아가 묻는다.', ['「세린 언니라고 했어.」', '모른 척한다']);
-      if (k === 0) await c.say('toria', '…세린 언니. 나, 그 이름을 알아. 어떻게 아는지는 몰라. 16년 동안 가슴 어딘가가 무거웠어. 거기서 나는 이름 같아.', { face: 'sad' });
-      else await c.say('toria', '…거짓말. 표정에 다 써 있어. 찍. 나도 알아. 가슴이 무거워. 16년 동안. 레벨 9에서 안 올라가는 거, 그거 때문인 것 같아.', { face: 'sad' });
+      if (k === 0) await c.say('toria', '…세린 언니. 나, 그 이름을 알아. 어떻게 아는지는 몰라. 오래전부터 가슴 어딘가가 무거웠어. 거기서 나는 이름 같아.', { face: 'sad' });
+      else await c.say('toria', '…거짓말. 표정에 다 써 있어. 찍. 나도 알아. 가슴이 무거워. 늘. 레벨 9에서 안 올라가는 거, 그거 때문인 것 같아.', { face: 'sad' });
       await c.say('toria', '퍼플의 시빌 할멈 연못… 거기선 「되고 싶지 않은 나」가 보인댔지. 나한테 뭐가 붙어 있는지도 보일까?', { face: 'normal' });
       c.quest('toria_nine', 'on');
-      c.journal('토리아가 잠꼬대로 세린의 이름을 불렀다. 16년 동안 가슴이 무거웠다고 한다.');
+      c.journal('토리아가 잠꼬대로 세린의 이름을 불렀다. 오래전부터 가슴이 무거웠다고 한다.');
     } },
     { id: 'lyra', when: (s) => ST.after('c10') && f('lyra_sister') && !s.quests.lyra_name, play: async (c) => {
       await c.narr('꿈인지 생시인지. 낮은 허밍 소리.');
@@ -472,7 +470,7 @@
     } },
     { id: 'count', when: (s) => f('c1_tower'), play: async (c) => {
       await c.narr('꿈. 끝없는 서가. 책장마다 같은 장부가 꽂혀 있다.');
-      await c.narr('누군가 네 이름 옆의 숫자를 센다.\n[r]「열하나. 열둘. 열셋.」[/]');
+      await c.narr('누군가 네 이름 옆의 숫자를 센다.\n[r]「열하나. 열둘…」[/]');
       await c.narr('그 숫자가 네 레벨과 같다는 걸 깨닫는 순간— 목소리가 멈춘다.\n[r]「…예비.」[/]');
       c.sfx('heartbeat'); c.shake(2, 0.4);
       if (inParty('toria')) await c.say('toria', '찍… 또 악몽? 이마가 땀범벅이야. 누가 널 센대?', { face: 'sad' });
@@ -518,12 +516,12 @@
 
   /* ═════════ 보상 · 부탁 ═════════ */
   const item = (id, o) => { D.ITEMS[id] = Object.assign(D.ITEMS[id] || { id }, o); };
-  item('ac_toria', { type: 'acc', grade: 5, name: '열 번째 깃털', fx: { exp: 0.15, sta: 4, dex: 3 }, desc: '토리아가 16년 만에 렙업하며 떨군 깃털. 얻는 빛 +15%, 스태미나 +4, 솜씨 +3.' });
+  item('ac_toria', { type: 'acc', grade: 5, name: '열 번째 깃털', fx: { exp: 0.15, sta: 4, dex: 3 }, desc: '토리아가 처음 렙업하며 떨군 깃털. 얻는 빛 +15%, 스태미나 +4, 솜씨 +3.' });
   item('ac_lyra', { type: 'acc', grade: 4, name: '리라의 현', fx: { int: 5, dex: 3, crit: 0.05 }, req: { lv: 26 }, desc: '리라가 류트에서 끊어 준 줄 하나. 지력 +5, 솜씨 +3, 치명타 +5%.' });
   item('sw_cassian', { type: 'sword', grade: 4, name: '두 번째 칼 「사과 값」', atk: 14, reach: 25, crit: 0.08, speed: 0.92, col: '#ffd0d8', glow: '#ff8a9a', req: { str: 16, dex: 10, lv: 24 }, desc: '카이론이 열두 살 카시안에게 준 연습검의 짝. 베는 속도 빠름, 치명타 +8%.' });
   item('ledger_graus', { type: 'key', name: '그라우스의 두 번째 장부', desc: '매달 같은 칸. 「N에게 — 빛 한 줌」. 맨 뒷장에 아이 그림.', read: '991년부터 매달 한 줄. 「N에게 — 빛 한 줌」. 가장자리마다 붉은 도장: 「재징수」.' });
   const Q = (id, o) => { D.QUESTS[id] = Object.assign({ id }, o); };
-  Q('toria_nine', { name: '토리아의 아홉', who: '토리아', desc: (s) => (!s.flags.toria_mirror ? '퍼플, 시빌 할멈의 거울 연못에 토리아를 비춰 본다.' : !s.flags.toria_story ? '그린 마을 에벨린 할머니에게 토리아 가슴의 흰 방울에 대해 묻는다.' : '그린 마을 할머니 오두막 옆 큰 참나무 아래에서, 토리아와 함께 방울을 놓아준다.'), after: '토리아가 16년 만에 렙업했다. 한 뼘, 떠올랐다.' });
+  Q('toria_nine', { name: '토리아의 아홉', who: '토리아', desc: (s) => (!s.flags.toria_mirror ? '퍼플, 시빌 할멈의 거울 연못에 토리아를 비춰 본다.' : !s.flags.toria_story ? '그린 마을 에벨린 할머니에게 토리아 가슴의 흰 방울에 대해 묻는다.' : '그린 마을 할머니 오두막 옆 큰 참나무 아래에서, 토리아와 함께 방울을 놓아준다.'), after: '토리아가 드디어 렙업했다. 한 뼘, 떠올랐다.' });
   Q('lyra_name', { name: '두 개의 이름', who: '리라', desc: (s) => (!s.flags.lyra_page ? '블루 대도서관 사서 헤미아에게 983년 출생 기록을 묻는다.' : '찢긴 장의 나머지를 그린 마을 에벨린 할머니가 가지고 있을지도 모른다.'), after: '리라의 이름은 엄마가 지었다. 네 이름은 할머니가.' });
   Q('cassian_last', { name: '사과 값', who: '카시안', desc: '단풍 협곡에서 혼자 검을 휘두르는 카시안과 겨룬다.', after: '카시안이 스승에게 전할 말을 맡겼다. 「사과 값은 아직 못 갚았다」.' });
   Q('graus_ledger', { name: '두 번째 장부', who: '그라우스', desc: (s) => (!s.flags.graus_noah_told ? '장부 맨 뒷장의 그림. 「노아」. 백은 대성당 병동의 노아에게 보여 줄까.' : '아스트라 어딘가에 그라우스가 있다. 장부를 돌려준다.'), after: '그라우스가 숫자가 아닌 첫 말을 했다. 「노아」.' });
@@ -553,8 +551,8 @@
     await c.say(n, '983년 겨울. 세린이가 이 집 문을 두드렸다. 품에 아가 하나, 어깨에 다람쥐 하나.', { face: 'sad' });
     await c.say(n, '다람쥐는 레벨 9였다. 하늘다람쥐는 열이 되면 난다 카더라.', { face: 'normal' });
     await c.say(n, '세린이가 그 다람쥐 가슴에 흰빛 한 방울을 넣었다. 「이 아가 렙업할 때마다 탑이 흰빛을 알아챌 거야. 토리아가 그 소리를 대신 삼켜 줄 거야.」', { face: 'closed' });
-    await c.say('toria', '…그래서 16년 동안 탑이 너를 못 찾은 거야? 내가… 삼켜서?', { face: 'shock' });
-    await c.say(n, '그래. 니 레벨이 9에서 안 오른 것도 그 때문이다. 니는 16년 동안 이 아 렙업을 대신 삼켰다. 한 번도 안 빼고.', { face: 'sad' });
+    await c.say('toria', '…그래서 탑이 너를 못 찾은 거야? 내가… 삼켜서?', { face: 'shock' });
+    await c.say(n, '그래. 니 레벨이 9에서 안 오른 것도 그 때문이다. 니는 내내 이 아 렙업을 대신 삼켰다. 한 번도 안 빼고.', { face: 'sad' });
     await c.say('toria', '생일날 탑이 널 알아챈 건… 검을 뽑아서 빛이 너무 커져서구나. 내가 다 못 삼켰어. …찍.', { face: 'cry' });
     await c.say(n, '세린이가 그랬다. 「이 아가 제 빛을 스스로 감당할 수 있을 때, 방울을 돌려줘. 그럼 토리아도 날 거야.」', { face: 'normal' });
     await c.say(n, '놓아줄 데는 저 참나무 아래다. 세린이가 처음 흰빛을 낸 데. 칼자국 옆에 빗금 두 개 있제. 그것도 세린이가 그었다.', { face: 'closed' });
@@ -573,7 +571,7 @@
     c.music('mother');
     await c.narr('참나무 아래. 칼로 새긴 S · K. 그 밑의 빗금 두 개.');
     await c.say('toria', f('lyra_sister') ? '빗금 두 개… 너랑 리라 언니야. 언니가 새긴 거야. 이제 알겠어.' : '빗금 두 개… 아가 둘? 언니가 새긴 거래. …둘?', { face: 'sad' });
-    await c.say('toria', '놓을게. …무서워. 16년 동안 안고 있었는데. 놓으면 나 아무것도 아닐까 봐.', { face: 'cry' });
+    await c.say('toria', '놓을게. …무서워. 이렇게 오래 안고 있었는데. 놓으면 나 아무것도 아닐까 봐.', { face: 'cry' });
     const k = await c.choice('토리아가 떨고 있다.', ['「넌 토리아야. 방울이 없어도.」', '「안 놓아도 돼.」', '말없이 손을 내민다']);
     if (k === 1) await c.say('toria', '…찍. 그 말 들으니까, 놓을 수 있을 것 같아.', { face: 'smile' });
     else if (k === 0) await c.say('toria', '…응. 토리아야. 레벨 9 말고. 찍.', { face: 'cry' });
@@ -583,13 +581,13 @@
     G.fx.glow(p.x, p.y - 14, '#ffffff', 26, 40);
     await c.narr('토리아의 가슴에서 흰 방울 하나가 떠올랐다. 작은 별처럼. 방울이 떨렸다. 그리고— 목소리가 났다.');
     await c.say('serin', '(목소리) …토리아. 이걸 듣고 있다면, 놓아준 거구나.', { face: 'smile' });
-    await c.say('serin', '(목소리) 고마워. 16년이지? 무거웠지. 내 아이의 렙업 소리, 전부 네가 삼켰구나.', { face: 'sad' });
+    await c.say('serin', '(목소리) 고마워. 오래 무거웠지. 내 아이의 렙업 소리, 전부 네가 삼켰구나.', { face: 'sad' });
     await c.say('serin', '(목소리) 그 소리들, 나한테도 들렸어. 수정 속에서. 하나도 안 빼고.', { face: 'closed' });
     await c.say('serin', '(목소리) 그러니까 이제— 네가 날 차례야.', { face: 'smile' });
-    await c.narr('방울이 네 가슴으로 스며들었다. 따뜻했다. 16년 치의 렙업 소리가 한꺼번에 울렸다.');
+    await c.narr('방울이 네 가슴으로 스며들었다. 따뜻했다. 밀린 렙업 소리가 한꺼번에 울렸다.');
     c.sfx('levelup');
     G.fx.ring(p.x, p.y - 10, '#fff4a8', 30, 0.6, 2);
-    await c.say(null, '[y]토리아[/]가 레벨 [y]10[/]이 되었다! (16년 만의 렙업)', { style: 'sys' });
+    await c.say(null, '[y]토리아[/]가 레벨 [y]10[/]이 되었다! (처음 렙업)', { style: 'sys' });
     await c.say('toria', '찍! 찍찍! 10이야! 10! 16년 만에!', { face: 'happy' });
     await c.narr('토리아가 날개를 폈다. 바람이 날개 밑으로 들어왔다.\n토리아가— 한 뼘, 떠올랐다. 그리고 떨어졌다.');
     await c.say('toria', '…아직 한 뼘. 그래도 가벼워. 처음으로.', { face: 'cry' });
@@ -597,7 +595,7 @@
     await c.getItem('ac_toria');
     s.pts = (s.pts || 0) + 2;
     await c.say(null, '방울의 빛이 스며들었다. [y]성장 점수 +2[/]', { style: 'sys' });
-    c.journal('참나무 아래에서 토리아가 세린의 방울을 놓아주었다. 16년 동안 토리아는 내 렙업 소리를 대신 삼키고 있었다. 세린은 그 소리를 전부 듣고 있었다.');
+    c.journal('참나무 아래에서 토리아가 세린의 방울을 놓아주었다. 토리아는 내 렙업 소리를 내내 대신 삼키고 있었다. 세린은 그 소리를 전부 듣고 있었다.');
     c.music('home');
     await c.cinema(false); c.lock(false);
   }
@@ -610,7 +608,7 @@
     await c.say(n, '그, 그런데… 한 장이 찢겨 나갔어요. 칼로 자른 것처럼 반듯하게. 남은 건 모서리 하나.', { face: 'shock' });
     await c.narr('모서리에 남은 글씨. 가늘고 둥근 손글씨.\n「…라. 노래하는 아이. 둘째는 ㅇ…」');
     await c.say('lyra', '「…라」.', { face: 'shock' });
-    await c.say(n, '이, 이 글씨… 세린 님 글씨예요. 도서관 대출 카드에 똑같은 글씨가 있어요. 「구름의 모양」 스물여섯 번 빌리셨어요.', { face: 'smile' });
+    await c.say(n, '이, 이 글씨… 세린 님 글씨예요. 도서관 대출 카드에 똑같은 글씨가 있어요. 「구름의 모양」을 몇 번이고 빌리셨어요.', { face: 'smile' });
     c.flag('lyra_page');
     c.lock(false);
   });
@@ -621,12 +619,12 @@
     c.music('mother');
     await c.say(n, '……', { face: 'shock' });
     await c.say(n, '니가. 첫째가.', { face: 'sad' });
-    await c.say(ly, '처음 뵙겠습니다… 는 아니죠. 983년에 한 번 봤을 테니까.', { face: 'smile' });
+    await c.say(ly, '처음 뵙겠습니다…는 아니죠. 983년에 한 번 봤을 테니까.', { face: 'smile' });
     await c.say(n, '울기만 하던 아가였다. 목청이 좋았제. 노래할 줄 알았다.', { face: 'cry' });
     await c.narr('할머니가 침대 밑 상자에서 종이 반 장을 꺼냈다. 한쪽이 칼로 자른 듯 반듯했다.');
     await c.narr('세린의 글씨.\n[w]「첫째: 리라 — 노래하는 아이. 밤이 지켜 줄 거야.」[/]\n[w]「둘째: 이름은 엄마가 지어 줘. 엄마가 부르기 좋은 이름으로.」[/]');
     await c.say(n, '그래서 니 이름은 내가 지었다. ' + (S().name || '아린') + '. 부르기 좋제.', { face: 'smile' });
-    await c.say(ly, '…녹턴이 지어 준 줄 알았어요. 16년 동안. …엄마가 지었구나. 내 이름.', { face: 'cry' });
+    await c.say(ly, '…녹턴이 지어 준 줄 알았어요. 여태. …엄마가 지었구나. 내 이름.', { face: 'cry' });
     await c.say(n, '녹턴은 그 이름을 지키기만 했다. 칼로. 장부에서 지우고, 종이에서 오리고.', { face: 'closed' });
     await c.say(n, '…옥수수빵 무라. 네 개 구웠다. 한 사람 더 올지 모른다 캤제.', { face: 'smile' });
     await c.say(ly, '(빵을 받아 든다) …따뜻해요.', { face: 'cry' });
@@ -657,12 +655,11 @@
       await c.cutin({ who: 'cassian', title: '카시안', small: '스승을 떠난 제자', sub: '방패를 든 정면은 막힌다 — 완벽 회피 뒤에 반격을', col: '#8a1a2a', face: 'smirk', sec: 1.6 });
       const bx = n.x, by = n.y; n.dead = true;
       const boss = G.bosses.spawn('cassian2', bx, by, {});
-      boss.duel = true; boss.home = { x: bx, y: by };
+      boss.duel = true; boss.home = { x: bx, y: by }; G.bosses.duelTo(boss, 0.2);
       S().duel = true;
       c.lock(false);
       boss.start(); G.hud.setBoss(boss); c.music('boss2');
-      let win = false;
-      await c.freeWhile(() => { if (boss.hp <= boss.maxHp * 0.2) { win = true; return true; } return S().hp <= 1; });
+      const win = await c.duel(boss);
       S().duel = false;
       const x2 = boss.x, y2 = boss.y; boss.dead = true; G.hud.boss = null;
       c.lock(true); await c.cinema(true);
@@ -722,13 +719,13 @@
     talk: async (c, n) => {
       if (f('graus_noah')) { await c.say(n, '……노아. 노아. …옥수수빵.', { face: 'closed' }); return; }
       if (!(S().inv.ledger_graus && f('graus_noah_told'))) {
-        await c.say(n, U.pick(['천이백. 천이백하나. 천이백둘.', '…다음 그릇. 하나.', '하나. 하나. 하나.']), { face: 'closed' });
+        await c.say(n, U.pick(['천이백…', '…다음 그릇. 하나.', '하나. 하나. 하나.']), { face: 'closed' });
         await c.say('toria', '찍… 이 사람, 뭘 세는 거지? 눈이 텅 비었는데 입만 움직여.', { face: 'sad' });
         return;
       }
       c.lock(true); await c.cinema(true);
       c.music('sad');
-      await c.say(n, '천삼백. 천삼백하나.', { face: 'closed' });
+      await c.say(n, '천삼백…', { face: 'closed' });
       await c.narr('장부를 펴서, 그라우스의 무릎 위에 올려놓았다. 맨 뒷장. 그리고 노아가 새로 그린 그림.');
       await c.say(n, '천삼백……', { face: 'closed' });
       c.stopMusic(0.8);
@@ -750,7 +747,7 @@
       await c.say(n, f('lyra_sister') ? '두 빛이 이제 나란히 걸어요. 한쪽이 조금 더 밝고, 한쪽이 조금 더 따뜻해요. 보기 좋아요.' : '…당신 빛 옆에, 똑같은 모양의 빛이 하나 더 있어요. 성 안에. 노래하는 모양이에요.', { face: 'normal' });
     }, c10: '성녀님께 편지를 썼어요. 「신의 뜻이 아니라 사람의 장부였어요」라고. 답장이 왔어요. 「알고 있었다」래요. …그래도 기도는 계속하신대요.', c12: '하늘의 검은 빛이 당신만 봐요. 무서워하지 마요. 저도 보고 있으니까요.' } });
   ST.folk('world', { id: 'pika', name: '피카', at: townAt('black', 5, 4), dir: 'left', wander: 20, when: (s) => ST.after('c9') && s.flags['met:pika'] && !s.flags.ending,
-    lines: { c9: ['참새단 배달! 등불 기름이요! …칸델 아저씨가 16년 치 야근 수당을 나눠 준대서 왔어요. 헤헤.', '밤 동네 애들은 해를 그림으로만 봤대요. 그래서 우리가 노래를 가르쳐 줬어요. 「해님 해님」. 리라 언니한테 배운 거.'], c10: '무한호 연료통에 우리 참새단 사인도 있어요! 하늘까지 가는 거예요, 우리 이름이!' } });
+    lines: { c9: ['참새단 배달! 등불 기름이요! …칸델 아저씨가 밀린 야근 수당을 나눠 준대서 왔어요. 헤헤.', '밤 동네 애들은 해를 그림으로만 봤대요. 그래서 우리가 노래를 가르쳐 줬어요. 「해님 해님」. 리라 언니한테 배운 거.'], c10: '무한호 연료통에 우리 참새단 사인도 있어요! 하늘까지 가는 거예요, 우리 이름이!' } });
   ST.folk('world', { id: 'yana', name: '야나', at: townAt('gray', 6, -4), dir: 'down', when: (s) => ST.after('c8') && s.flags['met:yana'] && !s.flags.ending,
     lines: { c8: ['회색 땅엔 별이 안 보여. 그래도 나는 알아. 저 구름 위에 어떤 별이 있는지. 길잡이는 안 보이는 걸 외우는 사람이야.', '모래바다 대상들이 회색 땅까지 소금을 날라. 여기 사람들, 소금 맛이 뭔지 잊었대. …색이랑 같이.'], c10: '하늘로 간다며? 별자리 하나 알려 줄게. 「두 마리 여우」. 꼬리가 맞닿아 있어. 쌍둥이 별이야.' } });
   ST.folk('world', { id: 'rud', name: '루드', at: townAt('mist', -8, 4), dir: 'right', when: (s) => ST.after('c8') && s.flags['met:rud'] && !s.flags.ending,
@@ -775,7 +772,7 @@
     const list = evidence0.apply(this, arguments);
     if (f('cassian_duel')) list.push('카시안의 사과 값');
     if (f('graus_noah')) list.push('그라우스의 두 번째 장부');
-    if (f('toria_ten')) list.push('토리아가 삼킨 16년');
+    if (f('toria_ten')) list.push('토리아가 삼킨 소리');
     if (f('lyra_named')) list.push('세린이 지은 이름');
     return list;
   };
@@ -785,7 +782,7 @@
     const s = S();
     const V = [
       ['evelyn', () => true, '(목소리) 밥은 묵었나. …묵고 싸워라. 옥수수빵 네 개 구워 놨다.'],
-      ['toria', () => f('toria_ten'), '(목소리) 찍! 방울 소리 들려? 16년 치야. 전부 네 거야!'],
+      ['toria', () => f('toria_ten'), '(목소리) 찍! 방울 소리 들려? 전부 네 거야!'],
       ['noah', () => f('met:noah'), '(목소리) ' + sib() + '! 나 머리카락 까매진 거 세 올이야! 그러니까 지지 마!'],
       ['cassian', () => f('cassian_duel') || (s.bond.cassian || 0) >= 3, '(목소리) 검 끝이 떨리는 건 화가 나서다. 좋은 칼이다. …가라, 후배.'],
       ['lea', () => f('met:lea') && s.flags.route_lock === 'dawn', '(목소리) 새벽단 전원, 탑 불 껐다! 대륙 빛이 전부 네 쪽으로 간다!'],

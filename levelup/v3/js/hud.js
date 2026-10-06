@@ -63,7 +63,12 @@
   /* ───────── 그리기 ───────── */
   function draw(g, w, h) {
     const W = G.world, p = W.player, s = G.state;
-    if (!p || H.hidden || (G.cine && G.cine.active && G.cine.active())) { drawBoss(g, w, h); drawVignette(g, w, h); return; }
+    if (!p || H.hidden || (G.cine && G.cine.active && G.cine.active())) {
+      drawBoss(g, w, h); drawVignette(g, w, h);
+      // 기억 속(56_shards): 하트 · 지도는 숨겨도 「무엇을 할지」는 보인다 — 말 걸기 안내 · 할 일 띠 · 멈춰 있으면 방향
+      if (p && H.hidden && !(G.cine && G.cine.active && G.cine.active()) && G.story && G.story.memInfo) { const mi = G.story.memInfo(); if (mi) { drawMem(g, w, h, p, mi); drawHint(g); } }
+      return;
+    }
     const d = G.st.derive(s);
     // ── 하트 ──
     const perRow = 10;
@@ -81,6 +86,8 @@
     const barW = 64;
     if (Object.keys(s.spells).length) {
       bar(g, 7, y, barW, 3, s.mp / d.mpMax, '#4a8aff', '#8ac8ff', '#14203a');
+      // 쉬는 동안(MP를 1.5초 쓰지 않으면) 더 빨리 찬다 — 막대 위로 빛이 흐른다
+      if (d.mpCalm && s.mp < d.mpMax) { const fw = Math.max(2, Math.round(barW * s.mp / d.mpMax)); g.fillStyle = 'rgba(220,240,255,0.85)'; g.fillRect(7 + Math.floor((performance.now() / 25) % fw), y, 2, 3); }
       y += 5;
     }
     // ── 필살 ──
@@ -106,8 +113,7 @@
     // ── 오른쪽 위: 골드 · 열쇠 · 작은 지도 ──
     const rx = w - 6;
     const mm = drawMini(g, w, h);
-    let ry = mm ? mm.y + mm.h + 4 : 5;
-    if (touch()) ry = Math.max(ry, 34);
+    let ry = mm ? mm.y + mm.h + 4 : topRight();
     if (s.gold !== H.lastGold) { H.goldShow = 2; H.lastGold = s.gold; }
     const gs = String(s.gold);
     g.drawImage(icon('coin'), rx - X.digitsWidth(gs) - 16, ry - 1);
@@ -155,6 +161,39 @@
     // 카운터 기회
     if (p.counterT > 0 && s.skills.sw_counter) { g.font = "12px 'Galmuri11', monospace"; g.textAlign = 'center'; txt(g, '반격!', Math.round(p.x - W.cam.x), Math.round(p.y - W.cam.y - 34), '#8ad8ff'); g.textAlign = 'left'; }
 
+    drawHint(g);
+
+    drawBoss(g, w, h);
+    drawVignette(g, w, h);
+    // 추위 · 더위 경고
+    if (H.env) { g.font = "12px 'Galmuri11', monospace"; txt(g, H.env.text, 7, y + 12, H.env.col); }
+  }
+  /** 기억 속 할 일 띠 (위 가운데) · 멈춰 있으면 다음 볼 것 쪽으로 화살표 */
+  function drawMem(g, w, h, p, mi) {
+    const W = G.world;
+    // 한 줄로 작게 (방 위쪽 벽의 물건을 가리지 않게) — 들어선 직후 몇 초만 제목을 덧붙인다
+    g.font = "12px 'Galmuri11', monospace"; g.textAlign = 'center';
+    const body = mi.text + (mi.prog ? ' ' + mi.prog : '');
+    let t = (mi.fresh ? mi.title + ' — ' : '◆ ') + body;
+    const maxW = touch() ? Math.floor(w * 0.6) : w - 20;   // 휴대폰: 오른쪽 위 지도 · 메뉴 버튼을 가리지 않게
+    if (g.measureText(t).width > maxW) t = '◆ ' + body;                          // 좁으면 제목을 뺀다
+    if (g.measureText(t).width > maxW) g.font = "8px 'Galmuri11', monospace";    // 그래도 넘치면 작은 글씨
+    const bw = Math.min(maxW + 12, g.measureText(t).width + 16), bx = Math.round(w / 2 - bw / 2), by = 3;
+    g.fillStyle = 'rgba(14,8,26,0.72)'; g.fillRect(bx, by, bw, 15);
+    g.fillStyle = '#b87aff'; g.fillRect(bx, by + 14, bw, 1);
+    txt(g, t, Math.round(w / 2), by + 11, mi.fresh ? '#e8d8ff' : '#f4ecdc');
+    g.textAlign = 'left';
+    if (mi.arrow) {
+      const px0 = p.x - W.rcx, py0 = p.y - W.rcy - 14, a = Math.atan2(mi.arrow.y - p.y, mi.arrow.x - p.x);
+      const r = 22 + Math.sin(W.t * 6) * 3, ax = px0 + Math.cos(a) * r, ay = py0 + Math.sin(a) * r;
+      g.save(); g.translate(Math.round(ax), Math.round(ay)); g.rotate(a);
+      g.fillStyle = '#0b0914'; g.beginPath(); g.moveTo(7, 0); g.lineTo(-5, -6); g.lineTo(-2, 0); g.lineTo(-5, 6); g.closePath(); g.fill();
+      g.fillStyle = '#e8c8ff'; g.beginPath(); g.moveTo(5, 0); g.lineTo(-4, -4); g.lineTo(-1, 0); g.lineTo(-4, 4); g.closePath(); g.fill();
+      g.restore();
+    }
+  }
+  function drawHint(g) {
+    const W = G.world;
     // ── 말 걸기 · 조사 안내 ──
     if (G.interact && G.interact.hint) {
       const ht = G.interact.hint;
@@ -168,11 +207,6 @@
       if (!touch()) { g.fillStyle = '#f0cc6e'; g.fillRect(bx + 3, hy - 9, 9, 9); g.fillStyle = '#0b0914'; g.font = "12px 'Galmuri11', monospace"; g.fillText('J', bx + 5, hy - 1); }
       g.font = "12px 'Galmuri11', monospace"; txt(g, label, bx + (touch() ? 4 : 14), hy, '#f4ecdc');
     }
-
-    drawBoss(g, w, h);
-    drawVignette(g, w, h);
-    // 추위 · 더위 경고
-    if (H.env) { g.font = "12px 'Galmuri11', monospace"; txt(g, H.env.text, 7, y + 12, H.env.col); }
   }
   function drawVignette(g, w, h) {
     const s = G.state;
@@ -191,7 +225,8 @@
     const tag = bossTag();
     if (!b || (b.dead && H.bossShow <= 0)) { if (!tag.hidden) tag.hidden = true; return; }
     const bw = Math.min(220, w - 120), x = Math.round((w - bw) / 2), y = h - 10;
-    const k = Math.max(0, b.hp / b.maxHp);
+    const k = b.duel && b.hp <= 1 ? 0 : Math.max(0, b.hp / b.maxHp);
+    if (b.duel && b.hp <= 1) H.bossLag = 0;
     H.bossLag = H.bossLag == null ? k : U.lerp(H.bossLag, k, 0.04);
     g.fillStyle = 'rgba(11,9,20,0.85)'; g.fillRect(x - 2, y - 2, bw + 4, 8);
     // 이름은 화면 해상도 그대로(작고 또렷하게) — 캔버스 글씨는 3배로 커진다
@@ -222,12 +257,27 @@
   function txt(g, s, x, y, col) { g.fillStyle = '#0b0914'; g.fillText(s, x + 1, y + 1); g.fillText(s, x, y + 1); g.fillStyle = col; g.fillText(s, x, y); }
 
   /* ───────── 작은 지도 (넓은 지도에서만) ───────── */
+  /** 오른쪽 위 맨 윗줄: 휴대폰은 시스템 버튼(지도 · 메뉴)이 오른쪽 위에 있으면 바로 그 아래, 아래에 있으면(세로 화면) 맨 위
+      (예전엔 휴대폰이면 늘 40 — 가로 화면에선 버튼 아래로 한참 비었고, 세로 화면에선 버튼이 아래인데도 내려와 있었다) */
+  let topCache = 5, topAt = -1;
+  function topRight() {
+    if (!touch()) return 5;
+    const now = G.world ? G.world.t : 0;
+    if (topAt >= 0 && Math.abs(now - topAt) < 0.5) return topCache;
+    topAt = now;
+    const sb = document.getElementById('sysbtns'), cv = document.getElementById('cv');
+    if (!sb || !cv) return (topCache = 40);
+    const r = sb.getBoundingClientRect(), c = cv.getBoundingClientRect();
+    if (!r.height || !c.height || r.top > c.top + c.height / 2 || r.left + r.width < c.left + c.width / 2) return (topCache = 5);
+    const k = cv.height / c.height;   // 캔버스 픽셀 / 화면 픽셀
+    return (topCache = U.clamp(Math.ceil((r.bottom - c.top) * k) + 3, 5, 40));
+  }
   function drawMini(g, w) {
     const W = G.world, m = W.map, s = G.state;
     if (!m || !m.minimap || s.settings.minimap === false) return null;
     if (!m.miniImg) buildMini(m);
     const mw = 64, mh = 44;
-    const x = w - mw - 6, y = touch() ? 40 : 5;
+    const x = w - mw - 6, y = topRight();
     const p = W.player;
     const ptx = p.x / TS, pty = p.y / TS;
     const sc = m.miniScale || 1; // 칸당 픽셀
@@ -242,7 +292,7 @@
       if (mx < x || my < y || mx > x + mw || my > y + mh) continue;
       g.fillStyle = mk.col || '#8ad8ff'; g.fillRect(Math.round(mx) - 1, Math.round(my) - 1, 2, 2);
     }
-    const goal = G.story && G.story.goal && G.story.goal();
+    const goal = G.story && (G.story.goalOn ? G.story.goalOn(m.id) : G.story.goal && G.story.goal());   // 다른 지도의 목표는 그리로 가는 문을
     if (goal && goal.map === m.id) {
       let gx = x + goal.x * sc - sx, gy = y + goal.y * sc - sy;
       const inside = gx >= x && gy >= y && gx <= x + mw && gy <= y + mh;
@@ -292,22 +342,33 @@
     if (H.btnT <= 0 && touch()) { H.btnT = 0.25; syncButtons(); }
   }
   const btnCache = {};
+  /** 휴대폰 버튼 한 개: 글자 · 그림 · 흐림 (바뀐 때만 고친다) */
+  function setBtn(act, label, dim, ready, glyph) {
+    const key = act + label + dim + ready + (glyph || '');
+    if (btnCache[act] === key) return;
+    btnCache[act] = key;
+    const el = document.querySelector('.tb[data-act="' + act + '"]');
+    if (!el) return;
+    el.querySelector('small').textContent = label;
+    if (glyph) el.querySelector('i').textContent = glyph;
+    el.style.opacity = dim ? '0.28' : '';
+    if (act === 'special') el.classList.toggle('ready', !!ready);
+  }
   function syncButtons() {
     const s = G.state;
-    const set = (act, label, dim, ready) => {
-      const key = act + label + dim + ready;
-      if (btnCache[act] === key) return;
-      btnCache[act] = key;
-      const el = document.querySelector('.tb[data-act="' + act + '"]');
-      if (!el) return;
-      el.querySelector('small').textContent = label;
-      el.style.opacity = dim ? '0.28' : '';
-      if (act === 'special') el.classList.toggle('ready', !!ready);
-    };
-    set('bow', s.tools.bow ? '활 ' + s.ammo.arrows : '활', !s.tools.bow);
-    set('magic', s.spell ? G.data.SPELLS[s.spell].name : '마법', !s.spell || s.mp < (s.spell ? G.data.SPELLS[s.spell].mp : 99));
+    const set = setBtn;
+    // 공격 · 바꾸기 · 스킬 버튼은 든 무기를 따른다 (stance.js)
+    if (H.weaponButtons) H.weaponButtons(set);
+    else {
+      set('bow', s.tools.bow ? '활 ' + s.ammo.arrows : '활', !s.tools.bow);
+      set('magic', s.spell ? G.data.SPELLS[s.spell].name : '마법', !s.spell || s.mp < (s.spell ? G.data.SPELLS[s.spell].mp : 99));
+    }
     set('tool', s.tool ? G.data.ITEMS[s.tool].name + (s.tool === 'bomb' ? ' ' + s.ammo.bombs : '') : '도구', !s.tool);
     set('special', s.special >= 100 ? '필살!' : Math.floor(s.special) + '%', false, s.special >= 100);
+    // 기억 속: 버튼은 하나 — 살피기(말 걸기 · 만지기). 칼 · 구르기 · 도구 · 스킬은 숨긴다
+    const mem = !!(G.story && G.story.memNow && G.story.memNow());
+    const tp = document.getElementById('touch'); if (tp && tp.classList.contains('mem') !== mem) tp.classList.toggle('mem', mem);
+    if (mem) set('attack', '살피기', false, false, '◎');
   }
   function hurt() { H.hurtT = 0.35; }
   function specialReady() { H.readyT = 1; if (G.ui && G.ui.toast) G.ui.toast('필살기 준비 — [O] 빛의 일섬', 'gold'); }
